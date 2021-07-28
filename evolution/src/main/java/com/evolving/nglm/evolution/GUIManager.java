@@ -831,7 +831,7 @@ public class GUIManager
     String nodeID = System.getProperty("nglm.license.nodeid");
 
     String bootstrapServers = Deployment.getBrokerServers();
-	String apiProcessKey = "NOT_USED";
+    String apiProcessKey = "NOT_USED";
     String dynamicCriterionFieldTopic = Deployment.getDynamicCriterionFieldTopic();
     String journeyTopic = Deployment.getJourneyTopic();
     String journeyTemplateTopic = Deployment.getJourneyTemplateTopic();
@@ -2676,6 +2676,12 @@ public class GUIManager
         *****************************************/
         
         Integer tenantID = JSONUtilities.decodeInteger(jsonRoot, "tenantID", null);
+        
+        // EVPRO-1117
+        if(tenantID == null)
+          {
+            tenantID = DeploymentCommon.getDefaultTenant().getTenantID();
+          }
 
         /*****************************************
         *

@@ -80,10 +80,12 @@ public class DeploymentCommon
   protected static final Logger log = LoggerFactory.getLogger(DeploymentCommon.class);
   
   private static Map<Tenant, JSONObject> jsonConfigPerTenant;
+  private static Tenant defaultTenant;
   private static Map<Integer, Deployment> deploymentsPerTenant; // Will contains instance of Deployment class from nglm-project.
 
   public static void initialize() { /* Just to be sure the static bloc is read. */ }
   public static Set<Tenant> getTenants() { return jsonConfigPerTenant.keySet(); }
+  public static Tenant getDefaultTenant() { return defaultTenant; }
   public static Deployment getDeployment(int tenantID) { return deploymentsPerTenant.get(tenantID); }
   public static Deployment getDefault() { return getDeployment(0); }
   
@@ -2022,6 +2024,32 @@ public class DeploymentCommon
         
         jsonConfigPerTenant.put(tenant, tenantJSON);
       }
+    // now let ensure exactly one tenant is the default... consider the fist one default as the default
+    Tenant tenantDefault = null;
+    Tenant firstTenant = null;
+    for(Tenant t : jsonConfigPerTenant.keySet())
+      {
+        if(firstTenant == null) { firstTenant = t;}
+        if(t.isDefault()) 
+          { 
+            if(tenantDefault == null)
+              {
+                tenantDefault = t;
+              }
+            else 
+              {
+                log.warn("Tenant " + t.getName() + " is defined as default but " + tenantDefault.getName() + " is already default, so ignore default for " + t.getName());
+                t.setDefault(false);
+              }
+          }
+      }
+    if(tenantDefault == null)
+      {
+        firstTenant.setDefault(true);
+        log.warn("DeploymentCommon.buildJsonPerTenant No default tenant has been define, we consider tenant " + firstTenant.getName() + " as default");
+      }
+    defaultTenant = tenantDefault;
+    
   }
   
   /****************************************

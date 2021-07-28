@@ -61,6 +61,7 @@ import org.apache.kafka.common.errors.WakeupException;
 import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.AssignSubscriberIDs;
 import com.evolving.nglm.core.Deployment;
+import com.evolving.nglm.core.DeploymentCommon;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.NGLMRuntime;
@@ -730,7 +731,8 @@ public class DNBOProxy
          *
          *****************************************/
 
-        int tenantID = 1; // by default... TODO EVPRO-99 do we need to remove this check ? Deployment.getRegressionMode
+        // EVPRO-1117
+        int tenantID = DeploymentCommon.getDefaultTenant().getTenantID(); 
         if (! Deployment.getRegressionMode())
           {
             tenantID = authenticateAndCheckAccess(jsonRoot, api.name());
