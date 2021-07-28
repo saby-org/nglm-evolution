@@ -944,9 +944,9 @@
       "permissions"  : ["API-GET-VOUCHER-LIST"]
     },
     {
-      "id"           : "deleteSubscriber",
-      "methodName"   : "deleteSubscriber",
-      "permissions"  : ["API-VALIDATE-VOUCHER"]
+      "id"           : "deleteCustomer",
+      "methodName"   : "deleteCustomer",
+      "permissions"  : ["API-DELETE-CUSTOMER"]
     }    
   ],
 
