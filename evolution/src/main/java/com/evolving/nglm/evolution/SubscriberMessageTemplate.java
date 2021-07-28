@@ -533,4 +533,17 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
       }
     return result; 
   }
+  
+  
+  public List<String> getAreaAvailabilities(){
+    JSONArray areaAvailability = (JSONArray) getJSONRepresentation().get("areaAvailability");
+    List<String> result = new ArrayList<>();
+    if (areaAvailability != null && !(areaAvailability.isEmpty())) {
+      for (int i = 0; i < areaAvailability.size(); i++)
+        {
+          result.add((String)areaAvailability.get(i));
+        }
+      }
+    return result;
+  }
 }

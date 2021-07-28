@@ -421,7 +421,7 @@ public class OTPUtils
     Map<String, String> tags = new HashMap<>();
     tags.put("otpCode", otpInstance.getOTPValue());
     
-    List<Pair<DialogTemplate, String>> templates = EvolutionUtilities.getNotificationTemplateForAreaAvailability("realtime", subscriberMessageTemplateService, sourceAddressService, tenantID);
+    List<Pair<DialogTemplate, String>> templates = EvolutionUtilities.getNotificationTemplateForAreaAvailability("oneTimePassword", subscriberMessageTemplateService, sourceAddressService, tenantID);
     for(Pair<DialogTemplate, String> template : templates)
       {
         EvolutionUtilities.sendMessage(evolutionEventContext, tags, template.getFirstElement().getDialogTemplateID(), ContactType.ActionNotification, template.getSecondElement(), subscriberEvaluationRequest, subscriberState);

@@ -347,7 +347,7 @@ public class EvolutionUtilities
     for (SubscriberMessageTemplate template : templates) {           
       if (template instanceof DialogTemplate && !template.getReadOnly()) 
         {
-          if (areaAvailability != null && areaAvailability.contains(areaAvailability))
+          if (areaAvailability != null && template.getAreaAvailabilities().contains(areaAvailability))
             {
               String communicationChannelID = ((DialogTemplate) template).getCommunicationChannelID();
               Collection <SourceAddress> sourceAddresses = sourceAddressService.getActiveSourceAddresses(SystemTime.getCurrentTime(), tenantID);
