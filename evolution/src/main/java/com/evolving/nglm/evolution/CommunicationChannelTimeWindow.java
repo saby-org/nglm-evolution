@@ -591,7 +591,7 @@ public class CommunicationChannelTimeWindow extends GUIManagedObject
       *
       ****************************************/
 
-      String communicationChannelTimeWindowPeriodID = JSONUtilities.decodeString(jsonRoot, "id", true);
+      String communicationChannelID = JSONUtilities.decodeString(jsonRoot, "communicationChannelID", true);
 
       /**************************************************************
       *
@@ -599,7 +599,7 @@ public class CommunicationChannelTimeWindow extends GUIManagedObject
       *
       ***************************************************************/
 
-      GUIManagedObject communicationChannelTimeWindowPeriod = communicationChannelTimeWindowService.getStoredCommunicationChannelTimeWindow(communicationChannelTimeWindowPeriodID, includeArchived);
+      GUIManagedObject communicationChannelTimeWindowPeriod = communicationChannelTimeWindowService.getStoredCommunicationChannelTimeWindow(communicationChannelID, includeArchived);
       JSONObject communicationChannelTimeWindowPeriodJSON = communicationChannelTimeWindowService.generateResponseJSON(communicationChannelTimeWindowPeriod, true, SystemTime.getCurrentTime());
 
       /*****************************************
