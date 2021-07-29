@@ -19598,7 +19598,7 @@ public class GUIManager
                     // filter on customerStatus
                     //
 
-                    boolean statusNotified = subsLatestStatistic.getStatusHistory().stream().filter(campaignStat -> SubscriberJourneyStatus.Notified.getExternalRepresentation().equals(campaignStat.getStatus())).count() > 0L;
+                    boolean statusNotified = subsLatestStatistic.getStatusHistory().stream().filter(campaignStat -> (SubscriberJourneyStatus.Notified.getExternalRepresentation().equals(campaignStat.getStatus()) || SubscriberJourneyStatus.ConvertedNotified.getExternalRepresentation().equals(campaignStat.getStatus()) )).count() > 0L;
                     boolean statusConverted = subsLatestStatistic.getStatusHistory().stream().filter(campaignStat -> campaignStat.isConverted()).count() > 0L;
                     Boolean statusTargetGroup = subsLatestStatistic.getStatusHistory().stream().filter(campaignStat -> SubscriberJourneyStatus.Targeted.getExternalRepresentation().equals(campaignStat.getStatus())).count() > 0L;
                     Boolean statusControlGroup = subsLatestStatistic.getStatusHistory().stream().filter(campaignStat -> SubscriberJourneyStatus.ControlGroup.getExternalRepresentation().equals(campaignStat.getStatus()) || SubscriberJourneyStatus.ControlGroupConverted.getExternalRepresentation().equals(campaignStat.getStatus())).count() > 0L;
