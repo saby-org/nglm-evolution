@@ -531,7 +531,9 @@ public class ReportUtils {
     return res;
   }
 
-  public static String unzip(String zipFilePath) {
+
+  public static List<String> unzip(String zipFilePath) {
+    List<String> res = new ArrayList<>();
     try {
       Path destDirPath = Files.createTempDirectory("zipdir");
       String destDir = destDirPath.toString();
@@ -553,16 +555,16 @@ public class ReportUtils {
         }
         fos.close();
         zis.closeEntry();
+        res.add(newFile.getAbsolutePath());
         ze = zis.getNextEntry();
       }
       zis.closeEntry();
       zis.close();
       fis.close();
-      return newFile.getAbsolutePath();
     } catch (IOException ex) {
       log.info("error zipping intermediate file : " + ex.getLocalizedMessage());
-      return "";
     }
+    return res;
   }
   
   private static final String ZIP_PREFIX = "zip";
@@ -595,25 +597,33 @@ public class ReportUtils {
       }
   }
 
-  public static void zipFile(String inputFile, String outputFile) {
-      try {
+  public static void zipFiles(List<String> inputFiles, String outputFile) {
+    ZipOutputStream zos = null;
+    try {
+      FileOutputStream fos = new FileOutputStream(outputFile);
+      zos = new ZipOutputStream(fos);
+      for (String inputFile : inputFiles) {
+        try {
           File file = new File(inputFile);
-  
-          FileOutputStream fos = new FileOutputStream(outputFile);
-          ZipOutputStream zos = new ZipOutputStream(fos);
-  
           zos.putNextEntry(new ZipEntry(file.getName()));
-  
           byte[] bytes = Files.readAllBytes(Paths.get(inputFile));
           zos.write(bytes, 0, bytes.length);
           zos.closeEntry();
-          zos.close();
-  
-      } catch (FileNotFoundException ex) {
-      	log.error("The file does not exist", ex);
-      } catch (IOException ex) {
-      	log.error("I/O error creating zip file", ex);
+        } catch (IOException ex) {
+          log.error("I/O error creating zip file", ex);
+        }
       }
+    } catch (FileNotFoundException ex) {
+      log.error("The file " + outputFile + " does not exist", ex);
+    } finally {
+      if (zos != null) {
+        try {
+          zos.close();
+        } catch (IOException e) {
+          log.error("I/O error closing zip file", e);
+        }
+      }
+    }
   }
 
   public static void extractTopRows(String inputFile, String outputFile, int topRows) 
