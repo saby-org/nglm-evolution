@@ -1077,10 +1077,11 @@ public class GUIManagerLoyaltyReporting extends GUIManager
       {
         try
           {
+            
             Report report = new Report(report1.getJSONRepresentation(), epochServer.getKey(), null, tenantID);
             String reportName = report.getName();
 
-            String outputPath = Deployment.getDeployment(tenantID).getReportManagerOutputPath()+File.separator;
+            String outputPath = ReportService.getReportOutputPath(tenantID);
             String fileExtension = Deployment.getDeployment(tenantID).getReportManagerFileExtension();
 
             File folder = new File(outputPath);
