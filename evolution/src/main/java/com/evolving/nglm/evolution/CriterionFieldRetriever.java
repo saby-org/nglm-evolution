@@ -1421,7 +1421,7 @@ public abstract class CriterionFieldRetriever
         try
           {
             List<String> complexResult = ComplexObjectUtils.getComplexObjectStringSet(subscriberProfile, complexObjectTypeName, elementID, subfieldName);
-            result.addAll(complexResult);
+            if (complexResult != null) result.addAll(complexResult);
           } 
         catch (ComplexObjectException e)
           {
