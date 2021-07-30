@@ -264,8 +264,14 @@ public class OfferReportDriver extends ReportDriver
                                 JSONObject offer2 = (JSONObject) obj3.get(i);
                                 if (offer2 != null)
                                   {
-                                    String name = "" + offer2.get("catalogCharacteristicName");                                
-                                    caracteristicsJSON.put(name, offer2.get("value"));
+                                    Object catalogCharacteristicIDObj = offer2.get("catalogCharacteristicID");
+                                    if (catalogCharacteristicIDObj != null && catalogCharacteristicIDObj instanceof String) {
+                                      GUIManagedObject catalogCharacteristicObj = catalogCharacteristicService.getStoredCatalogCharacteristic((String) catalogCharacteristicIDObj);
+                                      if (catalogCharacteristicObj != null && catalogCharacteristicObj instanceof CatalogCharacteristic) {
+                                        String name = ((CatalogCharacteristic) catalogCharacteristicObj).getGUIManagedObjectDisplay();
+                                        caracteristicsJSON.put(name, offer2.get("value"));
+                                      }
+                                    }
                                   }
                               }
                             outputJSON.add(caracteristicsJSON);

@@ -1430,7 +1430,7 @@ public class GUIManager
     //
 
     // Always update reports with initialReports. When we upgrade, new effectiveScheduling is merged with existing one (EVPRO-244)
-    for(Tenant tenant : Deployment.getTenants())
+    for(Tenant tenant : Deployment.getRealTenants())
       { 
         int tenantID = tenant.getTenantID();
         try
@@ -1441,6 +1441,7 @@ public class GUIManager
           for (int i=0; i<initialReportsJSONArray.size(); i++)
             {
               JSONObject reportJSON = (JSONObject) initialReportsJSONArray.get(i);
+              reportJSON.remove("id"); // might have been added by processPutReport for another tenant, but need to use differentIDs for every tenant
               String name = JSONUtilities.decodeString(reportJSON, "display", false);
               boolean create = true;
               if (name != null)
@@ -1451,14 +1452,15 @@ public class GUIManager
                         {
                           // this report already exists (same name), do not create it
                           create = false;
-                          log.info("Report " + name + " (id " + report.getReportID() + " ) already exists, do not create");
+                          log.info("Report " + name + " (id " + report.getReportID() + " ) already exists in tenant " + tenantID + " do not create");
                           break;
                         }
                     }
                 }
               if (create)
               {
-                guiManagerLoyaltyReporting.processPutReport("0", reportJSON, tenantID); // TODO-EVPRO-99 check this related to tenancy...
+                log.info("processPutReport in tenant " + tenantID + " for " + JSONUtilities.decodeString(reportJSON, "id", false) + " " + JSONUtilities.decodeString(reportJSON, "display", false));
+                guiManagerLoyaltyReporting.processPutReport("0", reportJSON, tenantID);
               }
             }
         }

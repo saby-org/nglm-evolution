@@ -7,12 +7,16 @@
 package com.evolving.nglm.evolution.reports;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.Deployment;
+import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.JobScheduler;
@@ -44,17 +48,18 @@ public class ReportScheduler {
   
   public ReportScheduler()
   {
-    log.trace("Creating ReportService");
+    log.trace("Creating ReportScheduler");
     ReportListener reportListener = new ReportListener()
     {
       @Override public void reportActivated(Report report)
       {
-        log.info("report activated : " + report);
-        scheduleReport(report, 0); // TODO : which tenant ?
+        int tenantID = (report != null)? report.getTenantID() : 0;
+        log.info("Report activated for tenant " + tenantID + " : " + report);
+        scheduleReport(report, tenantID);
       }
       @Override public void reportDeactivated(String guiManagedObjectID)
       {
-        log.info("report deactivated: " + guiManagedObjectID);
+        log.info("Report deactivated: " + guiManagedObjectID);
       }
     };
     reportService = new ReportService(Deployment.getBrokerServers(), "reportscheduler-reportservice-001", Deployment.getReportTopic(), false, reportListener);
@@ -63,13 +68,14 @@ public class ReportScheduler {
     
     // create a ReportScheduler per tenant
     reportScheduler = new HashMap<>();
-    for (Tenant tenant : Deployment.getTenants()) {
+    for (Tenant tenant : Deployment.getRealTenants()) {
       int tenantID = tenant.getTenantID();
+      log.info("Creating scheduler for tenant " + tenantID);
       reportScheduler.put(tenantID, new JobScheduler("report-"+tenantID));
     }
     
     // EVPRO-266 process all existing reports
-    for (Tenant tenant : Deployment.getTenants()) {
+    for (Tenant tenant : Deployment.getRealTenants()) {
       int tenantID = tenant.getTenantID();
       for (Report report : reportService.getActiveReports(SystemTime.getCurrentTime(), tenantID)) {
         scheduleReport(report, tenantID);
@@ -93,15 +99,13 @@ public class ReportScheduler {
   
   private void run()
   {
-    if (log.isInfoEnabled()) log.info("Starting all schedulers...");
-    for (Tenant tenant : Deployment.getTenants())
-      {
-        int tenantID = tenant.getTenantID();
-        JobScheduler reportSchedulerForTenant = reportScheduler.get(tenantID);
-        String schedulerName = "report-scheduler-tenant"+tenantID;
-        new Thread(reportSchedulerForTenant::runScheduler, schedulerName).start();
-        if (log.isInfoEnabled()) log.info("Started {} ...", schedulerName);
-      }
+    log.info("Starting scheduler for all tenants");
+    for (Tenant tenant : Deployment.getRealTenants()) {
+      int tenantID = tenant.getTenantID();
+      log.info("== Starting scheduler for tenant " + tenantID);
+      new Thread(reportScheduler.get(tenantID)::runScheduler, "reportScheduler-tenant"+tenantID).start();
+    }
+    log.info("All schedulers started");
   }
   
   /*****************************************
@@ -111,7 +115,8 @@ public class ReportScheduler {
   *****************************************/
   
   private void scheduleReport(Report report, int tenantID)
-  {    
+  {
+    log.info("Scheduling report " + report.getName() + " for tenant " + tenantID);
     //
     // First deschedule all jobs associated with this report 
     //
@@ -120,17 +125,17 @@ public class ReportScheduler {
       {
        if (job != null && job.isProperlyConfigured() && job instanceof ReportJob && reportID.equals(((ReportJob) job).getReportID()))
          {
-           log.info("desceduling " + job + " for tenant " + tenantID + " because it ran for " + report.getName());
+           log.info("Descheduling " + job + " for tenant " + tenantID + " because it ran for " + report.getName());
            reportScheduler.get(tenantID).deschedule(job);
          }
       }
-
+    
     //
     // then schedule or reschedule everything
     //
     for (SchedulingInterval scheduling : report.getEffectiveScheduling())
       {
-        log.info("processing "+report.getName()+ " for tenant " + tenantID +" with scheduling "+scheduling.getExternalRepresentation()+" cron "+scheduling.getCron());
+        log.info("Processing "+report.getName()+ " for tenant " + tenantID +" with scheduling "+scheduling.getExternalRepresentation()+" cron "+scheduling.getCron());
         if(scheduling.equals(SchedulingInterval.NONE))
     		continue;
         
