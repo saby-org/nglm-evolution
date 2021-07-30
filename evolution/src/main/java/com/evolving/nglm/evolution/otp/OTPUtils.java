@@ -29,6 +29,7 @@ import com.evolving.nglm.evolution.SubscriberState;
 import com.evolving.nglm.evolution.ContactPolicyCommunicationChannels.ContactType;
 import com.evolving.nglm.evolution.DialogTemplate;
 import com.evolving.nglm.evolution.otp.OTPInstance.OTPStatus;
+import com.rii.utilities.SystemTime;
 
 public class OTPUtils
 {
@@ -338,7 +339,7 @@ public class OTPUtils
         return otpRequest;
       }
     SubscriberProfile profile = subscriberState.getSubscriberProfile();
-    Date now = new Date();
+    Date now = SystemTime.getCurrentTime();
     List<OTPInstance> initialOtpList = profile.getOTPInstances().stream().filter(c -> c.getOTPTypeDisplayName().equals(otpRequest.getOTPTypeName())).collect(Collectors.toList());
 
     // check and retrieve otpType
@@ -424,7 +425,7 @@ public class OTPUtils
     List<Pair<DialogTemplate, String>> templates = EvolutionUtilities.getNotificationTemplateForAreaAvailability("oneTimePassword", subscriberMessageTemplateService, sourceAddressService, tenantID);
     for(Pair<DialogTemplate, String> template : templates)
       {
-        EvolutionUtilities.sendMessage(evolutionEventContext, tags, template.getFirstElement().getDialogTemplateID(), ContactType.ActionNotification, template.getSecondElement(), subscriberEvaluationRequest, subscriberState);
+        EvolutionUtilities.sendMessage(evolutionEventContext, tags, template.getFirstElement().getDialogTemplateID(), ContactType.ActionNotification, template.getSecondElement(), subscriberEvaluationRequest, subscriberState, otpRequest.getFeatureID(), otpRequest.getModuleID());
       }
     
     otpRequest.setOTPCheckValue(otpValue); // at least for debug now, but should not be returned to the customer...

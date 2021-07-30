@@ -2605,7 +2605,7 @@ public class EvolutionEngine
    if (evolutionEvent instanceof NotificationEvent)
      {
        NotificationEvent notificationEvent = (NotificationEvent)evolutionEvent;
-       subscriberUpdated = EvolutionUtilities.sendMessage(context, notificationEvent.getTags(), notificationEvent.getTemplateID(), notificationEvent.getContactType(), notificationEvent.getSource(), subscriberEvaluationRequest, subscriberState);
+       subscriberUpdated = EvolutionUtilities.sendMessage(context, notificationEvent.getTags(), notificationEvent.getTemplateID(), notificationEvent.getContactType(), notificationEvent.getSource(), subscriberEvaluationRequest, subscriberState, notificationEvent.getFeatureID(), notificationEvent.getModuleID());
      }
    return subscriberUpdated;
  }

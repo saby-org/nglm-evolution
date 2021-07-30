@@ -30753,6 +30753,10 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
 
     String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
     String areaAvailability = JSONUtilities.decodeString(jsonRoot, "areaAvailability", true);
+    String userName = JSONUtilities.decodeString(jsonRoot, "userName", false);
+    String featureID = (userName != null) ? userName : "administrator";
+    Module moduleID = JSONUtilities.decodeString(jsonRoot, "moduleID", false) != null ? Module.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "moduleID", false)) : Module.Customer_Care;
+    
     JSONObject tags = JSONUtilities.decodeJSONObject(jsonRoot, "tags", true);
     Map<String, List<String>> tagsMap = null;
     List<String> dialogMessageTags = new ArrayList<>();
@@ -30807,7 +30811,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
             String topic = Deployment.getNotificationEventTopic();
             Serializer<StringKey> keySerializer = StringKey.serde().serializer();
             Serializer<NotificationEvent> valueSerializer = NotificationEvent.serde().serializer();
-            NotificationEvent notificationEvent = new NotificationEvent(subscriberID, now, "eventID", templateID, tagValue, communicationChannelID, contactType, source); 
+            NotificationEvent notificationEvent = new NotificationEvent(subscriberID, now, "eventID", templateID, tagValue, communicationChannelID, contactType, source, featureID, moduleID); 
             
             kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
                 topic,

@@ -5975,8 +5975,9 @@ public class ThirdPartyManager
 
   
   private JSONObject processCheckOTP(JSONObject jsonRoot, int tenantID) throws ThirdPartyManagerException, ParseException, IOException
-
-  {// GFE TODO check implem
+  {
+    String featureID = JSONUtilities.decodeString(jsonRoot, "loginName", DEFAULT_FEATURE_ID);
+    
 	  String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
 	  
 	  Map<String,Object> otpResponse = new HashMap<>();
@@ -5995,6 +5996,8 @@ public class ThirdPartyManager
 	            0, //currentTypeErrors
 	            0, // globalErrorCounts
 	            RESTAPIGenericReturnCodes.UNKNOWN,
+	            featureID,
+	            Module.REST_API, // TODO
 	            tenantID);
 
 	    Future<OTPInstanceChangeEvent> waitingResponse = otpChangeResponseListenerService.addWithOnValueFilter((value)->value.getEventID().equals(request.getEventID())&&value.getReturnStatus()!=RESTAPIGenericReturnCodes.UNKNOWN);
@@ -6016,6 +6019,7 @@ public class ThirdPartyManager
   private JSONObject processGenerateOTP(JSONObject jsonRoot, int tenantID) throws ThirdPartyManagerException, ParseException, IOException
   {
 
+    String featureID = JSONUtilities.decodeString(jsonRoot, "loginName", DEFAULT_FEATURE_ID);
     /****************************************
     *
     * argument
@@ -6050,6 +6054,8 @@ public class ThirdPartyManager
         0, //currentTypeErrors
         0, // globalErrorCounts
         RESTAPIGenericReturnCodes.UNKNOWN,
+        featureID,
+        Module.REST_API,
         tenantID);
 
      //String topic = Deployment.getOTPInstanceChangeRequestTopic();
