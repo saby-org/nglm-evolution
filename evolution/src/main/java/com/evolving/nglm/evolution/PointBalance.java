@@ -17,6 +17,8 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import com.evolving.nglm.core.*;
+import com.evolving.nglm.evolution.commoditydelivery.CommodityDeliveryException;
+import com.evolving.nglm.evolution.commoditydelivery.CommodityDeliveryManagerRemovalUtils;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.connect.data.Schema;
@@ -572,7 +574,14 @@ public class PointBalance
     commodityDeliveryRequest.setStatusMessage("Success");
     commodityDeliveryRequest.setDeliveryDate(SystemTime.getCurrentTime());
 
-    context.getSubscriberState().getDeliveryRequests().add(commodityDeliveryRequest);
+    try{
+      DeliveryRequest deliveryRequest = CommodityDeliveryManagerRemovalUtils.createDeliveryRequest(commodityDeliveryRequest,context.getPaymentMeanService(),context.getDeliverableService());
+      deliveryRequest.setDeliveryStatus(DeliveryStatus.Delivered);
+      deliveryRequest.setDeliveryDate(SystemTime.getCurrentTime());
+      context.getSubscriberState().getDeliveryRequests().add(deliveryRequest);
+    }catch (CommodityDeliveryException e) {
+      log.info("could not create delivery response "+e.getError().getGenericResponseMessage());
+    }
 
   }
 }
