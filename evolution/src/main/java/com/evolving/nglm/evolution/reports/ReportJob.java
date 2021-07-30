@@ -83,11 +83,8 @@ public class ReportJob extends ScheduledJob
           Thread thread = new Thread( () -> 
           {
             reportService.launchReport(report, tenantID, false);
-            try { Thread.sleep(180L*1000); } catch (InterruptedException e) { e.printStackTrace(); } // wait for 180s (3mins) - enough to launch todays report - then launch the other dates report
-            if (log.isInfoEnabled()) log.info("reportJob " + report.getName() + " : launch pending report in tenant " + tenantID);
 
             // wait for report to finish
-
             while (reportService.isReportRunning(report.getName(), tenantID)) {
               log.info("Report " + report.getName() + " for tenant " + tenantID + " still running, waiting...");
               try { Thread.sleep(60L*1000); } catch (InterruptedException e) { e.printStackTrace(); }
@@ -127,12 +124,12 @@ public class ReportJob extends ScheduledJob
                 JSONArray schedulingJSONArray = JSONUtilities.decodeJSONArray(extractSchedulingJSON, "scheduling", false);
                 if (schedulingJSONArray != null) { 
                   for (int j=0; j<schedulingJSONArray.size(); j++) {
-                    String schedulingStr = (String) schedulingJSONArray.get(i);
+                    String schedulingStr = (String) schedulingJSONArray.get(j);
                     if (schedulingStr.equalsIgnoreCase(scheduling)) { // this is the right "extractSscheduling" section
                       JSONObject filteringJSON = (JSONObject) extractSchedulingJSON.get("filtering");
                       filteringJSON.put("id", report.getReportID());
                       filteringJSON.put("tenantID", tenantID);
-                      log.info("Found filtering in tenant " + tenantID + " : " + filteringJSON);
+                      if (log.isDebugEnabled()) log.debug("Found filtering in tenant " + tenantID + " : " + filteringJSON);
                       JSONObject jsonResponse = new JSONObject();
                       try {
                         String filename = GUIManagerLoyaltyReporting.processDownloadReportInternal("0", filteringJSON, jsonResponse, null, reportService);
@@ -147,7 +144,7 @@ public class ReportJob extends ScheduledJob
               }
             }
             
-            // Launch pending reports
+            if (log.isInfoEnabled()) log.info("reportJob " + report.getName() + " : launch pending report in tenant " + tenantID);
             reportService.launchReport(report, tenantID, true);
           }
               );

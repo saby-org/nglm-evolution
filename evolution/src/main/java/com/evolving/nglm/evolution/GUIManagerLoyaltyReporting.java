@@ -1274,6 +1274,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                       percentageOutTmpFile = File.createTempFile("tempReportPercentage.", ".csv");
                       topRowsOutTmpFile = File.createTempFile("tempReportTopRows.", ".csv");
                       headerOutTmpFile = File.createTempFile("tempReportHeader.", ".csv");
+                      columnRemovalOutTmpFile = File.createTempFile("tempReportColRemoval.", ".csv");
                       String finalInternalFileName = unzippedFile.substring(0, unzippedFile.length()-4); // remove .csv
                       if (isFilters) {
                         ReportUtils.filterReport(unzippedFile, filterOutTmpFile.getAbsolutePath(), colNames, colsValues, Deployment.getReportManagerCsvSeparator(), Deployment.getReportManagerFieldSurrounder());
@@ -1307,7 +1308,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                         ReportUtils.removeCols(headerOutTmpFile.getAbsolutePath(), columnRemovalOutTmpFile.getAbsolutePath(), columnNamesRemoval, Deployment.getReportManagerCsvSeparator(), Deployment.getReportManagerFieldSurrounder());
                         finalInternalFileName = finalInternalFileName+REMOVAL;
                       } else {
-                        columnRemovalOutTmpFile = columnRemovalOutTmpFile;
+                        columnRemovalOutTmpFile = headerOutTmpFile;
                       }
                       File internalFile = new File(finalInternalFileName + "_" + hashCode + ".csv");
                       try {
