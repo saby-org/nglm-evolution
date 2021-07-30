@@ -33,7 +33,7 @@ import com.evolving.nglm.core.SubscriberStreamEvent;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
-@GUIDependencyDef(objectType = "loyaltyProgramMission", serviceClass = LoyaltyProgramService.class, dependencies = { "catalogcharacteristic"})
+@GUIDependencyDef(objectType = "loyaltyProgramMission", serviceClass = LoyaltyProgramService.class, dependencies = { "catalogcharacteristic", "workflow"})
 public class LoyaltyProgramMission extends LoyaltyProgram
 {
   
@@ -789,6 +789,7 @@ public class LoyaltyProgramMission extends LoyaltyProgram
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
     List<String> catalogcharacteristicIDs = new ArrayList<String>();
+    List<String> wrkflowIDs = new ArrayList<String>();
     
     if (getCharacteristics() != null)
       {
@@ -798,6 +799,17 @@ public class LoyaltyProgramMission extends LoyaltyProgram
           }
       }
     
+    if (getSteps() != null)
+      {
+        for (MissionStep step : getSteps())
+          {
+            if (step.getWorkflowCompletion() != null && !step.getWorkflowCompletion().isEmpty()) wrkflowIDs.add(step.getWorkflowCompletion());
+            if (step.getWorkflowDaily() != null && !step.getWorkflowDaily().isEmpty()) wrkflowIDs.add(step.getWorkflowDaily());
+            if (step.getWorkflowStepUP() != null && !step.getWorkflowStepUP().isEmpty()) wrkflowIDs.add(step.getWorkflowStepUP());
+          }
+      }
+    
+    result.put("workflow", wrkflowIDs);
     result.put("catalogcharacteristic", catalogcharacteristicIDs);
     return result;
   }
