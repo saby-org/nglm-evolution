@@ -184,6 +184,7 @@ public abstract class GUIManagedObject
     guiManagedObjectSerdes.add(CriterionFieldAvailableValues.serde());
     guiManagedObjectSerdes.add(SourceAddress.serde());
     guiManagedObjectSerdes.add(OTPType.serde());
+    guiManagedObjectSerdes.add(Badge.serde());
     commonSerde = new ConnectSerde<GUIManagedObject>("guiManagedObject", false, guiManagedObjectSerdes.toArray(new ConnectSerde[0]));
     incompleteObjectSerde = new ConnectSerde<GUIManagedObject>("guiManagedObjectIncomplete", false, IncompleteObject::unpack, guiManagedObjectSerdes.toArray(new ConnectSerde[0]));
   }

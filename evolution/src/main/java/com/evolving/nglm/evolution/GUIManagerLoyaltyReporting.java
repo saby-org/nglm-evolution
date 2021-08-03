@@ -45,6 +45,7 @@ import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.StringKey;
 import com.evolving.nglm.core.SubscriberIDService;
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.Badge.BadgeType;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
@@ -1027,6 +1028,44 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     HashMap<String,Object> response = new HashMap<String,Object>();
     response.put("responseCode", "ok");
     response.put("loyaltyProgramTypes", JSONUtilities.encodeArray(programTypeList));
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  *  processGetBadgeTypeList
+  *
+  *****************************************/
+
+  JSONObject processGetBadgeTypeList(String userID, JSONObject jsonRoot, int tenantID)
+  {
+    /*****************************************
+    *
+    *  retrieve badge type list
+    *
+    *****************************************/
+
+    List<JSONObject> badgeTypeList = new ArrayList<JSONObject>();
+    for (BadgeType badgeType : BadgeType.values())
+      {
+        if (!badgeType.equals(BadgeType.Unknown))
+          {
+            Map<String, Object> badgeTypeJSON = new HashMap<String, Object>();
+            badgeTypeJSON.put("display", badgeType.name());
+            badgeTypeJSON.put("name", badgeType.getExternalRepresentation());
+            badgeTypeList.add(JSONUtilities.encodeObject(badgeTypeJSON));
+          }
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("badgeTypes", JSONUtilities.encodeArray(badgeTypeList));
     return JSONUtilities.encodeObject(response);
   }
 
