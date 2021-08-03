@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1070,11 +1071,224 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     response.put("badgeTypes", JSONUtilities.encodeArray(badgeTypeList));
     return JSONUtilities.encodeObject(response);
   }
+  
+  /*****************************************
+  *
+  *  processPutBadgeObjective
+  *
+  *****************************************/
+
+  JSONObject processPutBadgeObjective(String userID, JSONObject jsonRoot, int tenantID)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    Boolean dryRun = false;
+    
+
+    /*****************************************
+    *
+    *  dryRun
+    *
+    *****************************************/
+    
+    if (jsonRoot.containsKey("dryRun"))
+      {
+        dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", false);
+      }
+
+    /*****************************************
+    *
+    *  badgeObjectiveID
+    *
+    *****************************************/
+
+    String badgeObjectiveID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    if (badgeObjectiveID == null)
+      {
+        badgeObjectiveID = badgeObjectiveService.generateBadgeObjectiveID();
+        jsonRoot.put("id", badgeObjectiveID);
+      }
+
+    /*****************************************
+    *
+    *  existing badgeObjective
+    *
+    *****************************************/
+
+    GUIManagedObject existingBadgeObjective = badgeObjectiveService.getStoredBadgeObjective(badgeObjectiveID);
+
+    /*****************************************
+    *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingBadgeObjective != null && existingBadgeObjective.getReadOnly())
+      {
+        response.put("id", existingBadgeObjective.getGUIManagedObjectID());
+        response.put("accepted", existingBadgeObjective.getAccepted());
+        response.put("valid", existingBadgeObjective.getAccepted());
+        response.put("processing", badgeObjectiveService.isActiveBadgeObjective(existingBadgeObjective, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    *  process badgeObjective
+    *
+    *****************************************/
+
+    long epoch = epochServer.getKey();
+    try
+      {
+        /****************************************
+        *
+        *  instantiate badgeObjective
+        *
+        ****************************************/
+
+        BadgeObjective badgeObjective = new BadgeObjective(jsonRoot, epoch, existingBadgeObjective, tenantID);
+
+        /*****************************************
+        *
+        *  store
+        *
+        *****************************************/
+        if (!dryRun)
+          {
+
+            badgeObjectiveService.putBadgeObjective(badgeObjective, (existingBadgeObjective == null), userID);
+
+            /*****************************************
+             *
+             * revalidate dependent objects
+             *
+             *****************************************/
+
+            revalidateBadges(now, tenantID);
+          }
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", badgeObjective.getBadgeObjectiveID());
+        response.put("accepted", badgeObjective.getAccepted());
+        response.put("valid", badgeObjective.getAccepted());
+        response.put("processing", badgeObjectiveService.isActiveBadgeObjective(badgeObjective, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch, tenantID);
+
+        //
+        //  store
+        //
+        if (!dryRun)
+          {
+            badgeObjectiveService.putBadgeObjective(incompleteObject, (existingBadgeObjective == null), userID);
+
+            //
+            // revalidate dependent objects
+            //
+
+            revalidateBadges(now, tenantID);
+          }
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  response
+        //
+
+        response.put("id", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "badgeObjectiveNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+  
+  /*****************************************
+  *
+  *  revalidateBadges
+  *
+  *****************************************/
+
+  protected void revalidateBadges(Date date, int tenantID)
+  {
+    /****************************************
+    *
+    *  identify
+    *
+    ****************************************/
+
+    Set<GUIManagedObject> modifiedBadges = new HashSet<GUIManagedObject>();
+    for (GUIManagedObject existingBadge : badgeService.getStoredBadges(tenantID))
+      {
+        //
+        //  modifiedBadge
+        //
+
+        long epoch = epochServer.getKey();
+        GUIManagedObject modifiedBadge;
+        try
+          {
+            Badge badge = new Badge(existingBadge.getJSONRepresentation(), epoch, existingBadge, catalogCharacteristicService, tenantID);
+            badge.validate();
+            modifiedBadge = badge;
+          }
+        catch (JSONUtilitiesException|GUIManagerException e)
+          {
+            modifiedBadge = new IncompleteObject(existingBadge.getJSONRepresentation(), epoch, tenantID);
+          }
+
+        //
+        //  changed?
+        //
+
+        if (existingBadge.getAccepted() != modifiedBadge.getAccepted())
+          {
+            modifiedBadges.add(modifiedBadge);
+          }
+      }
+
+    /****************************************
+    *
+    *  update
+    *
+    ****************************************/
+
+    for (GUIManagedObject modifiedBadge : modifiedBadges)
+      {
+        badgeService.putGUIManagedObject(modifiedBadge, date, false, null);
+      }
+  }
 
   /*****************************************
   *
   *  processDownloadReport
- * @throws IOException 
   *
   *****************************************/
 
