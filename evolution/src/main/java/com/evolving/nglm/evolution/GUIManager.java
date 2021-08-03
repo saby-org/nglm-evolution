@@ -544,6 +544,8 @@ public class GUIManager
     
     putBadgeObjective("putBadgeObjective"),
     getBadgeObjective("getBadgeObjective"),
+    getBadgeObjectiveSummaryList("getBadgeObjectiveSummaryList"),
+    getBadgeObjectiveList("getBadgeObjectiveList"),
     getBadgeTypeList("getBadgeTypeList"),
     
     getResellerList("getResellerList"),
@@ -2303,6 +2305,8 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getBadgeTypeList", new APISimpleHandler(API.getBadgeTypeList));
         restServer.createContext("/nglm-guimanager/putBadgeObjective", new APISimpleHandler(API.putBadgeObjective));
         restServer.createContext("/nglm-guimanager/getBadgeObjective", new APISimpleHandler(API.getBadgeObjective));
+        restServer.createContext("/nglm-guimanager/getBadgeObjectiveSummaryList", new APISimpleHandler(API.getBadgeObjectiveSummaryList));
+        restServer.createContext("/nglm-guimanager/getBadgeObjectiveList", new APISimpleHandler(API.getBadgeObjectiveList));
         restServer.createContext("/nglm-guimanager/getResellerList", new APISimpleHandler(API.getResellerList));
         restServer.createContext("/nglm-guimanager/getResellerSummaryList", new APISimpleHandler(API.getResellerSummaryList));
         restServer.createContext("/nglm-guimanager/getReseller", new APISimpleHandler(API.getReseller));
@@ -4032,6 +4036,14 @@ public class GUIManager
                   
                 case getBadgeObjective:
                   jsonResponse = guiManagerLoyaltyReporting.processGetBadgeObjective(userID, jsonRoot, includeArchived, tenantID);
+                  break;
+                  
+                case getBadgeObjectiveSummaryList:
+                  jsonResponse = guiManagerLoyaltyReporting.processGetBadgeObjectiveList(userID, jsonRoot, false, includeArchived, tenantID);
+                  break;
+                  
+                case getBadgeObjectiveList:
+                  jsonResponse = guiManagerLoyaltyReporting.processGetBadgeObjectiveList(userID, jsonRoot, true, includeArchived, tenantID);
                   break;
                   
                 case getResellerList:

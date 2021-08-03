@@ -1277,6 +1277,58 @@ public class GUIManagerLoyaltyReporting extends GUIManager
   
   /*****************************************
   *
+  *  processGetBadgeObjectiveList
+  *
+  *****************************************/
+
+  protected JSONObject processGetBadgeObjectiveList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived, int tenantID)
+  {
+    /*****************************************
+    *
+    *  retrieve and convert badgeObjectives
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> badgeObjectives = new ArrayList<JSONObject>();
+    Collection <GUIManagedObject> badgeObjectiveObjects = new ArrayList<GUIManagedObject>();
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        JSONArray badgeObjectiveIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+        for (int i = 0; i < badgeObjectiveIDs.size(); i++)
+          {
+            String badgeObjectiveID = badgeObjectiveIDs.get(i).toString();
+            GUIManagedObject badgeObjective = badgeObjectiveService.getStoredBadgeObjective(badgeObjectiveID, includeArchived);
+            if (badgeObjective != null && badgeObjective.getTenantID() == tenantID)
+              {
+                badgeObjectiveObjects.add(badgeObjective);
+              }
+          }
+      }
+    else
+      {
+        badgeObjectiveObjects = badgeObjectiveService.getStoredBadgeObjectives(includeArchived, tenantID);
+      }
+    for (GUIManagedObject badgeObjective : badgeObjectiveObjects)
+      {
+        badgeObjectives.add(badgeObjectiveService.generateResponseJSON(badgeObjective, fullDetails, now));
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();;
+    response.put("responseCode", "ok");
+    response.put("badgeObjectives", JSONUtilities.encodeArray(badgeObjectives));
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
   *  revalidateBadges
   *
   *****************************************/
