@@ -57,6 +57,29 @@ public class Badge extends GUIManagedObject
     public static BadgeType fromExternalRepresentation(String externalRepresentation) { for (BadgeType enumeratedValue : BadgeType.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
   }
   
+  public enum BadgeAction
+  {
+    AWARD("AWARD"),
+    REMOVE("REMOVE"),
+    Unknown("(unknown)");
+    private String externalRepresentation;
+    private BadgeAction(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
+    public String getExternalRepresentation() { return externalRepresentation; }
+    public static BadgeAction fromExternalRepresentation(String externalRepresentation) { for (BadgeAction enumeratedValue : BadgeAction.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
+  }
+  
+  public enum CustomerBadgeStatus
+  {
+    AWARDED("AWARDED"),
+    REMOVED("REMOVED"),
+    PENDING("PENDING"),
+    Unknown("(unknown)");
+    private String externalRepresentation;
+    private CustomerBadgeStatus(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
+    public String getExternalRepresentation() { return externalRepresentation; }
+    public static CustomerBadgeStatus fromExternalRepresentation(String externalRepresentation) { for (CustomerBadgeStatus enumeratedValue : CustomerBadgeStatus.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
+  }
+  
   /*****************************************
   *
   *  schema
@@ -435,6 +458,17 @@ public class Badge extends GUIManagedObject
     this.removeWorkflowID = JSONUtilities.decodeString(jsonRoot, "removeWorkflowID", false);
     this.badgeTranslations = decodeBadgeTranslations(JSONUtilities.decodeJSONArray(jsonRoot, "translations", false));
     this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", true), tenantID);
+    
+    /*****************************************
+    *
+    *  epoch
+    *
+    *****************************************/
+
+    if (epochChanged(existingBadge))
+      {
+        this.setEpoch(epoch);
+      }
   }
   
   /*****************************************
