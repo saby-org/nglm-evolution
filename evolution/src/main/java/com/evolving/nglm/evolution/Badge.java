@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
@@ -24,7 +25,7 @@ import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
-@GUIDependencyDef(objectType = "badge", serviceClass = BadgeService.class, dependencies = { })
+@GUIDependencyDef(objectType = "badge", serviceClass = BadgeService.class, dependencies = { "badgeObjective" })
 public class Badge extends GUIManagedObject
 {
   
@@ -120,6 +121,8 @@ public class Badge extends GUIManagedObject
   *
   ****************************************/
   
+  public String getBadgeID() { return getGUIManagedObjectID(); }
+  public String getDisplay() { return getGUIManagedObjectDisplay(); }
   public Set<BadgeObjectiveInstance> getBadgeObjectives()
   {
     return badgeObjectives;
@@ -537,6 +540,8 @@ public class Badge extends GUIManagedObject
   @Override public Map<String, List<String>> getGUIDependencies(int tenantID)
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
+    List<String> badgeObjectivesIDs = getBadgeObjectives().stream().map(badgeObjective -> badgeObjective.getBadgeObjectiveID()).collect(Collectors.toList());
+    result.put("badgeObjective", badgeObjectivesIDs);
     return result;
   }
 

@@ -1543,6 +1543,149 @@ public class GUIManagerLoyaltyReporting extends GUIManager
    response.put("statusSetIds", statusSetIDs);
    return JSONUtilities.encodeObject(response);
  }
+ 
+ /*****************************************
+ *
+ *  processPutBadge
+ *
+ *****************************************/
+
+ protected JSONObject processPutBadge(String userID, JSONObject jsonRoot, int tenantID)
+ {
+   /****************************************
+   *
+   *  response
+   *
+   ****************************************/
+
+   Date now = SystemTime.getCurrentTime();
+   HashMap<String,Object> response = new HashMap<String,Object>();
+   Boolean dryRun = false;
+   
+
+   /*****************************************
+   *
+   *  dryRun
+   *
+   *****************************************/
+   
+   if (jsonRoot.containsKey("dryRun"))
+     {
+       dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", false);
+     }
+
+   /*****************************************
+   *
+   *  badgeID
+   *
+   *****************************************/
+
+   String badgeID = JSONUtilities.decodeString(jsonRoot, "id", false);
+   if (badgeID == null)
+     {
+       badgeID = badgeService.generateBadgeID();
+       jsonRoot.put("id", badgeID);
+     }
+
+   /*****************************************
+   *
+   *  existing badge
+   *
+   *****************************************/
+
+   GUIManagedObject existingBadge = badgeService.getStoredBadge(badgeID);
+
+   /*****************************************
+   *
+   *  read-only
+   *
+   *****************************************/
+
+   if (existingBadge != null && existingBadge.getReadOnly())
+     {
+       response.put("id", existingBadge.getGUIManagedObjectID());
+       response.put("accepted", existingBadge.getAccepted());
+       response.put("valid", existingBadge.getAccepted());
+       response.put("processing", badgeService.isActiveBadge(existingBadge, now));
+       response.put("responseCode", "failedReadOnly");
+       return JSONUtilities.encodeObject(response);
+     }
+
+   /*****************************************
+   *
+   *  process badge
+   *
+   *****************************************/
+
+   long epoch = epochServer.getKey();
+   try
+     {
+       /****************************************
+       *
+       *  instantiate badge
+       *
+       ****************************************/
+
+       Badge badge = new Badge(jsonRoot, epoch, existingBadge, catalogCharacteristicService, tenantID);
+
+       /*****************************************
+       *
+       *  store
+       *
+       *****************************************/
+       if (!dryRun)
+         {
+           badgeService.putBadge(badge, (existingBadge == null), userID);
+         }
+
+       /*****************************************
+       *
+       *  response
+       *
+       *****************************************/
+
+       response.put("id", badge.getBadgeID());
+       response.put("accepted", badge.getAccepted());
+       response.put("valid", badge.getAccepted());
+       response.put("processing", badgeService.isActiveBadge(badge, now));
+       response.put("responseCode", "ok");
+       return JSONUtilities.encodeObject(response);
+     }
+   catch (JSONUtilitiesException|GUIManagerException e)
+     {
+       //
+       //  incompleteObject
+       //
+
+       IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch, tenantID);
+
+       //
+       //  store
+       //
+       if (!dryRun)
+         {
+           badgeService.putBadge(incompleteObject, (existingBadge == null), userID);
+         }
+
+       //
+       //  log
+       //
+
+       StringWriter stackTraceWriter = new StringWriter();
+       e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+       log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+       //
+       //  response
+       //
+
+       response.put("id", incompleteObject.getGUIManagedObjectID());
+       response.put("responseCode", "badgeNotValid");
+       response.put("responseMessage", e.getMessage());
+       response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+       return JSONUtilities.encodeObject(response);
+     }
+ }
   
   /*****************************************
   *

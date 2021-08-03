@@ -549,6 +549,7 @@ public class GUIManager
     getBadgeTypeList("getBadgeTypeList"),
     removeBadgeObjective("removeBadgeObjective"),
     setStatusBadgeObjective("setStatusBadgeObjective"),
+    putBadge("putBadge"),
     
     getResellerList("getResellerList"),
     getResellerSummaryList("getResellerSummaryList"),
@@ -2311,6 +2312,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getBadgeObjectiveList", new APISimpleHandler(API.getBadgeObjectiveList));
         restServer.createContext("/nglm-guimanager/removeBadgeObjective", new APISimpleHandler(API.removeBadgeObjective));
         restServer.createContext("/nglm-guimanager/setStatusBadgeObjective", new APISimpleHandler(API.setStatusBadgeObjective));
+        restServer.createContext("/nglm-guimanager/putBadge", new APISimpleHandler(API.putBadge));
         restServer.createContext("/nglm-guimanager/getResellerList", new APISimpleHandler(API.getResellerList));
         restServer.createContext("/nglm-guimanager/getResellerSummaryList", new APISimpleHandler(API.getResellerSummaryList));
         restServer.createContext("/nglm-guimanager/getReseller", new APISimpleHandler(API.getReseller));
@@ -4056,6 +4058,10 @@ public class GUIManager
                   
                 case setStatusBadgeObjective:
                   jsonResponse = guiManagerLoyaltyReporting.processSetStatusBadgeObjective(userID, jsonRoot, tenantID);
+                  break;
+                  
+                case putBadge:
+                  jsonResponse = guiManagerLoyaltyReporting.processPutBadge(userID, jsonRoot, tenantID);
                   break;
                   
                 case getResellerList:
