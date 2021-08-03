@@ -6,4 +6,4 @@ target/
 .vscode/*
 *.iml
 /bin/
-.factorypath
+-.factorypath

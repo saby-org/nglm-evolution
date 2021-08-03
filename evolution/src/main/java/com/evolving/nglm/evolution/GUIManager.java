@@ -547,6 +547,8 @@ public class GUIManager
     getBadgeObjectiveSummaryList("getBadgeObjectiveSummaryList"),
     getBadgeObjectiveList("getBadgeObjectiveList"),
     getBadgeTypeList("getBadgeTypeList"),
+    removeBadgeObjective("removeBadgeObjective"),
+    setStatusBadgeObjective("setStatusBadgeObjective"),
     
     getResellerList("getResellerList"),
     getResellerSummaryList("getResellerSummaryList"),
@@ -2307,6 +2309,8 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getBadgeObjective", new APISimpleHandler(API.getBadgeObjective));
         restServer.createContext("/nglm-guimanager/getBadgeObjectiveSummaryList", new APISimpleHandler(API.getBadgeObjectiveSummaryList));
         restServer.createContext("/nglm-guimanager/getBadgeObjectiveList", new APISimpleHandler(API.getBadgeObjectiveList));
+        restServer.createContext("/nglm-guimanager/removeBadgeObjective", new APISimpleHandler(API.removeBadgeObjective));
+        restServer.createContext("/nglm-guimanager/setStatusBadgeObjective", new APISimpleHandler(API.setStatusBadgeObjective));
         restServer.createContext("/nglm-guimanager/getResellerList", new APISimpleHandler(API.getResellerList));
         restServer.createContext("/nglm-guimanager/getResellerSummaryList", new APISimpleHandler(API.getResellerSummaryList));
         restServer.createContext("/nglm-guimanager/getReseller", new APISimpleHandler(API.getReseller));
@@ -4044,6 +4048,14 @@ public class GUIManager
                   
                 case getBadgeObjectiveList:
                   jsonResponse = guiManagerLoyaltyReporting.processGetBadgeObjectiveList(userID, jsonRoot, true, includeArchived, tenantID);
+                  break;
+                  
+                case removeBadgeObjective:
+                  jsonResponse = guiManagerLoyaltyReporting.processRemoveBadgeObjective(userID, jsonRoot, tenantID);
+                  break;
+                  
+                case setStatusBadgeObjective:
+                  jsonResponse = guiManagerLoyaltyReporting.processSetStatusBadgeObjective(userID, jsonRoot, tenantID);
                   break;
                   
                 case getResellerList:

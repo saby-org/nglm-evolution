@@ -1329,6 +1329,223 @@ public class GUIManagerLoyaltyReporting extends GUIManager
   
   /*****************************************
   *
+  *  processRemoveBadgeObjective
+  *
+  *****************************************/
+
+  protected JSONObject processRemoveBadgeObjective(String userID, JSONObject jsonRoot, int tenantID)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    String responseCode = "";
+    String singleIDresponseCode = "";
+    List<GUIManagedObject> badgeObjectives = new ArrayList<>();
+    JSONArray badgeObjectiveIDs = new JSONArray();
+    List<String> validIDs = new ArrayList<>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+    
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
+    //
+    //remove single badgeObjective
+    //
+    if (jsonRoot.containsKey("id"))
+      {
+        String badgeObjectiveID = JSONUtilities.decodeString(jsonRoot, "id", false);
+        badgeObjectiveIDs.add(badgeObjectiveID);
+        GUIManagedObject badgeObjective = badgeObjectiveService.getStoredBadgeObjective(badgeObjectiveID);
+        if (badgeObjective != null && (force || !badgeObjective.getReadOnly()))
+          singleIDresponseCode = "ok";
+        else if (badgeObjective != null)
+          singleIDresponseCode = "failedReadOnly";
+        else singleIDresponseCode = "badgeObjectiveNotFound";
+      }
+    
+    //
+    // multiple deletion
+    //
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        badgeObjectiveIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false);
+      }
+       
+    for (int i = 0; i < badgeObjectiveIDs.size(); i++)
+      {
+        String badgeObjectiveID = badgeObjectiveIDs.get(i).toString();
+        GUIManagedObject badgeObjective = badgeObjectiveService.getStoredBadgeObjective(badgeObjectiveID);
+        if (badgeObjective != null && (force || !badgeObjective.getReadOnly()))
+          {
+            badgeObjectives.add(badgeObjective);
+            validIDs.add(badgeObjectiveID);
+          }
+      }
+        
+  
+
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+    for (int i = 0; i < badgeObjectives.size(); i++)
+      {
+
+        GUIManagedObject badgeObjective = badgeObjectives.get(i);
+
+        badgeObjectiveService.removeBadgeObjective(badgeObjective.getGUIManagedObjectID(), userID, tenantID);
+
+        /*****************************************
+         *
+         * revalidate dependent objects
+         *
+         *****************************************/
+
+        revalidateBadges(now, tenantID);
+      }
+
+    /*****************************************
+     *
+     * responseCode
+     *
+     *****************************************/
+
+    if (jsonRoot.containsKey("id"))
+      {
+        response.put("responseCode", singleIDresponseCode);
+        return JSONUtilities.encodeObject(response);
+      }
+
+    else
+      {
+        response.put("responseCode", "ok");
+      }
+
+    /*****************************************
+     *
+     * response
+     *
+     *****************************************/
+    response.put("removedBadgeObjectiveIDS", JSONUtilities.encodeArray(validIDs));
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  * processSetStatusBadgeObjective
+  *
+  *****************************************/
+
+ protected JSONObject processSetStatusBadgeObjective(String userID, JSONObject jsonRoot, int tenantID)
+ {
+   /****************************************
+    *
+    * response
+    *
+    ****************************************/
+   
+   Date now = SystemTime.getCurrentTime();
+   HashMap<String, Object> response = new HashMap<String, Object>();
+   JSONArray badgeObjectiveIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+   List<String> statusSetIDs = new ArrayList<>();
+   Boolean status = JSONUtilities.decodeBoolean(jsonRoot, "active");
+   long epoch = epochServer.getKey();
+
+   for (int i = 0; i < badgeObjectiveIDs.size(); i++)
+     {
+       String badgeObjectiveID = badgeObjectiveIDs.get(i).toString();
+       GUIManagedObject existingElement = badgeObjectiveService.getStoredBadgeObjective(badgeObjectiveID);
+       if (existingElement != null && !(existingElement.getReadOnly()))
+         {
+           statusSetIDs.add(badgeObjectiveID);
+           JSONObject elementRoot = (JSONObject) existingElement.getJSONRepresentation().clone();
+           elementRoot.put("active", status);
+           try
+             {
+               /****************************************
+                *
+                * instantiate badgeObjective
+                *
+                ****************************************/
+
+               BadgeObjective badgeObjective = new BadgeObjective(elementRoot, epoch, existingElement, tenantID);
+
+               /*****************************************
+                *
+                * store
+                *
+                *****************************************/
+               
+               badgeObjectiveService.putBadgeObjective(badgeObjective, (existingElement == null), userID);
+
+               /*****************************************
+                *
+                * revalidate dependent objects
+                *
+                *****************************************/
+
+               revalidateBadges(now, tenantID);
+
+             }
+           catch (JSONUtilitiesException | GUIManagerException e)
+             {
+               //
+               // incompleteObject
+               //
+
+               IncompleteObject incompleteObject = new IncompleteObject(elementRoot, epoch, tenantID);
+
+               //
+               // store
+               //
+
+               badgeObjectiveService.putBadgeObjective(incompleteObject, (existingElement == null), userID);
+
+               //
+               // revalidate dependent objects
+               //
+
+               revalidateBadges(now, tenantID);
+
+               //
+               // log
+               //
+
+               StringWriter stackTraceWriter = new StringWriter();
+               e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+               if (log.isWarnEnabled())
+                 {
+                   log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+                 }
+
+             }
+         }
+     }
+   response.put("responseCode", "ok");
+   response.put("statusSetIds", statusSetIDs);
+   return JSONUtilities.encodeObject(response);
+ }
+  
+  /*****************************************
+  *
   *  revalidateBadges
   *
   *****************************************/
