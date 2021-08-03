@@ -1686,6 +1686,213 @@ public class GUIManagerLoyaltyReporting extends GUIManager
        return JSONUtilities.encodeObject(response);
      }
  }
+ 
+ /*****************************************
+ *
+ *  processGetBadge
+ *
+ *****************************************/
+
+ protected JSONObject processGetBadge(String userID, JSONObject jsonRoot, boolean includeArchived, int tenantID)
+ {
+   /****************************************
+   *
+   *  response
+   *
+   ****************************************/
+
+   HashMap<String,Object> response = new HashMap<String,Object>();
+
+   /****************************************
+   *
+   *  argument
+   *
+   ****************************************/
+
+   String badgeID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+   /*****************************************
+   *
+   *  retrieve and decorate scoring strategy
+   *
+   *****************************************/
+
+   GUIManagedObject badge = badgeService.getStoredBadge(badgeID, includeArchived);
+   JSONObject badgeJSON = badgeService.generateResponseJSON(badge, true, SystemTime.getCurrentTime());
+
+   /*****************************************
+   *
+   *  response
+   *
+   *****************************************/
+
+   response.put("responseCode", (badge != null) ? "ok" : "badgeNotFound");
+   if (badge != null) response.put("badge", badgeJSON);
+   return JSONUtilities.encodeObject(response);
+ }
+ 
+ /*****************************************
+ *
+ *  processGetBadgeList
+ *
+ *****************************************/
+
+ protected JSONObject processGetBadgeList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived, int tenantID)
+ {
+   /*****************************************
+   *
+   *  retrieve and convert badges
+   *
+   *****************************************/
+
+   Date now = SystemTime.getCurrentTime();
+   List<JSONObject> badges = new ArrayList<JSONObject>();
+   Collection <GUIManagedObject> badgeObjects = new ArrayList<GUIManagedObject>();
+   
+   if (jsonRoot.containsKey("ids"))
+     {
+       JSONArray badgeIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+       for (int i = 0; i < badgeIDs.size(); i++)
+         {
+           String badgeID = badgeIDs.get(i).toString();
+           GUIManagedObject badge = badgeService.getStoredBadge(badgeID, includeArchived);
+           if (badge != null && badge.getTenantID() == tenantID)
+             {
+               badgeObjects.add(badge);
+             }
+         }
+     }
+   else
+     {
+       badgeObjects = badgeService.getStoredBadges(includeArchived, tenantID);
+     }
+   for (GUIManagedObject badge : badgeObjects)
+     {
+       badges.add(badgeService.generateResponseJSON(badge, fullDetails, now));
+     }
+
+   /*****************************************
+   *
+   *  response
+   *
+   *****************************************/
+
+   HashMap<String,Object> response = new HashMap<String,Object>();;
+   response.put("responseCode", "ok");
+   response.put("badges", JSONUtilities.encodeArray(badges));
+   return JSONUtilities.encodeObject(response);
+ }
+ 
+ /*****************************************
+ *
+ *  processRemoveBadge
+ *
+ *****************************************/
+
+ protected JSONObject processRemoveBadge(String userID, JSONObject jsonRoot, int tenantID)
+ {
+   /****************************************
+   *
+   *  response
+   *
+   ****************************************/
+
+   HashMap<String,Object> response = new HashMap<String,Object>();
+
+   /*****************************************
+   *
+   *  now
+   *
+   *****************************************/
+
+   Date now = SystemTime.getCurrentTime();
+
+   String responseCode = "";
+   String singleIDresponseCode = "";
+   List<GUIManagedObject> badges = new ArrayList<>();
+   JSONArray badgeIDs = new JSONArray();
+   List<String> validIDs = new ArrayList<>();
+
+   /****************************************
+   *
+   *  argument
+   *
+   ****************************************/
+   
+   boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
+   //
+   //remove single badge
+   //
+   if (jsonRoot.containsKey("id"))
+     {
+       String badgeID = JSONUtilities.decodeString(jsonRoot, "id", false);
+       badgeIDs.add(badgeID);
+       GUIManagedObject badge = badgeService.getStoredBadge(badgeID);
+       if (badge != null && (force || !badge.getReadOnly()))
+         singleIDresponseCode = "ok";
+       else if (badge != null)
+         singleIDresponseCode = "failedReadOnly";
+       else singleIDresponseCode = "badgeNotFound";
+     }
+   
+   //
+   // multiple deletion
+   //
+   
+   if (jsonRoot.containsKey("ids"))
+     {
+       badgeIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false);
+     }
+      
+   for (int i = 0; i < badgeIDs.size(); i++)
+     {
+       String badgeID = badgeIDs.get(i).toString();
+       GUIManagedObject badge = badgeService.getStoredBadge(badgeID);
+       if (badge != null && (force || !badge.getReadOnly()))
+         {
+           badges.add(badge);
+           validIDs.add(badgeID);
+         }
+     }
+       
+ 
+
+   /*****************************************
+   *
+   *  remove
+   *
+   *****************************************/
+   for (int i = 0; i < badges.size(); i++)
+     {
+       GUIManagedObject badge = badges.get(i);
+       badgeService.removeBadge(badge.getGUIManagedObjectID(), userID, tenantID);
+     }
+
+   /*****************************************
+    *
+    * responseCode
+    *
+    *****************************************/
+
+   if (jsonRoot.containsKey("id"))
+     {
+       response.put("responseCode", singleIDresponseCode);
+       return JSONUtilities.encodeObject(response);
+     }
+
+   else
+     {
+       response.put("responseCode", "ok");
+     }
+
+   /*****************************************
+    *
+    * response
+    *
+    *****************************************/
+   response.put("removedBadgeIDS", JSONUtilities.encodeArray(validIDs));
+   return JSONUtilities.encodeObject(response);
+ }
   
   /*****************************************
   *

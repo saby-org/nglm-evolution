@@ -550,6 +550,10 @@ public class GUIManager
     removeBadgeObjective("removeBadgeObjective"),
     setStatusBadgeObjective("setStatusBadgeObjective"),
     putBadge("putBadge"),
+    getBadge("getBadge"),
+    getBadgeSummaryList("getBadgeSummaryList"),
+    getBadgeList("getBadgeList"),
+    removeBadge("removeBadge"),
     
     getResellerList("getResellerList"),
     getResellerSummaryList("getResellerSummaryList"),
@@ -2313,6 +2317,10 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/removeBadgeObjective", new APISimpleHandler(API.removeBadgeObjective));
         restServer.createContext("/nglm-guimanager/setStatusBadgeObjective", new APISimpleHandler(API.setStatusBadgeObjective));
         restServer.createContext("/nglm-guimanager/putBadge", new APISimpleHandler(API.putBadge));
+        restServer.createContext("/nglm-guimanager/getBadge", new APISimpleHandler(API.getBadge));
+        restServer.createContext("/nglm-guimanager/getBadgeSummaryList", new APISimpleHandler(API.getBadgeSummaryList));
+        restServer.createContext("/nglm-guimanager/getBadgeList", new APISimpleHandler(API.getBadgeList));
+        restServer.createContext("/nglm-guimanager/removeBadge", new APISimpleHandler(API.removeBadge));
         restServer.createContext("/nglm-guimanager/getResellerList", new APISimpleHandler(API.getResellerList));
         restServer.createContext("/nglm-guimanager/getResellerSummaryList", new APISimpleHandler(API.getResellerSummaryList));
         restServer.createContext("/nglm-guimanager/getReseller", new APISimpleHandler(API.getReseller));
@@ -4062,6 +4070,22 @@ public class GUIManager
                   
                 case putBadge:
                   jsonResponse = guiManagerLoyaltyReporting.processPutBadge(userID, jsonRoot, tenantID);
+                  break;
+                  
+                case getBadge:
+                  jsonResponse = guiManagerLoyaltyReporting.processGetBadge(userID, jsonRoot, includeArchived, tenantID);
+                  break;
+                  
+                case getBadgeSummaryList:
+                  jsonResponse = guiManagerLoyaltyReporting.processGetBadgeList(userID, jsonRoot, false, includeArchived, tenantID);
+                  break;
+                  
+                case getBadgeList:
+                  jsonResponse = guiManagerLoyaltyReporting.processGetBadgeList(userID, jsonRoot, true, includeArchived, tenantID);
+                  break;
+                  
+                case removeBadge:
+                  jsonResponse = guiManagerLoyaltyReporting.processRemoveBadge(userID, jsonRoot, tenantID);
                   break;
                   
                 case getResellerList:
