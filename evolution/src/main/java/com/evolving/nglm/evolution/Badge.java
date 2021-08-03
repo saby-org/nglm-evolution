@@ -46,9 +46,9 @@ public class Badge extends GUIManagedObject
 
   public enum BadgeType
   {
-    PERMANENT("0"),
-    STATUS("1"),
-    COLLECTIBLE("2"),
+    PERMANENT("PERMANENT"),
+    STATUS("STATUS"),
+    COLLECTIBLE("COLLECTIBLE"),
     Unknown("(unknown)");
     private String externalRepresentation;
     private BadgeType(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
@@ -76,7 +76,7 @@ public class Badge extends GUIManagedObject
     schemaBuilder.field("badgeObjectives", SchemaBuilder.array(OfferObjectiveInstance.schema()).schema());
     schemaBuilder.field("badgeTranslations", SchemaBuilder.array(OfferTranslation.schema()).schema());
     schemaBuilder.field("description", Schema.OPTIONAL_STRING_SCHEMA);
-    schemaBuilder.field("badgeTypeID", Schema.STRING_SCHEMA);
+    schemaBuilder.field("badgeType", Schema.STRING_SCHEMA);
     schemaBuilder.field("pendingImageURL", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("awardedImageURL", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("awardedWorkflowID", Schema.OPTIONAL_STRING_SCHEMA);
@@ -112,7 +112,7 @@ public class Badge extends GUIManagedObject
   private String awardedWorkflowID;
   private String removeWorkflowID;
   private List<EvaluationCriterion> profileCriteria;
-  private String badgeTypeID;
+  private String badgeTypeExternal;
 
   /****************************************
   *
@@ -154,7 +154,7 @@ public class Badge extends GUIManagedObject
   }
   public BadgeType getBadgeType()
   {
-    return BadgeType.fromExternalRepresentation(badgeTypeID);
+    return BadgeType.fromExternalRepresentation(badgeTypeExternal);
   }
   
   /*****************************************
@@ -341,13 +341,13 @@ public class Badge extends GUIManagedObject
   *
   *****************************************/
 
-  public Badge(SchemaAndValue schemaAndValue, Set<OfferObjectiveInstance> badgeObjectives, Set<OfferTranslation> badgeTranslations, String description, String badgeTypeID, String pendingImageURL, String awardedImageURL, String awardedWorkflowID, String removeWorkflowID, List<EvaluationCriterion> profileCriteria)
+  public Badge(SchemaAndValue schemaAndValue, Set<OfferObjectiveInstance> badgeObjectives, Set<OfferTranslation> badgeTranslations, String description, String badgeTypeExternal, String pendingImageURL, String awardedImageURL, String awardedWorkflowID, String removeWorkflowID, List<EvaluationCriterion> profileCriteria)
   {
     super(schemaAndValue);
     this.badgeObjectives = badgeObjectives;
     this.badgeTranslations = badgeTranslations;
     this.description = description;
-    this.badgeTypeID = badgeTypeID;
+    this.badgeTypeExternal = badgeTypeExternal;
     this.pendingImageURL = pendingImageURL;
     this.awardedImageURL = awardedImageURL;
     this.awardedWorkflowID = awardedWorkflowID;
@@ -425,7 +425,7 @@ public class Badge extends GUIManagedObject
     
     this.badgeObjectives = decodeBadgeObjectives(JSONUtilities.decodeJSONArray(jsonRoot, "badgeObjectives", true), catalogCharacteristicService);
     this.description = JSONUtilities.decodeString(jsonRoot, "description", false);
-    this.badgeTypeID = JSONUtilities.decodeString(jsonRoot, "badgeTypeID", BadgeType.PERMANENT.getExternalRepresentation()); // PERMANENT is default
+    this.badgeTypeExternal = JSONUtilities.decodeString(jsonRoot, "badgeType", BadgeType.PERMANENT.getExternalRepresentation()); // PERMANENT is default
     this.pendingImageURL = JSONUtilities.decodeString(jsonRoot, "pendingImageURL", false);
     this.awardedImageURL = JSONUtilities.decodeString(jsonRoot, "awardedImageURL", false);
     this.awardedWorkflowID = JSONUtilities.decodeString(jsonRoot, "awardedWorkflowID", false);
@@ -503,7 +503,7 @@ public class Badge extends GUIManagedObject
         epochChanged = epochChanged || ! Objects.equals(badgeObjectives, existingBadge.getBadgeObjectives());
         epochChanged = epochChanged || ! Objects.equals(badgeTranslations, existingBadge.getBadgeTranslations());
         epochChanged = epochChanged || ! Objects.equals(description, existingBadge.getDescription());
-        epochChanged = epochChanged || ! Objects.equals(badgeTypeID, existingBadge.getBadgeType().getExternalRepresentation());
+        epochChanged = epochChanged || ! Objects.equals(badgeTypeExternal, existingBadge.getBadgeType().getExternalRepresentation());
         epochChanged = epochChanged || ! Objects.equals(pendingImageURL, existingBadge.getPendingImageURL());
         epochChanged = epochChanged || ! Objects.equals(awardedImageURL, existingBadge.getAwardedImageURL());
         epochChanged = epochChanged || ! Objects.equals(awardedWorkflowID, existingBadge.getAwardedWorkflowID());
