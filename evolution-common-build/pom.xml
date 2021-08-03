@@ -151,6 +151,7 @@
     <topic.blackoutperiod>blackoutperiod</topic.blackoutperiod>
     <topic.timewindowperiod>timewindowperiod</topic.timewindowperiod>
     <topic.loyaltyprogram>loyaltyprogram</topic.loyaltyprogram>
+    <topic.badge>badge</topic.badge>
     <topic.exclusioninclusiontarget>exclusioninclusiontarget</topic.exclusioninclusiontarget>
     <topic.segmentcontactpolicy>segmentcontactpolicy</topic.segmentcontactpolicy>
     <topic.criterionfieldavailablevalues>criterionfieldavailablevalues</topic.criterionfieldavailablevalues>
