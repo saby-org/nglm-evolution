@@ -1232,6 +1232,51 @@ public class GUIManagerLoyaltyReporting extends GUIManager
   
   /*****************************************
   *
+  *  processGetBadgeObjective
+  *
+  *****************************************/
+
+  protected JSONObject processGetBadgeObjective(String userID, JSONObject jsonRoot, boolean includeArchived, int tenantID)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String badgeObjectiveID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  retrieve and decorate scoring strategy
+    *
+    *****************************************/
+
+    GUIManagedObject badgeObjective = badgeObjectiveService.getStoredBadgeObjective(badgeObjectiveID, includeArchived);
+    JSONObject badgeObjectiveJSON = badgeObjectiveService.generateResponseJSON(badgeObjective, true, SystemTime.getCurrentTime());
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (badgeObjective != null) ? "ok" : "badgeObjectiveNotFound");
+    if (badgeObjective != null) response.put("badgeObjective", badgeObjectiveJSON);
+    return JSONUtilities.encodeObject(response);
+  
+  }
+  
+  /*****************************************
+  *
   *  revalidateBadges
   *
   *****************************************/
