@@ -73,8 +73,8 @@ public class Badge extends GUIManagedObject
     schemaBuilder.name("badge");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),4));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
-    schemaBuilder.field("badgeObjectives", SchemaBuilder.array(OfferObjectiveInstance.schema()).schema());
-    schemaBuilder.field("badgeTranslations", SchemaBuilder.array(OfferTranslation.schema()).schema());
+    schemaBuilder.field("badgeObjectives", SchemaBuilder.array(BadgeObjectiveInstance.schema()).schema());
+    schemaBuilder.field("badgeTranslations", SchemaBuilder.array(BadgeTranslation.schema()).schema());
     schemaBuilder.field("description", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("badgeType", Schema.STRING_SCHEMA);
     schemaBuilder.field("pendingImageURL", Schema.OPTIONAL_STRING_SCHEMA);
@@ -104,8 +104,8 @@ public class Badge extends GUIManagedObject
   *
   ****************************************/
 
-  private Set<OfferObjectiveInstance> badgeObjectives; 
-  private Set<OfferTranslation> badgeTranslations;
+  private Set<BadgeObjectiveInstance> badgeObjectives; 
+  private Set<BadgeTranslation> badgeTranslations;
   private String description;
   private String pendingImageURL;
   private String awardedImageURL;
@@ -120,11 +120,11 @@ public class Badge extends GUIManagedObject
   *
   ****************************************/
   
-  public Set<OfferObjectiveInstance> getBadgeObjectives()
+  public Set<BadgeObjectiveInstance> getBadgeObjectives()
   {
     return badgeObjectives;
   }
-  public Set<OfferTranslation> getBadgeTranslations()
+  public Set<BadgeTranslation> getBadgeTranslations()
   {
     return badgeTranslations;
   }
@@ -190,12 +190,12 @@ public class Badge extends GUIManagedObject
   *
   ****************************************/
 
-  private static List<Object> packBadgeObjectives(Set<OfferObjectiveInstance> offerObjectives)
+  private static List<Object> packBadgeObjectives(Set<BadgeObjectiveInstance> badgeObjectives)
   {
     List<Object> result = new ArrayList<Object>();
-    for (OfferObjectiveInstance offerObjective : offerObjectives)
+    for (BadgeObjectiveInstance badgeObjective : badgeObjectives)
       {
-        result.add(OfferObjectiveInstance.pack(offerObjective));
+        result.add(BadgeObjectiveInstance.pack(badgeObjective));
       }
     return result;
   }
@@ -206,12 +206,12 @@ public class Badge extends GUIManagedObject
   *
   ****************************************/
 
-  private static List<Object> packBadgeTranslations(Set<OfferTranslation> offerTranslations)
+  private static List<Object> packBadgeTranslations(Set<BadgeTranslation> badgeTranslations)
   {
     List<Object> result = new ArrayList<Object>();
-    for (OfferTranslation offerTranslation : offerTranslations)
+    for (BadgeTranslation badgeTranslation : badgeTranslations)
       {
-        result.add(OfferTranslation.pack(offerTranslation));
+        result.add(BadgeTranslation.pack(badgeTranslation));
       }
     return result;
   }
@@ -254,23 +254,23 @@ public class Badge extends GUIManagedObject
   *
   *****************************************/
 
-  private static Set<OfferObjectiveInstance> unpackBadgeObjectives(Schema schema, Object value)
+  private static Set<BadgeObjectiveInstance> unpackBadgeObjectives(Schema schema, Object value)
   {
     //
-    //  get schema for OfferObjective
+    //  get schema for BadgeObjective
     //
 
-    Schema offerObjectiveSchema = schema.valueSchema();
+    Schema badgeObjectiveSchema = schema.valueSchema();
 
     //
     //  unpack
     //
 
-    Set<OfferObjectiveInstance> result = new HashSet<OfferObjectiveInstance>();
+    Set<BadgeObjectiveInstance> result = new HashSet<BadgeObjectiveInstance>();
     List<Object> valueArray = (List<Object>) value;
-    for (Object offerObjective : valueArray)
+    for (Object badgeObjective : valueArray)
       {
-        result.add(OfferObjectiveInstance.unpack(new SchemaAndValue(offerObjectiveSchema, offerObjective)));
+        result.add(BadgeObjectiveInstance.unpack(new SchemaAndValue(badgeObjectiveSchema, badgeObjective)));
       }
 
     //
@@ -286,23 +286,23 @@ public class Badge extends GUIManagedObject
   *
   *****************************************/
 
-  private static Set<OfferTranslation> unpackBadgeTranslations(Schema schema, Object value)
+  private static Set<BadgeTranslation> unpackBadgeTranslations(Schema schema, Object value)
   {
     //
-    //  get schema for OfferTranslation
+    //  get schema for BadgeTranslation
     //
 
-    Schema offerTranslationSchema = schema.valueSchema();
+    Schema badgeTranslationSchema = schema.valueSchema();
     
     //
     //  unpack
     //
 
-    Set<OfferTranslation> result = new HashSet<OfferTranslation>();
+    Set<BadgeTranslation> result = new HashSet<BadgeTranslation>();
     List<Object> valueArray = (List<Object>) value;
-    for (Object offerTranslation : valueArray)
+    for (Object badgeTranslation : valueArray)
       {
-        result.add(OfferTranslation.unpack(new SchemaAndValue(offerTranslationSchema, offerTranslation)));
+        result.add(BadgeTranslation.unpack(new SchemaAndValue(badgeTranslationSchema, badgeTranslation)));
       }
 
     //
@@ -341,7 +341,7 @@ public class Badge extends GUIManagedObject
   *
   *****************************************/
 
-  public Badge(SchemaAndValue schemaAndValue, Set<OfferObjectiveInstance> badgeObjectives, Set<OfferTranslation> badgeTranslations, String description, String badgeTypeExternal, String pendingImageURL, String awardedImageURL, String awardedWorkflowID, String removeWorkflowID, List<EvaluationCriterion> profileCriteria)
+  public Badge(SchemaAndValue schemaAndValue, Set<BadgeObjectiveInstance> badgeObjectives, Set<BadgeTranslation> badgeTranslations, String description, String badgeTypeExternal, String pendingImageURL, String awardedImageURL, String awardedWorkflowID, String removeWorkflowID, List<EvaluationCriterion> profileCriteria)
   {
     super(schemaAndValue);
     this.badgeObjectives = badgeObjectives;
@@ -376,8 +376,8 @@ public class Badge extends GUIManagedObject
     //
 
     Struct valueStruct = (Struct) value;
-    Set<OfferObjectiveInstance> badgeObjectives = unpackBadgeObjectives(schema.field("badgeObjectives").schema(), valueStruct.get("badgeObjectives"));
-    Set<OfferTranslation> badgeTranslations = unpackBadgeTranslations(schema.field("badgeTranslations").schema(), valueStruct.get("badgeTranslations"));
+    Set<BadgeObjectiveInstance> badgeObjectives = unpackBadgeObjectives(schema.field("badgeObjectives").schema(), valueStruct.get("badgeObjectives"));
+    Set<BadgeTranslation> badgeTranslations = unpackBadgeTranslations(schema.field("badgeTranslations").schema(), valueStruct.get("badgeTranslations"));
     String description = valueStruct.getString("description");
     String badgeTypeID = valueStruct.getString("badgeTypeID");
     String pendingImageURL = valueStruct.getString("pendingImageURL");
@@ -411,7 +411,7 @@ public class Badge extends GUIManagedObject
 
     /*****************************************
     *
-    *  existingOffer
+    *  existingBadge
     *
     *****************************************/
 
@@ -456,14 +456,14 @@ public class Badge extends GUIManagedObject
   *
   *****************************************/
 
-  private Set<OfferObjectiveInstance> decodeBadgeObjectives(JSONArray jsonArray, CatalogCharacteristicService catalogCharacteristicService) throws GUIManagerException
+  private Set<BadgeObjectiveInstance> decodeBadgeObjectives(JSONArray jsonArray, CatalogCharacteristicService catalogCharacteristicService) throws GUIManagerException
   {
-    Set<OfferObjectiveInstance> result = new HashSet<OfferObjectiveInstance>();
+    Set<BadgeObjectiveInstance> result = new HashSet<BadgeObjectiveInstance>();
     if (jsonArray != null)
       {
         for (int i=0; i<jsonArray.size(); i++)
           {
-            result.add(new OfferObjectiveInstance((JSONObject) jsonArray.get(i), catalogCharacteristicService));
+            result.add(new BadgeObjectiveInstance((JSONObject) jsonArray.get(i), catalogCharacteristicService));
           }
       }
     return result;
@@ -475,14 +475,14 @@ public class Badge extends GUIManagedObject
   *
   *****************************************/
 
-  private Set<OfferTranslation> decodeBadgeTranslations(JSONArray jsonArray) throws GUIManagerException
+  private Set<BadgeTranslation> decodeBadgeTranslations(JSONArray jsonArray) throws GUIManagerException
   {
-    Set<OfferTranslation> result = new HashSet<OfferTranslation>();
+    Set<BadgeTranslation> result = new HashSet<BadgeTranslation>();
     if (jsonArray != null)
       {
         for (int i=0; i<jsonArray.size(); i++)
           {
-            result.add(new OfferTranslation((JSONObject) jsonArray.get(i)));
+            result.add(new BadgeTranslation((JSONObject) jsonArray.get(i)));
           }
       }
     return result;
