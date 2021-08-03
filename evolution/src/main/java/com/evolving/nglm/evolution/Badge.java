@@ -426,7 +426,7 @@ public class Badge extends GUIManagedObject
     *
     *****************************************/
     
-    this.badgeObjectives = decodeBadgeObjectives(JSONUtilities.decodeJSONArray(jsonRoot, "badgeObjectives", true), catalogCharacteristicService);
+    this.badgeObjectives = decodeBadgeObjectives(JSONUtilities.decodeJSONArray(jsonRoot, "badgeObjectives", new JSONArray()), catalogCharacteristicService);
     this.description = JSONUtilities.decodeString(jsonRoot, "description", false);
     this.badgeTypeExternal = JSONUtilities.decodeString(jsonRoot, "badgeType", BadgeType.PERMANENT.getExternalRepresentation()); // PERMANENT is default
     this.pendingImageURL = JSONUtilities.decodeString(jsonRoot, "pendingImageURL", false);
