@@ -352,7 +352,7 @@ public class Badge extends GUIManagedObject
     struct.put("badgeObjectives", packBadgeObjectives(badge.getBadgeObjectives()));
     struct.put("badgeTranslations", packBadgeTranslations(badge.getBadgeTranslations()));
     struct.put("description", badge.getDescription());
-    struct.put("badgeTypeID", badge.getBadgeType().getExternalRepresentation());
+    struct.put("badgeType", badge.getBadgeType().getExternalRepresentation());
     struct.put("pendingImageURL", badge.getPendingImageURL());
     struct.put("awardedImageURL", badge.getAwardedImageURL());
     struct.put("awardedWorkflowID", badge.getAwardedWorkflowID());
@@ -405,7 +405,7 @@ public class Badge extends GUIManagedObject
     Set<BadgeObjectiveInstance> badgeObjectives = unpackBadgeObjectives(schema.field("badgeObjectives").schema(), valueStruct.get("badgeObjectives"));
     Set<BadgeTranslation> badgeTranslations = unpackBadgeTranslations(schema.field("badgeTranslations").schema(), valueStruct.get("badgeTranslations"));
     String description = valueStruct.getString("description");
-    String badgeTypeID = valueStruct.getString("badgeTypeID");
+    String badgeTypeExternal = valueStruct.getString("badgeType");
     String pendingImageURL = valueStruct.getString("pendingImageURL");
     String awardedImageURL = valueStruct.getString("awardedImageURL");
     String awardedWorkflowID = valueStruct.getString("awardedWorkflowID");
@@ -416,7 +416,7 @@ public class Badge extends GUIManagedObject
     //  return
     //
 
-    return new Badge(schemaAndValue, badgeObjectives, badgeTranslations, description, badgeTypeID, pendingImageURL, awardedImageURL, awardedWorkflowID, removeWorkflowID, profileCriteria);
+    return new Badge(schemaAndValue, badgeObjectives, badgeTranslations, description, badgeTypeExternal, pendingImageURL, awardedImageURL, awardedWorkflowID, removeWorkflowID, profileCriteria);
   }
 
   /*****************************************
@@ -562,7 +562,10 @@ public class Badge extends GUIManagedObject
   
   public boolean validate() throws GUIManagerException
   {
-    return true;
+    boolean valid = true;
+    valid = valid && !getBadgeType().equals(BadgeType.Unknown);
+    if (!valid) throw new GUIManagerException("invalid badge type for badgeID " + getBadgeID(), getBadgeType().getExternalRepresentation());
+    return valid;
   }
   
   /*******************************
