@@ -650,6 +650,7 @@ public class CommunicationChannel extends GUIManagedObject
       summaryJSONRepresentation.put("deleted", this.getJSONRepresentation().get("deleted") != null ? this.getJSONRepresentation().get("deleted") : false);
        
       responseJSON.putAll(fullDetails ? jsonRepresentation : summaryJSONRepresentation);
+      responseJSON.put("isGeneric", this.isGeneric());
       responseJSON.put("accepted", this.getAccepted());
       responseJSON.put("active", this.getActive());
       responseJSON.put("valid", this.getAccepted());
