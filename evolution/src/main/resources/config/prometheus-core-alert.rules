@@ -33,3 +33,11 @@ groups:
       summary: "Zookeeper(s) down"
       description: "At least one Zookeeper instance has been down for more than 60 seconds."
 
+  - alert: Kafka_connect_ingestion_errors
+    expr: sum by (connectorName)(increase(com_evolving_nglm_core_filesourcetask_errorrecordcount[5m])) / sum by (connectorName) (increase(com_evolving_nglm_core_filesourcetask_totalrecordcount[5m]) + increase(com_evolving_nglm_core_filesourcetask_errorrecordcount[5m])) > 0.5
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Failure on processed cdrs"
+      description: "Ratio of failed {{$labels.connectorName}} cdrs in the last 5 mins is more than 40%"
