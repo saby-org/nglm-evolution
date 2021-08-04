@@ -2676,6 +2676,12 @@ public class EvolutionEngine
                    subscriberProfile.getBadges().add(newBadge);
                    badgeChangeResponse.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
                    log.info("RAJ K newBadge {}", newBadge);
+                   
+                   //
+                   //  triggerBadgeWorflow AwardedWorkflow
+                   //
+                   
+                   triggerBadgeWorflow(badgeChangeRequest, context.getSubscriberState(), badge.getAwardedWorkflowID(), badgeChangeRequest.getFeatureID(), badgeChangeRequest.getOrigin());
                  }
                else if (subscriberBadge.getCustomerBadgeStatus().equals(CustomerBadgeStatus.REMOVED))
                  {
@@ -2688,6 +2694,12 @@ public class EvolutionEngine
                    subscriberBadge.setBadgeRemoveDate(null);
                    badgeChangeResponse.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
                    log.info("RAJ K re award {}", subscriberBadge);
+                   
+                   //
+                   //  triggerBadgeWorflow AwardedWorkflow
+                   //
+                   
+                   triggerBadgeWorflow(badgeChangeRequest, context.getSubscriberState(), badge.getAwardedWorkflowID(), badgeChangeRequest.getFeatureID(), badgeChangeRequest.getOrigin());
                  }
                else
                  {
@@ -2717,6 +2729,12 @@ public class EvolutionEngine
                    subscriberBadge.setBadgeRemoveDate(context.now());
                    badgeChangeResponse.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
                    log.info("RAJ K removed");
+                   
+                   //
+                   //  triggerBadgeWorflow RemoveWorkflow
+                   //
+                   
+                   triggerBadgeWorflow(badgeChangeRequest, context.getSubscriberState(), badge.getRemoveWorkflowID(), badgeChangeRequest.getFeatureID(), badgeChangeRequest.getOrigin());
                  }
                break;
 
@@ -4243,6 +4261,25 @@ public class EvolutionEngine
     if(workflowTriggering.contains(toBeAdded))
       {
         // there is a conflict, i.e. this has already be requested, which means the date is not enough to discriminate... will see
+        log.warn("triggerLoyaltyWorflow already has " + toBeAdded);
+        return false;
+      }
+    workflowTriggering.add(toBeAdded);
+    return true;
+  }
+  
+  public static boolean triggerBadgeWorflow(SubscriberStreamEvent eventToTrigWorkflow, SubscriberState subscriberState, String badgeWorflowID, String featureID, String origin)
+  {
+    // 
+    // Tag the subscriber state with the event's information, log a warn if a conflict appears (is the date enough to segregate 2 
+    //
+    
+    if(badgeWorflowID == null) { return false; }
+    
+    String toBeAdded = eventToTrigWorkflow.getClass().getName() + ":" + eventToTrigWorkflow.getEventDate().getTime() + ":" + badgeWorflowID + ":" + featureID + ":" + "Badge_workflow" + ":" + origin ;
+    List<String> workflowTriggering = subscriberState.getWorkflowTriggering();
+    if(workflowTriggering.contains(toBeAdded))
+      {
         log.warn("triggerLoyaltyWorflow already has " + toBeAdded);
         return false;
       }
