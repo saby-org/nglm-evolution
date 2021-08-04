@@ -2653,7 +2653,7 @@ public class EvolutionEngine
      {
        log.info("RAJ K updateBadges");
        BadgeChange badgeChangeRequest = (BadgeChange) evolutionEvent;
-       BadgeChange badgeChangeResponse = badgeChangeRequest.copy();
+       BadgeChange badgeChangeResponse = new BadgeChange(badgeChangeRequest);
        badgeChangeResponse.changeToBadgeChangeResponse();
        BadgeAction actionRequest = badgeChangeRequest.getAction();
        log.info("RAJ K actionRequest {}", actionRequest.getExternalRepresentation());

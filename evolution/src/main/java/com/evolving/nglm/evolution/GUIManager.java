@@ -482,6 +482,7 @@ public class GUIManager
     getCustomerBDRs("getCustomerBDRs"),
     getCustomerEDRs("getCustomerEDRs"),
     getCustomerODRs("getCustomerODRs"),
+    getCustomerBGDRs("getCustomerBGDRs"),
     getCustomerMessages("getCustomerMessages"),
     getCustomerJourneys("getCustomerJourneys"),
     getCustomerCampaigns("getCustomerCamapigns"),
@@ -2258,6 +2259,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getCustomerBDRs", new APISimpleHandler(API.getCustomerBDRs));
         restServer.createContext("/nglm-guimanager/getCustomerEDRs", new APISimpleHandler(API.getCustomerEDRs));
         restServer.createContext("/nglm-guimanager/getCustomerODRs", new APISimpleHandler(API.getCustomerODRs));
+        restServer.createContext("/nglm-guimanager/getCustomerBGDRs", new APISimpleHandler(API.getCustomerBGDRs));
         restServer.createContext("/nglm-guimanager/getCustomerMessages", new APISimpleHandler(API.getCustomerMessages));
         restServer.createContext("/nglm-guimanager/getCustomerJourneys", new APISimpleHandler(API.getCustomerJourneys));
         restServer.createContext("/nglm-guimanager/getCustomerCampaigns", new APISimpleHandler(API.getCustomerCampaigns));
@@ -3837,6 +3839,10 @@ public class GUIManager
 
                 case getCustomerODRs:
                   jsonResponse = processGetCustomerODRs(userID, jsonRoot, tenantID);
+                  break;
+                  
+                case getCustomerBGDRs:
+                  jsonResponse = processGetCustomerBGDRs(userID, jsonRoot, tenantID);
                   break;
 
                 case getCustomerMessages:
@@ -19079,6 +19085,110 @@ public class GUIManager
                 //
 
                 response.put("ODRs", JSONUtilities.encodeArray(ODRsJson));
+                response.put("responseCode", "ok");
+              }
+          }
+        catch (SubscriberProfileServiceException | java.text.ParseException e)
+          {
+            throw new GUIManagerException(e);
+          }
+      }
+
+    /*****************************************
+    *
+    *  return
+    *
+    *****************************************/
+
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  * processGetCustomerBGDRs
+  *
+  *****************************************/
+
+  private JSONObject processGetCustomerBGDRs(String userID, JSONObject jsonRoot, int tenantID) throws GUIManagerException
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    Map<String, Object> response = new HashMap<String, Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+    String startDateReq = JSONUtilities.decodeString(jsonRoot, "startDate", false);
+    String moduleID = JSONUtilities.decodeString(jsonRoot, "moduleID", false);
+    String featureID = JSONUtilities.decodeString(jsonRoot, "featureID", false);
+    
+    List<QueryBuilder> filters = new ArrayList<QueryBuilder>();
+    if (moduleID != null && !moduleID.isEmpty()) filters.add(QueryBuilders.matchQuery("moduleID", moduleID));
+    if (featureID != null && !featureID.isEmpty()) filters.add(QueryBuilders.matchQuery("featureID", featureID));
+
+    /*****************************************
+    *
+    *  resolve subscriberID
+    *
+    *****************************************/
+
+    String subscriberID = resolveSubscriberID(customerID, tenantID);
+    if (subscriberID == null)
+      {
+        log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
+        response.put("responseCode", "CustomerNotFound");
+      }
+    else
+      {
+        /*****************************************
+        *
+        *  getSubscriberProfile - include history
+        *
+        *****************************************/
+        try
+          {
+            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
+            if (baseSubscriberProfile == null)
+              {
+                response.put("responseCode", "CustomerNotFound");
+                log.debug("SubscriberProfile is null for subscriberID {}" , subscriberID);
+              }
+            else
+              {
+                List<JSONObject> BGDRsJson = new ArrayList<JSONObject>();
+                
+                List<BadgeChange> BGDRs = new ArrayList<BadgeChange>();
+                SearchRequest searchRequest = this.elasticsearch.getSearchRequest(API.getCustomerBGDRs, subscriberID, startDateReq == null ? null : RLMDateUtils.parseDateFromDay(startDateReq, Deployment.getDeployment(tenantID).getTimeZone()), filters, tenantID);
+                List<SearchHit> hits = this.elasticsearch.getESHits(searchRequest);
+                for (SearchHit hit : hits)
+                  {
+                    BadgeChange badgeChange = new BadgeChange(hit.getSourceAsMap());
+                    BGDRs.add(badgeChange);
+                  }
+
+                //
+                // prepare json
+                //
+
+                for (BadgeChange bgdr : BGDRs)
+                  {
+                    Map<String, Object> presentationMap = bgdr.getGUIPresentationMap(badgeService);
+                    BGDRsJson.add(JSONUtilities.encodeObject(presentationMap));
+                  }
+
+                //
+                // prepare response
+                //
+
+                response.put("BGDRs", JSONUtilities.encodeArray(BGDRsJson));
                 response.put("responseCode", "ok");
               }
           }

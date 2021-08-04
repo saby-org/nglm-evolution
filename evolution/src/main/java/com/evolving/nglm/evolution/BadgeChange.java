@@ -1,6 +1,11 @@
 package com.evolving.nglm.evolution;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.TimeZone;
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
@@ -10,9 +15,12 @@ import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
 
 import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.Deployment;
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.evolution.Badge.BadgeAction;
+import com.evolving.nglm.evolution.DeliveryManagerForNotifications.MessageStatus;
 
 public class BadgeChange extends SubscriberStreamOutput implements EvolutionEngineEvent
 {
@@ -222,8 +230,111 @@ public class BadgeChange extends SubscriberStreamOutput implements EvolutionEngi
     this.tenantID = tenantID;
     this.infos = infos;
   }
-  public BadgeChange copy()
+  
+  //
+  //  ES
+  //
+  
+  public BadgeChange(Map<String, Object> esFields)
   {
-    return new BadgeChange(this);
+    super();
+    this.subscriberID = (String) esFields.get("subscriberID");
+    try
+      {
+        this.eventDate = RLMDateUtils.parseDateFromElasticsearch((String) esFields.get("eventDatetime"));
+      } 
+    catch (ParseException e)
+      {
+      }
+    this.eventID = (String) esFields.get("eventID");
+    this.action = BadgeAction.fromExternalRepresentation((String) esFields.get("action"));
+    this.badgeID = (String) esFields.get("badgeID");
+    this.moduleID = (String) esFields.get("moduleID");
+    this.featureID = (String) esFields.get("featureID");
+    this.origin = (String) esFields.get("origin");
+    this.returnStatus = RESTAPIGenericReturnCodes.fromGenericResponseCode((Integer) esFields.get("returnCode"));
+    this.tenantID = (int) esFields.get("tenantID");
+    this.infos = new ParameterMap();
+  }
+  
+  //
+  //  getGUIPresentationMap
+  //
+  
+  public Map<String, Object> getGUIPresentationMap(BadgeService badgeService)
+  {
+    Map<String, Object> result = new HashMap<String, Object>();
+    result.put("eventID", eventID);
+    result.put("eventDate", getDateString(getEventDate()));
+    result.put("action", action.getExternalRepresentation());
+    result.put("badgeID", badgeID);
+    result.put("moduleID", moduleID);
+    result.put("moduleName", moduleID + " TO DO");
+    result.put("featureID", featureID);
+    result.put("featureName", featureID + "TO DO");
+    result.put("tenantID", tenantID);
+    result.put("returnCode", returnStatus.getGenericResponseCode());
+    result.put("returnCodeDetails", returnStatus.getGenericResponseMessage());
+    GUIManagedObject badgeUnchecked = badgeService.getStoredBadge(badgeID);
+    if (badgeUnchecked != null && badgeUnchecked.getAccepted())
+      {
+        Badge badge = (Badge) badgeUnchecked;
+        result.put("badgeName", badge.getGUIManagedObjectName());
+        result.put("badgeDisplay", badge.getGUIManagedObjectDisplay());
+        result.put("badgeType", badge.getBadgeType().getExternalRepresentation());
+      }
+    return result;
+  }
+  
+  //
+  //  getThirdPartyPresentationMap
+  //
+  
+  public Map<String, Object> getThirdPartyPresentationMap(BadgeService badgeService)
+  {
+    Map<String, Object> result = new HashMap<String, Object>();
+    result.put("eventID", eventID);
+    result.put("eventDate", getDateString(getEventDate()));
+    result.put("action", action.getExternalRepresentation());
+    result.put("badgeID", badgeID);
+    result.put("moduleID", moduleID);
+    result.put("moduleName", moduleID + " TO DO");
+    result.put("featureID", featureID);
+    result.put("featureName", featureID + "TO DO");
+    result.put("tenantID", tenantID);
+    result.put("returnCode", returnStatus.getGenericResponseCode());
+    result.put("returnCodeDetails", returnStatus.getGenericResponseMessage());
+    GUIManagedObject badgeUnchecked = badgeService.getStoredBadge(badgeID);
+    if (badgeUnchecked != null && badgeUnchecked.getAccepted())
+      {
+        Badge badge = (Badge) badgeUnchecked;
+        result.put("badgeName", badge.getGUIManagedObjectName());
+        result.put("badgeDisplay", badge.getGUIManagedObjectDisplay());
+        result.put("badgeType", badge.getBadgeType().getExternalRepresentation());
+      }
+    return result;
+  }
+  
+  /*****************************************
+  *
+  *  getDateString
+  *
+  *****************************************/
+  @Deprecated
+  public String getDateString(Date date)
+
+  {
+    String result = null;
+    if (null == date) return result;
+    try
+      {
+        SimpleDateFormat dateFormat = new SimpleDateFormat(Deployment.getAPIresponseDateFormat());   // TODO EVPRO-99
+        dateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getTimeZone()));
+        result = dateFormat.format(date);
+      }
+    catch (Exception e)
+      {
+      }
+    return result;
   }
 }
