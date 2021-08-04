@@ -250,6 +250,7 @@ public class DeploymentCommon
   private static int elasticsearchRetentionDaysTokens;
   private static int elasticsearchRetentionDaysSnapshots;
   private static int elasticsearchRetentionDaysVDR;
+  private static int elasticsearchRetentionDaysBGDR;
   private static int elasticsearchRetentionDaysEDR;
   private static int elasticsearchRetentionDaysJourneys;
   private static int elasticsearchRetentionDaysCampaigns;
@@ -538,6 +539,7 @@ public class DeploymentCommon
   public static int getElasticsearchRetentionDaysTokens() { return elasticsearchRetentionDaysTokens; }
   public static int getElasticsearchRetentionDaysSnapshots() { return elasticsearchRetentionDaysSnapshots; }
   public static int getElasticsearchRetentionDaysVDR() { return elasticsearchRetentionDaysVDR; }
+  public static int getElasticsearchRetentionDaysBGDR() { return elasticsearchRetentionDaysBGDR; }
   public static int getElasticsearchRetentionDaysEDR() { return elasticsearchRetentionDaysEDR; }
   public static int getElasticsearchRetentionDaysJourneys() { return elasticsearchRetentionDaysJourneys; }
   public static int getElasticsearchRetentionDaysCampaigns() { return elasticsearchRetentionDaysCampaigns; }
@@ -551,6 +553,7 @@ public class DeploymentCommon
   public static Long getElasticsearchTokenTemplateVersion() { return elasticsearchTemplatesVersion.get("detailedrecords_tokens"); }
   public static Long getElasticsearchOdrTemplateVersion() { return elasticsearchTemplatesVersion.get("detailedrecords_offers"); }
   public static Long getElasticsearchVdrTemplateVersion() { return elasticsearchTemplatesVersion.get("detailedrecords_vouchers"); }
+  public static Long getElasticsearchBGdrTemplateVersion() { return elasticsearchTemplatesVersion.get("detailedrecords_badges"); }
   public static Long getElasticsearchMdrTemplateVersion() { return elasticsearchTemplatesVersion.get("detailedrecords_messages"); }
   public static Long getElasticsearchEdrTemplateVersion() { return elasticsearchTemplatesVersion.get("detailedrecords_events"); }
   public static Long getElasticsearcJourneystatisticTemplateVersion() { return elasticsearchTemplatesVersion.get("journeystatistic"); }
@@ -859,6 +862,7 @@ public class DeploymentCommon
     elasticsearchRetentionDaysTokens = jsonReader.decodeInteger("ESRetentionDaysTokens");
     elasticsearchRetentionDaysSnapshots = jsonReader.decodeInteger("ESRetentionDaysSnapshots");
     elasticsearchRetentionDaysVDR = jsonReader.decodeInteger("ESRetentionDaysVDR");
+    elasticsearchRetentionDaysBGDR = jsonReader.decodeInteger("ESRetentionDaysBGDR");
     elasticsearchRetentionDaysEDR = jsonReader.decodeInteger("ESRetentionDaysEDR");
     elasticsearchRetentionDaysJourneys = jsonReader.decodeInteger("ESRetentionDaysJourneys");
     elasticsearchRetentionDaysCampaigns = jsonReader.decodeInteger("ESRetentionDaysCampaigns");
