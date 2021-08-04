@@ -4,6 +4,7 @@
   <artifactId>nglm-evolution-common-build</artifactId>
   <packaging>pom</packaging>
   <version>2.0.0_4-SNAPSHOT</version>  
+  <version>EVPRO-1151-1149-SNAPSHOT</version>  
   <name>evolution-common-build</name>
 
   <repositories> 
@@ -151,6 +152,8 @@
     <topic.blackoutperiod>blackoutperiod</topic.blackoutperiod>
     <topic.timewindowperiod>timewindowperiod</topic.timewindowperiod>
     <topic.loyaltyprogram>loyaltyprogram</topic.loyaltyprogram>
+    <topic.badge>badge</topic.badge>
+    <topic.badgeobjective>badgeobjective</topic.badgeobjective>
     <topic.exclusioninclusiontarget>exclusioninclusiontarget</topic.exclusioninclusiontarget>
     <topic.segmentcontactpolicy>segmentcontactpolicy</topic.segmentcontactpolicy>
     <topic.criterionfieldavailablevalues>criterionfieldavailablevalues</topic.criterionfieldavailablevalues>
