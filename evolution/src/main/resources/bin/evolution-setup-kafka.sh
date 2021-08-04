@@ -94,6 +94,8 @@ echo create_topic ${topic.otpinstancechange.response}                           
 echo create_topic ${topic.otpinstancechange.request}                                $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
 echo create_topic ${topic.subscriberProfileForceUpdateResponse}                     $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
 echo create_topic ${topic.notificationEvent}                                        $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
+echo create_topic ${topic.badgechange.request}                                    	$KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
+echo create_topic ${topic.badgechange.response}                                   	$KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
 
 #
 #  regression topics  

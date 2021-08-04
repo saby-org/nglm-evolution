@@ -251,6 +251,8 @@
   "workflowEventTopic"                                   : "${topic.workflowEvent}",
   "subscriberProfileForceUpdateResponseTopic"            : "${topic.subscriberProfileForceUpdateResponse}",
   "notificationEventTopic"                               : "${topic.notificationEvent}",
+  "badgeChangeRequestTopic"                            	 : "${topic.badgechange.request}",
+  "badgeChangeResponseTopic"                           	 : "${topic.badgechange.response}",
 
   "supportedDataTypes" :
     [

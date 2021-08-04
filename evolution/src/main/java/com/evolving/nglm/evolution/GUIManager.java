@@ -124,6 +124,7 @@ import com.evolving.nglm.core.SubscriberIDService;
 import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.core.UniqueKeyServer;
+import com.evolving.nglm.evolution.Badge.BadgeAction;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryStatus;
@@ -554,7 +555,8 @@ public class GUIManager
     getBadgeSummaryList("getBadgeSummaryList"),
     getBadgeList("getBadgeList"),
     removeBadge("removeBadge"),
-    
+    loyaltyAwardBadge("loyaltyAwardBadge"),
+    loyaltyRemoveBadge("loyaltyRemoveBadge"),
     getResellerList("getResellerList"),
     getResellerSummaryList("getResellerSummaryList"),
     getReseller("getReseller"),
@@ -2323,6 +2325,8 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getBadgeSummaryList", new APISimpleHandler(API.getBadgeSummaryList));
         restServer.createContext("/nglm-guimanager/getBadgeList", new APISimpleHandler(API.getBadgeList));
         restServer.createContext("/nglm-guimanager/removeBadge", new APISimpleHandler(API.removeBadge));
+        restServer.createContext("/nglm-guimanager/loyaltyAwardBadge", new APISimpleHandler(API.loyaltyAwardBadge));
+        restServer.createContext("/nglm-guimanager/loyaltyRemoveBadge", new APISimpleHandler(API.loyaltyRemoveBadge));
         restServer.createContext("/nglm-guimanager/getResellerList", new APISimpleHandler(API.getResellerList));
         restServer.createContext("/nglm-guimanager/getResellerSummaryList", new APISimpleHandler(API.getResellerSummaryList));
         restServer.createContext("/nglm-guimanager/getReseller", new APISimpleHandler(API.getReseller));
@@ -4088,6 +4092,14 @@ public class GUIManager
                   
                 case removeBadge:
                   jsonResponse = guiManagerLoyaltyReporting.processRemoveBadge(userID, jsonRoot, tenantID);
+                  break;
+                  
+                case loyaltyAwardBadge:
+                  jsonResponse = guiManagerLoyaltyReporting.processLoyaltyBadgeRequest(userID, jsonRoot, BadgeAction.AWARD, tenantID);
+                  break;
+                  
+                case loyaltyRemoveBadge:
+                  jsonResponse = guiManagerLoyaltyReporting.processLoyaltyBadgeRequest(userID, jsonRoot, BadgeAction.REMOVE, tenantID);
                   break;
                   
                 case getResellerList:

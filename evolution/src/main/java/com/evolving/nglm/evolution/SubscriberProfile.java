@@ -172,6 +172,7 @@ public abstract class SubscriberProfile
     schemaBuilder.field("offerPurchaseSalesChannelHistory", SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(SalesChannelPurchaseDate.schema())).name("subscriber_profile_purchase_saleschannel_history").schema());
     schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
     schemaBuilder.field("otps",   SchemaBuilder.array(OTPInstance.serde().schema()).defaultValue(Collections.<OTPInstance>emptyList()).schema());
+    schemaBuilder.field("badges", SchemaBuilder.array(BadgeState.schema()).name("subscriber_profile_badges").optional().schema());
 
     commonSchema = schemaBuilder.build();
   };
@@ -256,6 +257,7 @@ public abstract class SubscriberProfile
   // the field unknownRelationships does not mean to be serialized, it is only used as a temporary parameter to handle the case where, in a journey, 
   // the required relationship does not exist and must go out of the box through a special connector.
   private List<Pair<String, String>> unknownRelationships = new ArrayList<>();
+  private List<BadgeState> badges;
   
  
 
@@ -303,6 +305,11 @@ public abstract class SubscriberProfile
           }
       }
     return result;
+  }
+  public List<BadgeState> getBadges() { return badges; }
+  public BadgeState getBadgeByID(String badgeID) 
+  { 
+    return badges.stream().filter(badge -> badge.getBadgeID().equals(badgeID)).findFirst().orElse(null); 
   }
   
   //
@@ -765,7 +772,33 @@ public abstract class SubscriberProfile
     }
     return result;
   }
- 
+  
+  /****************************************
+  *
+  *  getBadgesJSON - badges
+  *
+  ****************************************/
+
+ public JSONObject getBadgesJSON()
+ {
+   JSONObject result = new JSONObject();
+   if (this.badges != null)
+     {
+       JSONArray array = new JSONArray();
+       for (BadgeState badge : badges)
+         {
+           JSONObject obj = new JSONObject();
+           obj.put("badgeID", badge.getBadgeID());
+           obj.put("badgeType", badge.getBadgeType().getExternalRepresentation());
+           obj.put("badgeStatus", badge.getCustomerBadgeStatus().getExternalRepresentation());
+           obj.put("badgeAwardDate", RLMDateUtils.formatDateForElasticsearchDefault(badge.getBadgeAwardDate()));
+           obj.put("badgeRemoveDate", RLMDateUtils.formatDateForElasticsearchDefault(badge.getBadgeRemoveDate()));
+           array.add(obj);
+         }
+       result.put("badges", array);
+     }
+   return result;
+ }
   
   /****************************************
   *
@@ -1188,6 +1221,8 @@ public abstract class SubscriberProfile
     generalDetailsPresentation.put("inclusionTargets", JSONUtilities.encodeArray(new ArrayList<String>(getInclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now))));
     generalDetailsPresentation.put("universalControlGroup", getUniversalControlGroup(subscriberGroupEpochReader));
     generalDetailsPresentation.put("complexFields", JSONUtilities.encodeArray(complexObjectInstancesjson));
+    //generalDetailsPresentation.put("badges", JSONUtilities.encodeArray(badgesPresentation)); RAJ K
+    
     // prepare basic kpiPresentation (if any)
     //
 
@@ -1594,6 +1629,7 @@ public abstract class SubscriberProfile
     this.offerPurchaseHistory = new HashMap<>();
     this.offerPurchaseSalesChannelHistory = new HashMap<String, List<Pair<String,Date>>>();
     this.tenantID = tenantID;
+    this.badges = new LinkedList<BadgeState>();
   }
 
   /*****************************************
@@ -1640,6 +1676,7 @@ public abstract class SubscriberProfile
     Map<String, List<Pair<String, Date>>> offerPurchaseSalesChannelHistory = schema.field("offerPurchaseSalesChannelHistory") != null ? unpackOfferPurchaseSalesChannelHistory(schema.field("offerPurchaseSalesChannelHistory").schema(), (Map<String,List<Object>>) valueStruct.get("offerPurchaseSalesChannelHistory")) : new HashMap<String, List<Pair<String,Date>>>();
     int tenantID = schema.field("tenantID") != null ? valueStruct.getInt16("tenantID") : 1; // by default tenant 1
     List<OTPInstance> otpInstances = (schemaVersion >= 11) ? unpackOTPs(schema.field("otps").schema(), valueStruct.get("otps")) : Collections.<OTPInstance>emptyList();
+    List<BadgeState> badges = (schemaVersion >= 12) ? unpackBadges(schema.field("badges").schema(), valueStruct.get("badges")) : Collections.<BadgeState>emptyList();
 
     //
     //  return
@@ -1668,6 +1705,7 @@ public abstract class SubscriberProfile
     this.tenantID = tenantID;
     this.otpInstances = otpInstances;
     this.offerPurchaseSalesChannelHistory = offerPurchaseSalesChannelHistory;
+    this.badges = badges;
   }
 
   /*****************************************
@@ -1963,7 +2001,39 @@ public abstract class SubscriberProfile
   
   /*****************************************
   *
-  *  unpackVouchers
+  *  unpackBadges
+  *
+  *****************************************/
+
+ private static List<BadgeState> unpackBadges(Schema schema, Object value)
+ {
+   //
+   //  get schema for voucher
+   //
+
+   Schema badgeSchema = schema.valueSchema();
+
+   //
+   //  unpack
+   //
+
+   List<BadgeState> result = new LinkedList<>();
+   List<Object> valueArray = (List<Object>) value;
+   for (Object badgestatObject : valueArray)
+   {
+     result.add(BadgeState.unpack(new SchemaAndValue(badgeSchema, badgestatObject)));
+   }
+
+   //
+   //  return
+   //
+
+   return result;
+ }
+  
+  /*****************************************
+  *
+  *  unpackOTPs
   *
   *****************************************/
 
@@ -2057,6 +2127,7 @@ public abstract class SubscriberProfile
     this.offerPurchaseSalesChannelHistory = subscriberProfile.getOfferPurchaseSalesChannelHistory();
     this.getUnknownRelationships().addAll(subscriberProfile.getUnknownRelationships());
     this.tenantID = subscriberProfile.getTenantID();
+    this.badges = new LinkedList<BadgeState>(subscriberProfile.getBadges());
   }
 
   /*****************************************
@@ -2090,6 +2161,7 @@ public abstract class SubscriberProfile
     struct.put("offerPurchaseSalesChannelHistory", packOfferPurchaseSalesChannelHistory(subscriberProfile.getOfferPurchaseSalesChannelHistory()));
     struct.put("tenantID", (short)(short)subscriberProfile.getTenantID());
     struct.put("otps", packOTPInstances(subscriberProfile.getOTPInstances()));
+    struct.put("badges", packBadges(subscriberProfile.getBadges()));
   }
 
   /*****************************************
@@ -2285,6 +2357,21 @@ public abstract class SubscriberProfile
     return result;
   }
   
+  /****************************************
+  *
+  *  packBadges
+  *
+  ****************************************/
+
+ private static Object packBadges(List<BadgeState> badges)
+ {
+   List<Object> result = new ArrayList<Object>();
+   for (BadgeState badge : badges)
+   {
+     result.add(BadgeState.pack(badge));
+   }
+   return result;
+ }
   
   /****************************************
   *

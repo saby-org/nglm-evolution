@@ -162,6 +162,8 @@
     <topic.voucherchange.response>voucherchange-response</topic.voucherchange.response>
     <topic.otpinstancechange.request>otpinstancechange-request</topic.otpinstancechange.request>
     <topic.otpinstancechange.response>otpinstancechange-response</topic.otpinstancechange.response>
+    <topic.badgechange.request>badgechange-request</topic.badgechange.request>
+    <topic.badgechange.response>badgechange-response</topic.badgechange.response>
     
     <topic.tenant>tenant</topic.tenant>
     <topic.edrdetails>edrdetails</topic.edrdetails>

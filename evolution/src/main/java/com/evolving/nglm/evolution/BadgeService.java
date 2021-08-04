@@ -9,6 +9,8 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.VoucherService.VoucherListener;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 public class BadgeService extends GUIService
 {
@@ -43,7 +45,7 @@ public class BadgeService extends GUIService
   {
     super(bootstrapServers, "BadgeService", groupID, badgeTopic, masterService, getSuperListener(badgeListener), "putBadge", "removeBadge", notifyOnSignificantChange);
   }
-
+  
   //
   //  constructor
   //

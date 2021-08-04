@@ -50,6 +50,7 @@ import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.StringKey;
 import com.evolving.nglm.core.SubscriberIDService;
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.Badge.BadgeAction;
 import com.evolving.nglm.evolution.Badge.BadgeType;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
@@ -1901,6 +1902,87 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     *****************************************/
    response.put("removedBadgeIDS", JSONUtilities.encodeArray(validIDs));
    return JSONUtilities.encodeObject(response);
+ }
+ 
+ protected JSONObject processLoyaltyBadgeRequest(String userID, JSONObject jsonRoot, BadgeAction action, int tenantID) throws GUIManagerException
+ {
+   /****************************************
+    *
+    * response
+    *
+    ****************************************/
+
+   HashMap<String, Object> response = new HashMap<String, Object>();
+
+   /****************************************
+    *
+    * argument
+    *
+    ****************************************/
+
+   String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", false);
+   String badgeID = JSONUtilities.decodeString(jsonRoot, "badge", false);
+
+   /*****************************************
+    *
+    * resolve subscriberID
+    *
+    *****************************************/
+
+   String subscriberID = resolveSubscriberID(customerID, tenantID);
+
+   /*****************************************
+    *
+    * getSubscriberProfile - no history
+    *
+    *****************************************/
+
+   try
+     {
+       SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
+       if (subscriberProfile == null)
+         {
+           response.put("responseCode", RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
+           response.put("responseMessage", RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage());
+           if (log.isDebugEnabled()) log.debug("SubscriberProfile is null for subscriberID {}", subscriberID);
+           return JSONUtilities.encodeObject(response);
+         }
+
+       Date now = SystemTime.getCurrentTime();
+
+       String activeBadgeID = badgeService.getActiveBadge(badgeID, now) == null ? null : badgeService.getActiveBadge(badgeID, now).getBadgeID();
+       if (activeBadgeID == null)
+         {
+           response.put("responseCode", RESTAPIGenericReturnCodes.BADGE_NOT_FOUND.getGenericResponseCode());
+           response.put("responseMessage", RESTAPIGenericReturnCodes.BADGE_NOT_FOUND.getGenericResponseMessage());
+           return JSONUtilities.encodeObject(response);
+         }
+
+       Serializer<StringKey> keySerializer = StringKey.serde().serializer();
+       Serializer<BadgeChange> valueSerializer = BadgeChange.serde().serializer();
+
+       String featureID = userID;
+       String origin = userID; // RAJ K
+       String moduleID = DeliveryRequest.Module.Customer_Care.getExternalRepresentation();
+
+       BadgeChange badgeChangeRequest = new BadgeChange(subscriberID, now, "event from CC", action, activeBadgeID, moduleID, featureID, origin, RESTAPIGenericReturnCodes.SUCCESS, tenantID, new ParameterMap());
+       kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getBadgeChangeRequestTopic(), keySerializer.serialize(Deployment.getBadgeChangeRequestTopic(), new StringKey(subscriberID)), valueSerializer.serialize(Deployment.getBadgeChangeRequestTopic(), badgeChangeRequest)));
+     } 
+   catch (SubscriberProfileServiceException e)
+     {
+       log.error("unable to process request processLoyaltyBadgeRequest {} ", e.getMessage());
+       throw new GUIManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage(), "21");
+     }
+
+   /*****************************************
+    *
+    * decorate and response
+    *
+    *****************************************/
+
+   response.put("responseCode", "ok");
+   return JSONUtilities.encodeObject(response);
+
  }
   
   /*****************************************

@@ -367,6 +367,8 @@ public class DeploymentCommon
   private static String workflowEventTopic;
   private static String subscriberProfileForceUpdateResponseTopic;
   private static String notificationEventTopic;
+  private static String badgeChangeRequestTopic;
+  private static String badgeChangeResponseTopic;
     
   //
   // Others
@@ -684,11 +686,14 @@ public class DeploymentCommon
   public static String getWorkflowEventTopic() { return workflowEventTopic; }
   public static String getSubscriberProfileForceUpdateResponseTopic() { return subscriberProfileForceUpdateResponseTopic; }    
   public static String getNotificationEventTopic() { return notificationEventTopic; }
+  public static String getBadgeChangeRequestTopic() { return badgeChangeRequestTopic; }
+  public static String getBadgeChangeResponseTopic() { return badgeChangeResponseTopic; }
   
   
   //
   // Others
   //
+  
   public static Map<String,AlternateID> getAlternateIDs() { return alternateIDs; }
   public static String getExternalSubscriberID() { return externalSubscriberID; }
   public static String getSubscriberTraceControlAlternateID() { return subscriberTraceControlAlternateID; }
@@ -988,6 +993,8 @@ public class DeploymentCommon
     edrDetailsTopic = jsonReader.decodeString("edrDetailsTopic");
     workflowEventTopic = jsonReader.decodeString("workflowEventTopic");
     notificationEventTopic = jsonReader.decodeString("notificationEventTopic");
+    badgeChangeRequestTopic = jsonReader.decodeString("badgeChangeRequestTopic");
+    badgeChangeResponseTopic = jsonReader.decodeString("badgeChangeResponseTopic");
     
     alternateIDs = jsonReader.decodeMapFromArray(AlternateID.class, "alternateIDs");
     
