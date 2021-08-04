@@ -557,6 +557,7 @@ public class DeploymentCommon
   public static Long getElasticsearchDatacubeJourneyrewardsTemplateVersion() { return elasticsearchTemplatesVersion.get("datacube_journeyrewards"); }
   public static Long getElasticsearchDatacubeOdrTemplateVersion() { return elasticsearchTemplatesVersion.get("datacube_odr"); }
   public static Long getElasticsearchDatacubeBdrTemplateVersion() { return elasticsearchTemplatesVersion.get("datacube_bdr"); }
+  public static Long getElasticsearchDatacubeTdrTemplateVersion() { return elasticsearchTemplatesVersion.get("datacube_tdr"); }
   public static Long getElasticsearchDatacubeMessagesTemplateVersion() { return elasticsearchTemplatesVersion.get("datacube_messages"); }
   public static Long getElasticsearchDatacubeVdrTemplateVersion() { return elasticsearchTemplatesVersion.get("datacube_vdr"); }
   public static Long getElasticsearchMappingModulesTemplateVersion() { return elasticsearchTemplatesVersion.get("mapping_modules"); }

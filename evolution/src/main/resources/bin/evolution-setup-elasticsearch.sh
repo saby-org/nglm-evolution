@@ -804,6 +804,26 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_b
 }'
 echo
 
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_tdr -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
+{
+  "index_patterns": ["t*_datacube_tdr"],
+  "mappings" : {
+    "_meta": { "datacube_tdr" : { "version": Deployment.getElasticsearchDatacubeTdrTemplateVersion() } },
+    "properties" : {
+      "period" : { "type" : "long" },
+      "filter.module" : { "type" : "keyword" },
+      "filter.feature" : { "type" : "keyword" },      
+      "filter.origin" : { "type" : "keyword" },
+      "filter.returnCode" : { "type" : "keyword" },
+      "filter.acceptedOffer" : { "type" : "keyword" },
+      "filter.action" : { "type" : "keyword" },
+      "count" : { "type" : "integer" },
+      "timestamp" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" }
+    }
+  }
+}'
+echo
+
 prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_messages -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["t*_datacube_messages"],
