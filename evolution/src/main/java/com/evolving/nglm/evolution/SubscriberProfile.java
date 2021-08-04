@@ -1104,7 +1104,7 @@ public abstract class SubscriberProfile
             badgeJSONMap.put("badgeID", badge.getBadgeID());
             badgeJSONMap.put("badgeName", badge.getGUIManagedObjectName());
             badgeJSONMap.put("badgeDisplay", badge.getGUIManagedObjectDisplay());
-            badgeJSONMap.put("badgeType", badgeState.getBadgeType());
+            badgeJSONMap.put("badgeType", badgeState.getBadgeType().getExternalRepresentation());
             badgeJSONMap.put("customerBadgeStatus", badgeState.getCustomerBadgeStatus().getExternalRepresentation());
             badgeJSONMap.put("badgeAwardDate", badgeState.getBadgeAwardDate());
             badgeJSONMap.put("badgeRemoveDate", badgeState.getBadgeRemoveDate());
@@ -1304,7 +1304,7 @@ public abstract class SubscriberProfile
             Badge badge = (Badge) badgeUnchecked;
             Map<String, Object> badgeJSONMap = new HashMap<String, Object>();
             badgeJSONMap.put("badgeDisplay", badge.getGUIManagedObjectDisplay());
-            badgeJSONMap.put("badgeType", badgeState.getBadgeType());
+            badgeJSONMap.put("badgeType", badgeState.getBadgeType().getExternalRepresentation());
             badgeJSONMap.put("customerBadgeStatus", badgeState.getCustomerBadgeStatus().getExternalRepresentation());
             badgeJSONMap.put("badgeAwardDate", badgeState.getBadgeAwardDate());
             badgeJSONMap.put("badgeRemoveDate", badgeState.getBadgeRemoveDate());
