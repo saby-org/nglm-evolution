@@ -979,7 +979,7 @@ public abstract class SubscriberProfile
   //  getProfileMapForGUIPresentation
   //
 
-  public Map<String, Object> getProfileMapForGUIPresentation(SubscriberProfileService subscriberProfileService, LoyaltyProgramService loyaltyProgramService, SegmentationDimensionService segmentationDimensionService, TargetService targetService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService, ExclusionInclusionTargetService exclusionInclusionTargetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
+  public Map<String, Object> getProfileMapForGUIPresentation(SubscriberProfileService subscriberProfileService, LoyaltyProgramService loyaltyProgramService, BadgeService badgeService, SegmentationDimensionService segmentationDimensionService, TargetService targetService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService, ExclusionInclusionTargetService exclusionInclusionTargetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
   {
     //
     //  now
@@ -1088,6 +1088,29 @@ public abstract class SubscriberProfile
     	}
     	complexObjectInstancesjson.add(JSONUtilities.encodeObject(json)) ;
     }
+    
+    //
+    //  badgesPresentation
+    //
+    
+    List<JSONObject> badgesPresentation = new ArrayList<JSONObject>();
+    for (BadgeState badgeState : getBadges())
+      {
+        GUIManagedObject badgeUnchecked = badgeService.getStoredBadge(badgeState.getBadgeID());
+        if (badgeUnchecked != null && badgeUnchecked.getAccepted())
+          {
+            Badge badge = (Badge) badgeUnchecked;
+            Map<String, Object> badgeJSONMap = new HashMap<String, Object>();
+            badgeJSONMap.put("badgeID", badge.getBadgeID());
+            badgeJSONMap.put("badgeName", badge.getGUIManagedObjectName());
+            badgeJSONMap.put("badgeDisplay", badge.getGUIManagedObjectDisplay());
+            badgeJSONMap.put("badgeType", badgeState.getBadgeType());
+            badgeJSONMap.put("customerBadgeStatus", badgeState.getCustomerBadgeStatus().getExternalRepresentation());
+            badgeJSONMap.put("badgeAwardDate", badgeState.getBadgeAwardDate());
+            badgeJSONMap.put("badgeRemoveDate", badgeState.getBadgeRemoveDate());
+            badgesPresentation.add(JSONUtilities.encodeObject(badgeJSONMap));
+          }
+      }
     
     //prepare Inclusion/Exclusion list
     
@@ -1221,7 +1244,7 @@ public abstract class SubscriberProfile
     generalDetailsPresentation.put("inclusionTargets", JSONUtilities.encodeArray(new ArrayList<String>(getInclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now))));
     generalDetailsPresentation.put("universalControlGroup", getUniversalControlGroup(subscriberGroupEpochReader));
     generalDetailsPresentation.put("complexFields", JSONUtilities.encodeArray(complexObjectInstancesjson));
-    //generalDetailsPresentation.put("badges", JSONUtilities.encodeArray(badgesPresentation)); RAJ K
+    generalDetailsPresentation.put("badges", JSONUtilities.encodeArray(badgesPresentation));
     
     // prepare basic kpiPresentation (if any)
     //
@@ -1259,7 +1282,7 @@ public abstract class SubscriberProfile
   //  getProfileMapForThirdPartyPresentation
   //
 
-  public Map<String,Object> getProfileMapForThirdPartyPresentation(SegmentationDimensionService segmentationDimensionService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ExclusionInclusionTargetService exclusionInclusionTargetService)
+  public Map<String,Object> getProfileMapForThirdPartyPresentation(SegmentationDimensionService segmentationDimensionService, BadgeService badgeService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ExclusionInclusionTargetService exclusionInclusionTargetService)
   {
     HashMap<String, Object> baseProfilePresentation = new HashMap<String,Object>();
     HashMap<String, Object> generalDetailsPresentation = new HashMap<String,Object>();
@@ -1267,6 +1290,27 @@ public abstract class SubscriberProfile
      //prepare Inclusion/Exclusion list
     Date now = SystemTime.getCurrentTime();
     SubscriberEvaluationRequest inclusionExclusionEvaluationRequest = new SubscriberEvaluationRequest(this, subscriberGroupEpochReader, now, tenantID);
+    
+    //
+    //  badgesPresentation
+    //
+    
+    List<JSONObject> badgesPresentation = new ArrayList<JSONObject>();
+    for (BadgeState badgeState : getBadges())
+      {
+        GUIManagedObject badgeUnchecked = badgeService.getStoredBadge(badgeState.getBadgeID());
+        if (badgeUnchecked != null && badgeUnchecked.getAccepted())
+          {
+            Badge badge = (Badge) badgeUnchecked;
+            Map<String, Object> badgeJSONMap = new HashMap<String, Object>();
+            badgeJSONMap.put("badgeDisplay", badge.getGUIManagedObjectDisplay());
+            badgeJSONMap.put("badgeType", badgeState.getBadgeType());
+            badgeJSONMap.put("customerBadgeStatus", badgeState.getCustomerBadgeStatus().getExternalRepresentation());
+            badgeJSONMap.put("badgeAwardDate", badgeState.getBadgeAwardDate());
+            badgeJSONMap.put("badgeRemoveDate", badgeState.getBadgeRemoveDate());
+            badgesPresentation.add(JSONUtilities.encodeObject(badgeJSONMap));
+          }
+      }
     
 
     //
@@ -1281,6 +1325,7 @@ public abstract class SubscriberProfile
     generalDetailsPresentation.put("exclusionTargets", JSONUtilities.encodeArray(new ArrayList<String>(getExclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now))));
     generalDetailsPresentation.put("inclusionTargets", JSONUtilities.encodeArray(new ArrayList<String>(getInclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now))));
     generalDetailsPresentation.put("universalControlGroup", getUniversalControlGroup(subscriberGroupEpochReader));
+    generalDetailsPresentation.put("badges", JSONUtilities.encodeArray(badgesPresentation));
   
     //
     // prepare basic kpiPresentation (if any)

@@ -96,6 +96,7 @@ import com.evolving.nglm.core.SubscriberStreamEvent.SubscriberAction;
 import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.ActionManager.ActionType;
 import com.evolving.nglm.evolution.Badge.BadgeAction;
+import com.evolving.nglm.evolution.Badge.BadgeType;
 import com.evolving.nglm.evolution.Badge.CustomerBadgeStatus;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
 import com.evolving.nglm.evolution.ContactPolicyCommunicationChannels.ContactType;
@@ -2700,6 +2701,11 @@ public class EvolutionEngine
                    badgeChangeResponse.setReturnStatus(RESTAPIGenericReturnCodes.BADGE_NOT_AVAILABLE);
                    log.info("RAJ K BADGE_NOT_AVAILABLE");
                  }
+               else if (badge.getBadgeType().equals(BadgeType.PERMANENT))
+                 {
+                   badgeChangeResponse.setReturnStatus(RESTAPIGenericReturnCodes.BADGE_NOT_REMOVABLE);
+                   log.info("RAJ K BADGE_NOT_REMOVABLE");
+                 }
                else
                  {
                    //
@@ -2714,6 +2720,7 @@ public class EvolutionEngine
                break;
 
              default:
+               if (log.isErrorEnabled()) log.error("invalid badge actionRequest {}", actionRequest);
                break;
            }
          }
