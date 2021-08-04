@@ -565,6 +565,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/bgdr -u $E
       "origin" 			: { "type" : "keyword" },
       "returnStatus" 	: { "type" : "keyword" },
       "badgeID" 		: { "type" : "keyword" },
+      "action" 			: { "type" : "keyword" },
       "returnCode" 		: { "type" : "keyword" }
     }
   }

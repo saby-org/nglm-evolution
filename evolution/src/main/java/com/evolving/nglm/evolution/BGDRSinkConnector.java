@@ -66,6 +66,7 @@ public class BGDRSinkConnector extends SimpleESSinkConnector
       documentMap.put("returnCode", badgeChange.getReturnStatus().getGenericResponseCode());
       documentMap.put("returnStatus", badgeChange.getReturnStatus().getGenericResponseMessage());
       documentMap.put("badgeID", badgeChange.getBadgeID());
+      documentMap.put("action", badgeChange.getAction().getExternalRepresentation());
       return documentMap;
     }
   }
