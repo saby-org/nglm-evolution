@@ -1942,8 +1942,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
        SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
        if (subscriberProfile == null)
          {
-           response.put("responseCode", RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
-           response.put("responseMessage", RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage());
+           response.put("responseCode", RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseMessage());
            if (log.isDebugEnabled()) log.debug("SubscriberProfile is null for subscriberID {}", subscriberID);
            return JSONUtilities.encodeObject(response);
          }
@@ -1953,8 +1952,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
        String activeBadgeID = badgeService.getActiveBadge(badgeID, now) == null ? null : badgeService.getActiveBadge(badgeID, now).getBadgeID();
        if (activeBadgeID == null)
          {
-           response.put("responseCode", RESTAPIGenericReturnCodes.BADGE_NOT_FOUND.getGenericResponseCode());
-           response.put("responseMessage", RESTAPIGenericReturnCodes.BADGE_NOT_FOUND.getGenericResponseMessage());
+           response.put("responseCode", RESTAPIGenericReturnCodes.BADGE_NOT_FOUND.getGenericResponseMessage());
            return JSONUtilities.encodeObject(response);
          }
 

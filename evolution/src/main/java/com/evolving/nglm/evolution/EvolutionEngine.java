@@ -2690,11 +2690,12 @@ public class EvolutionEngine
                else
                  {
                    badgeChangeResponse.setReturnStatus(RESTAPIGenericReturnCodes.BADGE_ALREADY_AWARDED);
+                   log.info("RAJ K BADGE_ALREADY_AWARDED");
                  }
                break;
                
              case REMOVE:
-               if (subscriberBadge == null)
+               if (subscriberBadge == null || subscriberBadge.getCustomerBadgeStatus().equals(CustomerBadgeStatus.REMOVED))
                  {
                    badgeChangeResponse.setReturnStatus(RESTAPIGenericReturnCodes.BADGE_NOT_AVAILABLE);
                    log.info("RAJ K BADGE_NOT_AVAILABLE");
