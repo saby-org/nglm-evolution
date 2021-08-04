@@ -276,6 +276,8 @@ public class DeploymentCommon
   private static int kafkaRetentionDaysExpiredVouchers;
   private static int kafkaRetentionDaysLoyaltyPrograms;
   private static int kafkaRetentionDaysTargets;
+  private static int kafkaRetentionDaysRemovedBadges;
+  
   //
   // Topics
   //
@@ -586,6 +588,7 @@ public class DeploymentCommon
   public static int getKafkaRetentionDaysExpiredTokens() { return kafkaRetentionDaysExpiredTokens; }
   public static int getKafkaRetentionDaysExpiredVouchers() { return kafkaRetentionDaysExpiredVouchers; }
   public static int getKafkaRetentionDaysLoyaltyPrograms() { return kafkaRetentionDaysLoyaltyPrograms; }
+  public static int getKafkaRetentionDaysRemovedBadges() { return kafkaRetentionDaysRemovedBadges; }
   public static int getKafkaRetentionDaysTargets() { return kafkaRetentionDaysTargets; } 
   public static int getJourneysReportMaxParallelThreads() { return journeysReportMaxParallelThreads; }
   public static int getDetailedrecordReportsArrearCount() { return detailedrecordReportsArrearCount; }
@@ -902,6 +905,7 @@ public class DeploymentCommon
     kafkaRetentionDaysExpiredTokens = jsonReader.decodeInteger("kafkaRetentionDaysExpiredTokens");
     kafkaRetentionDaysExpiredVouchers = jsonReader.decodeInteger("kafkaRetentionDaysExpiredVouchers");
     kafkaRetentionDaysLoyaltyPrograms = jsonReader.decodeInteger("kafkaRetentionDaysLoyaltyPrograms");
+    kafkaRetentionDaysRemovedBadges = jsonReader.decodeInteger("kafkaRetentionDaysRemovedBadges");
     kafkaRetentionDaysTargets = jsonReader.decodeInteger("kafkaRetentionDaysTargets");
     maxPollIntervalMs = jsonReader.decodeInteger("maxPollIntervalMs");
     purchaseTimeoutMs = jsonReader.decodeInteger("purchaseTimeoutMs");

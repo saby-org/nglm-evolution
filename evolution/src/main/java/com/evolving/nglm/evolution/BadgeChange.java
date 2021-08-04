@@ -19,10 +19,12 @@ import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SubscriberStreamOutput;
+import com.evolving.nglm.evolution.ActionManager.Action;
+import com.evolving.nglm.evolution.ActionManager.ActionType;
 import com.evolving.nglm.evolution.Badge.BadgeAction;
 import com.evolving.nglm.evolution.DeliveryManagerForNotifications.MessageStatus;
 
-public class BadgeChange extends SubscriberStreamOutput implements EvolutionEngineEvent
+public class BadgeChange extends SubscriberStreamOutput implements EvolutionEngineEvent, Action
 {
   
   private static Schema schema = null;
@@ -320,8 +322,7 @@ public class BadgeChange extends SubscriberStreamOutput implements EvolutionEngi
   *  getDateString
   *
   *****************************************/
-  @Deprecated
-  public String getDateString(Date date)
+  @Deprecated public String getDateString(Date date)
 
   {
     String result = null;
@@ -336,5 +337,10 @@ public class BadgeChange extends SubscriberStreamOutput implements EvolutionEngi
       {
       }
     return result;
+  }
+  
+  @Override public ActionType getActionType()
+  {
+    return ActionType.BadgeChange;
   }
 }

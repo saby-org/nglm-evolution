@@ -20,6 +20,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import com.evolving.nglm.evolution.kafka.EvolutionProductionExceptionHandler;
 import com.evolving.nglm.evolution.otp.OTPInstance;
@@ -2735,6 +2736,23 @@ public class EvolutionEngine
        //
        
        context.getSubscriberState().getBadgeChangeResponses().add(badgeChangeResponse);
+       
+       //
+       //  if badge got deleted (NOT JUST "suspended"), we need to remove to clean it from profile after a while
+       //
+       
+       Collection<GUIManagedObject> allBadges = badgeService.getStoredBadges(true, context.getSubscriberState().getSubscriberProfile().getTenantID());
+       Collection<GUIManagedObject> deletedBadges = allBadges.stream().filter(bdg -> bdg.getDeleted()).collect(Collectors.toList());
+       for (GUIManagedObject deletedBadge : deletedBadges)
+         {
+           BadgeState subscriberBadge = subscriberProfile.getBadgeByID(deletedBadge.getGUIManagedObjectID());
+           if (subscriberBadge != null && !subscriberBadge.getCustomerBadgeStatus().equals(CustomerBadgeStatus.REMOVED))
+             {
+               subscriberBadge.setCustomerBadgeStatus(CustomerBadgeStatus.REMOVED);
+               subscriberBadge.setBadgeRemoveDate(context.now());
+               result = true;
+             }
+         }
      }
    return result;
  }
@@ -7244,7 +7262,8 @@ public class EvolutionEngine
               break;
               
             case BadgeChange:
-              BadgeChange badgeChange = (BadgeChange) action; //RAJ K
+              BadgeChange badgeChange = (BadgeChange) action;
+              subscriberState.getBadgeChangeRequests().add(badgeChange);
               break;
 
             default:

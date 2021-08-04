@@ -1922,6 +1922,8 @@ public class GUIManagerLoyaltyReporting extends GUIManager
 
    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
    String badgeID = JSONUtilities.decodeString(jsonRoot, "badge", true);
+   String userName = JSONUtilities.decodeString(jsonRoot, "userName", false);
+   String origin = JSONUtilities.decodeString(jsonRoot, "origin", false);
 
    /*****************************************
     *
@@ -1947,24 +1949,25 @@ public class GUIManagerLoyaltyReporting extends GUIManager
            return JSONUtilities.encodeObject(response);
          }
 
-       Date now = SystemTime.getCurrentTime();
-
-       String activeBadgeID = badgeService.getActiveBadge(badgeID, now) == null ? null : badgeService.getActiveBadge(badgeID, now).getBadgeID();
+       String activeBadgeID = badgeService.getActiveBadge(badgeID, SystemTime.getCurrentTime()) == null ? null : badgeService.getActiveBadge(badgeID, SystemTime.getCurrentTime()).getBadgeID();
        if (activeBadgeID == null)
          {
            response.put("responseCode", RESTAPIGenericReturnCodes.BADGE_NOT_FOUND.getGenericResponseMessage());
            return JSONUtilities.encodeObject(response);
          }
 
+
+       String featureID = (userName != null) ? userName : "administrator"; // for PTT tests, never happens when called by browser
+       String moduleID = DeliveryRequest.Module.Customer_Care.getExternalRepresentation();
+       String eventID = "event from " + Module.fromExternalRepresentation(moduleID).toString();
+
+       //
+       //  badgeChangeRequest
+       //
+       
+       BadgeChange badgeChangeRequest = new BadgeChange(subscriberID, SystemTime.getCurrentTime(), eventID, action, activeBadgeID, moduleID, featureID, origin, RESTAPIGenericReturnCodes.SUCCESS, tenantID, new ParameterMap());
        Serializer<StringKey> keySerializer = StringKey.serde().serializer();
        Serializer<BadgeChange> valueSerializer = BadgeChange.serde().serializer();
-
-       userID = userID == null || userID.isEmpty() ? "1" : userID;
-       String featureID = userID;
-       String origin = userID; // RAJ K
-       String moduleID = DeliveryRequest.Module.Customer_Care.getExternalRepresentation();
-
-       BadgeChange badgeChangeRequest = new BadgeChange(subscriberID, now, "event from CC", action, activeBadgeID, moduleID, featureID, origin, RESTAPIGenericReturnCodes.SUCCESS, tenantID, new ParameterMap());
        kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getBadgeChangeRequestTopic(), keySerializer.serialize(Deployment.getBadgeChangeRequestTopic(), new StringKey(subscriberID)), valueSerializer.serialize(Deployment.getBadgeChangeRequestTopic(), badgeChangeRequest)));
      } 
    catch (SubscriberProfileServiceException e)

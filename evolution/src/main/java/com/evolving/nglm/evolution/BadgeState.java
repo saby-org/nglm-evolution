@@ -127,7 +127,7 @@ public class BadgeState implements Cleanable
     switch (retentionType)
     {
       case KAFKA_DELETION:
-        return Duration.ofDays(Deployment.getKafkaRetentionDaysLoyaltyPrograms()); //RAJ K
+        return Duration.ofDays(Deployment.getKafkaRetentionDaysRemovedBadges());
     }
     return null;
   }
