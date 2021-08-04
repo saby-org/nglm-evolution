@@ -1920,8 +1920,8 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     *
     ****************************************/
 
-   String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", false);
-   String badgeID = JSONUtilities.decodeString(jsonRoot, "badge", false);
+   String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+   String badgeID = JSONUtilities.decodeString(jsonRoot, "badge", true);
 
    /*****************************************
     *
@@ -1961,6 +1961,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
        Serializer<StringKey> keySerializer = StringKey.serde().serializer();
        Serializer<BadgeChange> valueSerializer = BadgeChange.serde().serializer();
 
+       userID = userID == null || userID.isEmpty() ? "1" : userID;
        String featureID = userID;
        String origin = userID; // RAJ K
        String moduleID = DeliveryRequest.Module.Customer_Care.getExternalRepresentation();
