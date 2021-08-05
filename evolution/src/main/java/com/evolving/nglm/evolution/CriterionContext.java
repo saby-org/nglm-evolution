@@ -1008,7 +1008,7 @@ public class CriterionContext
           result.putAll(Profile(tenantID).getCriterionFields(tenantID));
           for (DynamicCriterionField dynamicCriterionField : dynamicCriterionFieldService.getActiveDynamicCriterionFields(SystemTime.getCurrentTime(), tenantID))
             {
-              if (!dynamicCriterionField.getDeleted()) result.put(dynamicCriterionField.getCriterionField().getID(), dynamicCriterionField.getCriterionField());
+              result.put(dynamicCriterionField.getCriterionField().getID(), dynamicCriterionField.getCriterionField());
             }
           break;
 

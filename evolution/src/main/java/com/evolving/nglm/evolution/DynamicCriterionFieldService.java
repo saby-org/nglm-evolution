@@ -210,6 +210,8 @@ public class DynamicCriterionFieldService extends GUIService
     putGUIManagedObject(criterionField, SystemTime.getCurrentTime(), newLoyaltyProgram, null);
   }
   
+  public final static String CUSTOMCRITERIA_PREFIX = "customCriteria.";
+  
   /*****************************************
   *
   *  addCustomCriterionField
@@ -223,7 +225,7 @@ public class DynamicCriterionFieldService extends GUIService
     //
 
     JSONObject criterionFieldJSON = new JSONObject();
-    String id = "customCriteria" + "." + customCriteria.getGUIManagedObjectID();
+    String id = CUSTOMCRITERIA_PREFIX + customCriteria.getGUIManagedObjectID();
     criterionFieldJSON.put("id", id);
     criterionFieldJSON.put("display", customCriteria.getGUIManagedObjectDisplay());
     criterionFieldJSON.put("epoch", customCriteria.getEpoch());

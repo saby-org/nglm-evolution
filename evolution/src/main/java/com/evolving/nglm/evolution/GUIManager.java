@@ -31109,6 +31109,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
 
         GUIManagedObject customCriteria = customCriterias.get(i);
         customCriteriaService.removeCustomCriteria(customCriteria.getGUIManagedObjectID(), userID, tenantID);
+        dynamicCriterionFieldService.removeDynamicCriterionField(DynamicCriterionFieldService.CUSTOMCRITERIA_PREFIX + customCriteria.getGUIManagedObjectID(), userID, tenantID);
       }
     
     /*****************************************
