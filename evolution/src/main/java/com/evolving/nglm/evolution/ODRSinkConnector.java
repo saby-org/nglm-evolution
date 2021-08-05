@@ -219,6 +219,9 @@ public class ODRSinkConnector extends SimpleESSinkConnector
                     }
                   voucherJsonObject.put("voucherCode", voucherCode);
                   voucherJsonObject.put("supplierID", supplierID);
+                  voucherJsonObject.put("voucherID", voucherDelivery.getVoucherID());
+                  voucherJsonObject.put("voucherFileID", voucherDelivery.getFileID());
+                  voucherJsonObject.put("voucherExpiryDate", voucherDelivery.getVoucherExpiryDate()!=null?RLMDateUtils.formatDateForElasticsearchDefault(voucherDelivery.getVoucherExpiryDate()):"");
                   voucherList.add(voucherJsonObject);
 
                 }
