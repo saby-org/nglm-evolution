@@ -163,12 +163,9 @@
     <topic.tenant>tenant</topic.tenant>
     <topic.edrdetails>edrdetails</topic.edrdetails>
     <topic.workflowEvent>workflowEvent</topic.workflowEvent>
-<<<<<<< HEAD
     <topic.subscriberProfileForceUpdateResponse>subscriberProfileForceUpdateResponse</topic.subscriberProfileForceUpdateResponse>
     <topic.notificationEvent>notificationEvent</topic.notificationEvent>
-=======
     <topic.customcriteria>customcriteria</topic.customcriteria>
->>>>>>> EVPRO-919-2001
 
     <!-- evolutionengine -->
     <changelog.evolutionengine.subscriberstate>subscriberstate</changelog.evolutionengine.subscriberstate>

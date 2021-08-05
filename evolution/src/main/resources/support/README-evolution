@@ -38,8 +38,8 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSupportedDataTypes; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSupportedEvents; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSupportedTargetingTypes; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getProfileCriterionFields; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getProfileCriterionFieldIDs; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "includeDynamic":true }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getProfileCriterionFields; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "includeDynamic":true }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getProfileCriterionFieldIDs; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "subscriber.status"  }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getProfileCriterionField; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPresentationCriterionFields; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getPresentationCriterionFieldIDs; echo
