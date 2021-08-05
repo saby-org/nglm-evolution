@@ -63,7 +63,7 @@ import com.evolving.nglm.evolution.StockMonitor.StockableItem;
 import com.evolving.nglm.evolution.notification.NotificationTemplateParameters;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
-@GUIDependencyDef(objectType = "journey", serviceClass = JourneyService.class, dependencies = { "journey", "campaign", "journeyobjective" , "target" , "workflow" , "mailtemplate" , "pushtemplate" , "dialogtemplate"})
+@GUIDependencyDef(objectType = "journey", serviceClass = JourneyService.class, dependencies = { "journey", "campaign", "journeyobjective" , "target" , "workflow" , "mailtemplate" , "pushtemplate" , "dialogtemplate", "customcriteria"})
 public class Journey extends GUIManagedObject implements StockableItem, GUIManagedObject.ElasticSearchMapping
 {
   /*****************************************
@@ -3991,6 +3991,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     List<String> pushTemplateIDs = new ArrayList<String>();
     List<String> mailtemplateIDs = new ArrayList<String>();
     List<String> dialogIDs = new ArrayList<String>();
+    List<String> customCriteriaIDs = new ArrayList<String>();
     
     switch (getGUIManagedObjectType())
       {
@@ -4018,6 +4019,13 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
                   if (mailId != null) mailtemplateIDs.add(mailId);
                   String dialogID = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode, tenantID).get("dialogtemplate");
                   if (dialogID != null) dialogIDs.add(dialogID);
+                  String customCriteriaID = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode, tenantID).get("customcriteria");
+                  // We can depend on multiple customCriteria, they are separated by ','
+                  if (customCriteriaID != null) {
+                    for (String id : customCriteriaID.split(",")) {
+                      customCriteriaIDs.add(id);
+                    }
+                  }
                 }
 				if (journeyNode.getNodeName().equals("Profile Selection")
 						|| journeyNode.getNodeName().equals("Event Multi-Selection")
@@ -4060,6 +4068,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
           result.put("pushtemplate", pushTemplateIDs);
           result.put("mailtemplate", mailtemplateIDs);
           result.put("dialogtemplate", dialogIDs);
+          result.put("customcriteria", customCriteriaIDs);
           
           
           break;
@@ -4095,6 +4104,13 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
                   if (mailId != null) mailtemplateIDs.add(mailId);
                   String dialogID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("dialogtemplate");
                   if (dialogID != null) dialogIDs.add(dialogID);
+                  String customCriteriaID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("customcriteria");
+                  // We can depend on multiple customCriteria, they are separated by ','
+                  if (customCriteriaID != null) {
+                    for (String id : customCriteriaID.split(",")) {
+                      customCriteriaIDs.add(id);
+                    }
+                  }
                 }
               
 				if (offerNode.getNodeName().equals("Profile Selection")
@@ -4142,7 +4158,8 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
           result.put("pushtemplate", pushTemplateIDs);
           result.put("mailtemplate", mailtemplateIDs);
           result.put("dialogtemplate", dialogIDs);
-            
+          result.put("customcriteria", customCriteriaIDs);
+
           
           break;
 

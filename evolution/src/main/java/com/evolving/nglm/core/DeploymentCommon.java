@@ -365,6 +365,7 @@ public class DeploymentCommon
   private static String workflowEventTopic;
   private static String subscriberProfileForceUpdateResponseTopic;
   private static String notificationEventTopic;
+  private static String customCriteriaTopic;
     
   //
   // Others
@@ -680,7 +681,7 @@ public class DeploymentCommon
   public static String getWorkflowEventTopic() { return workflowEventTopic; }
   public static String getSubscriberProfileForceUpdateResponseTopic() { return subscriberProfileForceUpdateResponseTopic; }    
   public static String getNotificationEventTopic() { return notificationEventTopic; }
-  
+  public static String getCustomCriteriaTopic() { return customCriteriaTopic; }
   
   //
   // Others
@@ -982,6 +983,7 @@ public class DeploymentCommon
     edrDetailsTopic = jsonReader.decodeString("edrDetailsTopic");
     workflowEventTopic = jsonReader.decodeString("workflowEventTopic");
     notificationEventTopic = jsonReader.decodeString("notificationEventTopic");
+    customCriteriaTopic = jsonReader.decodeString("customCriteriaTopic");
     
     alternateIDs = jsonReader.decodeMapFromArray(AlternateID.class, "alternateIDs");
     

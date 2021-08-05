@@ -943,7 +943,17 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       , "node.parameter.dialog_template");
       String dialogueTemplateID = (String) templateParameters.getSubscriberMessageTemplateID();
       if (dialogueTemplateID != null) {
-    	  result.put("dialogtemplate", dialogueTemplateID);}
+    	  result.put("dialogtemplate", dialogueTemplateID);
+    	  SimpleParameterMap paramMap = templateParameters.getParameterTags();
+    	  String customCriteria = "";
+    	  if (paramMap != null) {
+    	    for (String paramKey : paramMap.keySet()) {
+    	      Object param = paramMap.get(paramKey);
+    	      customCriteria += ",toto";
+    	    }
+    	    result.put("customcriteria", customCriteria.substring(1)); // remove leading ','
+    	  }
+      }
       return result;
     }
   }

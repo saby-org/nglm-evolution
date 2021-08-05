@@ -209,6 +209,44 @@ public class DynamicCriterionFieldService extends GUIService
 
     putGUIManagedObject(criterionField, SystemTime.getCurrentTime(), newLoyaltyProgram, null);
   }
+  
+  /*****************************************
+  *
+  *  addCustomCriterionField
+  *
+  *****************************************/
+
+  public void addCustomCriterionField(CustomCriteria customCriteria, boolean newCustomCriteria) throws GUIManagerException
+  {
+    //
+    //  json constructor
+    //
+
+    JSONObject criterionFieldJSON = new JSONObject();
+    String id = "customCriteria" + "." + customCriteria.getGUIManagedObjectID();
+    criterionFieldJSON.put("id", id);
+    criterionFieldJSON.put("display", customCriteria.getGUIManagedObjectDisplay());
+    criterionFieldJSON.put("epoch", customCriteria.getEpoch());
+    criterionFieldJSON.put("dataType", customCriteria.getDataType());
+    criterionFieldJSON.put("tagFormat", null);
+    criterionFieldJSON.put("tagMaxLength", null);
+    criterionFieldJSON.put("esField", id);
+    criterionFieldJSON.put("retriever", "getCustomCriterionField");
+    criterionFieldJSON.put("minValue", null);
+    criterionFieldJSON.put("maxValue", null);
+    criterionFieldJSON.put("availableValues", null);
+    criterionFieldJSON.put("includedOperators", null);
+    criterionFieldJSON.put("excludedOperators", null);
+    criterionFieldJSON.put("includedComparableFields", null); 
+    criterionFieldJSON.put("excludedComparableFields", null);
+    DynamicCriterionField criterionField = new DynamicCriterionField(customCriteria, criterionFieldJSON, customCriteria.getTenantID());
+
+    //
+    //  put
+    //
+
+    putGUIManagedObject(criterionField, SystemTime.getCurrentTime(), newCustomCriteria, null);
+  }
 
   /*****************************************
   *

@@ -414,6 +414,7 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "objectType" : "saleschannel", "id" : "-1" , "fiddleTest" : true }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDependencies; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "objectType" : "supplier", "id" : "1" , "fiddleTest" : true }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getDependencies; echo
 
+
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/otptype.001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putOTPType; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id":"otpType_1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getOTPType; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getOTPTypeList; echo
@@ -425,6 +426,15 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID
 curl -X POST -H "Content-Type: application/json" -d '{"apiVersion": 1, "tenantID":1, "id":"genders","availableValues":[{"id": "male","display": "male"},{"id": "female","display": "female"},{"id": "other","display": "other"}]}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putCriterionFieldAvailableValues; echo
 curl -X POST -H "Content-Type: application/json" -d '{"apiVersion": 1, "tenantID":1, "id":"supportedStatuses","availableValues":[{ "id" : "active", "display" : "active" }, { "id" : "inactive", "display" : "inactive" }]}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putCriterionFieldAvailableValues; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id":"genders"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeCriterionFieldAvailableValues; echo
+
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomCriteriaList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomCriteriaSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "formula":"" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putCustomCriteria; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomCriteria; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeCustomCriteria; echo
+
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getFullProfileCriterionFields; echo
+
 
 --
 --  configAdaptor
@@ -568,6 +578,11 @@ curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1,"tenantID":
 curl -X POST -H "Content-Type: application/json" -d '{"id":"001","apiVersion":1,"tenantID":1}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/launchReport; echo
 curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1,"id":"001","tenantID":1, "backendsimulator" : true}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/launchReport; echo
 curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1,"tenantID":1}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getReportGlobalConfiguration
+
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "tenantID":1,"id":"12", "percentage":50}'  http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/downloadReport> /tmp/1.zip ; unzip -p /tmp/1.zip
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "tenantID":1,"id":"12", "topRows":10}'  http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/downloadReport> /tmp/1.zip ; unzip -p /tmp/1.zip
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "tenantID":1,"id":"12", "header":["msisdn","programName"]}'  http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/downloadReport> /tmp/1.zip ; unzip -p /tmp/1.zip
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion" : 1, "tenantID":1,"id":"12", "criteria":[{"criterionField":"msisdn","argument":{"valueType":"simpleSelect.string","value":"8902653866"}}] }'  http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/downloadReport> /tmp/1.zip ; unzip -p /tmp/1.zip
 
 --
 --  extracts

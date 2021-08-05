@@ -41,6 +41,7 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
+import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.LoyaltyProgramChallengeHistory.LevelHistory;
@@ -734,6 +735,35 @@ public abstract class CriterionFieldRetriever
      res.add(voucher.getVoucherCode());
    }
    return res;
+  }
+
+  //
+  //  getCustomCriterionField (dynamic)
+  //
+
+  public static Object getCustomCriterionField(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException
+  {
+    Object result = null;
+    
+    Pattern criterionIDPattern = Pattern.compile("^customCriteria\\.(.*)$");
+    Matcher criterionIDMatcher = criterionIDPattern.matcher(fieldName);
+    if (! criterionIDMatcher.find()) throw new CriterionException("invalid custom criterion field " + fieldName);
+    String criterionID = criterionIDMatcher.group(1);
+
+    // retrieve customCriteria
+    EvolutionEventContext context = evaluationRequest.geEvolutionEventContext();
+    if (context != null) {
+      CustomCriteriaService customCriteriaService = context.getCustomCriteriaService();
+      if (customCriteriaService != null) {
+        CustomCriteria customCriteria = customCriteriaService.getActiveCustomCriteria(criterionID, evaluationRequest.getEvaluationDate());
+        if (customCriteria == null) {
+          log.info("Refering to customCriteria " + criterionID + " which does not exist");
+        } else {
+          result = customCriteria.getExpression().evaluate(evaluationRequest, null);
+        }
+      }
+    }
+    return result;
   }
 
   //
