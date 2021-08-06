@@ -113,6 +113,7 @@
     "datacube_journeyrewards":          2,
     "datacube_odr":                     2,
     "datacube_bdr":                     2,
+    "datacube_tdr":                     2,
     "datacube_messages":                2,
     "datacube_vdr":                     2,
     "mapping_modules":                  2,

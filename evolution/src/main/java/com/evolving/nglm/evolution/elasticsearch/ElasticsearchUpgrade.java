@@ -396,6 +396,16 @@ public class ElasticsearchUpgrade
     loadPatch("datacube_bdr"                      , 1, 2, "t_tmp_datacube_bdr", (s) -> "t1_"+s, // Index name change !
         "ctx._source.tenantID = 1;");
 
+        /*****************************************/
+    // Changes: 
+    // - from 1.5.0 (<1) to 1.5.2 (1): No change
+    // - from 1.5.2 (1) to 2.0.0 (2):
+    //   - INDEX NAME CHANGE                               (tX_)
+    //   - filter.tenantID                                 (new)
+    loadPatch("datacube_tdr"                      , 1, 2, "t_tmp_datacube_tdr", (s) -> "t1_"+s, // Index name change !
+        "ctx._source.tenantID = 1;");
+
+
     /*****************************************
     *
     * datacube_messages template
