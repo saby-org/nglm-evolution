@@ -307,6 +307,7 @@
                     <include>config/evolution-prometheus-application.yml</include>
                     <include>config/extractmanager_jmx.yml</include>
                     <include>config/prometheus-core-alert.rules</include>
+                    <include>config/prometheus-environment-alert.rules</include>
                     <include>databases/_meta_gui/*</include>
                     <include>docker/prometheus-application/*</include>
                     <include>docker/prometheus-application-preamble.yml</include>
