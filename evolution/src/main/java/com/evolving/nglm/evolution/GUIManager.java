@@ -20796,7 +20796,7 @@ public class GUIManager
             if (staticCommunicationChannel == null)
               singleIDresponseCode = "communicationChannelNotFound";
             else
-              singleIDresponseCode = "communicationChannelIsDefault";
+              singleIDresponseCode = "communicationChannelIsDefaultNotFound";
           }
       }
     //
