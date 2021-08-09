@@ -498,7 +498,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/vdr -u $EL
       "eventID" : { "type" : "keyword" },     
       "moduleID" : { "type" : "keyword" },
       "featureID" : { "type" : "keyword" },
-      "origin" : { "type" : "keyword", "index" : "false" },
+      "origin" : { "type" : "keyword" },
       "returnStatus" : { "type" : "keyword" },
       "voucherCode" : { "type" : "keyword" },
       "voucherID" : { "type" : "keyword" },

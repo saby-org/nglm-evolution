@@ -272,8 +272,11 @@ public class ElasticsearchUpgrade
     // - from 1.5.2 (1) to 2.0.0 (2):
     //   - tenantID                                        (new)
     //   - returnCode                                      (definition)
-    loadPatch("detailedrecords_vouchers"          , 1, 2, "detailedrecords_vouchers-_tmp", (s) -> s,
+    // - from to 2.0.0 (2) to 2.0.0_2 (3) :
+    //   - origin                                          (was not indexed: index config was set to false)
+    loadPatch("detailedrecords_vouchers"          , 1, 3, "detailedrecords_vouchers-_tmp", (s) -> s,
         "ctx._source.tenantID = 1;");
+    loadPatch("detailedrecords_vouchers"          , 2, 3, "detailedrecords_vouchers-_tmp", (s) -> s, "");
 
     /*****************************************
     *
