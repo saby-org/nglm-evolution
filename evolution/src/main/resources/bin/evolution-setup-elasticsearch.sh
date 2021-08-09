@@ -774,6 +774,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_o
       "filter.meanOfPayment" : { "type" : "keyword" },
       "filter.meanOfPaymentProviderID" : { "type" : "keyword" },
       "filter.offerObjectives" : { "type" : "keyword" },
+      "filter.origin" : { "type" : "keyword" },
       "count" : { "type" : "integer" },
       "metric.totalAmount" : { "type" : "integer" }
     }
