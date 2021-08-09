@@ -20582,12 +20582,12 @@ public class GUIManager
     for (CommunicationChannel staticCommunicationChannel : communicationChannelObjects)
       {
         CommunicationChannel dynamicCommunicationChannel = communicationChannelService.getActiveCommunicationChannel(staticCommunicationChannel.getID(), SystemTime.getCurrentTime());
-        boolean isDefaultChannel = true;
+        boolean isDefaultChannel = false;
         if(dynamicCommunicationChannel == null)
           {
             // use the static communicationChannel
             dynamicCommunicationChannel = staticCommunicationChannel;
-            isDefaultChannel = false;
+            isDefaultChannel = true;
           }
 
         JSONObject channel = dynamicCommunicationChannel.generateResponseJSON(fullDetails, now);
@@ -20642,12 +20642,12 @@ public class GUIManager
     CommunicationChannel staticCommunicationChannel = Deployment.getDeployment(tenantID).getCommunicationChannels().get(communicationChannelID);
 
     CommunicationChannel dynamicCommunicationChannel = communicationChannelService.getActiveCommunicationChannel(communicationChannelID, SystemTime.getCurrentTime());
-    boolean isDefaultChannel = true;
+    boolean isDefaultChannel = false;
     if(dynamicCommunicationChannel == null)
       {
         // use the static communicationChannel
         dynamicCommunicationChannel = staticCommunicationChannel;
-        isDefaultChannel = false;
+        isDefaultChannel = true;
       }
     JSONObject communicationChannelJSON = dynamicCommunicationChannel.generateResponseJSON(true, SystemTime.getCurrentTime());
     communicationChannelJSON.put("isDefault", isDefaultChannel);
@@ -20792,7 +20792,11 @@ public class GUIManager
           singleIDresponseCode = "failedReadOnly";
         else
           {
-            singleIDresponseCode = "communicationChannelNotFound";
+            CommunicationChannel staticCommunicationChannel = Deployment.getDeployment(tenantID).getCommunicationChannels().get(communicationChannelID);
+            if (staticCommunicationChannel == null)
+              singleIDresponseCode = "communicationChannelNotFound";
+            else
+              singleIDresponseCode = "communicationChannelIsDefault";
           }
       }
     //
@@ -20832,6 +20836,14 @@ public class GUIManager
 
     /*****************************************
      *
+     * response
+     *
+     *****************************************/
+
+    response.put("restoredCommunicationChannelIDs", JSONUtilities.encodeArray(validIDs));
+
+    /*****************************************
+     *
      * responseCode
      *
      *****************************************/
@@ -20846,13 +20858,6 @@ public class GUIManager
         response.put("responseCode", "ok");
       }
 
-    /*****************************************
-     *
-     * response
-     *
-     *****************************************/
-
-    response.put("removedCommunicationChannelIDs", JSONUtilities.encodeArray(validIDs));
     return JSONUtilities.encodeObject(response);
   }
 

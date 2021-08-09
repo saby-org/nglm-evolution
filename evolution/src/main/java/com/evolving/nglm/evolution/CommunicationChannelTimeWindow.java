@@ -848,6 +848,14 @@ public class CommunicationChannelTimeWindow extends GUIManagedObject
               .removeCommunicationChannelTimeWindow(existingTimeWindowPeriod.getCommunicationChannelID(), userID, tenantID);
 
         }
+
+      /*****************************************
+       *
+       * response
+       *
+       *****************************************/
+      response.put("removedExistingTimeWindowPeriodIDS", JSONUtilities.encodeArray(validIDs));
+
       /*****************************************
        *
        * responseCode
@@ -864,13 +872,6 @@ public class CommunicationChannelTimeWindow extends GUIManagedObject
         {
           response.put("responseCode", "ok");
         }
-
-      /*****************************************
-       *
-       * response
-       *
-       *****************************************/
-      response.put("removedExistingTimeWindowPeriodIDS", JSONUtilities.encodeArray(validIDs));
 
       return JSONUtilities.encodeObject(response);
     }
