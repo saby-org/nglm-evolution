@@ -289,8 +289,11 @@ public class ElasticsearchUpgrade
     //   - contactType                                     (definition)
     // - from 1.5.2 (1) to 2.0.0 (2):
     //   - tenantID                                        (new)
-    loadPatch("detailedrecords_messages"          , 1, 2, "detailedrecords_messages-_tmp", (s) -> s,
+    // - from to 2.0.0 (2) to 2.0.0_2 (3) :
+    //   - origin                                          (was not indexed: index config was set to false)
+    loadPatch("detailedrecords_messages"          , 1, 3, "detailedrecords_messages-_tmp", (s) -> s,
         "ctx._source.tenantID = 1;");
+    loadPatch("detailedrecords_messages"          , 2, 3, "detailedrecords_messages-_tmp", (s) -> s, "");
 
     /*****************************************
     *
