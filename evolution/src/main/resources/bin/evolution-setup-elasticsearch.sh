@@ -798,6 +798,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_b
       "filter.salesChannel" : { "type" : "keyword" },
       "filter.deliverable" : { "type" : "keyword" },
       "filter.returnCode" : { "type" : "keyword" },
+      "filter.origin" : { "type" : "keyword" },
       "count" : { "type" : "integer" },
       "metric.totalQty" : { "type" : "integer" }
     }
