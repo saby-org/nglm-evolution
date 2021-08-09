@@ -217,7 +217,9 @@ public class ElasticsearchUpgrade
     // - from 1.5.2 (1) to 2.0.0 (2):
     //   - tenantID                                        (new)
     //   - deliverableExpirationDate                       (rename & date format change)
-    loadPatch("detailedrecords_bonuses"           , 1, 2, "detailedrecords_bonuses-_tmp", (s) -> s,
+    // - from to 2.0.0 (2) to 2.0.0_2 (3) :
+    //   - origin                                          (was not indexed: index config was set to false)
+    loadPatch("detailedrecords_bonuses"           , 1, 3, "detailedrecords_bonuses-_tmp", (s) -> s,
         "ctx._source.tenantID = 1;"
       + "def dateString = ctx._source.remove(\\\"deliverableExpirationDate\\\");" 
       + "if (dateString == null) {"
@@ -227,6 +229,7 @@ public class ElasticsearchUpgrade
       + "DateTimeFormatter outputFormat = DateTimeFormatter.ofPattern(\\\"yyyy-MM-dd HH:mm:ss.SSSZZ\\\");"
       + "ZonedDateTime zdt = ZonedDateTime.parse(dateString, inputFormat);"
       + "ctx._source.deliverableExpirationDate = zdt.format(outputFormat);");
+    loadPatch("detailedrecords_bonuses"           , 2, 3, "detailedrecords_bonuses-_tmp", (s) -> s, "");
     
     /*****************************************
     *
