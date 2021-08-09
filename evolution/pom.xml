@@ -49,7 +49,7 @@
     <gui-opc.version>1.5.24</gui-opc.version>
     <gui-iar.version>1.5.11</gui-iar.version>
     <gui-opr.version>1.5.7</gui-opr.version>
-    <gui-stg.version>1.5.29</gui-stg.version>
+    <gui-stg.version>2.0.4</gui-stg.version>
     <gui-sbm.version>1.5.27</gui-sbm.version>
     <gui-lpm.version>1.5.21</gui-lpm.version>
     <gui-tls.version>1.4.17</gui-tls.version>
