@@ -45,7 +45,7 @@ public class TDRDatacubeGenerator extends SimpleDatacubeGenerator
 {
   private static final String DATACUBE_ES_INDEX_SUFFIX = "_datacube_tdr";
   public static final String DATACUBE_ES_INDEX(int tenantID) { return "t" + tenantID + DATACUBE_ES_INDEX_SUFFIX; }
-  private static final String DATA_ES_INDEX_PREFIX = "detailedrecords_token-";
+  private static final String DATA_ES_INDEX_PREFIX = "detailedrecords_tokens-";
 
   /*****************************************
   *
@@ -88,7 +88,6 @@ public class TDRDatacubeGenerator extends SimpleDatacubeGenerator
     this.filterFields = new ArrayList<String>();
     this.filterFields.add("moduleID");
     this.filterFields.add("featureID");
-    this.filterFields.add("operation");
     this.filterFields.add("origin");
     this.filterFields.add("returnCode");
     this.filterFields.add("action");
