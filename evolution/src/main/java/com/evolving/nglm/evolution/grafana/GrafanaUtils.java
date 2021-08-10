@@ -183,6 +183,7 @@ public class GrafanaUtils
                           java.util.Scanner scanner = new java.util.Scanner(is).useDelimiter("\\A");
                           String s = scanner.hasNext() ? scanner.next() : "";
                           s = s.replace("tenantID:camptenantID", "tenantID:" + tenantID);
+                          s = s.replace("replaceWithTenantID", "" + tenantID );
                           scanner.close();
   
                           log.info("GrafanaUtils.prepareGrafanaForTenants ===parsing a Dashboard==== " + currentFileName + "\n" + s);

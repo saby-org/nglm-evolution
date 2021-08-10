@@ -17,7 +17,7 @@
   "gnetId": null,
   "graphTooltip": 0,
   "id": null,
-  "iteration": 1627392165144,
+  "iteration": 1627977321838,
   "links": [],
   "panels": [
     {
@@ -28,1357 +28,6 @@
         "w": 24,
         "x": 0,
         "y": 0
-      },
-      "id": 89,
-      "panels": [
-        {
-          "dashboardFilter": "",
-          "dashboardTags": [],
-          "datasource": null,
-          "fieldConfig": {
-            "defaults": {},
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 6,
-            "w": 24,
-            "x": 0,
-            "y": 1
-          },
-          "id": 91,
-          "limit": "10",
-          "nameFilter": "",
-          "onlyAlertsOnDashboard": false,
-          "show": "current",
-          "sortOrder": 3,
-          "stateFilter": [],
-          "timeFrom": null,
-          "timeShift": null,
-          "title": "Alert List",
-          "type": "alertlist"
-        }
-      ],
-      "title": "Alert List",
-      "type": "row"
-    },
-    {
-      "collapsed": true,
-      "datasource": null,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 1
-      },
-      "id": 2,
-      "panels": [
-        {
-          "alert": {
-            "alertRuleTags": {},
-            "conditions": [
-              {
-                "evaluator": {
-                  "params": [
-                    80
-                  ],
-                  "type": "gt"
-                },
-                "operator": {
-                  "type": "and"
-                },
-                "query": {
-                  "params": [
-                    "A",
-                    "5m",
-                    "now"
-                  ]
-                },
-                "reducer": {
-                  "params": [],
-                  "type": "avg"
-                },
-                "type": "query"
-              }
-            ],
-            "executionErrorState": "alerting",
-            "for": "2h",
-            "frequency": "5m",
-            "handler": 1,
-            "message": "Graph : CPU Used / node\n\nCPU used is above 80% over 2 hours\n\nPlease connect to grafana : Support - Hardware dashboard to identity node.",
-            "name": "CPU Usage / Node",
-            "noDataState": "no_data",
-            "notifications": []
-          },
-          "aliasColors": {},
-          "bars": false,
-          "dashLength": 10,
-          "dashes": false,
-          "datasource": "prometheus-environment",
-          "fieldConfig": {
-            "defaults": {
-              "links": []
-            },
-            "overrides": []
-          },
-          "fill": 1,
-          "fillGradient": 0,
-          "gridPos": {
-            "h": 9,
-            "w": 24,
-            "x": 0,
-            "y": 2
-          },
-          "hiddenSeries": false,
-          "id": 4,
-          "legend": {
-            "alignAsTable": true,
-            "avg": true,
-            "current": true,
-            "max": true,
-            "min": false,
-            "rightSide": true,
-            "show": true,
-            "sort": "avg",
-            "sortDesc": true,
-            "total": false,
-            "values": true
-          },
-          "lines": true,
-          "linewidth": 1,
-          "nullPointMode": "null",
-          "options": {
-            "alertThreshold": true
-          },
-          "percentage": false,
-          "pluginVersion": "7.5.2",
-          "pointradius": 2,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "spaceLength": 10,
-          "stack": false,
-          "steppedLine": false,
-          "targets": [
-            {
-              "exemplar": true,
-              "expr": "100 - avg by(instance) (irate(node_cpu{mode=\"idle\"}[5m]) * 100)",
-              "interval": "",
-              "legendFormat": "{{instance}}",
-              "refId": "A"
-            }
-          ],
-          "thresholds": [
-            {
-              "colorMode": "critical",
-              "fill": true,
-              "line": true,
-              "op": "gt",
-              "value": 80,
-              "visible": true
-            }
-          ],
-          "timeFrom": null,
-          "timeRegions": [],
-          "timeShift": null,
-          "title": "CPU Usage / Node",
-          "tooltip": {
-            "shared": true,
-            "sort": 2,
-            "value_type": "individual"
-          },
-          "transformations": [],
-          "type": "graph",
-          "xaxis": {
-            "buckets": null,
-            "mode": "time",
-            "name": null,
-            "show": true,
-            "values": []
-          },
-          "yaxes": [
-            {
-              "$$hashKey": "object:12184",
-              "format": "percent",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            },
-            {
-              "$$hashKey": "object:12185",
-              "format": "short",
-              "label": null,
-              "logBase": 1,
-              "max": "100",
-              "min": "0",
-              "show": false
-            }
-          ],
-          "yaxis": {
-            "align": false,
-            "alignLevel": null
-          }
-        },
-        {
-          "alert": {
-            "alertRuleTags": {},
-            "conditions": [
-              {
-                "evaluator": {
-                  "params": [
-                    0.8
-                  ],
-                  "type": "gt"
-                },
-                "operator": {
-                  "type": "and"
-                },
-                "query": {
-                  "params": [
-                    "A",
-                    "5m",
-                    "now"
-                  ]
-                },
-                "reducer": {
-                  "params": [],
-                  "type": "avg"
-                },
-                "type": "query"
-              }
-            ],
-            "executionErrorState": "alerting",
-            "for": "2h",
-            "frequency": "5m",
-            "handler": 1,
-            "message": "Graph : Memory Used /node\n\nMemory used is above 80% over 5 min\n\nPlease connect to grafana : Support - Hardware dashboard to identity node.",
-            "name": "Memory Usage / Node",
-            "noDataState": "no_data",
-            "notifications": []
-          },
-          "aliasColors": {},
-          "bars": false,
-          "dashLength": 10,
-          "dashes": false,
-          "datasource": "prometheus-environment",
-          "fieldConfig": {
-            "defaults": {
-              "links": []
-            },
-            "overrides": []
-          },
-          "fill": 1,
-          "fillGradient": 0,
-          "gridPos": {
-            "h": 9,
-            "w": 24,
-            "x": 0,
-            "y": 11
-          },
-          "hiddenSeries": false,
-          "id": 6,
-          "legend": {
-            "alignAsTable": true,
-            "avg": true,
-            "current": true,
-            "max": true,
-            "min": false,
-            "rightSide": true,
-            "show": true,
-            "sort": "current",
-            "sortDesc": true,
-            "total": false,
-            "values": true
-          },
-          "lines": true,
-          "linewidth": 1,
-          "nullPointMode": "null",
-          "options": {
-            "alertThreshold": true
-          },
-          "percentage": false,
-          "pluginVersion": "7.5.2",
-          "pointradius": 2,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "spaceLength": 10,
-          "stack": false,
-          "steppedLine": false,
-          "targets": [
-            {
-              "expr": "(node_memory_MemTotal - node_memory_MemAvailable) / node_memory_MemTotal",
-              "legendFormat": "{{instance}}",
-              "refId": "A"
-            }
-          ],
-          "thresholds": [
-            {
-              "colorMode": "critical",
-              "fill": true,
-              "line": true,
-              "op": "gt",
-              "value": 0.8,
-              "visible": true
-            }
-          ],
-          "timeFrom": null,
-          "timeRegions": [],
-          "timeShift": null,
-          "title": "Memory Usage / Node",
-          "tooltip": {
-            "shared": true,
-            "sort": 2,
-            "value_type": "individual"
-          },
-          "transformations": [],
-          "type": "graph",
-          "xaxis": {
-            "buckets": null,
-            "mode": "time",
-            "name": null,
-            "show": true,
-            "values": []
-          },
-          "yaxes": [
-            {
-              "$$hashKey": "object:7745",
-              "format": "percentunit",
-              "label": null,
-              "logBase": 1,
-              "max": "1",
-              "min": null,
-              "show": true
-            },
-            {
-              "$$hashKey": "object:7746",
-              "format": "short",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            }
-          ],
-          "yaxis": {
-            "align": false,
-            "alignLevel": null
-          }
-        },
-        {
-          "alert": {
-            "alertRuleTags": {},
-            "conditions": [
-              {
-                "evaluator": {
-                  "params": [
-                    0.8
-                  ],
-                  "type": "gt"
-                },
-                "operator": {
-                  "type": "and"
-                },
-                "query": {
-                  "params": [
-                    "A",
-                    "5m",
-                    "now"
-                  ]
-                },
-                "reducer": {
-                  "params": [],
-                  "type": "avg"
-                },
-                "type": "query"
-              }
-            ],
-            "executionErrorState": "alerting",
-            "for": "2h",
-            "frequency": "5m",
-            "handler": 1,
-            "message": "Graph : Disk Space Used / node\n\nDisk space used is above 80%\n\nPlease connect to grafana : Support - Hardware dashboard to identity node.",
-            "name": "Disk Space Usage / Node",
-            "noDataState": "no_data",
-            "notifications": []
-          },
-          "aliasColors": {},
-          "bars": false,
-          "dashLength": 10,
-          "dashes": false,
-          "datasource": "prometheus-environment",
-          "decimals": 1,
-          "fieldConfig": {
-            "defaults": {
-              "links": []
-            },
-            "overrides": []
-          },
-          "fill": 1,
-          "fillGradient": 0,
-          "gridPos": {
-            "h": 9,
-            "w": 24,
-            "x": 0,
-            "y": 20
-          },
-          "hiddenSeries": false,
-          "id": 8,
-          "legend": {
-            "alignAsTable": true,
-            "avg": true,
-            "current": true,
-            "max": true,
-            "min": false,
-            "rightSide": true,
-            "show": true,
-            "sort": "current",
-            "sortDesc": true,
-            "total": false,
-            "values": true
-          },
-          "lines": true,
-          "linewidth": 1,
-          "nullPointMode": "null",
-          "options": {
-            "alertThreshold": true
-          },
-          "percentage": false,
-          "pluginVersion": "7.5.2",
-          "pointradius": 2,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "spaceLength": 10,
-          "stack": false,
-          "steppedLine": false,
-          "targets": [
-            {
-              "expr": "max by(instance) (1 - node_filesystem_free{device!=\"rootfs\"} / node_filesystem_size{device!=\"rootfs\"})",
-              "legendFormat": "{{instance}}",
-              "refId": "A"
-            }
-          ],
-          "thresholds": [
-            {
-              "colorMode": "critical",
-              "fill": true,
-              "line": true,
-              "op": "gt",
-              "value": 0.8,
-              "visible": true
-            }
-          ],
-          "timeFrom": null,
-          "timeRegions": [],
-          "timeShift": null,
-          "title": "Disk Space Usage / Node",
-          "tooltip": {
-            "shared": true,
-            "sort": 2,
-            "value_type": "individual"
-          },
-          "transformations": [],
-          "type": "graph",
-          "xaxis": {
-            "buckets": null,
-            "mode": "time",
-            "name": null,
-            "show": true,
-            "values": []
-          },
-          "yaxes": [
-            {
-              "$$hashKey": "object:7991",
-              "format": "percentunit",
-              "label": null,
-              "logBase": 1,
-              "max": "1",
-              "min": null,
-              "show": true
-            },
-            {
-              "$$hashKey": "object:7992",
-              "format": "short",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            }
-          ],
-          "yaxis": {
-            "align": false,
-            "alignLevel": null
-          }
-        },
-        {
-          "aliasColors": {},
-          "bars": false,
-          "dashLength": 10,
-          "dashes": false,
-          "datasource": "prometheus-environment",
-          "fieldConfig": {
-            "defaults": {
-              "links": []
-            },
-            "overrides": []
-          },
-          "fill": 1,
-          "fillGradient": 0,
-          "gridPos": {
-            "h": 9,
-            "w": 24,
-            "x": 0,
-            "y": 29
-          },
-          "hiddenSeries": false,
-          "id": 10,
-          "legend": {
-            "alignAsTable": true,
-            "avg": true,
-            "current": true,
-            "max": true,
-            "min": false,
-            "rightSide": true,
-            "show": true,
-            "sort": "current",
-            "sortDesc": true,
-            "total": false,
-            "values": true
-          },
-          "lines": true,
-          "linewidth": 1,
-          "nullPointMode": "null",
-          "options": {
-            "alertThreshold": true
-          },
-          "percentage": false,
-          "pluginVersion": "7.5.2",
-          "pointradius": 2,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "spaceLength": 10,
-          "stack": false,
-          "steppedLine": false,
-          "targets": [
-            {
-              "expr": "sum by(instance) (rate(node_network_receive_bytes{device!~\"lo\", device!~\"docker\"}[5m]) + rate(node_network_transmit_bytes{device!~\"lo\", device!~\"docker\"}[5m]))",
-              "legendFormat": "{{instance}}",
-              "refId": "A"
-            }
-          ],
-          "thresholds": [],
-          "timeFrom": null,
-          "timeRegions": [],
-          "timeShift": null,
-          "title": "Network Load / Node",
-          "tooltip": {
-            "shared": true,
-            "sort": 2,
-            "value_type": "individual"
-          },
-          "transformations": [
-            {
-              "id": "renameByRegex",
-              "options": {
-                "regex": ":9101",
-                "renamePattern": ""
-              }
-            }
-          ],
-          "type": "graph",
-          "xaxis": {
-            "buckets": null,
-            "mode": "time",
-            "name": null,
-            "show": true,
-            "values": []
-          },
-          "yaxes": [
-            {
-              "$$hashKey": "object:8272",
-              "format": "Bps",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            },
-            {
-              "$$hashKey": "object:8273",
-              "format": "short",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            }
-          ],
-          "yaxis": {
-            "align": false,
-            "alignLevel": null
-          }
-        }
-      ],
-      "title": "Hardware",
-      "type": "row"
-    },
-    {
-      "collapsed": true,
-      "datasource": null,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 2
-      },
-      "id": 22,
-      "panels": [
-        {
-          "aliasColors": {},
-          "bars": false,
-          "cacheTimeout": null,
-          "dashLength": 10,
-          "dashes": false,
-          "datasource": "prometheus-core",
-          "fieldConfig": {
-            "defaults": {
-              "links": []
-            },
-            "overrides": []
-          },
-          "fill": 1,
-          "fillGradient": 0,
-          "gridPos": {
-            "h": 7,
-            "w": 24,
-            "x": 0,
-            "y": 3
-          },
-          "hiddenSeries": false,
-          "id": 24,
-          "legend": {
-            "alignAsTable": true,
-            "avg": true,
-            "current": true,
-            "max": true,
-            "min": false,
-            "rightSide": true,
-            "show": true,
-            "total": false,
-            "values": true
-          },
-          "lines": true,
-          "linewidth": 1,
-          "links": [],
-          "nullPointMode": "null",
-          "options": {
-            "alertThreshold": true
-          },
-          "percentage": false,
-          "pluginVersion": "7.5.2",
-          "pointradius": 2,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "spaceLength": 10,
-          "stack": false,
-          "steppedLine": false,
-          "targets": [
-            {
-              "expr": "kafka_burrow_total_lag{group=~\"fileconnector-($connector)_file_connector.*\"}",
-              "legendFormat": "{{group}}",
-              "refId": "A"
-            }
-          ],
-          "thresholds": [],
-          "timeFrom": null,
-          "timeRegions": [],
-          "timeShift": null,
-          "title": "Current File Backlog",
-          "tooltip": {
-            "shared": true,
-            "sort": 0,
-            "value_type": "individual"
-          },
-          "transformations": [
-            {
-              "id": "renameByRegex",
-              "options": {
-                "regex": "fileconnector-",
-                "renamePattern": ""
-              }
-            },
-            {
-              "id": "renameByRegex",
-              "options": {
-                "regex": "_file_connector",
-                "renamePattern": ""
-              }
-            }
-          ],
-          "type": "graph",
-          "xaxis": {
-            "buckets": null,
-            "mode": "time",
-            "name": null,
-            "show": true,
-            "values": []
-          },
-          "yaxes": [
-            {
-              "$$hashKey": "object:253",
-              "format": "short",
-              "label": "Count",
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            },
-            {
-              "$$hashKey": "object:254",
-              "format": "short",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            }
-          ],
-          "yaxis": {
-            "align": false,
-            "alignLevel": null
-          }
-        },
-        {
-          "aliasColors": {},
-          "bars": false,
-          "cacheTimeout": null,
-          "dashLength": 10,
-          "dashes": false,
-          "datasource": "prometheus-core",
-          "fieldConfig": {
-            "defaults": {
-              "links": []
-            },
-            "overrides": []
-          },
-          "fill": 1,
-          "fillGradient": 0,
-          "gridPos": {
-            "h": 7,
-            "w": 24,
-            "x": 0,
-            "y": 10
-          },
-          "hiddenSeries": false,
-          "id": 54,
-          "interval": "2m",
-          "legend": {
-            "alignAsTable": true,
-            "avg": true,
-            "current": true,
-            "max": true,
-            "min": false,
-            "rightSide": true,
-            "show": true,
-            "total": false,
-            "values": true
-          },
-          "lines": true,
-          "linewidth": 1,
-          "links": [],
-          "nullPointMode": "null",
-          "options": {
-            "alertThreshold": true
-          },
-          "percentage": false,
-          "pluginVersion": "7.5.2",
-          "pointradius": 2,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "spaceLength": 10,
-          "stack": false,
-          "steppedLine": false,
-          "targets": [
-            {
-              "expr": "sum(rate(com_evolving_nglm_core_filesourcetask_filesprocessedcount{connectorName=~\"($connector)_file_connector\"}[$__interval])) by (connectorName)",
-              "legendFormat": "{{connectorName}}",
-              "refId": "A"
-            }
-          ],
-          "thresholds": [],
-          "timeFrom": null,
-          "timeRegions": [],
-          "timeShift": null,
-          "title": "File Rate (Count / Second)",
-          "tooltip": {
-            "shared": true,
-            "sort": 0,
-            "value_type": "individual"
-          },
-          "transformations": [
-            {
-              "id": "renameByRegex",
-              "options": {
-                "regex": "_file_connector",
-                "renamePattern": ""
-              }
-            }
-          ],
-          "type": "graph",
-          "xaxis": {
-            "buckets": null,
-            "mode": "time",
-            "name": null,
-            "show": true,
-            "values": []
-          },
-          "yaxes": [
-            {
-              "$$hashKey": "object:1578",
-              "format": "short",
-              "label": "Count",
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            },
-            {
-              "$$hashKey": "object:1579",
-              "format": "short",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": false
-            }
-          ],
-          "yaxis": {
-            "align": false,
-            "alignLevel": null
-          }
-        },
-        {
-          "aliasColors": {},
-          "bars": true,
-          "cacheTimeout": null,
-          "dashLength": 10,
-          "dashes": false,
-          "datasource": "prometheus-core",
-          "description": "",
-          "fieldConfig": {
-            "defaults": {
-              "unit": "short"
-            },
-            "overrides": []
-          },
-          "fill": 1,
-          "fillGradient": 0,
-          "gridPos": {
-            "h": 7,
-            "w": 24,
-            "x": 0,
-            "y": 17
-          },
-          "hiddenSeries": false,
-          "id": 73,
-          "legend": {
-            "alignAsTable": true,
-            "avg": true,
-            "current": true,
-            "max": true,
-            "min": false,
-            "rightSide": true,
-            "show": true,
-            "total": false,
-            "values": true
-          },
-          "lines": false,
-          "linewidth": 1,
-          "links": [],
-          "nullPointMode": "null",
-          "options": {
-            "alertThreshold": true
-          },
-          "percentage": false,
-          "pluginVersion": "7.5.2",
-          "pointradius": 2,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "spaceLength": 10,
-          "stack": false,
-          "steppedLine": false,
-          "targets": [
-            {
-              "expr": "sum(increase(com_evolving_nglm_core_filesourcetask_totalrecordcount{connectorName=~\"($connector)_file_connector\"}[$interval])) by (connectorName)",
-              "format": "time_series",
-              "instant": false,
-              "interval": "",
-              "legendFormat": "{{connectorName}}",
-              "refId": "A"
-            }
-          ],
-          "thresholds": [],
-          "timeFrom": "1d",
-          "timeRegions": [],
-          "timeShift": null,
-          "title": "Total Record over $interval",
-          "tooltip": {
-            "shared": false,
-            "sort": 0,
-            "value_type": "individual"
-          },
-          "transformations": [
-            {
-              "id": "renameByRegex",
-              "options": {
-                "regex": "_file_connector",
-                "renamePattern": ""
-              }
-            }
-          ],
-          "type": "graph",
-          "xaxis": {
-            "buckets": null,
-            "mode": "series",
-            "name": null,
-            "show": true,
-            "values": [
-              "current"
-            ]
-          },
-          "yaxes": [
-            {
-              "$$hashKey": "object:331",
-              "format": "short",
-              "label": "Count",
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            },
-            {
-              "$$hashKey": "object:332",
-              "format": "short",
-              "label": "",
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            }
-          ],
-          "yaxis": {
-            "align": false,
-            "alignLevel": null
-          }
-        },
-        {
-          "cacheTimeout": null,
-          "datasource": "prometheus-core",
-          "description": "",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "thresholds"
-              },
-              "decimals": 1,
-              "mappings": [],
-              "max": 100,
-              "min": 0,
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              },
-              "unit": "percent"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 7,
-            "w": 12,
-            "x": 0,
-            "y": 24
-          },
-          "id": 52,
-          "links": [],
-          "options": {
-            "displayMode": "gradient",
-            "orientation": "vertical",
-            "reduceOptions": {
-              "calcs": [
-                "mean"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "showUnfilled": true,
-            "text": {}
-          },
-          "pluginVersion": "7.5.2",
-          "targets": [
-            {
-              "expr": "avg(increase(com_evolving_nglm_core_filesourcetask_totalrecordcount{connectorName=~\"($connector)_file_connector\"}[$interval]) * 100 / (increase(com_evolving_nglm_core_filesourcetask_totalrecordcount{connectorName=~\"($connector)_file_connector\"}[$interval]) + increase(com_evolving_nglm_core_filesourcetask_errorrecordcount{connectorName=~\"($connector)_file_connector\"}[$interval]))) by (connectorName)",
-              "interval": "",
-              "legendFormat": "{{connectorName}}",
-              "refId": "A"
-            }
-          ],
-          "timeFrom": "1d",
-          "timeShift": null,
-          "title": "Total Record $interval - status OK",
-          "transformations": [
-            {
-              "id": "renameByRegex",
-              "options": {
-                "regex": "_file_connector",
-                "renamePattern": ""
-              }
-            }
-          ],
-          "type": "bargauge"
-        },
-        {
-          "cacheTimeout": null,
-          "datasource": "prometheus-core",
-          "description": "",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "thresholds"
-              },
-              "decimals": 1,
-              "mappings": [],
-              "max": 100,
-              "min": 0,
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "red",
-                    "value": null
-                  }
-                ]
-              },
-              "unit": "percent"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 7,
-            "w": 12,
-            "x": 12,
-            "y": 24
-          },
-          "id": 53,
-          "links": [],
-          "options": {
-            "displayMode": "gradient",
-            "orientation": "vertical",
-            "reduceOptions": {
-              "calcs": [
-                "mean"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "showUnfilled": true,
-            "text": {}
-          },
-          "pluginVersion": "7.5.2",
-          "targets": [
-            {
-              "expr": "avg(increase(com_evolving_nglm_core_filesourcetask_errorrecordcount{connectorName=~\"($connector)_file_connector\"}[$interval]) * 100 / (increase(com_evolving_nglm_core_filesourcetask_totalrecordcount{connectorName=~\"($connector)_file_connector\"}[$interval]) + increase(com_evolving_nglm_core_filesourcetask_errorrecordcount{connectorName=~\"($connector)_file_connector\"}[$interval]))) by (connectorName)",
-              "interval": "",
-              "legendFormat": "{{connectorName}}",
-              "refId": "A"
-            }
-          ],
-          "timeFrom": "1d",
-          "timeShift": null,
-          "title": "Total Record $interval - status KO",
-          "transformations": [
-            {
-              "id": "renameByRegex",
-              "options": {
-                "regex": "_file_connector",
-                "renamePattern": ""
-              }
-            }
-          ],
-          "type": "bargauge"
-        }
-      ],
-      "title": "File Data Feed",
-      "type": "row"
-    },
-    {
-      "collapsed": true,
-      "datasource": null,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 3
-      },
-      "id": 81,
-      "panels": [
-        {
-          "aliasColors": {},
-          "bars": false,
-          "dashLength": 10,
-          "dashes": false,
-          "datasource": "prometheus-core",
-          "description": "",
-          "fieldConfig": {
-            "defaults": {
-              "links": []
-            },
-            "overrides": []
-          },
-          "fill": 1,
-          "fillGradient": 0,
-          "gridPos": {
-            "h": 12,
-            "w": 19,
-            "x": 0,
-            "y": 4
-          },
-          "hiddenSeries": false,
-          "id": 83,
-          "interval": "",
-          "legend": {
-            "alignAsTable": true,
-            "avg": true,
-            "current": true,
-            "max": true,
-            "min": false,
-            "rightSide": false,
-            "show": true,
-            "total": false,
-            "values": true
-          },
-          "lines": true,
-          "linewidth": 1,
-          "nullPointMode": "null",
-          "options": {
-            "alertThreshold": true
-          },
-          "percentage": false,
-          "pluginVersion": "7.5.2",
-          "pointradius": 2,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "spaceLength": 10,
-          "stack": false,
-          "steppedLine": false,
-          "targets": [
-            {
-              "exemplar": true,
-              "expr": "sum(rate(com_evolving_nglm_core_streamsourcetask_totalrecordcount{}[10m])) by (connectorName)",
-              "interval": "",
-              "legendFormat": "{{ connectorName }}",
-              "queryType": "randomWalk",
-              "refId": "A"
-            }
-          ],
-          "thresholds": [],
-          "timeFrom": null,
-          "timeRegions": [],
-          "timeShift": null,
-          "title": "Record (Count / Second)",
-          "tooltip": {
-            "shared": true,
-            "sort": 0,
-            "value_type": "individual"
-          },
-          "transformations": [
-            {
-              "id": "renameByRegex",
-              "options": {
-                "regex": "_stream_connector",
-                "renamePattern": ""
-              }
-            }
-          ],
-          "type": "graph",
-          "xaxis": {
-            "buckets": null,
-            "mode": "time",
-            "name": null,
-            "show": true,
-            "values": []
-          },
-          "yaxes": [
-            {
-              "$$hashKey": "object:870",
-              "format": "short",
-              "label": "Rate",
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            },
-            {
-              "$$hashKey": "object:871",
-              "format": "short",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            }
-          ],
-          "yaxis": {
-            "align": false,
-            "alignLevel": null
-          }
-        },
-        {
-          "datasource": "prometheus-core",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "thresholds"
-              },
-              "decimals": 2,
-              "displayName": "",
-              "mappings": [],
-              "max": 100,
-              "min": 0,
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              },
-              "unit": "percent"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 6,
-            "w": 5,
-            "x": 19,
-            "y": 4
-          },
-          "id": 85,
-          "interval": null,
-          "options": {
-            "displayMode": "gradient",
-            "orientation": "vertical",
-            "reduceOptions": {
-              "calcs": [
-                "mean"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "showUnfilled": true,
-            "text": {}
-          },
-          "pluginVersion": "7.5.2",
-          "targets": [
-            {
-              "exemplar": true,
-              "expr": "avg(increase(com_evolving_nglm_core_streamsourcetask_totalrecordcount{}[$interval]) * 100 / (increase(com_evolving_nglm_core_streamsourcetask_totalrecordcount{}[$interval]) + increase(com_evolving_nglm_core_streamsourcetask_errorrecordcount{}[$interval]))) by (connectorName)",
-              "interval": "",
-              "legendFormat": "{{connectorName}}",
-              "queryType": "randomWalk",
-              "refId": "A"
-            }
-          ],
-          "timeFrom": "1d",
-          "timeShift": null,
-          "title": "Total Record $interval - status OK",
-          "type": "bargauge"
-        },
-        {
-          "datasource": "prometheus-core",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "thresholds"
-              },
-              "decimals": 2,
-              "mappings": [],
-              "max": 100,
-              "min": 0,
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "red",
-                    "value": null
-                  }
-                ]
-              },
-              "unit": "percent"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 6,
-            "w": 5,
-            "x": 19,
-            "y": 10
-          },
-          "id": 87,
-          "options": {
-            "displayMode": "gradient",
-            "orientation": "vertical",
-            "reduceOptions": {
-              "calcs": [
-                "mean"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "showUnfilled": true,
-            "text": {}
-          },
-          "pluginVersion": "7.5.2",
-          "targets": [
-            {
-              "exemplar": true,
-              "expr": "avg(increase(com_evolving_nglm_core_streamsourcetask_errorrecordcount{}[$interval]) * 100 / (increase(com_evolving_nglm_core_streamsourcetask_totalrecordcount{}[$interval]) + increase(com_evolving_nglm_core_streamsourcetask_errorrecordcount{}[$interval]))) by (connectorName)",
-              "interval": "",
-              "legendFormat": "{{connectorName}}",
-              "queryType": "randomWalk",
-              "refId": "A"
-            }
-          ],
-          "timeFrom": "1d",
-          "timeShift": null,
-          "title": "Total Record $interval - status KO",
-          "type": "bargauge"
-        }
-      ],
-      "title": "Stream Connector Data Feed",
-      "type": "row"
-    },
-    {
-      "collapsed": true,
-      "datasource": null,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 4
       },
       "id": 49,
       "panels": [
@@ -1416,7 +65,7 @@
             "h": 15,
             "w": 3,
             "x": 0,
-            "y": 5
+            "y": 1
           },
           "id": 57,
           "interval": null,
@@ -1441,7 +90,7 @@
           "targets": [
             {
               "exemplar": false,
-              "expr": "sum(increase(com_evolving_nglm_evolution_notificationdelivery_count_total{}[${__range_s}s])) by(channel, status)",
+              "expr": "sum(increase(com_evolving_nglm_evolution_notificationdelivery_count_total{tenant=\"replaceWithTenantID\"}[${__range_s}s])) by(channel, status)",
               "hide": false,
               "instant": false,
               "interval": "",
@@ -1481,7 +130,7 @@
             "h": 15,
             "w": 10,
             "x": 3,
-            "y": 5
+            "y": 1
           },
           "hiddenSeries": false,
           "id": 59,
@@ -1515,7 +164,7 @@
           "targets": [
             {
               "exemplar": true,
-              "expr": "sum by(channel, status)(increase(com_evolving_nglm_evolution_notificationdelivery_count_total[1d]))",
+              "expr": "sum by(channel, status)(increase(com_evolving_nglm_evolution_notificationdelivery_count_total{tenant=\"replaceWithTenantID\"}[1d]))",
               "format": "time_series",
               "interval": "",
               "legendFormat": "{{channel}} / {{status}}",
@@ -1592,7 +241,7 @@
             "h": 15,
             "w": 11,
             "x": 13,
-            "y": 5
+            "y": 1
           },
           "hiddenSeries": false,
           "id": 100,
@@ -1624,13 +273,15 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "sum(increase(com_evolving_nglm_evolution_notificationdelivery_count_total{status=\"acknowledged\"}[5m]))",
+              "exemplar": true,
+              "expr": "sum(increase(com_evolving_nglm_evolution_notificationdelivery_count_total{status=\"acknowledged\", tenant=\"replaceWithTenantID\"}[5m]))",
               "interval": "",
               "legendFormat": "Acknowledged",
               "refId": "A"
             },
             {
-              "expr": "sum(increase(com_evolving_nglm_evolution_notificationdelivery_count_total{status =\"failed\"}[5m]))",
+              "exemplar": true,
+              "expr": "sum(increase(com_evolving_nglm_evolution_notificationdelivery_count_total{status =\"failed\", tenant=\"replaceWithTenantID\"}[5m]))",
               "hide": false,
               "interval": "",
               "legendFormat": "Failed",
@@ -1691,13 +342,13 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 5
+        "y": 1
       },
       "id": 33,
       "panels": [
         {
           "cacheTimeout": null,
-          "datasource": "prometheus-application",
+          "datasource": "bdr",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -1729,12 +380,12 @@
             "h": 14,
             "w": 3,
             "x": 0,
-            "y": 6
+            "y": 2
           },
           "id": 34,
-          "interval": null,
+          "interval": "9999999",
           "links": [],
-          "maxDataPoints": 100,
+          "maxDataPoints": null,
           "options": {
             "colorMode": "background",
             "graphMode": "none",
@@ -1753,11 +404,28 @@
           "pluginVersion": "7.5.2",
           "targets": [
             {
-              "exemplar": true,
-              "expr": "sum by(process, status)(increase(com_evolving_nglm_evolution_commoditydelivery_count_total{}[${__range_s}s]))",
-              "interval": "",
-              "legendFormat": "{{process}} / {{status}}",
-              "refId": "A"
+              "alias": "",
+              "bucketAggs": [
+                {
+                  "field": "timestamp",
+                  "id": "2",
+                  "settings": {
+                    "interval": "auto",
+                    "min_doc_count": "1"
+                  },
+                  "type": "date_histogram"
+                }
+              ],
+              "metrics": [
+                {
+                  "field": "count",
+                  "id": "1",
+                  "type": "sum"
+                }
+              ],
+              "query": "",
+              "refId": "A",
+              "timeField": "timestamp"
             }
           ],
           "timeFrom": null,
@@ -1793,7 +461,7 @@
           "bars": true,
           "dashLength": 10,
           "dashes": false,
-          "datasource": "prometheus-application",
+          "datasource": "bdr",
           "fieldConfig": {
             "defaults": {
               "links": []
@@ -1806,7 +474,7 @@
             "h": 14,
             "w": 10,
             "x": 3,
-            "y": 6
+            "y": 2
           },
           "hiddenSeries": false,
           "id": 36,
@@ -1839,11 +507,40 @@
           "steppedLine": false,
           "targets": [
             {
-              "exemplar": true,
-              "expr": "sum by(process, status)(increase(com_evolving_nglm_evolution_commoditydelivery_count_total[1d]))",
-              "interval": "",
-              "legendFormat": "{{process}} / {{status}}",
-              "refId": "A"
+              "alias": "",
+              "bucketAggs": [
+                {
+                  "field": "filter.returnCode",
+                  "id": "2",
+                  "settings": {
+                    "min_doc_count": "1",
+                    "order": "desc",
+                    "orderBy": "_term",
+                    "size": "0"
+                  },
+                  "type": "terms"
+                },
+                {
+                  "field": "timestamp",
+                  "id": "3",
+                  "settings": {
+                    "interval": "1d",
+                    "min_doc_count": "1",
+                    "trimEdges": "0"
+                  },
+                  "type": "date_histogram"
+                }
+              ],
+              "metrics": [
+                {
+                  "field": "count",
+                  "id": "1",
+                  "type": "sum"
+                }
+              ],
+              "query": "",
+              "refId": "A",
+              "timeField": "timestamp"
             }
           ],
           "thresholds": [],
@@ -1860,8 +557,8 @@
             {
               "id": "renameByRegex",
               "options": {
-                "regex": "commoditydeliverymanager-00",
-                "renamePattern": "Commodity Delivery Mgr no"
+                "regex": "",
+                "renamePattern": ""
               }
             }
           ],
@@ -1899,13 +596,11 @@
           }
         },
         {
-          "aliasColors": {
-            "sum(increase(com_evolving_nglm_evolution_bdrstatistics_nbeventsfailed{serviceName!~\".*deliverymanager.*\"}[5m]))": "red"
-          },
+          "aliasColors": {},
           "bars": false,
           "dashLength": 10,
           "dashes": false,
-          "datasource": "prometheus-application",
+          "datasource": "bdr",
           "fieldConfig": {
             "defaults": {
               "links": []
@@ -1918,7 +613,7 @@
             "h": 14,
             "w": 11,
             "x": 13,
-            "y": 6
+            "y": 2
           },
           "hiddenSeries": false,
           "id": 60,
@@ -1929,7 +624,6 @@
             "current": true,
             "max": true,
             "min": false,
-            "rightSide": false,
             "show": true,
             "total": false,
             "values": true
@@ -1947,7 +641,7 @@
           "renderer": "flot",
           "seriesOverrides": [
             {
-              "$$hashKey": "object:1933",
+              "$$hashKey": "object:550",
               "alias": "//"
             }
           ],
@@ -1956,17 +650,39 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "sum(rate(com_evolving_nglm_evolution_commoditydelivery_count_total{status=\"delivered\"}[$__interval]))",
-              "interval": "",
-              "legendFormat": "Delivered",
-              "refId": "A"
-            },
-            {
-              "expr": "sum(rate(com_evolving_nglm_evolution_commoditydelivery_count_total{status!=\"delivered\"}[$__interval]))",
-              "hide": false,
-              "interval": "",
-              "legendFormat": "Failed",
-              "refId": "B"
+              "alias": "",
+              "bucketAggs": [
+                {
+                  "field": "filter.returnCode",
+                  "id": "3",
+                  "settings": {
+                    "min_doc_count": "1",
+                    "order": "desc",
+                    "orderBy": "_term",
+                    "size": "0"
+                  },
+                  "type": "terms"
+                },
+                {
+                  "field": "timestamp",
+                  "id": "2",
+                  "settings": {
+                    "interval": "1s",
+                    "min_doc_count": "1"
+                  },
+                  "type": "date_histogram"
+                }
+              ],
+              "metrics": [
+                {
+                  "field": "count",
+                  "id": "1",
+                  "type": "sum"
+                }
+              ],
+              "query": "",
+              "refId": "A",
+              "timeField": "timestamp"
             }
           ],
           "thresholds": [],
@@ -1989,16 +705,16 @@
           },
           "yaxes": [
             {
-              "$$hashKey": "object:1940",
+              "$$hashKey": "object:508",
               "format": "short",
               "label": "Record",
               "logBase": 1,
               "max": null,
-              "min": "0",
+              "min": null,
               "show": true
             },
             {
-              "$$hashKey": "object:1941",
+              "$$hashKey": "object:509",
               "format": "short",
               "label": null,
               "logBase": 1,
@@ -2023,7 +739,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 6
+        "y": 2
       },
       "id": 125,
       "panels": [
@@ -2061,7 +777,7 @@
             "h": 14,
             "w": 3,
             "x": 0,
-            "y": 7
+            "y": 3
           },
           "id": 121,
           "interval": null,
@@ -2086,7 +802,7 @@
           "targets": [
             {
               "exemplar": true,
-              "expr": "sum(increase(com_evolving_nglm_evolution_voucher_change_count_total{}[${__range_s}s])) by(module ,operation, status)",
+              "expr": "sum(increase(com_evolving_nglm_evolution_voucher_change_count_total{tenant=\"replaceWithTenantID\"}[${__range_s}s])) by(module ,operation, status)",
               "hide": false,
               "interval": "",
               "legendFormat": "{{module }} / {{operation}} / {{status}}",
@@ -2139,7 +855,7 @@
             "h": 14,
             "w": 10,
             "x": 3,
-            "y": 7
+            "y": 3
           },
           "hiddenSeries": false,
           "id": 122,
@@ -2173,7 +889,7 @@
           "targets": [
             {
               "exemplar": true,
-              "expr": "sum by(module ,operation, status)(increase(com_evolving_nglm_evolution_voucher_change_count_total[1d]))",
+              "expr": "sum by(module ,operation, status)(increase(com_evolving_nglm_evolution_voucher_change_count_total{tenant=\"replaceWithTenantID\"}[1d]))",
               "interval": "",
               "legendFormat": "{{module }} / {{operation}} / {{status}}",
               "refId": "A"
@@ -2251,7 +967,7 @@
             "h": 14,
             "w": 11,
             "x": 13,
-            "y": 7
+            "y": 3
           },
           "hiddenSeries": false,
           "id": 123,
@@ -2290,7 +1006,7 @@
           "targets": [
             {
               "exemplar": true,
-              "expr": "sum by(module ,operation, status)(rate(com_evolving_nglm_evolution_voucher_change_count_total{}[$__interval]))",
+              "expr": "sum by(module ,operation, status)(rate(com_evolving_nglm_evolution_voucher_change_count_total{tenant=\"replaceWithTenantID\"}[$__interval]))",
               "hide": false,
               "interval": "",
               "legendFormat": "{{module }} / {{operation}} / {{status}}",
@@ -2351,7 +1067,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 7
+        "y": 3
       },
       "id": 26,
       "panels": [
@@ -2389,7 +1105,7 @@
             "h": 12,
             "w": 3,
             "x": 0,
-            "y": 51
+            "y": 4
           },
           "id": 28,
           "interval": null,
@@ -2412,7 +1128,7 @@
           "targets": [
             {
               "exemplar": true,
-              "expr": "sum(increase(com_evolving_nglm_evolution_purchasefulfillment_count_total{}[${__range_s}s]))by(module, status)",
+              "expr": "sum(increase(com_evolving_nglm_evolution_purchasefulfillment_count_total{tenant=\"replaceWithTenantID\"}[${__range_s}s]))by(module, status)",
               "interval": "",
               "legendFormat": "{{module}} / {{status}}",
               "refId": "A"
@@ -2441,7 +1157,7 @@
             "h": 12,
             "w": 10,
             "x": 3,
-            "y": 51
+            "y": 4
           },
           "hiddenSeries": false,
           "id": 30,
@@ -2474,7 +1190,7 @@
           "targets": [
             {
               "exemplar": true,
-              "expr": "sum by(module,status)(increase(com_evolving_nglm_evolution_purchasefulfillment_count_total[1d]))",
+              "expr": "sum by(module,status)(increase(com_evolving_nglm_evolution_purchasefulfillment_count_total{tenant=\"replaceWithTenantID\"}[1d]))",
               "interval": "",
               "legendFormat": "{{module}} {{status}}",
               "refId": "A"
@@ -2560,7 +1276,7 @@
             "h": 12,
             "w": 11,
             "x": 13,
-            "y": 51
+            "y": 4
           },
           "hiddenSeries": false,
           "id": 31,
@@ -2593,13 +1309,15 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "sum(rate(com_evolving_nglm_evolution_purchasefulfillment_count_total{status=\"delivered\"}[$__interval]))",
+              "exemplar": true,
+              "expr": "sum(rate(com_evolving_nglm_evolution_purchasefulfillment_count_total{status=\"delivered\", tenant=\"replaceWithTenantID\"}[$__interval]))",
               "interval": "",
               "legendFormat": "Delivered",
               "refId": "A"
             },
             {
-              "expr": "sum(rate(com_evolving_nglm_evolution_purchasefulfillment_count_total{status!=\"delivered\"}[$__interval]))",
+              "exemplar": true,
+              "expr": "sum(rate(com_evolving_nglm_evolution_purchasefulfillment_count_total{status!=\"delivered\", tenant=\"replaceWithTenantID\"}[$__interval]))",
               "hide": false,
               "interval": "",
               "legendFormat": "Failed",
@@ -2660,7 +1378,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 8
+        "y": 4
       },
       "id": 93,
       "panels": [
@@ -2697,7 +1415,7 @@
             "h": 17,
             "w": 3,
             "x": 0,
-            "y": 9
+            "y": 5
           },
           "id": 108,
           "interval": "1d",
@@ -2718,7 +1436,7 @@
           "targets": [
             {
               "exemplar": true,
-              "expr": "sum(increase (com_evolving_nglm_evolution_infulfillmentdelivery_count_total{}[${__range_s}s])) by(process, status)",
+              "expr": "sum(increase (com_evolving_nglm_evolution_infulfillmentdelivery_count_total{tenant=\"replaceWithTenantID\"}[${__range_s}s])) by(process, status)",
               "interval": "",
               "legendFormat": "{{process}} / {{status}}",
               "refId": "B"
@@ -2763,7 +1481,7 @@
             "h": 17,
             "w": 10,
             "x": 3,
-            "y": 9
+            "y": 5
           },
           "hiddenSeries": false,
           "id": 109,
@@ -2797,7 +1515,7 @@
           "targets": [
             {
               "exemplar": true,
-              "expr": "sum(increase (com_evolving_nglm_evolution_infulfillmentdelivery_count_total[1d])) by(process, operation, status)",
+              "expr": "sum(increase (com_evolving_nglm_evolution_infulfillmentdelivery_count_total{tenant=\"replaceWithTenantID\"}[1d])) by(process, operation, status)",
               "interval": "",
               "legendFormat": "{{process}} / {{operation}} / {{status}}",
               "refId": "B"
@@ -2880,7 +1598,7 @@
             "h": 17,
             "w": 11,
             "x": 13,
-            "y": 9
+            "y": 5
           },
           "hiddenSeries": false,
           "id": 97,
@@ -2912,7 +1630,8 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "sum(rate(com_evolving_nglm_evolution_infulfillmentdelivery_count_total[$__interval])) by (process,operation, status)",
+              "exemplar": true,
+              "expr": "sum(rate(com_evolving_nglm_evolution_infulfillmentdelivery_count_total{tenant=\"replaceWithTenantID\"}[$__interval])) by (process,operation, status)",
               "interval": "",
               "legendFormat": "{{process}} {{operation}} {{status}}",
               "refId": "B"
@@ -2995,7 +1714,7 @@
             "h": 8,
             "w": 24,
             "x": 0,
-            "y": 26
+            "y": 22
           },
           "hiddenSeries": false,
           "id": 99,
@@ -3028,12 +1747,15 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "sum(rate(com_evolving_nglm_evolution_infulfillmentdelivery_seconds_total[$__interval]))/sum(rate(com_evolving_nglm_evolution_infulfillmentdelivery_count_total[$__interval]))",
+              "exemplar": true,
+              "expr": "sum(rate(com_evolving_nglm_evolution_infulfillmentdelivery_seconds_total{tenant=\"replaceWithTenantID\"}[$__interval]))/sum(rate(com_evolving_nglm_evolution_infulfillmentdelivery_count_total{tenant=\"replaceWithTenantID\"}[$__interval]))",
+              "interval": "",
               "legendFormat": "All",
               "refId": "A"
             },
             {
-              "expr": "sum(rate(com_evolving_nglm_evolution_infulfillmentdelivery_seconds_total[$__interval]))by(process,operation,status)/sum(rate(com_evolving_nglm_evolution_infulfillmentdelivery_count_total[$__interval]))by(process,operation,status)",
+              "exemplar": true,
+              "expr": "sum(rate(com_evolving_nglm_evolution_infulfillmentdelivery_seconds_total{tenant=\"replaceWithTenantID\"}[$__interval]))by(process,operation,status)/sum(rate(com_evolving_nglm_evolution_infulfillmentdelivery_count_total{tenant=\"replaceWithTenantID\"}[$__interval]))by(process,operation,status)",
               "interval": "",
               "legendFormat": "{{process}}  {{operation}} {{status}}",
               "refId": "B"
@@ -3109,7 +1831,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 9
+        "y": 5
       },
       "id": 45,
       "panels": [
@@ -3147,7 +1869,7 @@
             "h": 12,
             "w": 3,
             "x": 0,
-            "y": 10
+            "y": 6
           },
           "id": 67,
           "interval": null,
@@ -3172,7 +1894,7 @@
           "targets": [
             {
               "exemplar": true,
-              "expr": "sum(increase(com_evolving_nglm_evolution_thirdpartyaccess_count_total{}[${__range_s}s]))by(name, status)",
+              "expr": "sum(increase(com_evolving_nglm_evolution_thirdpartyaccess_count_total{tenant=\"replaceWithTenantID\"}[${__range_s}s]))by(name, status)",
               "interval": "",
               "legendFormat": "{{name}} / {{status}}",
               "refId": "A"
@@ -3217,7 +1939,7 @@
             "h": 12,
             "w": 10,
             "x": 3,
-            "y": 10
+            "y": 6
           },
           "hiddenSeries": false,
           "id": 69,
@@ -3251,7 +1973,7 @@
           "targets": [
             {
               "exemplar": true,
-              "expr": "sum(increase(com_evolving_nglm_evolution_thirdpartyaccess_count_total[1d]))by(name, status)",
+              "expr": "sum(increase(com_evolving_nglm_evolution_thirdpartyaccess_count_total{tenant=\"replaceWithTenantID\"}[1d]))by(name, status)",
               "interval": "",
               "legendFormat": "{{name}} / {{status}}",
               "refId": "A"
@@ -3336,7 +2058,7 @@
             "h": 12,
             "w": 11,
             "x": 13,
-            "y": 10
+            "y": 6
           },
           "hiddenSeries": false,
           "id": 70,
@@ -3369,13 +2091,15 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "sum(rate(com_evolving_nglm_evolution_thirdpartyaccess_count_total{status !=\"ok\"}[$__interval]))",
+              "exemplar": true,
+              "expr": "sum(rate(com_evolving_nglm_evolution_thirdpartyaccess_count_total{status !=\"ok\", tenant=\"replaceWithTenantID\"}[$__interval]))",
               "interval": "",
               "legendFormat": "Failed",
               "refId": "A"
             },
             {
-              "expr": "sum(rate(com_evolving_nglm_evolution_thirdpartyaccess_count_total{status = \"ok\"}[$__interval]))",
+              "exemplar": true,
+              "expr": "sum(rate(com_evolving_nglm_evolution_thirdpartyaccess_count_total{status = \"ok\", tenant=\"replaceWithTenantID\"}[$__interval]))",
               "hide": false,
               "interval": "",
               "legendFormat": "Success",
@@ -3436,7 +2160,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 10
+        "y": 6
       },
       "id": 75,
       "panels": [
@@ -3474,7 +2198,7 @@
             "h": 9,
             "w": 6,
             "x": 0,
-            "y": 11
+            "y": 7
           },
           "hideTimeOverride": false,
           "id": 76,
@@ -3549,7 +2273,7 @@
             "h": 9,
             "w": 9,
             "x": 6,
-            "y": 11
+            "y": 7
           },
           "id": 79,
           "interval": "9999999",
@@ -3575,7 +2299,7 @@
                     "min_doc_count": 1,
                     "order": "desc",
                     "orderBy": "_term",
-                    "size": "10"
+                    "size": "0"
                   },
                   "type": "terms"
                 },
@@ -3629,7 +2353,7 @@
             "h": 9,
             "w": 9,
             "x": 15,
-            "y": 11
+            "y": 7
           },
           "id": 116,
           "interval": "9999999",
@@ -3654,7 +2378,7 @@
                     "min_doc_count": "1",
                     "order": "desc",
                     "orderBy": "_term",
-                    "size": "10"
+                    "size": "0"
                   },
                   "type": "terms"
                 },
@@ -3691,471 +2415,15 @@
       "type": "row"
     },
     {
-      "collapsed": false,
-      "datasource": null,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 11
-      },
-      "id": 51,
-      "panels": [],
-      "title": "GUI - User Authentication",
-      "type": "row"
-    },
-    {
-      "datasource": "prometheus-core",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "rgb(155, 155, 155)",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 10,
-        "w": 3,
-        "x": 0,
-        "y": 12
-      },
-      "id": 102,
-      "interval": "9999999",
-      "options": {
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "text": {
-          "titleSize": 18,
-          "valueSize": 18
-        },
-        "textMode": "auto"
-      },
-      "pluginVersion": "7.5.2",
-      "targets": [
-        {
-          "exemplar": true,
-          "expr": "sum(increase (com_evolution_fwkauth_users_connected{}[${__range_s}s])) by(status)",
-          "interval": "",
-          "legendFormat": "{{status}}",
-          "queryType": "randomWalk",
-          "refId": "A"
-        }
-      ],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Overall Count over $interval",
-      "type": "stat"
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "prometheus-core",
-      "fieldConfig": {
-        "defaults": {
-          "unit": "Misc"
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 10,
-        "w": 11,
-        "x": 3,
-        "y": 12
-      },
-      "hiddenSeries": false,
-      "id": 104,
-      "legend": {
-        "alignAsTable": true,
-        "avg": true,
-        "current": true,
-        "max": true,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
-      "options": {
-        "alertThreshold": true
-      },
-      "percentage": false,
-      "pluginVersion": "7.5.2",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "exemplar": true,
-          "expr": "sum by(status)(increase(com_evolution_fwkauth_user_authentication_requests[1d]))",
-          "interval": "",
-          "legendFormat": "{{status}}",
-          "queryType": "randomWalk",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Success and Failure (Count / Day)",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:3679",
-          "format": "Misc",
-          "label": "Count",
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "$$hashKey": "object:3680",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "cacheTimeout": null,
-      "datasource": "Auditlogs",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "custom": {
-            "align": null,
-            "filterable": false
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": []
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 10,
-        "w": 4,
-        "x": 14,
-        "y": 12
-      },
-      "id": 118,
-      "interval": null,
-      "links": [],
-      "options": {
-        "showHeader": true
-      },
-      "pluginVersion": "7.5.2",
-      "targets": [
-        {
-          "alias": "",
-          "bucketAggs": [
-            {
-              "field": "browser",
-              "id": "11",
-              "settings": {
-                "min_doc_count": "0",
-                "order": "desc",
-                "orderBy": "_term",
-                "size": "10"
-              },
-              "type": "terms"
-            }
-          ],
-          "metrics": [
-            {
-              "id": "1",
-              "type": "count"
-            }
-          ],
-          "query": "",
-          "refId": "A",
-          "timeField": "@timestamp"
-        }
-      ],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Connection Count per Browser Type",
-      "transformations": [
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {},
-            "indexByName": {},
-            "renameByName": {
-              "Count": "Count",
-              "browser": "Browser"
-            }
-          }
-        }
-      ],
-      "type": "table"
-    },
-    {
-      "datasource": "Auditlogs",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "custom": {
-            "align": null,
-            "filterable": false
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": []
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 10,
-        "w": 6,
-        "x": 18,
-        "y": 12
-      },
-      "id": 120,
-      "options": {
-        "showHeader": true
-      },
-      "pluginVersion": "7.5.2",
-      "targets": [
-        {
-          "alias": "",
-          "bucketAggs": [
-            {
-              "field": "shortDescription",
-              "id": "11",
-              "settings": {
-                "min_doc_count": "0",
-                "order": "desc",
-                "orderBy": "_count",
-                "size": "0"
-              },
-              "type": "terms"
-            }
-          ],
-          "metrics": [
-            {
-              "id": "1",
-              "type": "count"
-            }
-          ],
-          "query": "",
-          "refId": "A",
-          "timeField": "@timestamp"
-        }
-      ],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Count per Action Type",
-      "transformations": [
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {},
-            "indexByName": {},
-            "renameByName": {
-              "Count": "Count",
-              "shortDescription": "Action Short Description"
-            }
-          }
-        }
-      ],
-      "type": "table"
-    },
-    {
-      "datasource": "Auditlogs",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "custom": {
-            "align": null,
-            "filterable": false
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": []
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 12,
-        "w": 24,
-        "x": 0,
-        "y": 22
-      },
-      "id": 119,
-      "options": {
-        "showHeader": true,
-        "sortBy": [
-          {
-            "desc": true,
-            "displayName": "Count"
-          }
-        ]
-      },
-      "pluginVersion": "7.5.2",
-      "targets": [
-        {
-          "alias": "",
-          "bucketAggs": [
-            {
-              "field": "@timestamp",
-              "id": "11",
-              "settings": {
-                "min_doc_count": "0",
-                "order": "desc",
-                "orderBy": "_term",
-                "size": "0"
-              },
-              "type": "terms"
-            }
-          ],
-          "metrics": [
-            {
-              "id": "1",
-              "type": "logs"
-            }
-          ],
-          "query": "",
-          "refId": "A",
-          "timeField": "@timestamp"
-        }
-      ],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Audit Log",
-      "transformations": [
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {
-              "@version": true,
-              "_id": true,
-              "_index": true,
-              "_source": true,
-              "_type": true,
-              "application": true,
-              "dateEvent": true,
-              "datetimeEvent": true,
-              "jsondata": true,
-              "method": true,
-              "objectID": true,
-              "objectName": true,
-              "res": true,
-              "sort": true,
-              "weblink": true,
-              "yearEvent": true
-            },
-            "indexByName": {
-              "@timestamp": 0,
-              "@version": 6,
-              "_id": 7,
-              "_index": 8,
-              "_source": 9,
-              "_type": 10,
-              "apiroute": 3,
-              "application": 11,
-              "browser": 5,
-              "client": 4,
-              "dateEvent": 12,
-              "datetimeEvent": 13,
-              "jsondata": 14,
-              "method": 15,
-              "objectID": 16,
-              "objectName": 17,
-              "res": 18,
-              "shortDescription": 2,
-              "sort": 20,
-              "username": 1,
-              "weblink": 19,
-              "yearEvent": 21
-            },
-            "renameByName": {
-              "@timestamp": "Timestamp",
-              "apiroute": "Action",
-              "browser": "Browser",
-              "client": "IP",
-              "dateEvent": "",
-              "shortDescription": "Action Short Description",
-              "username": "Username",
-              "weblink": ""
-            }
-          }
-        }
-      ],
-      "type": "table"
-    },
-    {
       "collapsed": true,
       "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 34
+        "y": 7
       },
-      "id": 39,
+      "id": 51,
       "panels": [
         {
           "datasource": "prometheus-core",
@@ -4164,24 +2432,13 @@
               "color": {
                 "mode": "thresholds"
               },
-              "custom": {},
               "mappings": [],
-              "max": 100,
-              "min": 0,
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "red",
+                    "color": "rgb(155, 155, 155)",
                     "value": null
-                  },
-                  {
-                    "color": "#EAB839",
-                    "value": 10
-                  },
-                  {
-                    "color": "green",
-                    "value": 30
                   }
                 ]
               }
@@ -4189,43 +2446,432 @@
             "overrides": []
           },
           "gridPos": {
-            "h": 6,
-            "w": 10,
+            "h": 10,
+            "w": 3,
             "x": 0,
-            "y": 12
+            "y": 8
           },
-          "id": 56,
+          "id": 102,
+          "interval": "9999999",
           "options": {
+            "colorMode": "background",
+            "graphMode": "area",
+            "justifyMode": "auto",
             "orientation": "auto",
             "reduceOptions": {
               "calcs": [
-                "mean"
+                "lastNotNull"
               ],
               "fields": "",
               "values": false
             },
-            "showThresholdLabels": false,
-            "showThresholdMarkers": true,
-            "text": {}
+            "text": {
+              "titleSize": 18,
+              "valueSize": 18
+            },
+            "textMode": "auto"
           },
-          "pluginVersion": "7.4.0",
+          "pluginVersion": "7.5.2",
           "targets": [
             {
-              "expr": "avg(com_evolving_nglm_core_licenseexpiry_daysbeforeexpiry)",
-              "hide": false,
+              "exemplar": true,
+              "expr": "sum(increase (com_evolution_fwkauth_users_connected{tenantID=\"replaceWithTenantID\"}[${__range_s}s])) by(status)",
               "interval": "",
-              "legendFormat": "",
+              "legendFormat": "{{status}}",
+              "queryType": "randomWalk",
               "refId": "A"
             }
           ],
           "timeFrom": null,
           "timeShift": null,
-          "title": "License Validity (Number of Days)",
-          "type": "gauge"
+          "title": "Overall Count over $interval",
+          "type": "stat"
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": "prometheus-core",
+          "fieldConfig": {
+            "defaults": {
+              "unit": "Misc"
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 10,
+            "w": 11,
+            "x": 3,
+            "y": 8
+          },
+          "hiddenSeries": false,
+          "id": 104,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": true,
+            "max": true,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 1,
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "7.5.2",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "sum by(status)(increase(com_evolution_fwkauth_user_authentication_requests{tenantID=\"replaceWithTenantID\"}[1d]))",
+              "interval": "",
+              "legendFormat": "{{status}}",
+              "queryType": "randomWalk",
+              "refId": "A"
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "Success and Failure (Count / Day)",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:3679",
+              "format": "Misc",
+              "label": "Count",
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "$$hashKey": "object:3680",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "cacheTimeout": null,
+          "datasource": "Auditlogs",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "custom": {
+                "align": null,
+                "filterable": false
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": []
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 10,
+            "w": 4,
+            "x": 14,
+            "y": 8
+          },
+          "id": 118,
+          "interval": null,
+          "links": [],
+          "options": {
+            "showHeader": true
+          },
+          "pluginVersion": "7.5.2",
+          "targets": [
+            {
+              "alias": "",
+              "bucketAggs": [
+                {
+                  "field": "browser",
+                  "id": "11",
+                  "settings": {
+                    "min_doc_count": "0",
+                    "order": "desc",
+                    "orderBy": "_term",
+                    "size": "0"
+                  },
+                  "type": "terms"
+                }
+              ],
+              "metrics": [
+                {
+                  "id": "1",
+                  "type": "count"
+                }
+              ],
+              "query": "",
+              "refId": "A",
+              "timeField": "@timestamp"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Connection Count per Browser Type",
+          "transformations": [
+            {
+              "id": "organize",
+              "options": {
+                "excludeByName": {},
+                "indexByName": {},
+                "renameByName": {
+                  "Count": "Count",
+                  "browser": "Browser"
+                }
+              }
+            }
+          ],
+          "type": "table"
+        },
+        {
+          "datasource": "Auditlogs",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "custom": {
+                "align": null,
+                "filterable": false
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": []
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 10,
+            "w": 6,
+            "x": 18,
+            "y": 8
+          },
+          "id": 120,
+          "options": {
+            "showHeader": true
+          },
+          "pluginVersion": "7.5.2",
+          "targets": [
+            {
+              "alias": "",
+              "bucketAggs": [
+                {
+                  "field": "shortDescription",
+                  "id": "11",
+                  "settings": {
+                    "min_doc_count": "0",
+                    "order": "desc",
+                    "orderBy": "_count",
+                    "size": "0"
+                  },
+                  "type": "terms"
+                }
+              ],
+              "metrics": [
+                {
+                  "id": "1",
+                  "type": "count"
+                }
+              ],
+              "query": "",
+              "refId": "A",
+              "timeField": "@timestamp"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Count per Action Type",
+          "transformations": [
+            {
+              "id": "organize",
+              "options": {
+                "excludeByName": {},
+                "indexByName": {},
+                "renameByName": {
+                  "Count": "Count",
+                  "shortDescription": "Action Short Description"
+                }
+              }
+            }
+          ],
+          "type": "table"
+        },
+        {
+          "datasource": "Auditlogs",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "custom": {
+                "align": null,
+                "filterable": false
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": []
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 12,
+            "w": 24,
+            "x": 0,
+            "y": 18
+          },
+          "id": 119,
+          "interval": "9999999",
+          "options": {
+            "showHeader": true,
+            "sortBy": [
+              {
+                "desc": true,
+                "displayName": "Count"
+              }
+            ]
+          },
+          "pluginVersion": "7.5.2",
+          "targets": [
+            {
+              "alias": "",
+              "bucketAggs": [
+                {
+                  "field": "@timestamp",
+                  "id": "1",
+                  "settings": {
+                    "min_doc_count": "1",
+                    "order": "desc",
+                    "orderBy": "_term",
+                    "size": "0"
+                  },
+                  "type": "terms"
+                }
+              ],
+              "metrics": [
+                {
+                  "id": "1",
+                  "type": "logs"
+                }
+              ],
+              "query": "",
+              "refId": "A",
+              "timeField": "timestamp"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Audit Log",
+          "transformations": [
+            {
+              "id": "organize",
+              "options": {
+                "excludeByName": {
+                  "@version": true,
+                  "_id": true,
+                  "_index": true,
+                  "_source": true,
+                  "_type": true,
+                  "application": true,
+                  "dateEvent": true,
+                  "datetimeEvent": true,
+                  "highlight": true,
+                  "jsondata": true,
+                  "method": true,
+                  "objectID": true,
+                  "objectName": true,
+                  "res": true,
+                  "sort": true,
+                  "weblink": true,
+                  "yearEvent": true
+                },
+                "indexByName": {
+                  "@timestamp": 0,
+                  "@version": 6,
+                  "_id": 7,
+                  "_index": 8,
+                  "_source": 9,
+                  "_type": 10,
+                  "apiroute": 3,
+                  "application": 11,
+                  "browser": 5,
+                  "client": 4,
+                  "dateEvent": 12,
+                  "datetimeEvent": 13,
+                  "jsondata": 14,
+                  "method": 15,
+                  "objectID": 16,
+                  "objectName": 17,
+                  "res": 18,
+                  "shortDescription": 2,
+                  "sort": 20,
+                  "username": 1,
+                  "weblink": 19,
+                  "yearEvent": 21
+                },
+                "renameByName": {
+                  "@timestamp": "Timestamp",
+                  "apiroute": "Action",
+                  "browser": "Browser",
+                  "client": "IP",
+                  "dateEvent": "",
+                  "highlight": "",
+                  "shortDescription": "Action Short Description",
+                  "username": "Username",
+                  "weblink": ""
+                }
+              }
+            }
+          ],
+          "type": "table"
         }
       ],
-      "repeat": null,
-      "title": "License Status",
+      "title": "GUI - User Authentication",
       "type": "row"
     }
   ],
@@ -4318,37 +2964,6 @@
           "text": "All",
           "value": "$__all"
         },
-        "datasource": "prometheus-core",
-        "definition": "com_evolving_nglm_core_filesourcetask_filesprocessedcount",
-        "description": null,
-        "error": null,
-        "hide": 0,
-        "includeAll": true,
-        "label": "File Source",
-        "multi": false,
-        "name": "connector",
-        "options": [],
-        "query": {
-          "query": "com_evolving_nglm_core_filesourcetask_filesprocessedcount",
-          "refId": "prometheus-core-connector-Variable-Query"
-        },
-        "refresh": 2,
-        "regex": ".*connectorName=\"([^/\"]*)_file_connector\".*",
-        "skipUrlSync": false,
-        "sort": 1,
-        "tagValuesQuery": "",
-        "tags": [],
-        "tagsQuery": "",
-        "type": "query",
-        "useTags": false
-      },
-      {
-        "allValue": null,
-        "current": {
-          "selected": false,
-          "text": "All",
-          "value": "$__all"
-        },
         "datasource": "prometheus-application",
         "definition": "messagegateway",
         "description": null,
@@ -4420,6 +3035,6 @@
   "timezone": "",
   "title": "Admin - Monitoring Dashboard",
   "uid": "gMbUkWlWz",
-  "version": 24
+  "version": 33
 }
 }
