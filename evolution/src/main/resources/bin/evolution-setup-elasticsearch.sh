@@ -366,7 +366,8 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/token -u $
       "eventDatetime" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ"},
       "eventID"       : { "type" : "keyword" },
       "returnCode"    : { "type" : "keyword" },
-      "origin"        : { "type" : "keyword", "index" : "false" }
+      "origin"        : { "type" : "keyword" },
+      "acceptedOfferID"        : { "type" : "keyword" }
     }
   }
 }'
