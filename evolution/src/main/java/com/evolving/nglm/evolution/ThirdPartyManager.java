@@ -5991,6 +5991,7 @@ public class ThirdPartyManager
 	            OTPInstanceChangeEvent.OTPChangeAction.Check,
 	            JSONUtilities.decodeString(jsonRoot, "otpType", true),
 	            JSONUtilities.decodeString(jsonRoot, "otpCheckValue", true),
+	            JSONUtilities.decodeBoolean(jsonRoot, "burn", Boolean.FALSE), // mandatory=false+defaultValue= FALSE
 	            0, //remainingAttempts
 	            0, //validationDuration
 	            0, //currentTypeErrors
@@ -6049,6 +6050,7 @@ public class ThirdPartyManager
         OTPInstanceChangeEvent.OTPChangeAction.Generate,
         optTypeDisplay,
         (String) null, //otpCheckValue
+        Boolean.FALSE, //forceBurn=False
         0, //remainingAttempts
         0, //validationDuration
         0, //currentTypeErrors

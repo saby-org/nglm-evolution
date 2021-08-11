@@ -236,7 +236,7 @@ public class OTPUtils
     // Check 05 : check if already burnt
     if (tomatch.getOTPStatus().equals(OTPInstance.OTPStatus.Burnt))
       {
-        otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.OTP_EXPIRED);// could be INVALID_OTP);
+        otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.OTP_EXPIRED);// could be INVALID_OTP, incoming status OTP_BURNT;
         // maybe add updates of the status (or just wait for daily event update
         // TODO decide if this should count as an additional error or not, so far yes
         tomatch.setErrorCount(tomatch.getErrorCount() + 1);
@@ -253,12 +253,12 @@ public class OTPUtils
       {
         otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
         tomatch.setChecksCount(tomatch.getChecksCount() + 1);
-        // TODO BURN OR MARK AS SUCCESS (SUCCESS means it will allow more rechecks)
-        // current choice : burn each time
-        tomatch.setOTPStatus(OTPInstance.OTPStatus.Burnt);
+        // BURN OR mark AS SUCCESS depending on forceBurn (SUCCESS means it will allow more rechecks)
+        tomatch.setOTPStatus(OTPInstance.OTPStatus.ChecksSuccess);
+        if (otpRequest.getForceBurn() != null && otpRequest.getForceBurn()) tomatch.setOTPStatus(OTPInstance.OTPStatus.Burnt);
+
         tomatch.setLatestSuccess(now);
         tomatch.setLatestUpdate(now);
-
       }
     else
       {
@@ -277,7 +277,7 @@ public class OTPUtils
             otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.MAX_NB_OF_ATTEMPT_REACHED);
           }
         // check global counter for all candidates of the type
-        int globalerrorstimewindow = candidates.stream().filter(c -> DateUtils.addSeconds(c.getLatestError(), otptype.getTimeWindow()).after(now)).mapToInt(o -> o.getErrorCount()).sum();
+        int globalerrorstimewindow = candidates.stream().filter(c -> (c.getLatestError() != null && DateUtils.addSeconds(c.getLatestError(), otptype.getTimeWindow()).after(now))).mapToInt(o -> o.getErrorCount()).sum();
         otpRequest.setGlobalErrorCounts(globalerrorstimewindow);
         if (globalerrorstimewindow >= otptype.getMaxWrongCheckAttemptsByTimeWindow())
           {
