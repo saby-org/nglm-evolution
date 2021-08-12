@@ -1567,10 +1567,10 @@ public class EvaluationCriterion
     }
 
     //
-    // Handle criterion "loyaltyprogram.name"
+    // Handle criterion "loyaltyprograms.name"
     //
 
-    if ("loyaltyprogram.name".equals(esField))
+    if ("loyaltyprograms.name".equals(esField))
     {
       QueryBuilder query = null;
       // ES special case for isNull : (must_not -> exists) does not work when inside a nested query : must_not must be on the toplevel query !
@@ -1596,7 +1596,7 @@ public class EvaluationCriterion
     // Handle dynamic criterion "loyaltyprogram.LP1.xxxxx"
     //
 
-    if (esField.startsWith("loyaltyprogram."))
+    if (esField.startsWith("loyaltyprograms."))
     {
       QueryBuilder query = handleLoyaltyProgramDynamicCriterion(esField);
       return query;
@@ -2605,7 +2605,7 @@ public class EvaluationCriterion
 
   public QueryBuilder handleLoyaltyProgramDynamicCriterion(String esField) throws CriterionException
   {
-    Pattern fieldNamePattern = Pattern.compile("^loyaltyprogram\\.([^.]+)\\.(.+)$");
+    Pattern fieldNamePattern = Pattern.compile("^loyaltyprograms\\.([^.]+)\\.(.+)$");
     Matcher fieldNameMatcher = fieldNamePattern.matcher(esField);
     if (! fieldNameMatcher.find()) throw new CriterionException("invalid loyaltyprogram field " + esField);
     String loyaltyProgramID = fieldNameMatcher.group(1);
