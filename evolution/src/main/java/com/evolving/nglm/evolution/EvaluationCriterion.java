@@ -1606,7 +1606,7 @@ public class EvaluationCriterion
     // Handle dynamic criterion "point.POINT001.balance"
     //
 
-    if (esField.startsWith("point."))
+    if (esField.startsWith("pointBalances."))
     {
       QueryBuilder query = handlePointDynamicCriterion(esField);
       return query;
@@ -2537,7 +2537,7 @@ public class EvaluationCriterion
   
   public QueryBuilder handlePointDynamicCriterion(String esField) throws CriterionException
   {
-    Pattern fieldNamePattern = Pattern.compile("^point\\.([^.]+)\\.(.+)$");
+    Pattern fieldNamePattern = Pattern.compile("^pointBalances\\.([^.]+)\\.(.+)$");
     Matcher fieldNameMatcher = fieldNamePattern.matcher(esField);
     if (! fieldNameMatcher.find()) throw new CriterionException("invalid point field " + esField);
     String pointID = fieldNameMatcher.group(1);
