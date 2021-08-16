@@ -72,7 +72,7 @@ public class TokenChangeESSinkConnector extends SimpleESSinkConnector
       documentMap.put("origin", tokenChange.getOrigin());
       documentMap.put("moduleID", tokenChange.getModuleID());
       documentMap.put("featureID", tokenChange.getFeatureID());
-      
+      documentMap.put("acceptedOfferID", tokenChange.getAcceptedOfferID());
       return documentMap;
     }
   }
