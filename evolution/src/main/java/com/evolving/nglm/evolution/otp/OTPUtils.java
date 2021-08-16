@@ -267,6 +267,9 @@ public class OTPUtils
         tomatch.setErrorCount(tomatch.getErrorCount() + 1);
         tomatch.setLatestError(now);
         tomatch.setLatestUpdate(now);
+        
+        otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.INVALID_OTP);
+        
         // and check for higher ban while collecting counters:
         // check maxed this instance
         int remainingAttempts = otptype.getMaxWrongCheckAttemptsByInstance() - tomatch.getErrorCount();
@@ -283,7 +286,7 @@ public class OTPUtils
           {
             tomatch.setOTPStatus(OTPInstance.OTPStatus.RaisedBan);
             otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.MAX_NB_OF_ATTEMPT_REACHED);
-          }
+          }        
       }
     return otpRequest;
   }

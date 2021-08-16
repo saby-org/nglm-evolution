@@ -84,13 +84,24 @@ public class OTPType extends GUIManagedObject
   ****************************************/
 
   // security attributes
+  
+  // Max number of time we can check this OTP with a wrong code before being considered as Expired...  (For One OTP Instance) 
   private Integer maxWrongCheckAttemptsByInstance;
+  
+  // 
   private Integer maxWrongCheckAttemptsByTimeWindow;
+  
+  // Max number of instances for which (creation date + time window) > now: Still valid in TimeWindow's perpective
   private Integer maxConcurrentWithinTimeWindow;
+  
+  // Duration during which an instance 
   private Integer timeWindow;
+  
   private Integer banPeriod;  // int32 seconds allows >60years
+ 
   // affects instance values generation :
   private Integer instanceExpirationDelay;
+  
   // only one of the two :
   private Integer valueGenerationDigits; // for simple non-0-leading number
   private String valueGenerationRegex; // for more complex type
