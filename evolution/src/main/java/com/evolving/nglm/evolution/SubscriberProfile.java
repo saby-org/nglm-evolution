@@ -491,7 +491,7 @@ public abstract class SubscriberProfile
   
   /******************************************
   *
-  *  getLoyaltyProgramsJSON - LoyaltyPrograms
+  *  getLoyaltyProgramsJSON - LoyaltyProgramsuniversal
   *
   ******************************************/
   

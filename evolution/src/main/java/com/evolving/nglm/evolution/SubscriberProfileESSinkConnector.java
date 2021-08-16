@@ -174,7 +174,9 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
       documentMap.put("relationships", subscriberProfile.getSubscriberRelationsJSON());
       documentMap.put("exclusionInclusionList", subscriberProfile.getExclusionInclusionTargets(subscriberGroupEpochReader));
       documentMap.put("universalControlGroupPrevious",subscriberProfile.getUniversalControlGroupPrevious());
-      documentMap.put("universalControlGroupChangeDate",subscriberProfile.getUniversalControlGroupChangeDate());
+      log.info("before");
+      documentMap.put("universalControlGroupChangeDate",RLMDateUtils.formatDateForElasticsearchDefault(subscriberProfile.getUniversalControlGroupChangeDate()));
+      log.info("after");
       addToDocumentMap(documentMap, subscriberProfile, now);
       
       //
