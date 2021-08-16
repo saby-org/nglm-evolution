@@ -65,6 +65,12 @@ public class JourneyCustomerStatisticsReportMultithread implements ReportCsvFact
     headerFieldsOrder.add(dateTime);
     headerFieldsOrder.add(startDate);
     headerFieldsOrder.add(endDate);
+    for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricConfiguration().getMetrics().values())
+    {
+      headerFieldsOrder.add(journeyMetricDeclaration.getESFieldPrior());
+      headerFieldsOrder.add(journeyMetricDeclaration.getESFieldDuring());
+      headerFieldsOrder.add(journeyMetricDeclaration.getESFieldPost());
+    }
   }
   
   public void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders)
