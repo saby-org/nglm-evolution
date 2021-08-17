@@ -893,7 +893,14 @@ public class CriterionField extends DeploymentManagedObject
     switch (formatDataType)
       {
         case StringCriterion:
-          return 20;
+          if(this.getID() != null && this.getID().startsWith("variablefile."))
+            {
+              return 10000;
+            }
+          else 
+            {
+              return 20;
+            }
 
         case StringSetCriterion:
           return 50;
