@@ -3600,7 +3600,7 @@ public class EvolutionEngine
               currentUCGState.calculateAndApplyShiftProbabilityForUCGGroup(subscriberUCGGroup);
             }
             subscriberProfile.setUniversalControlGroupPrevious(isInUCG);
-            subscriberProfile.setUniversalControlGroupChangeDate(context.getSubscriberState().getLastEvaluationDate());
+            subscriberProfile.setUniversalControlGroupChangeDate(now);
             context.getSubscriberState().setUCGState(ucgState, now, tenantID);
           }
       }

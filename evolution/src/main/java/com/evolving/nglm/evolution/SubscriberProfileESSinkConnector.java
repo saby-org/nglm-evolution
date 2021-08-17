@@ -177,6 +177,7 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
       log.info("before");
       documentMap.put("universalControlGroupChangeDate",RLMDateUtils.formatDateForElasticsearchDefault(subscriberProfile.getUniversalControlGroupChangeDate()));
       log.info("after");
+      log.info("after2");
       addToDocumentMap(documentMap, subscriberProfile, now);
       
       //
