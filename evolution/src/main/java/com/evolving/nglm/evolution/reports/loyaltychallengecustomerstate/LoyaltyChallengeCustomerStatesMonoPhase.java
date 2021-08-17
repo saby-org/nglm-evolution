@@ -34,9 +34,40 @@ public class LoyaltyChallengeCustomerStatesMonoPhase implements ReportCsvFactory
   private static final Logger log = LoggerFactory.getLogger(LoyaltyChallengeCustomerStatesMonoPhase.class);
   
   private static final String CSV_SEPARATOR = ReportUtils.getSeparator();
-  List<String> headerFieldsOrder = new ArrayList<String>();
-  private final static String customerID = "customerID";
   
+  private final static String customerID = "customerID";
+  private final static String dateTime = "dateTime";
+  private static final String programName = "programName";
+  private static final String programEnrolmentDate = "programEnrolmentDate";
+  private static final String programExitDate = "programExitDate";
+  private static final String levelName = "levelName";
+  private static final String currentScore = "currentScore";
+  private static final String levelUpdateDate = "levelUpdateDate";
+  private static final String previousLevelName = "previousLevelName";
+  private static final String challengeOccurrence = "challengeOccurrence";
+  private static final String previousOccurrenceLevel = "previousOccurrenceLevel";
+  private static final String previousOccurrenceScore = "previousOccurrenceScore";
+  
+  static List<String> headerFieldsOrder = new ArrayList<String>();
+  static
+  {
+    headerFieldsOrder.add(customerID);
+    for (AlternateID alternateID : Deployment.getAlternateIDs().values())
+    {
+      headerFieldsOrder.add(alternateID.getName());
+    }
+    headerFieldsOrder.add(dateTime);
+    headerFieldsOrder.add(programName);
+    headerFieldsOrder.add(programEnrolmentDate);
+    headerFieldsOrder.add(programExitDate);
+    headerFieldsOrder.add(levelName);
+    headerFieldsOrder.add(currentScore);
+    headerFieldsOrder.add(levelUpdateDate);
+    headerFieldsOrder.add(previousLevelName);
+    headerFieldsOrder.add(challengeOccurrence);
+    headerFieldsOrder.add(previousOccurrenceLevel);
+    headerFieldsOrder.add(previousOccurrenceScore);
+  }
   /****************************************************************
    * 
    * main
