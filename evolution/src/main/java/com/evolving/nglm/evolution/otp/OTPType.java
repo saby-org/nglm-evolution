@@ -290,12 +290,12 @@ public class OTPType extends GUIManagedObject
     *****************************************/
     
     // {
-    //    "maxWrongCheckAttemptsByInstance" : 1,
+    //    "maxWrongCheckAttemptsByInstance" : 3,
     //    "maxWrongCheckAttemptsByTimeWindow" : 10,
-    //    "maxConcurrentWithinTimeWindow" : 1,
-    //    "timeWindow" : 600,
-    //    "banPeriod" : 10800,
-    //    "instanceExpirationDelay" : 600,
+    //    "maxConcurrentWithinTimeWindow" : 5,
+    //    "timeWindowInSeconds" : 6000,
+    //    "banPeriodInSeconds" : 10800,
+    //    "instanceExpirationDelayInSeconds" : 600,
     //    "valueGenerationDigits" : 6,
     //    "valueGenerationRegex" : "[123456789][0123456789]{5}"
     //  }
@@ -304,9 +304,9 @@ public class OTPType extends GUIManagedObject
     this.maxWrongCheckAttemptsByInstance  = JSONUtilities.decodeInteger(jsonRoot, "maxWrongCheckAttemptsByInstance", false); 
     this.maxWrongCheckAttemptsByTimeWindow  = JSONUtilities.decodeInteger(jsonRoot, "maxWrongCheckAttemptsByTimeWindow", false); 
     this.maxConcurrentWithinTimeWindow  = JSONUtilities.decodeInteger(jsonRoot, "maxConcurrentWithinTimeWindow", false); 
-    this.timeWindow  = JSONUtilities.decodeInteger(jsonRoot, "timeWindow", false); 
-    this.banPeriod  = JSONUtilities.decodeInteger(jsonRoot, "banPeriod", false); 
-    this.instanceExpirationDelay  = JSONUtilities.decodeInteger(jsonRoot, "instanceExpirationDelay", true); 
+    this.timeWindow  = JSONUtilities.decodeInteger(jsonRoot, "timeWindowInSeconds", false); 
+    this.banPeriod  = JSONUtilities.decodeInteger(jsonRoot, "banPeriodInSeconds", false); 
+    this.instanceExpirationDelay  = JSONUtilities.decodeInteger(jsonRoot, "instanceExpirationDelayInSeconds", true); 
     this.valueGenerationDigits = JSONUtilities.decodeInteger(jsonRoot, "valueGenerationDigits", false);
     this.valueGenerationRegex = JSONUtilities.decodeString(jsonRoot, "valueGenerationRegex", false);
 
