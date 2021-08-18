@@ -463,14 +463,14 @@ public class ElasticsearchUpgrade
 
     /*****************************************
     *
-    * mapping_basemanagment template
+    * mapping_basemanagement template
     *
     *****************************************/
     // Changes: 
     // - from 1.5.0 (<1) to 1.5.2 (1): No change
     // - from 1.5.2 (1) to 2.0.0 (2):
     //   - createdDate                                     (date format change)
-    loadPatch("mapping_basemanagment"             , 1, 2, "mapping_basemanagement_tmp", (s) -> s,
+    loadPatch("mapping_basemanagement"            , 1, 2, "mapping_basemanagement_tmp", (s) -> s,
         "def dateString = ctx._source.remove(\\\"createdDate\\\");" 
       + "if (dateString == null) {"
       +   "dateString = \\\"2020-01-01T00:00:00.000Z\\\";"
