@@ -34,17 +34,32 @@ import com.rii.utilities.SystemTime;
 public class OTPUtils
 {
 
+
+	  /**************************************************************
+	   *
+	   * STATIC VARIABLES/ENUMS OF CLASS
+	   *
+	   **************************************************************/
+	
   private static Random random = new Random();
   private static final Logger log = LoggerFactory.getLogger(OTPUtils.class);
 
   private static OTPTypeService otpTypeService;
-
   static
-    {
-      otpTypeService = new OTPTypeService(System.getProperty("broker.servers"), "otpinstance-otptypeservice", Deployment.getOTPTypeTopic(), false);
-      otpTypeService.start();
-    }
+  {
+    otpTypeService = new OTPTypeService(System.getProperty("broker.servers"), "otpinstance-otptypeservice", Deployment.getOTPTypeTopic(), false);
+    otpTypeService.start();
+  }
 
+  private static List<OTPStatus> statusListValidToInvalidate = new ArrayList<OTPStatus>();
+  static
+  {
+	  statusListValidToInvalidate.add(OTPStatus.ChecksError);
+	  statusListValidToInvalidate.add(OTPStatus.ChecksSuccess);
+	  statusListValidToInvalidate.add(OTPStatus.New);
+  }
+
+  // local comparator used later to extract the active/latest instance
   private static class OTPCreationDateComparator implements Comparator<OTPInstance>
   {
     @Override
@@ -54,64 +69,17 @@ public class OTPUtils
     }
   }
 
-//    // tests only :
-//    private static OTPInstance retrieveDummyOTPInstance() {
-//        Date now = new Date();
-//        return new OTPInstance("Dummy", OTPStatus.New, "DUMMY", 0, 0, now, now, null, null, DateUtils.addYears(now, 1));
-//    }
-//
-//    private static List<OTPInstance> retrieveDummyOTPInstancesList() {
-//        ArrayList<OTPInstance> list = new ArrayList<OTPInstance>();
-//        list.add(retrieveDummyOTPInstance());
-//        list.add(retrieveDummyOTPInstance());
-//        return list;
-//    }
-//
-//    private static OTPType retrieveDummyOTPType() {
-//        JSONObject fieldTypeJSON = new JSONObject();
-//        fieldTypeJSON.put("id", "666");
-//        fieldTypeJSON.put("name", "typename0");
-//        fieldTypeJSON.put("displayName", "DUMMY");
-//        fieldTypeJSON.put("active", true);
-//        fieldTypeJSON.put("maxWrongCheckAttemptsByInstance", 1);
-//        fieldTypeJSON.put("maxWrongCheckAttemptsByTimeWindow", 10);
-//        fieldTypeJSON.put("maxConcurrentWithinTimeWindow", 1);
-//        fieldTypeJSON.put("timeWindow", 600);
-//        fieldTypeJSON.put("banPeriod", 10800);
-//        fieldTypeJSON.put("instanceExpirationDelay", 600);
-//        fieldTypeJSON.put("valueGenerationDigits", 6);
-//        fieldTypeJSON.put("valueGenerationRegex", "[123456789][0123456789]{5}");
-//        OTPType returnedOTPType = new OTPType(fieldTypeJSON, System.currentTimeMillis(), 1);
-//        return returnedOTPType;
-//    }
 
-  public static OTPInstanceChangeEvent burnAllOTPsFromProfile(OTPInstanceChangeEvent otpRequest, SubscriberProfile profile, OTPTypeService otpTypeService, int tenantID)
-  {
-    Date now = new Date();
 
-    // TODO make this list static
-    List<OTPInstance.OTPStatus> statusListValidToBurn = new ArrayList<OTPInstance.OTPStatus>();
-    statusListValidToBurn.add(OTPInstance.OTPStatus.ChecksError);
-    statusListValidToBurn.add(OTPInstance.OTPStatus.ChecksSuccess);
-    statusListValidToBurn.add(OTPInstance.OTPStatus.New);
+  /**************************************************************
+   *
+   * Evolution Engine message handling SECTION
+   *	basically ee calls handleOTPEvent with an OTPInstanceChangeEvent request and expects an OTPInstanceChangeEvent response and depending on the Action this reroutes to either
+   *	generateOTP : generates a new otp and invalidate any previous otp
+   *	checkOTP : tries to validate a code on the active otp
+   **************************************************************/
 
-    List<OTPInstance> candidates = profile.getOTPInstances().stream().filter(c -> statusListValidToBurn.contains(c.getOTPStatus())).collect(Collectors.toList());
-    List<OTPInstance> nonCandidates = profile.getOTPInstances().stream().filter(c -> !statusListValidToBurn.contains(c.getOTPStatus())).collect(Collectors.toList());
-
-    for (OTPInstance updateOtp : profile.getOTPInstances().stream().filter(c -> statusListValidToBurn.contains(c.getOTPStatus())).collect(Collectors.toList()))
-      {
-        updateOtp.setOTPStatus(OTPInstance.OTPStatus.Burnt);
-        updateOtp.setLatestUpdate(now);
-      }
-
-    List<OTPInstance> otpToStore = new ArrayList<OTPInstance>();
-    otpToStore.addAll(candidates);
-    otpToStore.addAll(nonCandidates);
-    profile.setOTPInstances(otpToStore);
-    otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
-    return otpRequest;
-  }
-
+  
   // called by EvolutionEngine when receiving an event from thirdparty message
   public static OTPInstanceChangeEvent handleOTPEvent(OTPInstanceChangeEvent otpRequest, SubscriberState subscriberState, OTPTypeService otpTypeService, SubscriberMessageTemplateService subscriberMessageTemplateService, SourceAddressService sourceAddressService, SubscriberEvaluationRequest subscriberEvaluationRequest, EvolutionEventContext evolutionEventContextint,int tenantID)
   {
@@ -123,29 +91,26 @@ public class OTPUtils
         return generateOTP(otpRequest, subscriberState, otpTypeService, subscriberMessageTemplateService, sourceAddressService, subscriberEvaluationRequest, evolutionEventContextint, tenantID);
       case Burn:
         // pending story but will come soon ...
-        return burnOTPsFromGivenType(otpRequest, subscriberState.getSubscriberProfile(), otpTypeService, tenantID);
+        return invalidateAllOTPsFromProfile(otpRequest, subscriberState.getSubscriberProfile(), otpTypeService, tenantID);
       default:
         otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
         return otpRequest;
       }
   }
 
-  public static OTPInstanceChangeEvent burnOTPsFromGivenType(OTPInstanceChangeEvent otpRequest, SubscriberProfile profile, OTPTypeService otpTypeService, int tenantID)
-  {
 
+  
+  // no known call yet but meant to force invalidate all otp when a security issue asked to invalidate them
+  public static OTPInstanceChangeEvent invalidateAllOTPsFromProfile(OTPInstanceChangeEvent otpRequest, SubscriberProfile profile, OTPTypeService otpTypeService, int tenantID)
+  {
     Date now = new Date();
 
-    List<OTPInstance.OTPStatus> statusListValidToBurn = new ArrayList<OTPInstance.OTPStatus>();
-    statusListValidToBurn.add(OTPInstance.OTPStatus.ChecksError);
-    statusListValidToBurn.add(OTPInstance.OTPStatus.ChecksSuccess);
-    statusListValidToBurn.add(OTPInstance.OTPStatus.New);
+    List<OTPInstance> candidates = profile.getOTPInstances().stream().filter(c -> statusListValidToInvalidate.contains(c.getOTPStatus())).collect(Collectors.toList());
+    List<OTPInstance> nonCandidates = profile.getOTPInstances().stream().filter(c -> !statusListValidToInvalidate.contains(c.getOTPStatus())).collect(Collectors.toList());
 
-    List<OTPInstance> candidates = profile.getOTPInstances().stream().filter(c -> c.getOTPTypeDisplayName().equals(otpRequest.getOTPTypeName()) & statusListValidToBurn.contains(c.getOTPStatus())).collect(Collectors.toList());
-    List<OTPInstance> nonCandidates = profile.getOTPInstances().stream().filter(c -> (!c.getOTPTypeDisplayName().equals(otpRequest.getOTPTypeName())) | (!statusListValidToBurn.contains(c.getOTPStatus()))).collect(Collectors.toList());
-
-    for (OTPInstance updateOtp : profile.getOTPInstances().stream().filter(c -> statusListValidToBurn.contains(c.getOTPStatus())).collect(Collectors.toList()))
+    for (OTPInstance updateOtp : candidates)
       {
-        updateOtp.setOTPStatus(OTPInstance.OTPStatus.Burnt);
+        updateOtp.setOTPStatus(OTPStatus.Expired);
         updateOtp.setLatestUpdate(now);
       }
 
@@ -157,10 +122,42 @@ public class OTPUtils
     return otpRequest;
   }
 
+  private static void markAsError(OTPInstance instanceToError, OTPStatus errorToUseForInstance, boolean allowEscalateInstanceStatus, 
+		  OTPInstanceChangeEvent requestToError, RESTAPIGenericReturnCodes errorToUseForRequest, boolean allowEscalateRequestStatus,
+		  OTPType otptype, List<OTPInstance> sameTypeInstancesList, Date updateDate
+		  ) {
+      // error on the check : update the counters
+	  instanceToError.setOTPStatus(errorToUseForInstance);
+	  instanceToError.setErrorCount(instanceToError.getErrorCount() + 1);
+	  instanceToError.setLatestError(updateDate);
+	  instanceToError.setLatestUpdate(updateDate);
+	  requestToError.setReturnStatus(errorToUseForRequest);
+
+	  // collecting counters and checking for higher error:
+      int remainingAttempts = otptype.getMaxWrongCheckAttemptsByInstance() - instanceToError.getErrorCount();
+      requestToError.setRemainingAttempts(remainingAttempts);
+      int globalerrorstimewindow = sameTypeInstancesList.stream().filter(c -> (c.getLatestError() != null && DateUtils.addSeconds(c.getLatestError(), otptype.getTimeWindow()).after(updateDate))).mapToInt(o -> o.getErrorCount()).sum();
+      requestToError.setGlobalErrorCounts(globalerrorstimewindow);
+      
+      // check maxed this instance
+      if ( allowEscalateInstanceStatus && remainingAttempts <= 0 ) instanceToError.setOTPStatus(OTPStatus.MaxNbReached);
+      if ( allowEscalateRequestStatus  && remainingAttempts <= 0 ) requestToError.setReturnStatus(RESTAPIGenericReturnCodes.MAX_NB_OF_ATTEMPT_REACHED);
+      
+      // check global counter for all candidates of the type
+      if ( allowEscalateInstanceStatus && globalerrorstimewindow >= otptype.getMaxWrongCheckAttemptsByTimeWindow() ) {
+    	  requestToError.setRemainingAttempts(0); // maybe more attemps left before but since we ban lets tell nore are left
+    	  instanceToError.setOTPStatus(OTPStatus.RaisedBan);
+      }
+      if ( allowEscalateRequestStatus  && globalerrorstimewindow >= otptype.getMaxWrongCheckAttemptsByTimeWindow() ) requestToError.setReturnStatus(RESTAPIGenericReturnCodes.MAX_NB_OF_ATTEMPT_REACHED);   
+  }
+  // 
   public static OTPInstanceChangeEvent checkOTP(OTPInstanceChangeEvent otpRequest, SubscriberProfile profile, OTPTypeService otpTypeService, int tenantID)
   {
-
-    if (profile == null)
+    try {
+	// make sure we'll have a return status since "future" filters on not "New"
+	otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
+		  
+	if (profile == null)
       {
         // probably already raised before it reaches this section but for safety reasons
         // lets reject
@@ -173,79 +170,69 @@ public class OTPUtils
     OTPType otptype = otpTypeService.getActiveOTPTypeByName(otpRequest.getOTPTypeName(), tenantID);
     if (otptype == null)
       {
-        otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.MISSING_PARAMETERS);
-        // maybe RELATIONSHIP_NOT_FOUND would have been better ...
+        otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.ELEMENT_NOT_FOUND);
+        // TODO decide of the correct error to return
         return otpRequest;
       }
 
-    // maybe extent check to many more empty-like values ...
+    // maybe extent checks to many more empty-like values ...
     if (otpRequest.getOTPCheckValue() == null)
       {
         otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.MISSING_PARAMETERS);
-        // maybe RELATIONSHIP_NOT_FOUND would have been better ...
         return otpRequest;
       }
 
     List<OTPInstance> candidates = profile.getOTPInstances().stream().filter(c -> c.getOTPTypeDisplayName().equals(otpRequest.getOTPTypeName())).collect(Collectors.toList());
 
-    OTPInstance tomatch;
-
     // GLOBAL CHECKS
-    // Check 01 : not during a ban issue
-    // testing only the latest should be enough
-    try
-      {
-        tomatch = Collections.max(candidates, new OTPCreationDateComparator());
+    // Check 01 at least one of the requested type
+    if ( candidates == null || candidates.isEmpty()) {
+        // candidates is empty : no generate called probably hence raising INVALID
+        log.debug("No max candidate for the given otptype. Maybe check without generate (or already cleaned).");
+        otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.INVALID_OTP);// or maybe MISSING_PARAMETERS);
+        return otpRequest;
+    }
+    
+    OTPInstance tomatch;
+    tomatch = Collections.max(candidates, new OTPCreationDateComparator());
 
-        if (tomatch.getOTPStatus().equals(OTPInstance.OTPStatus.RaisedBan) && DateUtils.addSeconds(tomatch.getLatestUpdate(), otptype.getBanPeriod()).after(now))
+    // Check 02 : not during a ban issue
+    // testing only the latest should be enough
+    if (tomatch.getOTPStatus().equals(OTPStatus.RaisedBan) && DateUtils.addSeconds(tomatch.getLatestUpdate(), otptype.getBanPeriod()).after(now))
           {
-            // maybe add some other return values ??
             otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.CUSTOMER_NOT_ALLOWED);
             return otpRequest;
           }
-      }
-    catch (NoSuchElementException e)
-      {
-        // Check 02 at least one of the requested type
-        // candidates is empty : none of the type hence raising INVALID
-        log.info("debug check no max candidate");
-        otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.INVALID_OTP);// or maybe MISSING_PARAMETERS);
-        return otpRequest;
-      }
 
-    // Check 03 : already global errors for this type without even checking
-    if (otptype.getMaxWrongCheckAttemptsByInstance() <= candidates.stream().filter(c -> DateUtils.addDays(c.getCreationDate(), otptype.getTimeWindow()).after(now)).mapToInt(o -> o.getErrorCount().intValue()).sum())
+    // Check 03 : check if expired
+    if (tomatch.getExpirationDate() == null || tomatch.getExpirationDate().before(now))
       {
-        otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.CUSTOMER_NOT_ALLOWED);// or maybe
-                                                                                   // MAX_NB_OF_ATTEMPT_REACHED);
-        return otpRequest;
-      }
-
-    // Check 04 : check if expired
-    if (tomatch.getExpirationDate().before(now))
-      {
+    	// not seen as an error just leave everything as it is and reply expired.
         otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.OTP_EXPIRED);
-        // maybe add updates of the status (or just wait for daily event update
-        // if (!tomatch.getOTPStatus().equals(OTPInstance.OTPStatus.Expired) &&
-        // !tomatch.getOTPStatus().equals(OTPInstance.OTPStatus.RaisedBan)){
-        // tomatch.setLatestUpdate(now);
-        // tomatch.setOTPStatus(OTPInstance.OTPStatus.Expired);}
         return otpRequest;
       }
-
-    // Check 05 : check if already burnt
-    if (tomatch.getOTPStatus().equals(OTPInstance.OTPStatus.Burnt))
+    
+    // Check 04 : already maxed out instance
+    if (tomatch.getOTPStatus().equals(OTPStatus.MaxNbReached))
+    {
+      // leaves as it, does not increment error count
+      otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.MAX_NB_OF_ATTEMPT_REACHED);
+      return otpRequest;
+    }
+    
+    // Check 05 : check if already burnt with success
+    if (tomatch.getOTPStatus().equals(OTPStatus.Burnt))
       {
-        otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.OTP_EXPIRED);// could be INVALID_OTP, incoming status OTP_BURNT;
-        // maybe add updates of the status (or just wait for daily event update
-        // TODO decide if this should count as an additional error or not, so far yes
-        tomatch.setErrorCount(tomatch.getErrorCount() + 1);
-        tomatch.setLatestError(now);
-        tomatch.setLatestUpdate(now);
+    	// keep burnt but count the error and possibly ban since this could be seen as invalid
+    	markAsError(tomatch, OTPStatus.Burnt, false, 
+    			otpRequest, RESTAPIGenericReturnCodes.OTP_BURNT, true, 
+    			otptype, candidates, now);
         return otpRequest;
       }
 
     // Check 06 : finally check the value
+    //
+    // for information but not explictery checked :
     // expected remaining status : New (no attempt yet), ChecksError (latest attempt
     // was a failure but still allowed to try), ChecksSuccess (latest attempt was a
     // success but still alowed to recheck)
@@ -253,78 +240,70 @@ public class OTPUtils
       {
         otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
         tomatch.setChecksCount(tomatch.getChecksCount() + 1);
-        // BURN OR mark AS SUCCESS depending on forceBurn (SUCCESS means it will allow more rechecks)
-        tomatch.setOTPStatus(OTPInstance.OTPStatus.ChecksSuccess);
-        if (otpRequest.getForceBurn() != null && otpRequest.getForceBurn()) tomatch.setOTPStatus(OTPInstance.OTPStatus.Burnt);
-
         tomatch.setLatestSuccess(now);
         tomatch.setLatestUpdate(now);
+        tomatch.setOTPStatus(OTPStatus.ChecksSuccess); // for now may allow re-checks
+        
+        // mark as Burnt if requested (will disable future checks)
+        if (otpRequest.getForceBurn() != null && otpRequest.getForceBurn()) tomatch.setOTPStatus(OTPStatus.Burnt);
       }
-    else
+    else 
       {
-        // error on the check : update the counters
-        tomatch.setOTPStatus(OTPInstance.OTPStatus.ChecksError); // for now simply an error
-        tomatch.setErrorCount(tomatch.getErrorCount() + 1);
-        tomatch.setLatestError(now);
-        tomatch.setLatestUpdate(now);
-        
-        otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.INVALID_OTP);
-        
-        // and check for higher ban while collecting counters:
-        // check maxed this instance
-        int remainingAttempts = otptype.getMaxWrongCheckAttemptsByInstance() - tomatch.getErrorCount();
-        otpRequest.setRemainingAttempts(remainingAttempts);
-        if (remainingAttempts <= 0)
-          {
-            tomatch.setOTPStatus(OTPInstance.OTPStatus.Burnt);
-            otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.MAX_NB_OF_ATTEMPT_REACHED);
-          }
-        // check global counter for all candidates of the type
-        int globalerrorstimewindow = candidates.stream().filter(c -> (c.getLatestError() != null && DateUtils.addSeconds(c.getLatestError(), otptype.getTimeWindow()).after(now))).mapToInt(o -> o.getErrorCount()).sum();
-        otpRequest.setGlobalErrorCounts(globalerrorstimewindow);
-        if (globalerrorstimewindow >= otptype.getMaxWrongCheckAttemptsByTimeWindow())
-          {
-            tomatch.setOTPStatus(OTPInstance.OTPStatus.RaisedBan);
-            otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.MAX_NB_OF_ATTEMPT_REACHED);
-          }        
+    	// Mismatch => mark as error with possible escalation
+    	markAsError(tomatch, OTPStatus.ChecksError, true,
+    			otpRequest, RESTAPIGenericReturnCodes.INVALID_OTP, true,
+    			otptype,candidates, now);
       }
+    }
+    catch (Exception e) {
+    	otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
+    }
     return otpRequest;
   }
 
   // OTP clearance for daily customer polling
+  // TODO : check this is included in a workflow that updates the profile afterwards
   public static void clearOldOTPs(SubscriberProfile profile, OTPTypeService otpTypeService, int tenantID)
   {
-
     Date now = new Date();
     List<OTPInstance> otps = profile.getOTPInstances();
     List<OTPInstance> newOtps = new ArrayList<OTPInstance>();
 
+    // if profile has nothing, then nothing to do
     if (otps.isEmpty()) return;
 
-    // not empty, lets check for element that are passed the timewindow or ban
-    // period
+    // not empty, lets check for elements that are older than the timewindow or banperiod
     for (OTPInstance oldOtp : otps)
       {
+    	try {
         OTPType otpType = otpTypeService.getActiveOTPTypeByName(oldOtp.getOTPTypeDisplayName(), tenantID);
         // otp with a no longer active type ... can be deleted/skipped
         if (otpType == null) continue;
-        // otp outside relevant time windows (and not banned since ban has its own
-        // window) ... can be deleted/skipped
-        if (DateUtils.addSeconds(oldOtp.getCreationDate(), otpType.getTimeWindow()).before(now) && oldOtp.getExpirationDate().before(now) && oldOtp.getOTPStatus() != OTPInstance.OTPStatus.RaisedBan) continue;
-        // otp banned but bannedperiod outlonged ... can be deleted
-        if (oldOtp.getOTPStatus() == OTPInstance.OTPStatus.RaisedBan && DateUtils.addSeconds(oldOtp.getLatestUpdate(), otpType.getBanPeriod()).before(now)) continue;
+        // clean/skip malformed with no creation date
+        if ( oldOtp.getCreationDate() == null ) continue;
+        
+        // otp outside relevant time windows can be deleted/skipped
+        // (and not banned since ban has its own window) 
+        if ( DateUtils.addSeconds(oldOtp.getCreationDate(), otpType.getTimeWindow()).before(now) && oldOtp.getExpirationDate().before(now) && oldOtp.getOTPStatus() != OTPStatus.RaisedBan) continue;
+
+        // otp banned but banperiod outlonged ... can be deleted
+        if (oldOtp.getOTPStatus() == OTPStatus.RaisedBan && DateUtils.addSeconds(oldOtp.getLatestUpdate(), otpType.getBanPeriod()).before(now)) continue;
+        
         // not in a "terminal" status but passed the expiration, keep for global counts
         // but set it to expired
-        if (oldOtp.getOTPStatus() != OTPInstance.OTPStatus.Expired && oldOtp.getOTPStatus() != OTPInstance.OTPStatus.Burnt && oldOtp.getOTPStatus() != OTPInstance.OTPStatus.RaisedBan && oldOtp.getExpirationDate().before(now))
+        if (oldOtp.getOTPStatus() != OTPStatus.Expired && oldOtp.getOTPStatus() != OTPStatus.Burnt && oldOtp.getOTPStatus() != OTPStatus.RaisedBan && oldOtp.getExpirationDate().before(now))
           {
             oldOtp.setLatestUpdate(now);
-            oldOtp.setOTPStatus(OTPInstance.OTPStatus.Expired);
-            // ok to go on with those changes
+            oldOtp.setOTPStatus(OTPStatus.Expired);
           }
+        
         // all other cases :
-        // no update just keep it
-
-        // passed the criterias to be kept and updates already done, let's store
+        // no update just keep it unmodified
+    	} catch (Exception e) {
+    		log.debug("Exception while trying to flag OTPInstance for cleaning. Keeping as is.");
+    	}
+    	
+        // passed the criterias to be kept and updates already done, let's store :
         newOtps.add(oldOtp);
       }
     profile.setOTPInstances(newOtps);
@@ -333,7 +312,7 @@ public class OTPUtils
   // OTP Creation
   public static OTPInstanceChangeEvent generateOTP(OTPInstanceChangeEvent otpRequest, SubscriberState subscriberState, OTPTypeService otpTypeService, SubscriberMessageTemplateService subscriberMessageTemplateService, SourceAddressService sourceAddressService, SubscriberEvaluationRequest subscriberEvaluationRequest, EvolutionEventContext evolutionEventContext, int tenantID)
   {
-
+try {
     if (subscriberState == null)
       {
         // probably already raised before it reaches this section but for safety reasons
@@ -343,7 +322,6 @@ public class OTPUtils
       }
     SubscriberProfile profile = subscriberState.getSubscriberProfile();
     Date now = SystemTime.getCurrentTime();
-    List<OTPInstance> initialOtpList = profile.getOTPInstances().stream().filter(c -> c.getOTPTypeDisplayName().equals(otpRequest.getOTPTypeName())).collect(Collectors.toList());
 
     // check and retrieve otpType
     OTPType otptype = otpTypeService.getActiveOTPTypeByName(otpRequest.getOTPTypeName(), tenantID);
@@ -354,90 +332,96 @@ public class OTPUtils
         return otpRequest;
       }
 
-    try
-      {
-        OTPInstance mostRecentOtp = Collections.max(initialOtpList, new OTPCreationDateComparator());
+    	// check for previous elements of the same type to invalidate them or forbid current action :
+		// testing only the latest should be enough
+        List<OTPInstance> initialOtpList = profile.getOTPInstances().stream().filter(c -> c.getOTPTypeDisplayName().equals(otpRequest.getOTPTypeName())).collect(Collectors.toList());
 
-        // Check 01 : not during a ban issue
-        // testing only the latest should be enough
-        if (mostRecentOtp.getOTPStatus().equals(OTPInstance.OTPStatus.RaisedBan) && DateUtils.addSeconds(mostRecentOtp.getLatestUpdate(), otptype.getBanPeriod()).after(now))
-          {
-            // maybe add some other return values ??
-            otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.CUSTOMER_NOT_ALLOWED);
-            return otpRequest;
-          }
+        if ( initialOtpList != null && !initialOtpList.isEmpty() ) {
+    		OTPInstance mostRecentOtp = Collections.max(initialOtpList, new OTPCreationDateComparator());
 
-      }
-    catch (NoSuchElementException e)
-      {
-        // ok no prior means can go on
-      }
+    		// Check 01 : not during a ban issue
+    		if (mostRecentOtp.getOTPStatus().equals(OTPStatus.RaisedBan) && DateUtils.addSeconds(mostRecentOtp.getLatestUpdate(), otptype.getBanPeriod()).after(now))
+    		{
+    			otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.CUSTOMER_NOT_ALLOWED);
+    			return otpRequest;
+    		}
 
-    // Check 02 : not have asked too many elements of the given type within the
-    // timewindow
-    if (otptype.getMaxConcurrentWithinTimeWindow() <= initialOtpList.stream().filter(c -> c.getOTPTypeDisplayName().equals(otptype.getOTPTypeName()) && DateUtils.addDays(c.getCreationDate(), otptype.getTimeWindow()).after(now)).count())
+
+    // Check 02 : not have asked too many elements of the given type within the timewindow
+    if (otptype.getMaxConcurrentWithinTimeWindow() <= initialOtpList.stream().filter(c -> c.getOTPTypeDisplayName().equals(otptype.getOTPTypeName()) && DateUtils.addSeconds(c.getCreationDate(), otptype.getTimeWindow()).after(now)).count())
       {
         otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.CUSTOMER_NOT_ALLOWED);
         return otpRequest;
       }
 
-    // OK to proceed
-    // BURN ALL PREVIOUS ELEMENTS
-    List<OTPStatus> statusToBurn = new ArrayList<OTPStatus>();
-    statusToBurn.add(OTPStatus.New);
-    statusToBurn.add(OTPStatus.ChecksError);
-    statusToBurn.add(OTPStatus.ChecksSuccess);
-
+    // Invalidate all PREVIOUS INSTANCES that may still be active
     for (OTPInstance previous : initialOtpList)
       {
-        if (statusToBurn.contains(previous.getOTPStatus()))
+        if (statusListValidToInvalidate.contains(previous.getOTPStatus()))
           {
-            previous.setOTPStatus(OTPStatus.Burnt);
+            previous.setOTPStatus(OTPStatus.Expired);
             previous.setLatestUpdate(now);
           }
       }
-
+    }
+    // OK to proceed
+         
     // generating an otp VALUE STring according to type content :
     String otpValue = null;
     if (otptype.getValueGenerationRegex() != null)
       {
         otpValue = generateFromRegex(otptype.getValueGenerationRegex());
       }
-    else if (otptype.getValueGenerationDigits() > 0)
+    else if (otptype.getValueGenerationDigits() != null && otptype.getValueGenerationDigits() > 0)
       {
         otpValue = generateNonZeroLeadingOTPValue(otptype.getValueGenerationDigits());
       }
     else
       {
-        // maybe system error is better to indicate the error is in the otpType settings
-        otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.MISSING_PARAMETERS);
+        log.debug("Impossible to generate a code for otp : no generation method filled in GUI OTPType object content.");
+        otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
         return otpRequest;
       }
     OTPInstance otpInstance = new OTPInstance(otptype.getDisplay(), OTPStatus.New, otpValue, 0, 0, now, now, null, null, DateUtils.addSeconds(now, otptype.getInstanceExpirationDelay()));
 
     // put the relevant content of this instance in the returning event
     List<OTPInstance> existingInstances = profile.getOTPInstances();
+    // ( force profile.setOTPInstances since it could have been null pointer and not an existing List )
     if (existingInstances == null) existingInstances = new ArrayList<OTPInstance>();
     existingInstances.add(otpInstance);
     profile.setOTPInstances(existingInstances);
 
-    // send the notification
+    // send the notification ( sms )
     Map<String, String> tags = new HashMap<>();
     tags.put("otpCode", otpInstance.getOTPValue());
-    
     List<Pair<DialogTemplate, String>> templates = EvolutionUtilities.getNotificationTemplateForAreaAvailability("oneTimePassword", subscriberMessageTemplateService, sourceAddressService, tenantID);
     for(Pair<DialogTemplate, String> template : templates)
       {
         EvolutionUtilities.sendMessage(evolutionEventContext, tags, template.getFirstElement().getDialogTemplateID(), ContactType.ActionNotification, template.getSecondElement(), subscriberEvaluationRequest, subscriberState, otpRequest.getFeatureID(), otpRequest.getModuleID());
       }
     
-    otpRequest.setOTPCheckValue(otpValue); // at least for debug now, but should not be returned to the customer...
+    // prepare response
     otpRequest.setRemainingAttempts(otptype.getMaxWrongCheckAttemptsByInstance());
     otpRequest.setValidityDuration(otptype.getInstanceExpirationDelay());
     otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
 
-    return otpRequest;
+    otpRequest.setOTPCheckValue(otpValue); // at least for debug now, but should not be returned to the customer...    
+
+} catch (Exception e ){
+	log.debug("Exception During : "+e.getMessage());
+	otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
+}
+
+	return otpRequest;
   }
+
+  /**************************************************************
+   *
+   * TOOLS for instance's otp codes generation
+   * (See if this can be mutualized with TokenUtils class ... )
+   *
+   **************************************************************/
+
 
   // sample code generators
   private static String generateNonZeroLeadingOTPValue(int length)

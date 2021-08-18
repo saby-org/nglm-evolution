@@ -53,12 +53,13 @@ public class OTPInstance // implements Action
 
 	  public enum OTPStatus
 	  {
-	    New("new"),
-	    Expired("expired"),
-	    ChecksSuccess("checked"),
-	    ChecksError("error"),
-	    Burnt("burnt"),
-	    RaisedBan("raisedban"),
+	    New("new"), // latest call was a success but OTP is still valid
+	    Expired("expired"), // latest call was a success but OTP is still valid
+	    ChecksSuccess("checked"), // latest call was a success but OTP is still valid
+	    ChecksError("error"), // latest call was an error/failure but OTP is still valid
+	    Burnt("burnt"), // there were a successful check with burn=true that deactivated the instance
+	    MaxNbReached("maxnbreached"), // too many check errors on this one (not banned yet)
+	    RaisedBan("raisedban"), // ban was raised due to too many errors.
 	    Unknown("(unknown)");
 	    private String externalRepresentation;
 	    private OTPStatus(String externalRepresentation) { this.externalRepresentation = externalRepresentation;}
@@ -203,6 +204,8 @@ public class OTPInstance // implements Action
 	this.creationDate  =  JSONUtilities.decodeDate(jsonRoot,"creationDate", true);
 	this.latestUpdate  =  JSONUtilities.decodeDate(jsonRoot,"latestUpdate", false);
 	this.latestSuccess  =  JSONUtilities.decodeDate(jsonRoot,"latestSuccess", false);
+	this.latestError = JSONUtilities.decodeDate(jsonRoot,"latestError", false);
+	this.expirationDate = JSONUtilities.decodeDate(jsonRoot,"expirationDate", true);
   }
  
   
@@ -295,57 +298,7 @@ public class OTPInstance // implements Action
 		        + "expirationDate=" + expirationDate + "]";
 
   }
-  
-//  public static void main(String[] args)
-//  {
-//    Date date = new Date();
-//    
-//    Map<Integer, ComplexObjectTypeSubfield> fieldTypes = new HashMap<>();
-//    JSONObject fieldTypeJSON = new JSONObject();
-//    fieldTypeJSON.put("fieldName", "NBPatatoes");
-//    fieldTypeJSON.put("fieldDataType", "integer");
-//    ComplexObjectTypeSubfield fieldTypeInteger = new ComplexObjectTypeSubfield(fieldTypeJSON);
-//    fieldTypes.put(fieldTypeInteger.getPrivateID(), fieldTypeInteger);
-//    System.out.println("integer private field " + fieldTypeInteger.getPrivateID());
-//    
-//    fieldTypeJSON = new JSONObject();
-//    fieldTypeJSON.put("fieldName", "eyeColor");
-//    fieldTypeJSON.put("fieldDataType", "string");
-//    ComplexObjectTypeSubfield fieldTypeString = new ComplexObjectTypeSubfield(fieldTypeJSON);
-//    fieldTypes.put(fieldTypeString.getPrivateID(), fieldTypeString);
-//    System.out.println("string private field " + fieldTypeString.getPrivateID());
-//    
-//    fieldTypeJSON = new JSONObject();
-//    fieldTypeJSON.put("fieldName", "dateOfBirth");
-//    fieldTypeJSON.put("fieldDataType", "date");
-//    ComplexObjectTypeSubfield fieldTypeDate = new ComplexObjectTypeSubfield(fieldTypeJSON);
-//    fieldTypes.put(fieldTypeDate.getPrivateID(), fieldTypeDate);
-//    System.out.println("date private field " + fieldTypeDate.getPrivateID());
-//    
-//    Map<String, DataModelFieldValue> values = new HashMap<>();
-//    OTPInstance instance = new OTPInstance("AComplexObjectName", "element1");    
-//
-//    DataModelFieldValue value = new DataModelFieldValue(fieldTypeInteger.getSubfieldName(), fieldTypeInteger.getPrivateID(), new Long(1556788992556635323L));
-//    values.put(fieldTypeInteger.getSubfieldName(), value);
-//                                                                                                                   
-//    value = new DataModelFieldValue(fieldTypeString.getSubfieldName(), fieldTypeString.getPrivateID(), "brown");
-//    values.put(fieldTypeString.getSubfieldName(), value);
-//
-//    value = new DataModelFieldValue(fieldTypeString.getSubfieldName(), fieldTypeDate.getPrivateID(), date);
-//    values.put(fieldTypeDate.getSubfieldName(), value);
-//
-//    instance.setFieldValues(values);
-//    byte[] ser = instance.serialize(fieldTypes);
-//    
-//    HashMap<String, DataModelFieldValue> unserValues = deserialize(ser, fieldTypes, "AComplexObjectName");
-//    
-//    System.out.println("Integer " + (unserValues.get(fieldTypeInteger.getPrivateID()).equals(values.get(fieldTypeInteger.getPrivateID()))));
-//    
-//    
-//    System.out.println(unserValues);
-//  }
-  
-  
+    
   // Constructor used for for copy
   private OTPInstance(OTPInstance inst)
   {

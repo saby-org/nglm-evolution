@@ -9323,8 +9323,7 @@ public class EvolutionEngine
         EvolutionEngineEventDeclaration declaration = Deployment.getEvolutionEngineEvents().get(engineEvent.getEventName());
         if (declaration != null && declaration.getEdrCriterionFieldsMapping() != null && !declaration.getEdrCriterionFieldsMapping().isEmpty())
           {
-            result = true;
-          }
+            result = true;          }
       }
     return result;
   }
