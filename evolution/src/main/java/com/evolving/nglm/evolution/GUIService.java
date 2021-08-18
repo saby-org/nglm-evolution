@@ -1246,7 +1246,20 @@ public class GUIService {
 
   protected JSONObject getSummaryJSONRepresentation(GUIManagedObject guiManagedObject) {
     JSONObject result = new JSONObject();
-    result.put("communicationChannelID", guiManagedObject.getJSONRepresentation().get("communicationChannelID"));
+    result.put("id", guiManagedObject.getJSONRepresentation().get("id"));
+    result.put("name", guiManagedObject.getJSONRepresentation().get("name"));
+    result.put("description", guiManagedObject.getJSONRepresentation().get("description"));
+    result.put("display", guiManagedObject.getJSONRepresentation().get("display"));
+    result.put("icon", guiManagedObject.getJSONRepresentation().get("icon"));
+    result.put("effectiveStartDate", guiManagedObject.getJSONRepresentation().get("effectiveStartDate"));
+    result.put("effectiveEndDate", guiManagedObject.getJSONRepresentation().get("effectiveEndDate"));
+    result.put("userID", guiManagedObject.getJSONRepresentation().get("userID"));
+    result.put("userName", guiManagedObject.getJSONRepresentation().get("userName"));
+    result.put("groupID", guiManagedObject.getJSONRepresentation().get("groupID"));
+    result.put("createdDate", guiManagedObject.getJSONRepresentation().get("createdDate"));
+    result.put("updatedDate", guiManagedObject.getJSONRepresentation().get("updatedDate"));
+    result.put("info", guiManagedObject.getJSONRepresentation().get("info"));
+    result.put("deleted", guiManagedObject.getJSONRepresentation().get("deleted") != null ? guiManagedObject.getJSONRepresentation().get("deleted") : false);
     return result;
   }
 

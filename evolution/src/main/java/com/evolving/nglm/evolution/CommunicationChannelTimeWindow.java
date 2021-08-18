@@ -554,6 +554,7 @@ public class CommunicationChannelTimeWindow extends GUIManagedObject
       for (GUIManagedObject timeWindows : communicationChannelTimeWindowObjects)
         {
           JSONObject timeWindow = communicationChannelTimeWindowService.generateResponseJSON(timeWindows, fullDetails, now);
+          timeWindow.put("communicationChannelID", timeWindows.getJSONRepresentation().get("communicationChannelID"));
           communicationChannelTimeWindowList.add(timeWindow);
         }
 
