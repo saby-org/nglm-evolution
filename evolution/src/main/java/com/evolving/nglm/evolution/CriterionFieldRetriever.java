@@ -16,7 +16,9 @@ import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
 import com.evolving.nglm.evolution.LoyaltyProgramMission.MissionStep;
 import com.evolving.nglm.evolution.LoyaltyProgramMissionHistory.StepHistory;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
+import com.evolving.nglm.evolution.complexobjects.ComplexObjectException;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectInstance;
+import com.evolving.nglm.evolution.complexobjects.ComplexObjectUtils;
 import com.evolving.nglm.evolution.datamodel.DataModelFieldValue;
 
 import java.util.ArrayList;
@@ -1240,6 +1242,7 @@ public abstract class CriterionFieldRetriever
      return status;
   }
   
+  @Deprecated //should use getComplexObjectXXXX
   public static Object getComplexObjectFieldValue(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException
   {
     // parse the field name to retrieve the good value...
@@ -1265,6 +1268,167 @@ public abstract class CriterionFieldRetriever
     DataModelFieldValue elementValue = values.get(subfieldName);
     if(elementValue == null) { return null; }
     return elementValue.getValue();   
+  }
+  
+  public static Object getComplexObjectLong(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) throws CriterionException
+  {
+    Long result = null;
+    
+    //
+    //  fieldName = complex.ExampleObjName.subfieldprivateID.subfieldName
+    //
+    
+    String[] split = fieldName.split("\\.");
+    boolean invalidFieldName = split.length != 4 || !split[0].equals("complex");
+    if (invalidFieldName)
+      {
+        throw new CriterionException("field " + fieldName + " can't be handled");
+      }
+    else
+      {
+        String complexObjectTypeName = split[1];
+        String elementID = (String) subcriteriaVal.get(0);
+        String subfieldName = split[3];
+        SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+        try
+          {
+            result = ComplexObjectUtils.getComplexObjectLong(subscriberProfile, complexObjectTypeName, elementID, subfieldName);
+          } 
+        catch (ComplexObjectException e)
+          {
+            log.error("ComplexObjectException for {}", fieldName);
+          }
+      }
+    return result;   
+  }
+  
+  public static Object getComplexObjectString(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) throws CriterionException
+  {
+    String result = null;
+    
+    //
+    //  fieldName = complex.ExampleObjName.subfieldprivateID.subfieldName
+    //
+    
+    String[] split = fieldName.split("\\.");
+    boolean invalidFieldName = split.length != 4 || !split[0].equals("complex");
+    if (invalidFieldName)
+      {
+        throw new CriterionException("field " + fieldName + " can't be handled");
+      }
+    else
+      {
+        String complexObjectTypeName = split[1];
+        String elementID = (String) subcriteriaVal.get(0);
+        String subfieldName = split[3];
+        SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+        try
+          {
+            result = ComplexObjectUtils.getComplexObjectString(subscriberProfile, complexObjectTypeName, elementID, subfieldName);
+          } 
+        catch (ComplexObjectException e)
+          {
+            log.error("ComplexObjectException for {}", fieldName);
+          }
+      }
+    return result;   
+  }
+  
+  public static Object getComplexObjectBoolean(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) throws CriterionException
+  {
+    Boolean result = null;
+    
+    //
+    //  fieldName = complex.ExampleObjName.subfieldprivateID.subfieldName
+    //
+    
+    String[] split = fieldName.split("\\.");
+    boolean invalidFieldName = split.length != 4 || !split[0].equals("complex");
+    if (invalidFieldName)
+      {
+        throw new CriterionException("field " + fieldName + " can't be handled");
+      }
+    else
+      {
+        String complexObjectTypeName = split[1];
+        String elementID = (String) subcriteriaVal.get(0);
+        String subfieldName = split[3];
+        SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+        try
+          {
+            result = ComplexObjectUtils.getComplexObjectBoolean(subscriberProfile, complexObjectTypeName, elementID, subfieldName);
+          } 
+        catch (ComplexObjectException e)
+          {
+            log.error("ComplexObjectException for {}", fieldName);
+          }
+      }
+    return result;   
+  }
+  
+  public static Object getComplexObjectDate(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) throws CriterionException
+  {
+    Date result = null;
+    
+    //
+    //  fieldName = complex.ExampleObjName.subfieldprivateID.subfieldName
+    //
+    
+    String[] split = fieldName.split("\\.");
+    boolean invalidFieldName = split.length != 4 || !split[0].equals("complex");
+    if (invalidFieldName)
+      {
+        throw new CriterionException("field " + fieldName + " can't be handled");
+      }
+    else
+      {
+        String complexObjectTypeName = split[1];
+        String elementID = (String) subcriteriaVal.get(0);
+        String subfieldName = split[3];
+        SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+        try
+          {
+            result = ComplexObjectUtils.getComplexObjectDate(subscriberProfile, complexObjectTypeName, elementID, subfieldName);
+          } 
+        catch (ComplexObjectException e)
+          {
+            log.error("ComplexObjectException for {}", fieldName);
+          }
+      }
+    return result;   
+  }
+  
+  public static Object getComplexObjectStringSet(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) throws CriterionException
+  {
+    Set<String> result = new HashSet<String>();
+    
+    //
+    //  fieldName = complex.ExampleObjName.subfieldprivateID.subfieldName
+    //
+    
+    String[] split = fieldName.split("\\.");
+    boolean invalidFieldName = split.length != 4 || !split[0].equals("complex");
+    if (invalidFieldName)
+      {
+        throw new CriterionException("field " + fieldName + " can't be handled");
+      }
+    else
+      {
+        String complexObjectTypeName = split[1];
+        String elementID = (String) subcriteriaVal.get(0);
+        String subfieldName = split[3];
+        SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+        try
+          {
+            List<String> complexResult = ComplexObjectUtils.getComplexObjectStringSet(subscriberProfile, complexObjectTypeName, elementID, subfieldName);
+            if (complexResult != null) result.addAll(complexResult);
+          } 
+        catch (ComplexObjectException e)
+          {
+            log.error("ComplexObjectException for {}", fieldName);
+          }
+      }
+    return result;   
   }
 
   /*****************************************

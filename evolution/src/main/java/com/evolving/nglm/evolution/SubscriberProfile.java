@@ -44,8 +44,12 @@ import com.evolving.nglm.evolution.LoyaltyProgramMission.MissionStep;
 import com.evolving.nglm.evolution.LoyaltyProgramMissionHistory.StepHistory;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
+import com.evolving.nglm.evolution.complexobjects.ComplexObjectException;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectInstance;
+import com.evolving.nglm.evolution.complexobjects.ComplexObjectType;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectTypeService;
+import com.evolving.nglm.evolution.complexobjects.ComplexObjectTypeSubfield;
+import com.evolving.nglm.evolution.complexobjects.ComplexObjectUtils;
 import com.evolving.nglm.evolution.datamodel.DataModelFieldValue;
 import com.evolving.nglm.evolution.otp.OTPInstance;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
@@ -626,6 +630,71 @@ public abstract class SubscriberProfile
           }
       }
     return array;
+  }
+  
+  public JSONArray getComplexFieldsJSON(ComplexObjectTypeService complexObjectTypeService)
+  {
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> complexFields = new ArrayList<JSONObject>();
+    Collection<ComplexObjectType> complexObjectTypes = complexObjectTypeService.getActiveComplexObjectTypes(now, tenantID);
+    for (ComplexObjectType complexObjectType : complexObjectTypes)
+      {
+        Map<String, Object> elementJSONMAP = new HashMap<String, Object>();
+        List<String> elements = complexObjectType.getAvailableElements();
+        for (String element : elements)
+          {
+            Map<String, Object> subfieldJSONMap = new HashMap<String, Object>();
+            for (ComplexObjectTypeSubfield subfield : complexObjectType.getSubfields().values())
+              {
+                Object value = null;
+                try
+                  {
+                    switch (subfield.getCriterionDataType())
+                    {
+
+                      case StringCriterion:
+                        value = ComplexObjectUtils.getComplexObjectString(this, complexObjectType.getGUIManagedObjectName(), element, subfield.getSubfieldName());
+                        break;
+
+                      case DateCriterion:
+                        value = ComplexObjectUtils.getComplexObjectDate(this, complexObjectType.getGUIManagedObjectName(), element, subfield.getSubfieldName());
+                        break;
+
+                      case BooleanCriterion:
+                        value = ComplexObjectUtils.getComplexObjectBoolean(this, complexObjectType.getGUIManagedObjectName(), element, subfield.getSubfieldName());
+                        break;
+
+                      case IntegerCriterion:
+                        value = ComplexObjectUtils.getComplexObjectInteger(this, complexObjectType.getGUIManagedObjectName(), element, subfield.getSubfieldName());
+                        break;
+
+                      case StringSetCriterion:
+                        value = ComplexObjectUtils.getComplexObjectStringSet(this, complexObjectType.getGUIManagedObjectName(), element, subfield.getSubfieldName());
+                        break;
+
+                      default:
+                        log.error("invalid data type {} for sub field {}", subfield.getCriterionDataType(), subfield.getSubfieldName());
+                        break;
+                    }
+                  } 
+                catch (ComplexObjectException e)
+                  {
+                    log.error("ComplexObjectException {}", e.getMessage());
+                  }
+                if (value != null) subfieldJSONMap.put(subfield.getSubfieldName(), value);
+              }
+            if (!subfieldJSONMap.isEmpty()) elementJSONMAP.put(element, JSONUtilities.encodeObject(subfieldJSONMap));
+          }
+        
+        Map<String, Object> complexObjectTypeJSON = new HashMap<String, Object>();
+        complexObjectTypeJSON.put("complexObjectName", complexObjectType.getGUIManagedObjectName());
+        complexObjectTypeJSON.put("complexObjectID", complexObjectType.getGUIManagedObjectID());
+        complexObjectTypeJSON.put("complexObjectDisplay", complexObjectType.getGUIManagedObjectDisplay());
+        complexObjectTypeJSON.put("elements", JSONUtilities.encodeObject(elementJSONMAP));
+        if (!elementJSONMAP.isEmpty()) complexFields.add(JSONUtilities.encodeObject(complexObjectTypeJSON));
+      }
+    log.info("RAJ K complexFields JSON {}", complexFields.toString());
+    return JSONUtilities.encodeArray(complexFields);
   }
   
   /******************************************
