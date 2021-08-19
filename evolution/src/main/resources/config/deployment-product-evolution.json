@@ -24,6 +24,7 @@
   "kafkaRetentionDaysExpiredTokens"   : 31,
   "kafkaRetentionDaysExpiredVouchers" : 122,
   "kafkaRetentionDaysLoyaltyPrograms" : 31,
+  "kafkaRetentionDaysRemovedBadges"   : 31,
   "kafkaRetentionDaysTargets"         : 7,
   
   "firstDayOfTheWeek"                 : "Monday",
@@ -92,6 +93,7 @@
   "ESRetentionDaysBulkCampaigns"    : 15,
   "ESRetentionDaysExpiredVouchers"  : 31,
   "ESRetentionDaysVDR"              : 45,
+  "ESRetentionDaysBGDR"             : 45,
   "ESRetentionDaysEDR"              : 45,
   "ESRetentionWeeksDatacubeJourneys.comment": "WARNING: here it is in week",
   "ESRetentionWeeksDatacubeJourneys": 3,
@@ -103,6 +105,7 @@
     "detailedrecords_tokens":           2,
     "detailedrecords_offers":           2,
     "detailedrecords_vouchers":         2,
+    "detailedrecords_badges":         	2,
     "detailedrecords_messages":         2,
     "detailedrecords_events":           2,
     "journeystatistic":                 2,
@@ -232,6 +235,8 @@
   "communicationChannelBlackoutTopic"                    : "${topic.blackoutperiod}",
   "communicationChannelTimeWindowTopic"                  : "${topic.timewindowperiod}",
   "loyaltyProgramTopic"                                  : "${topic.loyaltyprogram}",
+  "badgeTopic"                                           : "${topic.badge}",
+  "badgeObjectiveTopic"                                  : "${topic.badgeobjective}",
   "exclusionInclusionTargetTopic"                        : "${topic.exclusioninclusiontarget}",
   "profileChangeEventTopic"                              : "${topic.profilechangeevent}",
   "profileSegmentChangeEventTopic"                       : "${topic.profilesegmentchangeevent}",
@@ -249,6 +254,8 @@
   "workflowEventTopic"                                   : "${topic.workflowEvent}",
   "subscriberProfileForceUpdateResponseTopic"            : "${topic.subscriberProfileForceUpdateResponse}",
   "notificationEventTopic"                               : "${topic.notificationEvent}",
+  "badgeChangeRequestTopic"                            	 : "${topic.badgechange.request}",
+  "badgeChangeResponseTopic"                           	 : "${topic.badgechange.response}",
 
   "supportedDataTypes" :
     [

@@ -1,0 +1,16 @@
+{
+   "display":"rk-bdg-obj",
+   "apiVersion":1,
+   "createdDate":null,
+   "id":null,
+   "name":"bdg20210803173736484",
+   "valid":true,
+   "accepted":false,
+   "active":true,
+   "catalogCharacteristics":[],
+   "readOnly":false,
+   "userName":"tavi",
+   "userID":"1158",
+   "groupID":"WKG-CUSTOMER-TENANT-DEFAULT",
+   "tenantID":1
+}

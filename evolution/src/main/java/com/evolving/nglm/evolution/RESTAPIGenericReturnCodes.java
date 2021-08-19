@@ -52,6 +52,14 @@ public enum RESTAPIGenericReturnCodes
   CUSTOMER_NOT_IN_PROJECT(301, "CUSTOMER_NOT_IN_PROJECT", "Customer not in project"),
   LOYALTY_CLASS_NOT_IN_PROJECT(302, "LOYALTY_CLASS_NOT_IN_PROJECT", "Loyalty class not found in project"),
   LOYALTY_TYPE_NOT_FOUND(303, "LOYALTY_TYPE_NOT_FOUND", "Loyalty type not found"),
+  
+  
+  BADGE_NOT_FOUND(304, "BADGE_NOT_FOUND", "Badge not found"),
+  BADGE_ALREADY_AWARDED(305, "BADGE_ALREADY_AWARDED", "Badge already awarded"),
+  BADGE_NOT_AVAILABLE(306, "BADGE_NOT_AVAILABLE", "Badge not available"),
+  BADGE_NOT_REMOVABLE(307, "BADGE_NOT_REMOVABLE", "Badge not removable"),
+  
+  
   OFFER_NOT_FOUND(400, "OFFER_NOT_FOUND", "Offer not found"),
   PRODUCT_NOT_FOUND(401, "PRODUCT_NOT_FOUND", "Offer content items not found"),
   INVALID_PRODUCT(402, "INVALID_PRODUCT", "Product not available"),
