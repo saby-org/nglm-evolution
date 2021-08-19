@@ -7,14 +7,27 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.evolving.nglm.core.Deployment;
+import com.evolving.nglm.core.FileSourceTask;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.SubscriberProfile;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectException.ComplexObjectUtilsReturnCodes;
 import com.evolving.nglm.evolution.datamodel.DataModelFieldValue;
 
+import jdk.internal.org.jline.utils.Log;
+
 public class ComplexObjectUtils
 {  
+  
+  //
+  //  logger
+  //
+
+  private static final Logger log = LoggerFactory.getLogger(ComplexObjectUtils.class);
+  
   private static ComplexObjectTypeService complexObjectTypeService;
   
   static
@@ -148,7 +161,15 @@ public class ComplexObjectUtils
   {
     Collection<ComplexObjectType> types = complexObjectTypeService.getActiveComplexObjectTypes(SystemTime.getCurrentTime(), profile.getTenantID());
     ComplexObjectType type = null;
-    for(ComplexObjectType current : types) { if(current.getComplexObjectTypeName().equals(complexTypeName)) { type = current; break; } }
+    for (ComplexObjectType current : types)
+      {
+        log.info("RAJ K checking between {} and {}", current.getComplexObjectTypeName(), complexTypeName);
+        if (current.getComplexObjectTypeName().equals(complexTypeName))
+          {
+            type = current;
+            break;
+          }
+      }
     if(type == null) { throw new ComplexObjectException(ComplexObjectUtilsReturnCodes.UNKNOWN_COMPLEX_TYPE, "Unknown " + complexTypeName); }
 
     // retrieve the subfield declaration
