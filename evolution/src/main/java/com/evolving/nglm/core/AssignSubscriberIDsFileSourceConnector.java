@@ -90,8 +90,7 @@ public class AssignSubscriberIDsFileSourceConnector extends FileSourceConnector
     *
     *****************************************/
 
-    @Override protected List<KeyValue> processRecord(String record) throws FileSourceTaskException
-    {
+    @Override protected List<KeyValue> processRecord(String record) throws FileSourceTaskException, InterruptedException {
       List<KeyValue> result = null;
       try
         {
@@ -182,7 +181,7 @@ public class AssignSubscriberIDsFileSourceConnector extends FileSourceConnector
             }
           else
             {
-              effectiveSubscriberID = resolveSubscriberID(alternateID, alternateSubscriberID);
+              effectiveSubscriberID = resolveSubscriberID(alternateID.getName(), alternateSubscriberID);
               autoProvision = false;
             }
           
@@ -219,45 +218,5 @@ public class AssignSubscriberIDsFileSourceConnector extends FileSourceConnector
       return result;
     }
 
-    /****************************************
-    *
-    *  resolveSubscriberID
-    *
-    ****************************************/
-
-    private String resolveSubscriberID(AlternateID alternateID, String alternateSubscriberID)
-    {
-      String subscriberID = null;
-      while (!getStopRequested())
-        {
-          try
-            {
-              subscriberID = subscriberIDService.getSubscriberID(alternateID.getID(), alternateSubscriberID);
-              break;
-            }
-          catch (SubscriberIDService.SubscriberIDServiceException e)
-            {
-              //
-              // sleep before retry
-              //
-
-              synchronized (this)
-                {
-                  if (! getStopRequested())
-                    {
-                      try
-                        {
-                          this.wait(10*1000L);
-                        }
-                      catch (InterruptedException e1)
-                        {
-                          // ignore
-                        }
-                    }
-                }
-            }
-        }
-      return subscriberID;
-    }
   }
 }

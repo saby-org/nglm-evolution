@@ -20,6 +20,9 @@ import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.errors.WakeupException;
 import org.json.simple.JSONArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -468,6 +471,23 @@ public class EvolutionUtilities
       }
     subscriberUpdated = true;
     return subscriberUpdated;
+  }
+
+  // checking consumer current position and partition end offset, return true if "no lag" for the current consumer assignment only (not the entire group subscription on topics)
+  public static boolean isEntireTopicPartitionAssignmentRead(KafkaConsumer<?,?> consumer){
+    Map<TopicPartition,Long> availableOffsets = consumer.endOffsets(consumer.assignment(),Duration.ofSeconds(Integer.MAX_VALUE));
+    for (TopicPartition partition : availableOffsets.keySet()) {
+      Long availableOffsetForPartition = availableOffsets.get(partition);
+      try{
+        Long consumedOffsetForPartition = consumer.position(partition,Duration.ofSeconds(Integer.MAX_VALUE)) - 1L;
+        if (consumedOffsetForPartition < availableOffsetForPartition-1) {
+          return false;
+        }
+      }catch (WakeupException ex){
+        return false;//wakeup() called on consumer while polling position from broker
+      }
+    }
+    return true;
   }
 
 }

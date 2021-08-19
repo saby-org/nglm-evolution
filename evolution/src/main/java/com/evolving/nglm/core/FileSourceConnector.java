@@ -6,10 +6,13 @@
 
 package com.evolving.nglm.core;
 
+import com.evolving.nglm.evolution.EvolutionUtilities;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.config.ConfigDef;
@@ -30,6 +33,7 @@ import java.nio.file.Files;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -46,6 +50,7 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import java.util.stream.Collectors;
 
 public abstract class FileSourceConnector extends SourceConnector
 {
@@ -83,6 +88,9 @@ public abstract class FileSourceConnector extends SourceConnector
   //
 
   private boolean stopRequested = false;
+
+  Thread pollDirectoryLoopThread = null;
+  KafkaConsumer<byte[],byte[]> initConsumer = null;
 
   //
   //  version
@@ -457,8 +465,7 @@ public abstract class FileSourceConnector extends SourceConnector
     *
     *****************************************/
 
-    Runnable pollDirectoryLoop = new Runnable() { @Override public void run() { runPollDirectoryLoop(); } };
-    Thread pollDirectoryLoopThread = new Thread(pollDirectoryLoop, "PollDirectoryLoop");
+    pollDirectoryLoopThread = new Thread(this::runPollDirectoryLoop, "PollDirectoryLoop-"+connectorName);
     pollDirectoryLoopThread.start();
     
     /*****************************************
@@ -552,7 +559,7 @@ public abstract class FileSourceConnector extends SourceConnector
     *
     ****************************************/
     
-    log.info("{} -- Connector.stop()", connectorName);
+    log.info("{} -- Connector.stop() called", connectorName);
     
     /*****************************************
     *
@@ -568,10 +575,30 @@ public abstract class FileSourceConnector extends SourceConnector
     *
     *****************************************/
 
+    if(initConsumer!=null){
+      log.info("{} -- Connector.stop() in init phase, wakeup consumer", connectorName);
+      // wake up consumer if needed, no synchro, might turned null
+      try{
+        initConsumer.wakeup();
+        log.info("{} -- Connector.stop() consumer wakeup done", connectorName);
+      }catch (NullPointerException e){ }
+	}
+
     synchronized (this)
       {
         this.notifyAll();
       }
+
+    // wait end of polling job
+    if(pollDirectoryLoopThread!=null){
+      try {
+        log.info("{} -- Connector.stop() waiting end thread {}", connectorName, pollDirectoryLoopThread.getName());
+        pollDirectoryLoopThread.join();
+      } catch (InterruptedException e) {}
+    }
+
+    log.info("{} -- Connector.stop() done", connectorName);
+
   }
 
   /****************************************
@@ -599,17 +626,14 @@ public abstract class FileSourceConnector extends SourceConnector
 
   private void runPollDirectoryLoop()
   {
-    /*****************************************
-    *
-    *  scheduledEvaluationProducer
-    *
-    *****************************************/
 
     Properties producerProperties = new Properties();
     producerProperties.put("bootstrap.servers", bootstrapServers);
     producerProperties.put("acks", "all");
     producerProperties.put("key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
     producerProperties.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
+    producerProperties.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG,120000);
+    producerProperties.put(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG,Integer.MAX_VALUE);
     KafkaProducer<byte[], byte[]> producer = new KafkaProducer<byte[], byte[]>(producerProperties);
 
     /*****************************************
@@ -628,7 +652,6 @@ public abstract class FileSourceConnector extends SourceConnector
     *****************************************/
 
     Set<File> previousFiles = new HashSet<File>();
-    KafkaConsumer<byte[], byte[]> consumer = null;
     try
       {
         //
@@ -651,6 +674,7 @@ public abstract class FileSourceConnector extends SourceConnector
           {
             initialFiles.add(file.getName());
           }
+        log.info("{} -- Connector.pollDirectory() start init, {} files found in folder {}", connectorName, initialFiles.size(), directory.getName());
 
         //
         //  populate previousFiles with any file that is both (1) already in the topic and (2) exists in the directory
@@ -663,31 +687,28 @@ public abstract class FileSourceConnector extends SourceConnector
         consumerProperties.put("enable.auto.commit", "false");
         consumerProperties.put("key.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
         consumerProperties.put("value.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
-        consumer = new KafkaConsumer<byte[], byte[]>(consumerProperties);
-        consumer.subscribe(Arrays.asList(internalTopic));
+        consumerProperties.put(ConsumerConfig.REQUEST_TIMEOUT_MS_CONFIG, Integer.MAX_VALUE);
+        consumerProperties.put(ConsumerConfig.DEFAULT_API_TIMEOUT_MS_CONFIG, Integer.MAX_VALUE);
+        initConsumer = new KafkaConsumer<>(consumerProperties);
+        Set<TopicPartition> toAssign = initConsumer.partitionsFor(internalTopic)
+													.stream()
+													.map(partitionInfo -> new TopicPartition(partitionInfo.topic(),partitionInfo.partition()))
+													.collect(Collectors.toSet());
+        initConsumer.assign(toAssign);
 
-        //
-        //  initialize consumedOffsets
-        //
-        
-        boolean consumedAllAvailable = false;
-        Map<TopicPartition,Long> consumedOffsets = new HashMap<TopicPartition,Long>();
-        for (TopicPartition topicPartition : consumer.assignment())
-          {
-            consumedOffsets.put(topicPartition, consumer.position(topicPartition) - 1L);
-          }
-        
         //
         //  populate based on Kafka
         //
-        
-        do
+
+        log.info("{} -- Connector.pollDirectory() init reading previous files from topic {}", connectorName, internalTopic);
+        int nbInTopic = 0;
+        while(!EvolutionUtilities.isEntireTopicPartitionAssignmentRead(initConsumer) && !stopRequested)
           {
             //
             // poll
             //
 
-            ConsumerRecords<byte[], byte[]> fileRecords = consumer.poll(5000);
+            ConsumerRecords<byte[], byte[]> fileRecords = initConsumer.poll(Duration.ofSeconds(5));
 
             //
             //  process
@@ -695,6 +716,7 @@ public abstract class FileSourceConnector extends SourceConnector
         
             for (ConsumerRecord<byte[], byte[]> fileRecord : fileRecords)
               {
+                nbInTopic++;
                 //
                 //  parse
                 //
@@ -704,42 +726,16 @@ public abstract class FileSourceConnector extends SourceConnector
                   {
                     previousFiles.add(new File(directory,filename.getValue()));
                   }
-            
-                //
-                //  update consumedOffsets based on polled records
-                //
-            
-                consumedOffsets.put(new TopicPartition(fileRecord.topic(), fileRecord.partition()), fileRecord.offset());
+
               }
 
-            //
-            //  consumed all available?
-            //
-
-            Set<TopicPartition> assignedPartitions = consumer.assignment();
-            Map<TopicPartition,Long> availableOffsets = consumer.endOffsets(assignedPartitions);
-            consumedAllAvailable = true;
-            for (TopicPartition partition : availableOffsets.keySet())
-              {
-                Long availableOffsetForPartition = availableOffsets.get(partition);
-                Long consumedOffsetForPartition = consumedOffsets.get(partition);
-                if (consumedOffsetForPartition == null)
-                  {
-                    consumedOffsetForPartition = consumer.position(partition) - 1L;
-                    consumedOffsets.put(partition, consumedOffsetForPartition);
-                  }
-                if (consumedOffsetForPartition < availableOffsetForPartition-1)
-                  {
-                    consumedAllAvailable = false;
-                    break;
-                  }
-              }
           }
-        while (! consumedAllAvailable);
+        log.info("{} -- Connector.pollDirectory() init over, {} files in topic, {} files in folder, {} files in folder already in topic", connectorName, nbInTopic, initialFiles.size(), previousFiles.size());
       }
     finally
       {
-        consumer.close();
+        initConsumer.close();
+        initConsumer=null;
       }
     
     /*****************************************
@@ -985,6 +981,11 @@ public abstract class FileSourceConnector extends SourceConnector
         for (File file : filesToProcess)
           {
             producer.send(new ProducerRecord<byte[], byte[]>(internalTopic, stringKeySerde.serializer().serialize(internalTopic, new StringKey(file.getName())), stringValueSerde.serializer().serialize(internalTopic, new StringValue(file.getName()))));
+          }
+        if(!filesToProcess.isEmpty())
+          {
+            producer.flush();
+            log.info("{} -- Connector.pollDirectory() {} files pushed for processing", connectorName, filesToProcess.size());
           }
 
         /*****************************************
