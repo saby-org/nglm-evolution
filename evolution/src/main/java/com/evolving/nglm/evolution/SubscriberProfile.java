@@ -1159,7 +1159,7 @@ public abstract class SubscriberProfile
     generalDetailsPresentation.put("inclusionTargets", JSONUtilities.encodeArray(new ArrayList<String>(getInclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now))));
     generalDetailsPresentation.put("universalControlGroup", getUniversalControlGroup(subscriberGroupEpochReader));
     generalDetailsPresentation.put("complexFields", JSONUtilities.encodeArray(complexObjectInstancesjson));
-    generalDetailsPresentation.put("universalControlGroupPrevious",getUniversalControlGroupPrevious().booleanValue());
+    generalDetailsPresentation.put("universalControlGroupPrevious",getUniversalControlGroupPrevious());
     generalDetailsPresentation.put("universalControlGroupChangeDate",getDateString(getUniversalControlGroupChangeDate()));
     // prepare basic kpiPresentation (if any)
     //
@@ -1220,7 +1220,7 @@ public abstract class SubscriberProfile
     generalDetailsPresentation.put("inclusionTargets", JSONUtilities.encodeArray(new ArrayList<String>(getInclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now))));
     generalDetailsPresentation.put("universalControlGroup", getUniversalControlGroup(subscriberGroupEpochReader));
     //to be decided if this info is send out for third party
-    generalDetailsPresentation.put("universalControlGroupPrevious",getUniversalControlGroupPrevious().booleanValue());
+    generalDetailsPresentation.put("universalControlGroupPrevious",getUniversalControlGroupPrevious());
     generalDetailsPresentation.put("universalControlGroupChangeDate",getDateString(getUniversalControlGroupChangeDate()));
   
     //
@@ -1451,7 +1451,7 @@ public abstract class SubscriberProfile
   public void setLanguageID(String languageID) { this.languageID = languageID; }
   public void setExtendedSubscriberProfile(ExtendedSubscriberProfile extendedSubscriberProfile) { this.extendedSubscriberProfile = extendedSubscriberProfile; }
   public void setTenantID(int tenantID) { this.tenantID = tenantID; }
-  public void setUniversalControlGroupPrevious(Boolean universalControlGroupPrevious) { this.universalControlGroupPrevious = Boolean.valueOf(universalControlGroupPrevious); }
+  public void setUniversalControlGroupPrevious(Boolean universalControlGroupPrevious) { this.universalControlGroupPrevious = universalControlGroupPrevious; }
   public void setUniversalControlGroupChangeDate(Date universalControlGroupChangeDate) { this.universalControlGroupChangeDate = universalControlGroupChangeDate; }
   
   //
