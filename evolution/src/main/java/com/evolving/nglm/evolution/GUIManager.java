@@ -1720,6 +1720,7 @@ public class GUIManager
     //
     //  complexObject
     //
+    
     for(Tenant tenant : Deployment.getTenants())
       {
         int tenantID = tenant.getTenantID();

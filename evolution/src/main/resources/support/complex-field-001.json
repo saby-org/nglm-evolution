@@ -1,6 +1,6 @@
 {
    "id":"001",
-   "name":"cmplex001",
+   "name":"calldestination",
    "display":"Call Destination",
    "active":true,
    "availableElements":[ "France", "India", "Romania", "UK" ],
