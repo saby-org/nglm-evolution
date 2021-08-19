@@ -406,7 +406,7 @@ public class DynamicCriterionFieldService extends GUIService
     List<JSONObject> subcriteriaJSONArray = new LinkedList<JSONObject>();
     Map<String, Object>subcriteriaMap = new HashMap<String, Object>();
     String subCriteriaID = "complex" + "." + complexObjectType.getGUIManagedObjectName() + "." + "element";
-    String subCriteriaDisplay = complexObjectType.getGUIManagedObjectDisplay() + " Element Name";
+    String subCriteriaDisplay = complexObjectType.getGUIManagedObjectDisplay() + " Element";
     List<JSONObject> subCriteriaAvailableValues = new ArrayList<JSONObject>();
     for (String s : complexObjectType.getAvailableElements())
       {
@@ -424,7 +424,7 @@ public class DynamicCriterionFieldService extends GUIService
     for(Map.Entry<Integer, ComplexObjectTypeSubfield> subfield : complexObjectType.getSubfields().entrySet())
       {
         String criteriaID = "complex" + "." + complexObjectType.getGUIManagedObjectName() + "." + subfield.getValue().getPrivateID() + "." + subfield.getValue().getSubfieldName();
-        String criteriaDisplay = "Complex " + complexObjectType.getGUIManagedObjectDisplay() + " " + subfield.getValue().getSubfieldName();
+        String criteriaDisplay = complexObjectType.getGUIManagedObjectDisplay() + " - " + subfield.getValue().getSubfieldName();
         String retriever = null;
         switch (subfield.getValue().getCriterionDataType())
         {
@@ -457,7 +457,7 @@ public class DynamicCriterionFieldService extends GUIService
         criterionFieldJSONMAP.put("id", criteriaID);
         criterionFieldJSONMAP.put("display", criteriaDisplay);
         criterionFieldJSONMAP.put("dataType", subfield.getValue().getCriterionDataType().getExternalRepresentation());
-        criterionFieldJSONMAP.put("tagMaxLength", 100);
+        //criterionFieldJSONMAP.put("tagMaxLength", 100); // RAJ K
         //criterionFieldJSONMAP.put("esField", esField); // RAJ K
         criterionFieldJSONMAP.put("retriever", retriever);
         criterionFieldJSONMAP.put("subcriteria", JSONUtilities.encodeArray(subcriteriaJSONArray));
