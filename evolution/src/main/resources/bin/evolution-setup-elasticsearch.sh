@@ -1062,6 +1062,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_ba
 	  "display" : 		{ "type" : "keyword" },
       "active" : 		{ "type" : "boolean" },
       "badgeType" : 	{ "type" : "keyword" },
+      "tenantID"  : 	{ "type" : "integer" },
       "createdDate" : 	{ "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
 	  "timestamp" : 	{ "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" }
     }

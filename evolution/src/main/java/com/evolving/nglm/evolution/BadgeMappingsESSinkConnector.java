@@ -36,7 +36,7 @@ public class BadgeMappingsESSinkConnector extends SimpleESSinkConnector
 
     @Override public String getDocumentID(GUIManagedObject item)
     {
-      return "_" + "badge-".concat(item.getGUIManagedObjectID()).hashCode();
+      return "_badge-" + item.getGUIManagedObjectID().hashCode();
     }
 
     @Override public Map<String, Object> getDocumentMap(GUIManagedObject item)
@@ -52,6 +52,7 @@ public class BadgeMappingsESSinkConnector extends SimpleESSinkConnector
           documentMap.put("badgeType", badge.getBadgeType().getExternalRepresentation());
           documentMap.put("createdDate", RLMDateUtils.formatDateForElasticsearchDefault(badge.getCreatedDate()));
           documentMap.put("timestamp", RLMDateUtils.formatDateForElasticsearchDefault(now));
+          documentMap.put("tenantID", badge.getTenantID());
         }
       return documentMap;
     }

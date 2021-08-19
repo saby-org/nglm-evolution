@@ -653,4 +653,3 @@ sleep 30
 curl -X POST -H "Content-Type: multipart/form-data" -F 'fileUploadMetaData={"sourceFilename": "target-with-variables.001.csv","fileType": "target","fileEncoding": "UTF-8","fileSize": 100,"numberOfLines": 1,"userID": "1", "applicationID":"201" }' -F 'file=@target-with-variables.001.csv' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putUploadedFileWithVariables; echo
 sleep 5
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/file-withvar-campaign.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putCampaign; echo
-
