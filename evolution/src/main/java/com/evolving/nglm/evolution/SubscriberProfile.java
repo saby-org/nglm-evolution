@@ -658,6 +658,7 @@ public abstract class SubscriberProfile
 
                       case DateCriterion:
                         value = ComplexObjectUtils.getComplexObjectDate(this, complexObjectType.getGUIManagedObjectName(), element, subfield.getSubfieldName());
+                        if (value != null) value = RLMDateUtils.formatDateForElasticsearchDefault((Date) value);
                         break;
 
                       case BooleanCriterion:
