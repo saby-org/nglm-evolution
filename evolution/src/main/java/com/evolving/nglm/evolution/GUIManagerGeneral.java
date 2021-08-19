@@ -1719,6 +1719,7 @@ public class GUIManagerGeneral extends GUIManager
 
   JSONObject processPutComplexObjectType(String userID, JSONObject jsonRoot, int tenantID)
   {
+    log.info("RAJ K processPutComplexObjectType jsonRoot {}, tenantID {}", jsonRoot, tenantID);
     
     //{ "id" : "45", "name" : "ComplexTypeA", "display" : "ComplexTypeA", "active" : true, "availableNames" : ["name1", "name2"], "fields" : { "field1" :  "string", "field2" : "integer"} , "apiVersion" : 1 }
 

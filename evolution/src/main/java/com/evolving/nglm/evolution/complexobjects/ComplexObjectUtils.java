@@ -160,6 +160,7 @@ public class ComplexObjectUtils
   private static Object getComplexObjectValue(SubscriberProfile profile, String complexTypeName, String elementID, String subfieldName) throws ComplexObjectException
   {
     Collection<ComplexObjectType> types = complexObjectTypeService.getActiveComplexObjectTypes(SystemTime.getCurrentTime(), profile.getTenantID());
+    types.forEach(typ -> log.info("RAJ K typ is {} for tenantID {}", typ.getComplexObjectTypeName(), profile.getTenantID()));
     ComplexObjectType type = null;
     for (ComplexObjectType current : types)
       {
