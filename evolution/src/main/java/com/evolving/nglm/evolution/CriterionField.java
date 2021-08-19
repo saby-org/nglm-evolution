@@ -472,11 +472,20 @@ public class CriterionField extends DeploymentManagedObject
     if (this.criterionFieldRetriever != null)
       {
         try
-          {
-            MethodType methodType = MethodType.methodType(Object.class, SubscriberEvaluationRequest.class, String.class);
-            MethodHandles.Lookup lookup = MethodHandles.lookup();
-            retriever = lookup.findStatic(Deployment.getCriterionFieldRetrieverClass(), criterionFieldRetriever, methodType);
-          }
+        {
+          if (hasSubcriterias())
+            {
+              MethodType methodType = MethodType.methodType(Object.class, SubscriberEvaluationRequest.class, String.class, List.class);
+              MethodHandles.Lookup lookup = MethodHandles.lookup();
+              this.retriever = lookup.findStatic(Deployment.getCriterionFieldRetrieverClass(), criterionFieldRetriever, methodType);
+            }
+          else
+            {
+              MethodType methodType = MethodType.methodType(Object.class, SubscriberEvaluationRequest.class, String.class);
+              MethodHandles.Lookup lookup = MethodHandles.lookup();
+              this.retriever = lookup.findStatic(Deployment.getCriterionFieldRetrieverClass(), criterionFieldRetriever, methodType);
+            }
+        }
         catch (NoSuchMethodException | IllegalAccessException e)
           {
             throw new SerializationException("invalid criterionField retriever", e);
