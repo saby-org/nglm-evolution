@@ -632,7 +632,7 @@ public abstract class SubscriberProfile
     return array;
   }
   
-  public JSONArray getComplexFieldsJSON(ComplexObjectTypeService complexObjectTypeService) throws ComplexObjectException
+  public JSONArray getComplexFieldsJSON(ComplexObjectTypeService complexObjectTypeService)
   {
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> complexFields = new ArrayList<JSONObject>();
@@ -647,32 +647,40 @@ public abstract class SubscriberProfile
             for (ComplexObjectTypeSubfield subfield : complexObjectType.getSubfields().values())
               {
                 Object value = null;
-                switch (subfield.getCriterionDataType())
-                {
-                  case StringCriterion:
-                    value = ComplexObjectUtils.getComplexObjectString(this, complexObjectType.getGUIManagedObjectName(), element, subfield.getSubfieldName());
-                    break;
-                    
-                  case DateCriterion:
-                    value = ComplexObjectUtils.getComplexObjectDate(this, complexObjectType.getGUIManagedObjectName(), element, subfield.getSubfieldName());
-                    break;
-                    
-                  case BooleanCriterion:
-                    value = ComplexObjectUtils.getComplexObjectBoolean(this, complexObjectType.getGUIManagedObjectName(), element, subfield.getSubfieldName());
-                    break;
-                    
-                  case IntegerCriterion:
-                    value = ComplexObjectUtils.getComplexObjectInteger(this, complexObjectType.getGUIManagedObjectName(), element, subfield.getSubfieldName());
-                    break;
-                    
-                  case StringSetCriterion:
-                    value = ComplexObjectUtils.getComplexObjectStringSet(this, complexObjectType.getGUIManagedObjectName(), element, subfield.getSubfieldName());
-                    break;
+                try
+                  {
+                    switch (subfield.getCriterionDataType())
+                    {
 
-                  default:
-                    log.error("invalid data type {} for sub field {}", subfield.getCriterionDataType(), subfield.getSubfieldName());
-                    break;
-                }
+                      case StringCriterion:
+                        value = ComplexObjectUtils.getComplexObjectString(this, complexObjectType.getGUIManagedObjectName(), element, subfield.getSubfieldName());
+                        break;
+
+                      case DateCriterion:
+                        value = ComplexObjectUtils.getComplexObjectDate(this, complexObjectType.getGUIManagedObjectName(), element, subfield.getSubfieldName());
+                        break;
+
+                      case BooleanCriterion:
+                        value = ComplexObjectUtils.getComplexObjectBoolean(this, complexObjectType.getGUIManagedObjectName(), element, subfield.getSubfieldName());
+                        break;
+
+                      case IntegerCriterion:
+                        value = ComplexObjectUtils.getComplexObjectInteger(this, complexObjectType.getGUIManagedObjectName(), element, subfield.getSubfieldName());
+                        break;
+
+                      case StringSetCriterion:
+                        value = ComplexObjectUtils.getComplexObjectStringSet(this, complexObjectType.getGUIManagedObjectName(), element, subfield.getSubfieldName());
+                        break;
+
+                      default:
+                        log.error("invalid data type {} for sub field {}", subfield.getCriterionDataType(), subfield.getSubfieldName());
+                        break;
+                    }
+                  } 
+                catch (ComplexObjectException e)
+                  {
+                    log.error("ComplexObjectException {}", e.getMessage());
+                  }
                 if (value != null) subfieldJSONMap.put(subfield.getSubfieldName(), value);
               }
             if (!subfieldJSONMap.isEmpty()) elementJSONMAP.put(element, JSONUtilities.encodeObject(subfieldJSONMap));
