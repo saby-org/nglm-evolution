@@ -1052,6 +1052,23 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_pa
 }'
 echo
 
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_badges -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
+{
+  "index_patterns": ["mapping_badges*"],
+  "mappings" : {
+  "_meta": { "mapping_badges" : { "version": Deployment.getElasticsearchMappingBadgesTemplateVersion() } },
+    "properties" : {
+	  "id" : 			{ "type" : "keyword" },
+	  "display" : 		{ "type" : "keyword" },
+      "active" : 		{ "type" : "boolean" },
+      "badgeType" : 	{ "type" : "keyword" },
+      "createdDate" : 	{ "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
+	  "timestamp" : 	{ "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" }
+    }
+  }
+}'
+echo
+
 prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_basemanagement -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["mapping_basemanagement*"],

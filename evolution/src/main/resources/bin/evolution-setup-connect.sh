@@ -358,6 +358,28 @@ prepare-curl -XPOST $CONNECT_URL_PARTNER_ES/connectors -H "Content-Type: applica
       "batchSize" : "'$CONNECT_ES_PARTNER_BATCHSIZEMB'"
       }
   }'
+  
+#
+#  sink connector -- Badges (elasticsearch)
+#
+
+export CONNECT_URL_BADGE_ES=${CONNECT_URL_BADGE_ES:-$DEFAULT_CONNECT_URL}
+export CONNECT_ES_BADGE_SINK_TASKS=${CONNECT_ES_BADGE_SINK_TASKS:-$CONNECT_ES_DEFAULT_SINK_TASKS}
+export CONNECT_ES_BADGE_BATCHRECORDCOUNT=${CONNECT_ES_BADGE_BATCHRECORDCOUNT:-$CONNECT_ES_DEFAULT_BATCHRECORDCOUNT}
+export CONNECT_ES_BADGE_BATCHSIZEMB=${CONNECT_ES_BADGE_BATCHSIZEMB:-$CONNECT_ES_DEFAULT_BATCHSIZEMB}
+prepare-curl -XPOST $CONNECT_URL_BADGE_ES/connectors -H "Content-Type: application/json" -d '
+  {
+    "name" : "badge_mapping_es_sink_connector",
+    "config" :
+      {
+      "connector.class" : "com.evolving.nglm.evolution.BadgeMappingsESSinkConnector",
+      "tasks.max" : '$CONNECT_ES_BADGE_SINK_TASKS',
+      "topics" : "${topic.badge}",
+      "indexName" : "mapping_badges",
+      "batchRecordCount" : "'$CONNECT_ES_BADGE_BATCHRECORDCOUNT'",
+      "batchSize" : "'$CONNECT_ES_BADGE_BATCHSIZEMB'"
+      }
+  }'
 
 #
 #  sink connector -- VDR (elasticsearch)
