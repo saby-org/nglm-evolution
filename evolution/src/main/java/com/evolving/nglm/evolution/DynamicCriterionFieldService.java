@@ -417,6 +417,7 @@ public class DynamicCriterionFieldService extends GUIService
       }
     subcriteriaMap.put("id", subCriteriaID);
     subcriteriaMap.put("display", subCriteriaDisplay);
+    subcriteriaMap.put("mandatory", true);
     subcriteriaMap.put("dataType", "string");
     subcriteriaMap.put("availableValues", JSONUtilities.encodeArray(subCriteriaAvailableValues));
     subcriteriaJSONArray.add(JSONUtilities.encodeObject(subcriteriaMap));
@@ -478,7 +479,6 @@ public class DynamicCriterionFieldService extends GUIService
         //
         
         DynamicCriterionField criterionField = new DynamicCriterionField(complexObjectType, criterionFieldJSON, tenantID);
-        log.info("RAJ K put criteria {}", criterionField.getJSONRepresentation());
         
         //
         //  put

@@ -659,7 +659,6 @@ public abstract class SubscriberProfile
                       case DateCriterion:
                         value = ComplexObjectUtils.getComplexObjectDate(this, complexObjectType.getGUIManagedObjectName(), element, subfield.getSubfieldName());
                         if (value != null) value = RLMDateUtils.formatDateForElasticsearchDefault((Date) value);
-                        log.info("RAJ K DateCriterion value {}", value);
                         break;
 
                       case BooleanCriterion:
@@ -695,7 +694,6 @@ public abstract class SubscriberProfile
         complexObjectTypeJSON.put("elements", JSONUtilities.encodeObject(elementJSONMAP));
         if (!elementJSONMAP.isEmpty()) complexFields.add(JSONUtilities.encodeObject(complexObjectTypeJSON));
       }
-    log.info("RAJ K complexFields JSON {}", complexFields.toString());
     return JSONUtilities.encodeArray(complexFields);
   }
   
