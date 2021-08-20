@@ -1242,33 +1242,51 @@ public abstract class CriterionFieldRetriever
      return status;
   }
   
-  @Deprecated //should use getComplexObjectXXXX
+  // migration start EVPRO-1185
+  @Deprecated // should use getComplexObjectXXXX // must be removed when all the customer using adv criteria when using complex fields
   public static Object getComplexObjectFieldValue(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException
   {
     // parse the field name to retrieve the good value...
     // complexObject.<objectTypeID>.<elementID>.<subfieldName>;
     String[] split = fieldName.split("\\.");
-    if(split.length != 4 || !split[0].equals("complexObject")) {throw new CriterionException("field " + fieldName + " can't be handled"); }
+    if (split.length != 4 || !split[0].equals("complexObject"))
+      {
+        throw new CriterionException("field " + fieldName + " can't be handled");
+      }
     String objectTypeID = split[1];
     String elementID = split[2];
     String subfieldName = split[3];
     List<ComplexObjectInstance> complexObjectInstances = evaluationRequest.getSubscriberProfile().getComplexObjectInstances();
-    if(complexObjectInstances == null) { return null; }
+    if (complexObjectInstances == null)
+      {
+        return null;
+      }
     ComplexObjectInstance instance = null;
-    for(ComplexObjectInstance current : complexObjectInstances) 
-      { 
-        if(current.getComplexObjectTypeID().equals(objectTypeID) && current.getElementID().equals(elementID)) 
-          { 
-            instance = current; break; 
+    for (ComplexObjectInstance current : complexObjectInstances)
+      {
+        if (current.getComplexObjectTypeID().equals(objectTypeID) && current.getElementID().equals(elementID))
+          {
+            instance = current;
+            break;
           }
       }
-    if(instance == null) { return null; }
+    if (instance == null)
+      {
+        return null;
+      }
     Map<String, DataModelFieldValue> values = instance.getFieldValuesReadOnly();
-    if(values == null) { return null; }
+    if (values == null)
+      {
+        return null;
+      }
     DataModelFieldValue elementValue = values.get(subfieldName);
-    if(elementValue == null) { return null; }
-    return elementValue.getValue();   
+    if (elementValue == null)
+      {
+        return null;
+      }
+    return elementValue.getValue();
   }
+  // migration end EVPRO-1185
   
   public static Object getComplexObjectLong(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) throws CriterionException
   {
