@@ -458,8 +458,8 @@ public class DynamicCriterionFieldService extends GUIService
         criterionFieldJSONMAP.put("id", criteriaID);
         criterionFieldJSONMAP.put("display", criteriaDisplay);
         criterionFieldJSONMAP.put("dataType", subfield.getValue().getCriterionDataType().getExternalRepresentation());
-        //criterionFieldJSONMAP.put("tagMaxLength", 100); // RAJ K
-        //criterionFieldJSONMAP.put("esField", esField); // RAJ K
+        //criterionFieldJSONMAP.put("tagMaxLength", 100);
+        //criterionFieldJSONMAP.put("esField", esField);
         criterionFieldJSONMAP.put("retriever", retriever);
         criterionFieldJSONMAP.put("subcriteria", JSONUtilities.encodeArray(subcriteriaJSONArray));
         criterionFieldJSONMAP.put("tagFormat", null);
