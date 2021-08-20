@@ -2014,7 +2014,9 @@ public class GUIManagerGeneral extends GUIManager
         //
         if(!(complexObjectType instanceof IncompleteObject))
           {
-            //dynamicCriterionFieldService.removeComplexObjectTypeCriterionFields(complexObjectType); 
+            // migration start EVPRO-1185
+            dynamicCriterionFieldService.removeComplexObjectTypeCriterionFields(complexObjectType);
+            // migration end EVPRO-1185
             dynamicCriterionFieldService.removeComplexObjectTypeAdvanceCriterionFields(complexObjectType);
           }
 

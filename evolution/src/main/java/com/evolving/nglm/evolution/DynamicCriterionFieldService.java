@@ -500,10 +500,29 @@ public class DynamicCriterionFieldService extends GUIService
     for(Map.Entry<Integer, ComplexObjectTypeSubfield> subfield : complexObjectType.getSubfields().entrySet())
       {
         String criteriaID = "complex" + "." + complexObjectType.getGUIManagedObjectName() + "." + subfield.getValue().getPrivateID() + "." + subfield.getValue().getSubfieldName();
-        removeGUIManagedObject(criteriaID, SystemTime.getCurrentTime(), null, guiManagedObject.getTenantID());
+        if (criteriaID != null) removeGUIManagedObject(criteriaID, SystemTime.getCurrentTime(), null, guiManagedObject.getTenantID());
+        
       }
   }
   
+  // migration start EVPRO-1185
+  @Deprecated // must be removed when all the customer using adv criteria when using complex fields
+  public void removeComplexObjectTypeCriterionFields(GUIManagedObject guiManagedObject)
+  {
+    ComplexObjectType complexObjectType = (ComplexObjectType) guiManagedObject;
+    for (String currentName : complexObjectType.getAvailableElements())
+      {
+        for (Map.Entry<Integer, ComplexObjectTypeSubfield> current : complexObjectType.getSubfields().entrySet())
+          {
+            Integer subFieldID = current.getKey();
+            String id = "complexObject." + complexObjectType.getComplexObjectTypeID() + "." + currentName + "." + subFieldID;
+            GUIManagedObject guiManagedObjectCrt = getStoredDynamicCriterionField(id);
+            if (guiManagedObjectCrt != null)
+              removeGUIManagedObject(id, SystemTime.getCurrentTime(), null, guiManagedObject.getTenantID());
+          }
+      }
+  }
+  // migration end EVPRO-1185
   
   /*****************************************
   *
