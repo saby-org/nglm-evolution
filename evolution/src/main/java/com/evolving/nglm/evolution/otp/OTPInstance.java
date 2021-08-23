@@ -130,9 +130,6 @@ public class OTPInstance // implements Action
   private Date latestSuccess;
   private Date latestError;
   private Date expirationDate;
-   
-  //private String elementID;
-  //private Map<String, DataModelFieldValue> fieldValues; // key is the fieldName
 
   /*****************************************
   *
