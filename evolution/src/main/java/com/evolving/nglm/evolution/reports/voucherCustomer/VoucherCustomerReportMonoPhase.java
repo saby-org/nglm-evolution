@@ -156,7 +156,18 @@ public class VoucherCustomerReportMonoPhase implements ReportCsvFactory
                           }
                         if (voucher.containsKey("voucherDeliveryDate") && voucher.get("voucherDeliveryDate") != null)
                           {
-                            result.put(deliveryDate, dateOrEmptyString(voucher.get("voucherDeliveryDate")));
+                            Object voucherDeliveryDateObj = voucher.get("voucherDeliveryDate");
+                            if (voucherDeliveryDateObj instanceof String)
+                              {
+                                // TEMP fix for BLK : reformat date with correct template.
+                                result.put(deliveryDate, ReportsCommonCode.parseDate((String) voucherDeliveryDateObj));
+                                // END TEMP fix for BLK
+                              }
+                            else
+                              {
+                                log.info("voucherDeliveryDate" + " is of wrong type : " + voucherDeliveryDateObj.getClass().getName());
+                                result.put(deliveryDate, "");
+                              }
                           }
                         else
                           {
@@ -164,7 +175,18 @@ public class VoucherCustomerReportMonoPhase implements ReportCsvFactory
                           }
                         if (voucher.containsKey("voucherExpiryDate") && voucher.get("voucherExpiryDate") != null)
                           {
-                            result.put(expiryDate, dateOrEmptyString(voucher.get("voucherExpiryDate")));
+                            Object voucherExpiryDateObj = voucher.get("voucherExpiryDate");
+                            if (voucherExpiryDateObj instanceof String)
+                              {
+                                // TEMP fix for BLK : reformat date with correct template.
+                                result.put(expiryDate, ReportsCommonCode.parseDate((String) voucherExpiryDateObj));
+                                // END TEMP fix for BLK
+                              }
+                            else
+                              {
+                                log.info("voucherExpiryDate" + " is of wrong type : " + voucherExpiryDateObj.getClass().getName());
+                                result.put(expiryDate, "");
+                              }
                           }
                         else
                           {
