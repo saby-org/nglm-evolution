@@ -134,6 +134,8 @@ public class ThirdPartyManager
 {
   private static final String DEFAULT_FEATURE_ID = "<anonymous>";
   private static final String CUSTOMER_ID = "customerID";
+  private static final String CUSTOMER_ID_TYPE = "customerIDType";
+  private static final String CUSTOMER_ID_VALUE = "customerIDValue";
   private static final DeliveryRequest.DeliveryPriority DELIVERY_REQUEST_PRIORITY = DeliveryRequest.DeliveryPriority.High;
   
   private static KStreamsUniqueKeyServer uniqueKeyServer = new KStreamsUniqueKeyServer();
@@ -6363,26 +6365,57 @@ public class ThirdPartyManager
     String subscriberID = JSONUtilities.decodeString(jsonRoot, CUSTOMER_ID, false);
     String alternateSubscriberID = null;
     
-    // finds the first parameter in the input request that corresponds to an entry in alternateID[]
-    for (String id : Deployment.getAlternateIDs().keySet())
+    // support the possibility: customerIDType and customerIDValue...
+    String customerIDType = JSONUtilities.decodeString(jsonRoot, CUSTOMER_ID_TYPE, false);
+    String customerIDValue = JSONUtilities.decodeString(jsonRoot, CUSTOMER_ID_VALUE, false);
+    
+    if(customerIDType != null && customerIDValue != null) 
       {
-        String param = JSONUtilities.decodeString(jsonRoot, id, false);
-        if (param != null)
+        if(customerIDType.trim().equals(CUSTOMER_ID))
           {
-            try
+            // special case if the internal subscriber id is provided, no need to resolve
+            subscriberID = customerIDValue;
+          }
+        else {
+          try
             {
-              Pair<String, Integer> s = subscriberIDService.getSubscriberIDAndTenantID(id, param);
-              
+              Pair<String, Integer> s = subscriberIDService.getSubscriberIDAndTenantID(customerIDType, customerIDValue);
               if (s == null || s.getSecondElement().intValue() != tenantID)
                 {
                   throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND);
                 }
               alternateSubscriberID = s.getFirstElement();
-              break;
-            } catch (SubscriberIDServiceException e)
-            {
-              log.error("SubscriberIDServiceException can not resolve subscriberID for {} error is {}", id, e.getMessage());
             }
+          catch (SubscriberIDServiceException e)
+            {
+              log.error("SubscriberIDServiceException can not resolve subscriberID from type {} and value {} error is {}", customerIDType, customerIDValue, e.getMessage());
+            }
+        }
+      }
+  
+    if(alternateSubscriberID == null && subscriberID == null) 
+      {
+        // finds the first parameter in the input request that corresponds to an entry in alternateID[]
+        for (String id : Deployment.getAlternateIDs().keySet())
+          {
+            String param = JSONUtilities.decodeString(jsonRoot, id, false);
+            if (param != null)
+              {
+                try
+                {
+                  Pair<String, Integer> s = subscriberIDService.getSubscriberIDAndTenantID(id, param);
+                  
+                  if (s == null || s.getSecondElement().intValue() != tenantID)
+                    {
+                      throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND);
+                    }
+                  alternateSubscriberID = s.getFirstElement();
+                  break;
+                } catch (SubscriberIDServiceException e)
+                {
+                  log.error("SubscriberIDServiceException can not resolve subscriberID for {} error is {}", id, e.getMessage());
+                }
+              }
           }
       }
     
