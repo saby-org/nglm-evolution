@@ -139,14 +139,19 @@ public class OTPUtils
       int globalerrorstimewindow = sameTypeInstancesList.stream().filter(c -> (c.getLatestError() != null && DateUtils.addSeconds(c.getLatestError(), otptype.getTimeWindow()).after(updateDate))).mapToInt(o -> o.getErrorCount()).sum();
       requestToError.setGlobalErrorCounts(globalerrorstimewindow);
       
-      // check maxed this instance
-      if ( allowEscalateInstanceStatus && remainingAttempts <= 0 ) instanceToError.setOTPStatus(OTPStatus.MaxNbReached);
+      // check maxed this instance 
+      //
+      //
+      if ( allowEscalateInstanceStatus && remainingAttempts <= 0 ) {
+    	  requestToError.setRemainingAttempts(0); // should be 0 with standard workflow but let's have a clean return message 
+    	  instanceToError.setOTPStatus(OTPStatus.RaisedBan);
+      }
       if ( allowEscalateRequestStatus  && remainingAttempts <= 0 ) requestToError.setReturnStatus(RESTAPIGenericReturnCodes.MAX_NB_OF_ATTEMPT_REACHED);
       
       // check global counter for all candidates of the type
       if ( allowEscalateInstanceStatus && globalerrorstimewindow >= otptype.getMaxWrongCheckAttemptsByTimeWindow() ) {
     	  requestToError.setRemainingAttempts(0); // maybe more attemps left before but since we ban lets tell nore are left
-    	  instanceToError.setOTPStatus(OTPStatus.RaisedBan);
+	  instanceToError.setOTPStatus(OTPStatus.RaisedBan);
       }
       if ( allowEscalateRequestStatus  && globalerrorstimewindow >= otptype.getMaxWrongCheckAttemptsByTimeWindow() ) requestToError.setReturnStatus(RESTAPIGenericReturnCodes.MAX_NB_OF_ATTEMPT_REACHED);   
   }
@@ -170,8 +175,13 @@ public class OTPUtils
     OTPType otptype = otpTypeService.getActiveOTPTypeByName(otpRequest.getOTPTypeName(), tenantID);
     if (otptype == null)
       {
+<<<<<<< HEAD
+        otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.INVALID_OTP);
+        // TODO decide of the correct error to return, ELEMENT_NOT_FOUND was used for generation
+=======
         otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.ELEMENT_NOT_FOUND);
         // TODO decide of the correct error to return
+>>>>>>> fd29423d16f129e251131457f3a7d56bfc45654c
         return otpRequest;
       }
 
@@ -327,8 +337,7 @@ try {
     OTPType otptype = otpTypeService.getActiveOTPTypeByName(otpRequest.getOTPTypeName(), tenantID);
     if (otptype == null)
       {
-        otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.MISSING_PARAMETERS);
-        // maybe RELATIONSHIP_NOT_FOUND would have been better ...
+        otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.ELEMENT_NOT_FOUND);
         return otpRequest;
       }
 

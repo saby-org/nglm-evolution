@@ -107,6 +107,12 @@ public class OTPType extends GUIManagedObject
   private String valueGenerationRegex; // for more complex type
   
   
+  
+  // possible future developments :
+  // - add a flag so indicate if maxWrongCheckAttemptsByInstance raises a ban (currently yes) or just leave the instance maxed without additionnal error count (originally but dismissed)
+  // - add a second timer or a flag to extend/reset the calculated expirationDate of the instance after a successfull check
+  // ...
+  
   /****************************************
   *
   *  accessors

@@ -53,14 +53,14 @@ public class OTPInstance // implements Action
 
 	  public enum OTPStatus
 	  {
-	    New("new"), // latest call was a success but OTP is still valid
-	    Expired("expired"), // latest call was a success but OTP is still valid
-	    ChecksSuccess("checked"), // latest call was a success but OTP is still valid
-	    ChecksError("error"), // latest call was an error/failure but OTP is still valid
+	    New("new"), // just generated, no check ever
+	    Expired("expired"), // ovewriten by a newer instance generation or flagged expired by purge mechanism
+	    ChecksSuccess("checked"), // latest call was a success but OTP is still valid/still allows checks
+	    ChecksError("error"), // latest call was an error/failure but OTP is still valid/still allows checks
 	    Burnt("burnt"), // there were a successful check with burn=true that deactivated the instance
-	    MaxNbReached("maxnbreached"), // too many check errors on this one (not banned yet)
-	    RaisedBan("raisedban"), // ban was raised due to too many errors.
-	    Unknown("(unknown)");
+	    MaxNbReached("maxnbreached"), // too many check errors on this one.
+	    RaisedBan("raisedban"), // ban was raised due to too many errors global or too many generates.
+	    Unknown("(unknown)");  // you don't want this one
 	    private String externalRepresentation;
 	    private OTPStatus(String externalRepresentation) { this.externalRepresentation = externalRepresentation;}
 	    public String getExternalRepresentation() { return externalRepresentation; }
@@ -130,9 +130,6 @@ public class OTPInstance // implements Action
   private Date latestSuccess;
   private Date latestError;
   private Date expirationDate;
-   
-  //private String elementID;
-  //private Map<String, DataModelFieldValue> fieldValues; // key is the fieldName
 
   /*****************************************
   *
