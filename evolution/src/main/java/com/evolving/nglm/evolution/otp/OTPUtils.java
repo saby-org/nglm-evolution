@@ -175,13 +175,8 @@ public class OTPUtils
     OTPType otptype = otpTypeService.getActiveOTPTypeByName(otpRequest.getOTPTypeName(), tenantID);
     if (otptype == null)
       {
-<<<<<<< HEAD
-        otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.INVALID_OTP);
-        // TODO decide of the correct error to return, ELEMENT_NOT_FOUND was used for generation
-=======
         otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.ELEMENT_NOT_FOUND);
         // TODO decide of the correct error to return
->>>>>>> fd29423d16f129e251131457f3a7d56bfc45654c
         return otpRequest;
       }
 
