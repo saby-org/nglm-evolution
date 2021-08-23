@@ -283,14 +283,13 @@ public abstract class FileSourceTask extends SourceTask {
 					if (record.trim().length() == 0) continue;
 
 					//  parse
-					List<KeyValue> recordResults;
+					List<KeyValue> recordResults=null;
 					try {
 						recordResults = processRecord(record.trim());// custom implementation call
 					} catch (InterruptedException e) {
 						throw e;//not an error
 					}
-					catch (Exception e)// we usually avoid crash on custom code calls
-					{
+					catch (Exception e) { // we usually avoid crash on custom code calls
 						updateErrorRecords(connectorName, taskNumber, 1);
 						// if FileSourceTaskException, that is something expected by custom code, so otherwise is probably bad error
 						if (!(e instanceof FileSourceTaskException))
@@ -298,10 +297,10 @@ public abstract class FileSourceTask extends SourceTask {
 						if (errorTopic != null) {
 							ErrorRecord errorRecord = new ErrorRecord(record.trim(), SystemTime.getCurrentTime(), currentFile.getName(), e.getMessage());
 							recordResults = Collections.singletonList(new KeyValue("error", null, null, ErrorRecord.schema(), ErrorRecord.pack(errorRecord)));
-						} else {
-							continue;
 						}
 					}
+
+					if(recordResults==null) continue;
 
 					// create a KeyValue event for the parent if needed
 					ArrayList<KeyValue> eventToAdd = null;
@@ -368,7 +367,7 @@ public abstract class FileSourceTask extends SourceTask {
 						updateRecordStatistics(connectorName, taskNumber, recordTopic, recordNumber);
 					}
 
-					if(result.size()+inFlightRecords.size() >= pollMaxRecords) break;//enough records, return them
+					if(result!=null && result.size()+inFlightRecords.size() >= pollMaxRecords) break;//enough records, return them
 					continue; // otherwise continue
 
 				}
@@ -376,7 +375,10 @@ public abstract class FileSourceTask extends SourceTask {
 				// read next file
 
 				// poll queue if empty
-				if(filesToProcess.isEmpty()) pollJobs();
+				if(filesToProcess.isEmpty()){
+					if(result!=null && !result.isEmpty()) break;//return current records before polling for new files
+					pollJobs();
+				}
 
 				SourceFile fileToProcess ;
 				fileToProcess = (filesToProcess.size() > 0) ? filesToProcess.remove(0) : null;
