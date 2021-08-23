@@ -639,7 +639,6 @@ public abstract class SubscriberProfile
     Collection<ComplexObjectType> complexObjectTypes = complexObjectTypeService.getActiveComplexObjectTypes(now, tenantID);
     for (ComplexObjectType complexObjectType : complexObjectTypes)
       {
-        log.info("RAJ K getComplexFieldsJSON complexObjectType {}, ID {}", complexObjectType.getGUIManagedObjectName(), complexObjectType.getGUIManagedObjectID());
         Map<String, Object> elementJSONMAP = new HashMap<String, Object>();
         List<String> elements = complexObjectType.getAvailableElements();
         for (String element : elements)

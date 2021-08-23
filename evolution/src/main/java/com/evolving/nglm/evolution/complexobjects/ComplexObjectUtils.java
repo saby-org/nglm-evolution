@@ -154,7 +154,7 @@ public class ComplexObjectUtils
     return (List<String>) value; 
   }
   
-  private static Object getComplexObjectValueLog(SubscriberProfile profile, String complexTypeName, String elementID, String subfieldName) throws ComplexObjectException
+  private static Object getComplexObjectValue(SubscriberProfile profile, String complexTypeName, String elementID, String subfieldName) throws ComplexObjectException
   {
     Collection<ComplexObjectType> types = complexObjectTypeService.getActiveComplexObjectTypes(SystemTime.getCurrentTime(), profile.getTenantID());
     ComplexObjectType type = null;
@@ -185,15 +185,8 @@ public class ComplexObjectUtils
     Map<String, DataModelFieldValue> values = instance.getFieldValuesReadOnly();
     if(values == null) { return null; }
     DataModelFieldValue value = values.get(subfieldName);
-    if(value == null) { return null; }
+    if(value == null) { return null; }    
     return value.getValue();
-  }
-  
-  private static Object getComplexObjectValue(SubscriberProfile profile, String complexTypeName, String elementID, String subfieldName) throws ComplexObjectException
-  {
-    Object val =  getComplexObjectValueLog(profile, complexTypeName, elementID, subfieldName);
-    log.info("RAJ K getComplexObjectValue for complexTypeName {} and element {} is {}", complexTypeName, elementID, val);
-    return val;
   }
 
 }
