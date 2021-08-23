@@ -211,6 +211,8 @@ public class GUIManagerGeneral extends GUIManager
     guiServiceList.add(dynamicCriterionFieldService);
     guiServiceList.add(dynamicEventDeclarationsService);
     guiServiceList.add(journeyTemplateService);
+    guiServiceList.add(badgeObjectiveService);
+    guiServiceList.add(badgeService);
     
     //
     //  buildGUIDependencyModelTreeMap
