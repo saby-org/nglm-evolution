@@ -575,7 +575,6 @@ public class DynamicCriterionFieldService extends GUIService
   @Deprecated // must be removed when all the customer using adv criteria when using complex fields
   public void removeComplexObjectTypeCriterionFields(GUIManagedObject guiManagedObject)
   {
-    log.info("RAJ K removeComplexObjectTypeCriterionFields ID {}", guiManagedObject.getGUIManagedObjectID());
     ComplexObjectType complexObjectType = (ComplexObjectType) guiManagedObject;
     for (String currentName : complexObjectType.getAvailableElements())
       {
@@ -583,16 +582,10 @@ public class DynamicCriterionFieldService extends GUIService
           {
             Integer subFieldID = current.getKey();
             String id = "complexObject." + complexObjectType.getComplexObjectTypeID() + "." + currentName + "." + current.getValue().getSubfieldName();
-            log.info("RAJ K removing old criteria id {}", id);
             GUIManagedObject guiManagedObjectCrt = getStoredDynamicCriterionField(id);
             if (guiManagedObjectCrt != null)
               {
-                log.info("RAJ K removing old criteria(found) id {}", id);
                 removeGUIManagedObject(id, SystemTime.getCurrentTime(), null, guiManagedObject.getTenantID());
-              }
-            else
-              {
-                log.info("RAJ K removing old criteria not found ID {}", id);
               }
           }
       }

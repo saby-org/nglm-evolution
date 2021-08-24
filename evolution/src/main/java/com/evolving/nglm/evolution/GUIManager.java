@@ -1729,7 +1729,6 @@ public class GUIManager
         int tenantID = tenant.getTenantID();
         if (complexObjectTypeService.getActiveComplexObjectTypes(SystemTime.getCurrentTime(), tenantID).size() == 0)
           {
-            log.info("RAJ K loading initialComplexObjectJSONArray for tenantID {} jsonArray {}", tenantID, Deployment.getInitialComplexObjectJSONArray());
             try
               {
                 JSONArray initialComplexObjectJSONArray = Deployment.getInitialComplexObjectJSONArray();
@@ -1737,7 +1736,6 @@ public class GUIManager
                   {
                     JSONObject initialComplexObjectJSON = (JSONObject) initialComplexObjectJSONArray.get(i);
                     JSONObject initialComplexObjectJSONCopy = (JSONObject) initialComplexObjectJSON.clone();
-                    log.info("RAJ K loading initialComplexObjectJSON for tenantID {} is {}", tenantID, initialComplexObjectJSON);
                     guiManagerGeneral.processPutComplexObjectType("0", initialComplexObjectJSONCopy, tenantID);
                   }
               }
