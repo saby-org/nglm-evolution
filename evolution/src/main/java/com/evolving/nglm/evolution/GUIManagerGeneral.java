@@ -2058,6 +2058,7 @@ public class GUIManagerGeneral extends GUIManager
   *
   *****************************************/
 
+  @Deprecated // this is an utility API - will be used by support team for EVPRO-1185 migration - must be removed when all the projects are migrated
   JSONObject processRefreshComplexObjectTypeCriteria(String userID, JSONObject jsonRoot, int tenantID)
   {
     /****************************************
