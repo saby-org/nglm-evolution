@@ -1738,6 +1738,7 @@ public class GUIManagerGeneral extends GUIManager
     if (jsonRoot.containsKey("dryRun")) {
       dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", false);
     }
+    boolean creteOldCriteria = JSONUtilities.decodeBoolean(jsonRoot, "creteOldCriteria", Boolean.FALSE);
 
     /*****************************************
     *
@@ -1809,8 +1810,14 @@ public class GUIManagerGeneral extends GUIManager
              *
              *****************************************/
 
-            //dynamicCriterionFieldService.addComplexObjectTypeCriterionFields(complexObjectType, (existingComplexObjectType == null), tenantID);
-            dynamicCriterionFieldService.addComplexObjectTypeAdvanceCriterionFields(complexObjectType, (existingComplexObjectType == null), tenantID);
+            if (creteOldCriteria) 
+              {
+                dynamicCriterionFieldService.addComplexObjectTypeCriterionFields(complexObjectType, (existingComplexObjectType == null), tenantID);
+              }
+            else
+              {
+                dynamicCriterionFieldService.addComplexObjectTypeAdvanceCriterionFields(complexObjectType, (existingComplexObjectType == null), tenantID);
+              }
           }
 
         /*****************************************
