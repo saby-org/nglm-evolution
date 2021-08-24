@@ -1719,6 +1719,7 @@ public class GUIManagerGeneral extends GUIManager
 
   JSONObject processPutComplexObjectType(String userID, JSONObject jsonRoot, int tenantID)
   {
+    log.info("RAJ K processPutComplexObjectType jsonRoot {} tenantID {}", jsonRoot, tenantID);
     /****************************************
     *
     *  response
@@ -1752,6 +1753,10 @@ public class GUIManagerGeneral extends GUIManager
         String idString = complexObjectTypeService.generateComplexObjectTypeID();
         log.info("RAJ K processPutComplexObjectType for tenantID {} idString {}", tenantID, idString);
         jsonRoot.put("id", idString);
+      }
+    else
+      {
+        log.info("RAJ K id found - processPutComplexObjectType for tenantID {} complexObjectTypeID {}", tenantID, complexObjectTypeID);
       }
 
     /*****************************************

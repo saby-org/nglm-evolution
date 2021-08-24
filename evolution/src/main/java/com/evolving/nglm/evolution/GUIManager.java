@@ -1729,6 +1729,7 @@ public class GUIManager
         int tenantID = tenant.getTenantID();
         if (complexObjectTypeService.getActiveComplexObjectTypes(SystemTime.getCurrentTime(), tenantID).size() == 0)
           {
+            log.info("RAJ K loading initialComplexObjectJSONArray for tenantID {}", tenantID);
             try
               {
                 JSONArray initialComplexObjectJSONArray = Deployment.getInitialComplexObjectJSONArray();
