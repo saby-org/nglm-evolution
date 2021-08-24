@@ -19394,7 +19394,7 @@ public class GUIManager
                         nodeHistoriesJson.add(JSONUtilities.encodeObject(nodeHistoriesMap));
                       }
 
-                    journeyResponseMap.put("customerStatus", customerStatusInJourney.getExternalRepresentation());
+                    journeyResponseMap.put("customerStatus", customerStatusInJourney.getDisplay());
                     journeyResponseMap.put("journeyComplete", journeyComplete);
                     journeyResponseMap.put("nodeHistories", JSONUtilities.encodeArray(nodeHistoriesJson));
                     journeyResponseMap.put("currentState", currentStateJson);
