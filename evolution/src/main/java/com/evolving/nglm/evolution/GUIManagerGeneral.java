@@ -1738,6 +1738,11 @@ public class GUIManagerGeneral extends GUIManager
     if (jsonRoot.containsKey("dryRun")) {
       dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", false);
     }
+    
+    //
+    //  utility argument to help QA team - so that they can test the migration - can be cleaned after EVPRO-1185 migration
+    //
+    
     boolean creteOldCriteria = JSONUtilities.decodeBoolean(jsonRoot, "creteOldCriteria", Boolean.FALSE);
 
     /*****************************************
