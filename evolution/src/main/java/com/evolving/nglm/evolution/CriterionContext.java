@@ -1009,6 +1009,7 @@ public class CriterionContext
           for (DynamicCriterionField dynamicCriterionField : dynamicCriterionFieldService.getActiveDynamicCriterionFields(SystemTime.getCurrentTime(), tenantID))
             {
               result.put(dynamicCriterionField.getCriterionField().getID(), dynamicCriterionField.getCriterionField());
+              log.info("RAJ K dynamicCriterionField {}", dynamicCriterionField.getJSONRepresentation());
             }
           break;
 

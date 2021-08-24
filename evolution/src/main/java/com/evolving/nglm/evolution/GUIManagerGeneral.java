@@ -1750,6 +1750,7 @@ public class GUIManagerGeneral extends GUIManager
     if (complexObjectTypeID == null)
       {
         String idString = complexObjectTypeService.generateComplexObjectTypeID();
+        log.info("RAJ K processPutComplexObjectType for tenantID {} idString {}", tenantID, idString);
         jsonRoot.put("id", idString);
       }
 
