@@ -582,7 +582,7 @@ public class DynamicCriterionFieldService extends GUIService
         for (Map.Entry<Integer, ComplexObjectTypeSubfield> current : complexObjectType.getSubfields().entrySet())
           {
             Integer subFieldID = current.getKey();
-            String id = "complexObject." + complexObjectType.getComplexObjectTypeID() + "." + currentName + "." + subFieldID;
+            String id = "complexObject." + complexObjectType.getComplexObjectTypeID() + "." + currentName + "." + current.getValue().getSubfieldName();
             log.info("RAJ K removing old criteria id {}", id);
             GUIManagedObject guiManagedObjectCrt = getStoredDynamicCriterionField(id);
             if (guiManagedObjectCrt != null)
