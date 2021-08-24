@@ -1743,7 +1743,7 @@ public class GUIManagerGeneral extends GUIManager
     //  utility argument to help QA team - so that they can test the migration - can be cleaned after EVPRO-1185 migration
     //
     
-    boolean creteOldCriteria = JSONUtilities.decodeBoolean(jsonRoot, "creteOldCriteria", Boolean.FALSE);
+    boolean createOldCriteria = JSONUtilities.decodeBoolean(jsonRoot, "createOldCriteria", Boolean.FALSE);
 
     /*****************************************
     *
@@ -1815,7 +1815,7 @@ public class GUIManagerGeneral extends GUIManager
              *
              *****************************************/
 
-            if (creteOldCriteria) 
+            if (createOldCriteria) 
               {
                 dynamicCriterionFieldService.addComplexObjectTypeCriterionFields(complexObjectType, (existingComplexObjectType == null), tenantID);
               }
