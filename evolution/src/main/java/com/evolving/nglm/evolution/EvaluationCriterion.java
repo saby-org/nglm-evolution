@@ -55,6 +55,7 @@ import com.evolving.nglm.evolution.Expression.ExpressionEvaluationException;
 import com.evolving.nglm.evolution.Expression.ExpressionParseException;
 import com.evolving.nglm.evolution.Expression.ExpressionReader;
 import com.evolving.nglm.evolution.Expression.ExpressionTypeCheckException;
+import com.evolving.nglm.evolution.Expression.ReferenceExpression;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
@@ -2022,7 +2023,24 @@ public class EvaluationCriterion
         default:
           if (criterionDefault)
             query = QueryBuilders.boolQuery().should(QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery(esField))).should(baseQuery);
-          else
+          else if (argument != null && argument instanceof Expression.FunctionCallExpression) { // redpoint.earliestexpirydate + 1 month
+            Expression.FunctionCallExpression fce = (Expression.FunctionCallExpression) argument;
+            // check if fce.arguments[0] is a ReferenceExpression, then add an exist clause with fce.arguments[0].reference.esField
+            List<String> esFieldsList = fce.getESFields(); // get list of esFields used by arguments
+            BoolQueryBuilder subQuery = QueryBuilders.boolQuery().must(QueryBuilders.existsQuery(esField)).must(baseQuery);
+            for (String esFieldArgument : esFieldsList) {
+              subQuery = subQuery.must(QueryBuilders.existsQuery(esFieldArgument));
+            }
+            query = subQuery;
+          } else if (argument != null && argument instanceof Expression.ReferenceExpression) { // redpoint.earliestexpirydate (instant)
+            Expression.ReferenceExpression re = (ReferenceExpression) argument;
+            BoolQueryBuilder subQuery = QueryBuilders.boolQuery().must(QueryBuilders.existsQuery(esField)).must(baseQuery);
+            String esFieldArg = re.getESField();
+            if (esFieldArg != null) {
+              subQuery = subQuery.must(QueryBuilders.existsQuery(esFieldArg));
+            }
+            query = subQuery;
+          } else
             query = QueryBuilders.boolQuery().must(QueryBuilders.existsQuery(esField)).must(baseQuery);
           break;
       }

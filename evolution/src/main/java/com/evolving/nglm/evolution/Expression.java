@@ -711,6 +711,11 @@ public abstract class Expression
       super(tenantID);
       this.reference = reference;
     }
+
+    public String getESField()
+    {
+      return (reference != null && reference.getESField() != null) ? reference.getESField() : null;
+    }
   }
 
   /*****************************************
@@ -3067,6 +3072,25 @@ public abstract class Expression
       return res;
     }
 
+    
+    public List<String> getESFields() {
+      List<String> res = new ArrayList<>();
+      // check if each argument is a ReferenceExpression, then add its esField
+      if (arguments != null) {
+        for (Expression exp : arguments) {
+          if (exp != null && exp instanceof ReferenceExpression) {
+            ReferenceExpression refExp = (ReferenceExpression) exp;
+            if (refExp.reference != null && refExp.reference.getESField() != null) {
+              res.add(refExp.reference.getESField());
+            }
+          }
+        }
+      }
+      return res;
+    }
+    
+    
+    
     /*****************************************
     *
     *  esQuery
