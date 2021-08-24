@@ -1736,8 +1736,9 @@ public class GUIManager
                 for (int i=0; i<initialComplexObjectJSONArray.size(); i++)
                   {
                     JSONObject initialComplexObjectJSON = (JSONObject) initialComplexObjectJSONArray.get(i);
+                    JSONObject initialComplexObjectJSONCopy = (JSONObject) initialComplexObjectJSON.clone();
                     log.info("RAJ K loading initialComplexObjectJSON for tenantID {} is {}", tenantID, initialComplexObjectJSON);
-                    guiManagerGeneral.processPutComplexObjectType("0", initialComplexObjectJSON, tenantID);
+                    guiManagerGeneral.processPutComplexObjectType("0", initialComplexObjectJSONCopy, tenantID);
                   }
               }
             catch (JSONUtilitiesException e)
