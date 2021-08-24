@@ -489,7 +489,7 @@ public class DynamicCriterionFieldService extends GUIService
     
     for(Map.Entry<Integer, ComplexObjectTypeSubfield> subfield : complexObjectType.getSubfields().entrySet())
       {
-        String criteriaID = "complex" + "." + complexObjectType.getGUIManagedObjectName() + "." + subfield.getValue().getPrivateID() + "." + subfield.getValue().getSubfieldName();
+        String criteriaID = "complex" + "." + complexObjectType.getGUIManagedObjectName() + "." + subfield.getValue().getPrivateID() + "." + subfield.getValue().getSubfieldName() + "." + complexObjectType.getGUIManagedObjectID();
         String criteriaDisplay = complexObjectType.getGUIManagedObjectDisplay() + " - " + subfield.getValue().getSubfieldName();
         String retriever = null;
         switch (subfield.getValue().getCriterionDataType())
@@ -564,9 +564,9 @@ public class DynamicCriterionFieldService extends GUIService
     ComplexObjectType complexObjectType = (ComplexObjectType) guiManagedObject;
     for(Map.Entry<Integer, ComplexObjectTypeSubfield> subfield : complexObjectType.getSubfields().entrySet())
       {
-        String criteriaID = "complex" + "." + complexObjectType.getGUIManagedObjectName() + "." + subfield.getValue().getPrivateID() + "." + subfield.getValue().getSubfieldName();
+        String criteriaID = "complex" + "." + complexObjectType.getGUIManagedObjectName() + "." + subfield.getValue().getPrivateID() + "." + subfield.getValue().getSubfieldName() + "." + complexObjectType.getGUIManagedObjectID();
         GUIManagedObject guiManagedObjectCrt = getStoredDynamicCriterionField(criteriaID);
-        if (guiManagedObjectCrt != null && guiManagedObjectCrt.getTenantID() == guiManagedObject.getTenantID()) removeGUIManagedObject(criteriaID, SystemTime.getCurrentTime(), null, guiManagedObject.getTenantID());
+        if (guiManagedObjectCrt != null) removeGUIManagedObject(criteriaID, SystemTime.getCurrentTime(), null, guiManagedObject.getTenantID());
         
       }
   }
@@ -583,7 +583,7 @@ public class DynamicCriterionFieldService extends GUIService
             Integer subFieldID = current.getKey();
             String id = "complexObject." + complexObjectType.getComplexObjectTypeID() + "." + currentName + "." + subFieldID;
             GUIManagedObject guiManagedObjectCrt = getStoredDynamicCriterionField(id);
-            if (guiManagedObjectCrt != null && guiManagedObjectCrt.getTenantID() == guiManagedObject.getTenantID()) removeGUIManagedObject(id, SystemTime.getCurrentTime(), null, guiManagedObject.getTenantID());
+            if (guiManagedObjectCrt != null) removeGUIManagedObject(id, SystemTime.getCurrentTime(), null, guiManagedObject.getTenantID());
           }
       }
   }

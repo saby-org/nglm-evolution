@@ -1293,11 +1293,11 @@ public abstract class CriterionFieldRetriever
     Long result = null;
     
     //
-    //  fieldName = complex.ExampleObjName.subfieldprivateID.subfieldName
+    //  fieldName = complex.ExampleObjName.subfieldprivateID.subfieldName.complexObjectTypeID
     //
     
     String[] split = fieldName.split("\\.");
-    boolean invalidFieldName = split.length != 4 || !split[0].equals("complex");
+    boolean invalidFieldName = split.length != 5 || !split[0].equals("complex");
     if (invalidFieldName)
       {
         throw new CriterionException("field " + fieldName + " can't be handled");
@@ -1325,11 +1325,11 @@ public abstract class CriterionFieldRetriever
     String result = null;
     
     //
-    //  fieldName = complex.ExampleObjName.subfieldprivateID.subfieldName
+    //  fieldName = complex.ExampleObjName.subfieldprivateID.subfieldName.complexObjectTypeID
     //
     
     String[] split = fieldName.split("\\.");
-    boolean invalidFieldName = split.length != 4 || !split[0].equals("complex");
+    boolean invalidFieldName = split.length != 5 || !split[0].equals("complex");
     if (invalidFieldName)
       {
         throw new CriterionException("field " + fieldName + " can't be handled");
@@ -1357,11 +1357,11 @@ public abstract class CriterionFieldRetriever
     Boolean result = null;
     
     //
-    //  fieldName = complex.ExampleObjName.subfieldprivateID.subfieldName
+    //  fieldName = complex.ExampleObjName.subfieldprivateID.subfieldName.complexObjectTypeID
     //
     
     String[] split = fieldName.split("\\.");
-    boolean invalidFieldName = split.length != 4 || !split[0].equals("complex");
+    boolean invalidFieldName = split.length != 5 || !split[0].equals("complex");
     if (invalidFieldName)
       {
         throw new CriterionException("field " + fieldName + " can't be handled");
@@ -1389,11 +1389,11 @@ public abstract class CriterionFieldRetriever
     Date result = null;
     
     //
-    //  fieldName = complex.ExampleObjName.subfieldprivateID.subfieldName
+    //  fieldName = complex.ExampleObjName.subfieldprivateID.subfieldName.complexObjectTypeID
     //
     
     String[] split = fieldName.split("\\.");
-    boolean invalidFieldName = split.length != 4 || !split[0].equals("complex");
+    boolean invalidFieldName = split.length != 5 || !split[0].equals("complex");
     if (invalidFieldName)
       {
         throw new CriterionException("field " + fieldName + " can't be handled");
@@ -1421,11 +1421,11 @@ public abstract class CriterionFieldRetriever
     Set<String> result = new HashSet<String>();
     
     //
-    //  fieldName = complex.ExampleObjName.subfieldprivateID.subfieldName
+    //  fieldName = complex.ExampleObjName.subfieldprivateID.subfieldName.complexObjectTypeID
     //
     
     String[] split = fieldName.split("\\.");
-    boolean invalidFieldName = split.length != 4 || !split[0].equals("complex");
+    boolean invalidFieldName = split.length != 5 || !split[0].equals("complex");
     if (invalidFieldName)
       {
         throw new CriterionException("field " + fieldName + " can't be handled");
