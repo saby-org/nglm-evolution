@@ -360,6 +360,8 @@ curl -X POST -H "Content-Type: application/json" -d '{ "id" : "ComplexObjectExam
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/complex-field-001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putComplexObjectType; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "ComplexObjectExample" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getComplexObjectType; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "ComplexObjectExample" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeComplexObjectType; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "001" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/refreshComplexObjectTypeCriteria; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "ids" : [ "001", "002" ] }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/refreshComplexObjectTypeCriteria; echo
 
 
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 , "subscriberID":"001", "includeExtendedSubscribeProfile" : true }' http://<_EVOLUTIONENGINE_SUBSCRIBERPROFILE_ENDPOINT_>/nglm-evolutionengine/getSubscriberProfile; echo

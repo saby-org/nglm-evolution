@@ -1811,7 +1811,6 @@ public class GUIManagerGeneral extends GUIManager
 
             //dynamicCriterionFieldService.addComplexObjectTypeCriterionFields(complexObjectType, (existingComplexObjectType == null), tenantID);
             dynamicCriterionFieldService.addComplexObjectTypeAdvanceCriterionFields(complexObjectType, (existingComplexObjectType == null), tenantID);
-
           }
 
         /*****************************************
@@ -2050,6 +2049,162 @@ public class GUIManagerGeneral extends GUIManager
      *****************************************/
     response.put("removedComplexObjectTypeIDs", JSONUtilities.encodeArray(validIDs));
 
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  *  processRefreshComplexObjectTypeCriteria
+  *
+  *****************************************/
+
+  JSONObject processRefreshComplexObjectTypeCriteria(String userID, JSONObject jsonRoot, int tenantID)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+    
+    String singleIDresponseCode = "";
+    List<GUIManagedObject> complexObjectTypes = new ArrayList<GUIManagedObject>();
+    List<String> validIDs = new ArrayList<>();
+    JSONArray complexObjectTypeIDs = new JSONArray();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
+    
+    //
+    // refresh single complexObjectType
+    //
+    
+    if (jsonRoot.containsKey("id"))
+      {
+        String complexObjectTypeID = JSONUtilities.decodeString(jsonRoot, "id", false);
+        complexObjectTypeIDs.add(complexObjectTypeID);
+        GUIManagedObject complexObjectType = complexObjectTypeService.getStoredComplexObjectType(complexObjectTypeID);
+        if (complexObjectType != null && (force || !complexObjectType.getReadOnly()))
+          singleIDresponseCode = "ok";
+        else if (complexObjectType != null)
+          singleIDresponseCode = "failedReadOnly";
+        else
+          {
+            singleIDresponseCode = "complexObjectTypeNotFound";
+          }
+
+
+      }
+    
+    //
+    // multiple refresh
+    //
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        complexObjectTypeIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false);
+      }  
+
+    for (int i = 0; i < complexObjectTypeIDs.size(); i++)
+      {
+        String complexObjectTypeID = complexObjectTypeIDs.get(i).toString();
+        GUIManagedObject complexObjectType = complexObjectTypeService.getStoredComplexObjectType(complexObjectTypeID);
+
+        if (complexObjectType != null && (force || !complexObjectType.getReadOnly()))
+          {
+            complexObjectTypes.add(complexObjectType);
+            validIDs.add(complexObjectTypeID);
+          }
+      }
+
+    /*****************************************
+     *
+     * refresh
+     *
+     *****************************************/
+    
+    for (int i = 0; i < complexObjectTypes.size(); i++)
+      {
+        GUIManagedObject complexObjectType = complexObjectTypes.get(i);
+        if (complexObjectType.getAccepted())
+          {
+            //
+            //  remove all criteria old/new
+            //
+            
+
+            // migration start EVPRO-1185
+            dynamicCriterionFieldService.removeComplexObjectTypeCriterionFields(complexObjectType);
+            // migration end EVPRO-1185
+            dynamicCriterionFieldService.removeComplexObjectTypeAdvanceCriterionFields(complexObjectType);
+            
+            //
+            //  create only new
+            //
+            
+            try
+              {
+                dynamicCriterionFieldService.addComplexObjectTypeAdvanceCriterionFields((ComplexObjectType) complexObjectType, true, tenantID);
+              } 
+            catch (GUIManagerException e)
+              {
+                e.printStackTrace();
+                validIDs.remove(complexObjectType.getGUIManagedObjectID());
+              }
+          }
+
+        //
+        // revalidate
+        //
+
+        revalidateSubscriberMessageTemplates(now, tenantID);
+        revalidateTargets(now, tenantID);
+        revalidateJourneys(now, tenantID);
+          
+      }
+    
+    /*****************************************
+     *
+     * responseCode
+     *
+     *****************************************/
+    if (jsonRoot.containsKey("id"))
+      {
+        response.put("responseCode", singleIDresponseCode);
+        return JSONUtilities.encodeObject(response);
+      }
+    else
+      {
+        response.put("responseCode", "ok");
+      }
+
+    /*****************************************
+     *
+     * response
+     *
+     *****************************************/
+    
+    response.put("refreshedComplexObjectTypeIDs", JSONUtilities.encodeArray(validIDs));
     return JSONUtilities.encodeObject(response);
   }
 
