@@ -503,7 +503,6 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public long getOfferDeliveryOfferPrice() { return getOfferPrice(); }
     public String getOfferDeliveryMeanOfPayment() { return getMeanOfPayment(); }
     public String getOfferDeliveryVoucherCode() { return getVoucherDeliveries()==null?"":getVoucherDeliveries().get(0).getVoucherCode(); }
-    public String getOfferDeliveryVoucherFormat() { return getVoucherDeliveries()==null?"":getVoucherDeliveries().get(0).getVoucherCode(); }
     public String getOfferDeliveryVoucherExpiryDate() { return getVoucherDeliveries()==null?"":getVoucherDeliveries().get(0).getVoucherExpiryDate()==null?"":getVoucherDeliveries().get(0).getVoucherExpiryDate().toString(); }
     public String getOfferDeliveryVoucherPartnerId() { return ""; }//TODO
     public String getOfferDeliveryOfferContent() { return getOfferContent(); }
