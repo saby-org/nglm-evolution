@@ -2125,8 +2125,6 @@ public class GUIManagerGeneral extends GUIManager
           {
             singleIDresponseCode = "complexObjectTypeNotFound";
           }
-
-
       }
     
     //
@@ -2159,33 +2157,33 @@ public class GUIManagerGeneral extends GUIManager
     for (int i = 0; i < complexObjectTypes.size(); i++)
       {
         GUIManagedObject complexObjectType = complexObjectTypes.get(i);
-        if (complexObjectType.getAccepted())
+        try
           {
+            ComplexObjectType toRefresh = new ComplexObjectType(complexObjectType.getJSONRepresentation(), epochServer.getKey(), complexObjectType, tenantID);
+            
             //
             //  remove all criteria old/new
             //
-            
 
             // migration start EVPRO-1185
-            dynamicCriterionFieldService.removeComplexObjectTypeCriterionFields(complexObjectType);
+            dynamicCriterionFieldService.removeComplexObjectTypeCriterionFields(toRefresh);
             // migration end EVPRO-1185
-            dynamicCriterionFieldService.removeComplexObjectTypeAdvanceCriterionFields(complexObjectType);
+            dynamicCriterionFieldService.removeComplexObjectTypeAdvanceCriterionFields(toRefresh);
             
             //
             //  create only new
             //
             
-            try
-              {
-                dynamicCriterionFieldService.addComplexObjectTypeAdvanceCriterionFields((ComplexObjectType) complexObjectType, true, tenantID);
-              } 
-            catch (GUIManagerException e)
-              {
-                e.printStackTrace();
-                validIDs.remove(complexObjectType.getGUIManagedObjectID());
-              }
+            dynamicCriterionFieldService.addComplexObjectTypeAdvanceCriterionFields(toRefresh, true, tenantID);
+            log.info("refreshed complex object criteria of {}", toRefresh.getGUIManagedObjectName());
+          } 
+        catch (GUIManagerException e)
+          {
+            log.error("unable to refresh complex object criteria for {}", complexObjectType.getGUIManagedObjectName());
+            e.printStackTrace();
+            validIDs.remove(complexObjectType.getGUIManagedObjectID());
           }
-
+        
         //
         // revalidate
         //
@@ -2193,7 +2191,6 @@ public class GUIManagerGeneral extends GUIManager
         revalidateSubscriberMessageTemplates(now, tenantID);
         revalidateTargets(now, tenantID);
         revalidateJourneys(now, tenantID);
-          
       }
     
     /*****************************************
