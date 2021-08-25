@@ -1071,7 +1071,6 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       guiPresentationMap.put(RETURNCODEDETAILS, PurchaseFulfillmentStatus.fromReturnCode(getReturnCode()).toString());
       guiPresentationMap.put(VOUCHERCODE, getOfferDeliveryVoucherCode());
       guiPresentationMap.put(VOUCHEREXPIRYDATE, getOfferDeliveryVoucherExpiryDate());
-      guiPresentationMap.put(VOUCHERPARTNERID, getOfferDeliveryVoucherPartnerId());
       guiPresentationMap.put(CUSTOMERID, getSubscriberID());
       guiPresentationMap.put(OFFERID, getOfferID());
       guiPresentationMap.put(OFFERQTY, getQuantity());
@@ -1134,6 +1133,8 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
                     	}
                     }
                   guiPresentationMap.put(VOUCHERFORMAT, voucherFormat);
+                  guiPresentationMap.put(VOUCHERSUPPLIERID, voucher.getSupplierID());
+                  
                 }
               }
               String offerContent = null;
@@ -1215,6 +1216,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
                 	}
                 }
               thirdPartyPresentationMap.put(VOUCHERFORMAT, voucherFormat);
+              thirdPartyPresentationMap.put(VOUCHERSUPPLIERID, voucher.getSupplierID());
             }
           }
           String offerContent = sb.length()>0?sb.toString().substring(0, sb.toString().length()-1):"";
@@ -1235,7 +1237,6 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           thirdPartyPresentationMap.put(RETURNCODEDETAILS, getOfferDeliveryReturnCodeDetails());
           thirdPartyPresentationMap.put(VOUCHERCODE, getOfferDeliveryVoucherCode());
           thirdPartyPresentationMap.put(VOUCHEREXPIRYDATE, getOfferDeliveryVoucherExpiryDate());
-          thirdPartyPresentationMap.put(VOUCHERPARTNERID, getOfferDeliveryVoucherPartnerId());
         }
     }
     @Override

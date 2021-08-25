@@ -107,7 +107,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   public static final String VOUCHERCODE = "voucherCode";
   public static final String VOUCHERFORMAT = "voucherFormat";
   public static final String VOUCHEREXPIRYDATE = "voucherExpiryDate";
-  public static final String VOUCHERPARTNERID = "voucherPartnerId";
+  public static final String VOUCHERSUPPLIERID = "voucherSupplierId";
   public static final String RESELLERID = "resellerID";
   public static final String RESELLERDISPLAY = "resellerDisplay";
   public static final String SUPPLIERDISPLAY = "supplierDisplay";
