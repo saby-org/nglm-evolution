@@ -1241,7 +1241,7 @@ public abstract class CriterionFieldRetriever
       }
      return status;
   }
-  
+  /*
   // migration start EVPRO-1185
   @Deprecated // should use getComplexObjectXXXX // must be removed when all the customer using adv criteria when using complex fields
   public static Object getComplexObjectFieldValue(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException
@@ -1287,6 +1287,7 @@ public abstract class CriterionFieldRetriever
     return elementValue.getValue();
   }
   // migration end EVPRO-1185
+   */
   
   public static Object getComplexObjectLong(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) throws CriterionException
   {
