@@ -1693,14 +1693,14 @@ public class EvaluationCriterion
     switch (evaluationDataType)
       {
         case StringCriterion:
-          script.append("def left = (doc." + esField + ".size() != 0) ? doc." + esField + ".value?.toLowerCase() : null; ");
+          script.append("def left = (doc['" + esField + "'].size() != 0) ? doc['" + esField + "']value?.toLowerCase() : null; ");
           break;
           
         case DateCriterion:
           script.append("def left; ");
-          script.append("if (doc." + esField + ".size() != 0) { ");
+          script.append("if (doc['" + esField + "'].size() != 0) { ");
           script.append("def leftSF = new SimpleDateFormat(\"yyyy-MM-dd'T'HH:mm:ss.SSSX\"); ");   // TODO EVPRO-99
-          script.append("def leftMillis = doc." + esField + ".value.getMillis(); ");
+          script.append("def leftMillis = doc['" + esField + "'].value.getMillis(); ");
           script.append("def leftCalendar = leftSF.getCalendar(); ");
           script.append("leftCalendar.setTimeInMillis(leftMillis); ");
           script.append("def leftInstant = leftCalendar.toInstant(); ");
@@ -1710,11 +1710,11 @@ public class EvaluationCriterion
           break;
 
         case StringSetCriterion:
-          script.append("def left = new ArrayList(); for (int i=0;i<doc." + esField + ".size();i++) left.add(doc." + esField + ".get(i)?.toLowerCase()); ");
+          script.append("def left = new ArrayList(); for (int i=0;i<doc['" + esField + "'].size();i++) left.add(doc['" + esField + "'].get(i)?.toLowerCase()); ");
           break;
 
         case IntegerSetCriterion:
-          script.append("def left = new ArrayList(); left.addAll(doc." + esField + "); ");
+          script.append("def left = new ArrayList(); left.addAll(doc['" + esField + "']); ");
           break;
           
         case AniversaryCriterion:
@@ -1724,7 +1724,7 @@ public class EvaluationCriterion
           throw new UnsupportedOperationException("timeCriterion is not supported");
           
         default:
-          script.append("def left = (doc." + esField + ".size() != 0) ? doc." + esField + "?.value : null; ");
+          script.append("def left = (doc['" + esField + "'].size() != 0) ? doc['" + esField + "']?.value : null; ");
           break;
       }
 
@@ -2577,15 +2577,16 @@ public class EvaluationCriterion
         queryInternal = buildCompareQuery("pointBalances." + SubscriberProfile.EARLIEST_EXPIRATION_QUANTITY, ExpressionDataType.IntegerExpression);
         break;
         
-      default:  // point.POINT_ID.expired.last7days
+      default:  // point.POINT_ID.expired.last7days  // HERE no nested necessary because pointFluctuations is a dictionary
         String searchStringForPointFluctuations = "pointFluctuations." + pointID + ".";
         fieldNamePattern = Pattern.compile("^([^.]+)\\.([^.]+)$");
         fieldNameMatcher = fieldNamePattern.matcher(criterionFieldBaseName);
         if (! fieldNameMatcher.find()) throw new CriterionException("invalid criterionFieldBaseName field " + criterionFieldBaseName);
         String nature = fieldNameMatcher.group(1); // earned, consumed, expired
-        String interval = fieldNameMatcher.group(2); // yesterday, last7days, last30days
+        String interval = fieldNameMatcher.group(2); // today, yesterday, last7days, last30days
         switch (interval)
         {
+          case "today":
           case "yesterday":
           case "last7days":
           case "last30days":
@@ -2910,7 +2911,7 @@ public class EvaluationCriterion
           throw new CriterionException("datatype not yet implemented : " + expectedType);
       }
     }
-    catch (ExpressionParseException|ExpressionTypeCheckException e)
+    catch (Exception e)
     {
       throw new CriterionException("argument " + argument + " must be a constant " + expectedType);
     }

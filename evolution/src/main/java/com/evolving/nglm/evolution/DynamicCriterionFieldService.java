@@ -295,9 +295,9 @@ public class DynamicCriterionFieldService extends GUIService
 
   public void addPointCriterionFields(Point point, boolean newPoint) throws GUIManagerException
   {
-    addPointCriterionField(point, newPoint, "balance", CriterionDataType.IntegerCriterion, null);
-    addPointCriterionField(point, newPoint, "earliestexpirydate", CriterionDataType.DateCriterion, null);
-    addPointCriterionField(point, newPoint, "earliestexpiryquantity", CriterionDataType.IntegerCriterion, null);
+    addPointCriterionFieldFluct(point, newPoint, "balance", CriterionDataType.IntegerCriterion);
+    addPointCriterionFieldFluct(point, newPoint, "earliestexpirydate", CriterionDataType.DateCriterion);
+    addPointCriterionFieldFluct(point, newPoint, "earliestexpiryquantity", CriterionDataType.IntegerCriterion);
 
     addPointMetricsCriterionFields(point, newPoint, "earned");
     addPointMetricsCriterionFields(point, newPoint, "consumed");
@@ -306,21 +306,31 @@ public class DynamicCriterionFieldService extends GUIService
   
   private void addPointMetricsCriterionFields(Point point, boolean newPoint, String nature) throws GUIManagerException
   {
-    addPointCriterionField(point, newPoint, nature+".yesterday", CriterionDataType.IntegerCriterion, null);
-    addPointCriterionField(point, newPoint, nature+".last7days", CriterionDataType.IntegerCriterion, null);
-    addPointCriterionField(point, newPoint, nature+".last30days", CriterionDataType.IntegerCriterion, null);
-    addPointCriterionField(point, newPoint, nature+".today", CriterionDataType.IntegerCriterion, null);
-    addPointCriterionField(point, newPoint, nature+".thisWeek", CriterionDataType.IntegerCriterion, null);
-    addPointCriterionField(point, newPoint, nature+".thisMonth", CriterionDataType.IntegerCriterion, null);
+    addPointCriterionField(point, newPoint, nature+".yesterday", CriterionDataType.IntegerCriterion);
+    addPointCriterionField(point, newPoint, nature+".last7days", CriterionDataType.IntegerCriterion);
+    addPointCriterionField(point, newPoint, nature+".last30days", CriterionDataType.IntegerCriterion);
+    addPointCriterionField(point, newPoint, nature+".today", CriterionDataType.IntegerCriterion);
+    addPointCriterionField(point, newPoint, nature+".thisWeek", CriterionDataType.IntegerCriterion);
+    addPointCriterionField(point, newPoint, nature+".thisMonth", CriterionDataType.IntegerCriterion);
+  }
+
+  private void addPointCriterionField(Point point, boolean newPoint, String criterionFieldBaseName, CriterionDataType criterionDataType) throws GUIManagerException
+  {
+    addPointCriterionFieldInternal(point, newPoint, criterionFieldBaseName, criterionDataType, "pointBalances." + point.getPointID() + "." + criterionFieldBaseName);
+  }
+  
+  private void addPointCriterionFieldFluct(Point point, boolean newPoint, String criterionFieldBaseName, CriterionDataType criterionDataType) throws GUIManagerException
+  {
+    addPointCriterionFieldInternal(point, newPoint, criterionFieldBaseName, criterionDataType, "pointFluctuations." + point.getPointID() + "." + criterionFieldBaseName);
   }
 
   /*****************************************
   *
-  *  addPointCriterionField
+  *  addPointCriterionFieldInternal
   *
   *****************************************/
 
-  private void addPointCriterionField(Point point, boolean newPoint, String criterionFieldBaseName, CriterionDataType criterionDataType, JSONArray availableValues) throws GUIManagerException
+  private void addPointCriterionFieldInternal(Point point, boolean newPoint, String criterionFieldBaseName, CriterionDataType criterionDataType, String esField) throws GUIManagerException
   {
     //
     //  json constructor
@@ -334,11 +344,11 @@ public class DynamicCriterionFieldService extends GUIService
     criterionFieldJSON.put("dataType", criterionDataType.getExternalRepresentation());
     criterionFieldJSON.put("tagFormat", null);
     criterionFieldJSON.put("tagMaxLength", null);
-    criterionFieldJSON.put("esField", "pointBalances." + point.getPointID() + "." + criterionFieldBaseName);
+    criterionFieldJSON.put("esField", esField);
     criterionFieldJSON.put("retriever", "getPointCriterionField");
     criterionFieldJSON.put("minValue", null);
     criterionFieldJSON.put("maxValue", null);
-    criterionFieldJSON.put("availableValues", availableValues);
+    criterionFieldJSON.put("availableValues", null);
     criterionFieldJSON.put("includedOperators", null);
     criterionFieldJSON.put("excludedOperators", null);
     criterionFieldJSON.put("includedComparableFields", null); 

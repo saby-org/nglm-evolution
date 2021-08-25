@@ -675,6 +675,12 @@ public abstract class SubscriberProfile
             last30daysFluctuations.put("expired", point.getValue().getExpiredHistory().getPrevious30Days(evaluationDate));
             fluctuations.put("last30days", last30daysFluctuations);
             
+            Date earliestExpirationDate = point.getValue().getFirstExpirationDate(SystemTime.getCurrentTime());
+            int earliestExpirationQuantity = point.getValue().getBalance(earliestExpirationDate);
+            fluctuations.put("earliestexpirydate", earliestExpirationDate);
+            fluctuations.put("earliestexpiryquantity", earliestExpirationQuantity);
+            fluctuations.put("balance", point.getValue().getBalance(SystemTime.getCurrentTime()));
+
             result.put(point.getKey(), fluctuations);
           }
       }
