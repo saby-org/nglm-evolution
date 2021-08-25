@@ -6443,6 +6443,17 @@ public class ThirdPartyManager
 
   private Pair<String, String> resolveSubscriberAlternateID(JSONObject jsonRoot) throws ThirdPartyManagerException
   {
+    // first check if customerIDType and customerIDValue are provided as is....
+    // support the possibility: customerIDType and customerIDValue...
+    String customerIDType = JSONUtilities.decodeString(jsonRoot, CUSTOMER_ID_TYPE, false);
+    String customerIDValue = JSONUtilities.decodeString(jsonRoot, CUSTOMER_ID_VALUE, false);
+    
+    if(customerIDType != null && customerIDValue != null) 
+      {
+        return new Pair<String,String>(customerIDType, customerIDValue);
+      }
+    
+    
     // "customerID" parameter is mapped internally to subscriberID
     String subscriberID = JSONUtilities.decodeString(jsonRoot, CUSTOMER_ID, false);
     String alternateSubscriberID = null;
