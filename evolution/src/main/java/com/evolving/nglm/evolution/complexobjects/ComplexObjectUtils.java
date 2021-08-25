@@ -180,7 +180,7 @@ public class ComplexObjectUtils
     List<ComplexObjectInstance> instances = profile.getComplexObjectInstances();
     if(instances == null) { return null;}
     ComplexObjectInstance instance = null;
-    for(ComplexObjectInstance current : instances) { if(current.getElementID().equals(elementID)) { instance = current; break; }}
+    for(ComplexObjectInstance current : instances) { if(current.getElementID().equals(elementID) && current.getComplexObjectTypeID().equals(type.getGUIManagedObjectID())) { instance = current; break; }}
     if(instance == null) { return null; }
     Map<String, DataModelFieldValue> values = instance.getFieldValuesReadOnly();
     if(values == null) { return null; }
