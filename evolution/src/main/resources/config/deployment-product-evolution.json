@@ -948,7 +948,12 @@
       "id"           : "deleteCustomer",
       "methodName"   : "deleteCustomer",
       "permissions"  : ["API-DELETE-CUSTOMER"]
-    }    
+    },
+    {
+      "id"           : "getCustomerVouchers",
+      "methodName"   : "getCustomerVouchers",
+      "permissions"  : ["API-GET-CUSTOMER-VOUCHERS"]
+    }
   ],
 
   "uploadedFileSeparator" : ";",

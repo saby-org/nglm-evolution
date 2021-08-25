@@ -93,7 +93,6 @@ import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOpe
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
-import com.evolving.nglm.evolution.EmptyFulfillmentManager.EmptyFulfillmentRequest;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
@@ -104,8 +103,6 @@ import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.LoyaltyProgramChallengeHistory.LevelHistory;
 import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
 import com.evolving.nglm.evolution.LoyaltyProgramMissionHistory.StepHistory;
-import com.evolving.nglm.evolution.MailNotificationManager.MailNotificationManagerRequest;
-import com.evolving.nglm.evolution.NotificationManager.NotificationManagerRequest;
 import com.evolving.nglm.evolution.OfferCharacteristics.OfferCharacteristicsLanguageProperty;
 import com.evolving.nglm.evolution.OfferCharacteristics.OfferCharacteristicsProperty;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
@@ -121,8 +118,6 @@ import com.evolving.nglm.evolution.offeroptimizer.DNBOMatrixAlgorithmParameters;
 import com.evolving.nglm.evolution.offeroptimizer.GetOfferException;
 import com.evolving.nglm.evolution.offeroptimizer.ProposedOfferDetails;
 import com.evolving.nglm.evolution.otp.OTPInstanceChangeEvent;
-import com.evolving.nglm.evolution.otp.OTPUtils;
-import com.evolving.nglm.evolution.otp.OTPInstanceChangeEvent.OTPChangeAction;
 import com.evolving.nglm.evolution.statistics.DurationStat;
 import com.evolving.nglm.evolution.statistics.StatBuilder;
 import com.evolving.nglm.evolution.statistics.StatsBuilders;
@@ -186,6 +181,7 @@ public class ThirdPartyManager
   private SupplierService supplierService;
   private CallingChannelService callingChannelService;
   private ExclusionInclusionTargetService exclusionInclusionTargetService;
+  private UploadedFileService uploadedFileService;
 
   private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
   private static final int RESTAPIVersion = 1;
@@ -285,7 +281,8 @@ public class ThirdPartyManager
     generateOTP(37),
     checkOTP(38),
     getVoucherList(39),
-    deleteCustomer(40);
+    deleteCustomer(40),
+    getCustomerVouchers(41);
     private int methodIndex;
     private API(int methodIndex) { this.methodIndex = methodIndex; }
     public int getMethodIndex() { return methodIndex; }
@@ -569,6 +566,9 @@ public class ThirdPartyManager
     subscriberProfileForceUpdateResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),Deployment.getSubscriberProfileForceUpdateResponseTopic(),StringKey.serde(),SubscriberProfileForceUpdateResponse.serde());
     subscriberProfileForceUpdateResponseListenerService.start();
 
+    uploadedFileService = new UploadedFileService(Deployment.getBrokerServers(),Deployment.getUploadedFileTopic(),false);
+    uploadedFileService.start();
+
     /*****************************************
      *
      *  REST interface -- server and handlers
@@ -617,6 +617,7 @@ public class ThirdPartyManager
       restServer.createContext("/nglm-thirdpartymanager/checkOTP", new APIHandler(API.checkOTP));      
       restServer.createContext("/nglm-thirdpartymanager/getVoucherList", new APIHandler(API.getVoucherList));
       restServer.createContext("/nglm-thirdpartymanager/deleteCustomer", new APIHandler(API.deleteCustomer));
+      restServer.createContext("/nglm-thirdpartymanager/getCustomerVouchers", new APIHandler(API.getCustomerVouchers));
       restServer.setExecutor(Executors.newFixedThreadPool(threadPoolSize));
       restServer.start();
 
@@ -632,7 +633,7 @@ public class ThirdPartyManager
      *
      *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, dynamicCriterionFieldService, offerService, subscriberProfileService, segmentationDimensionService, journeyService, journeyObjectiveService, loyaltyProgramService, pointService, paymentMeanService, offerObjectiveService, subscriberMessageTemplateService, salesChannelService, resellerService, subscriberIDService, subscriberGroupEpochReader, productService, deliverableService, callingChannelService, exclusionInclusionTargetService));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, dynamicCriterionFieldService, offerService, subscriberProfileService, segmentationDimensionService, journeyService, journeyObjectiveService, loyaltyProgramService, pointService, paymentMeanService, offerObjectiveService, subscriberMessageTemplateService, salesChannelService, resellerService, subscriberIDService, subscriberGroupEpochReader, productService, deliverableService, callingChannelService, exclusionInclusionTargetService, uploadedFileService));
 
     /*****************************************
      *
@@ -677,12 +678,13 @@ public class ThirdPartyManager
     private DynamicCriterionFieldService dynamicCriterionFieldService;
     private CallingChannelService callingChannelService;
     private ExclusionInclusionTargetService exclusionInclusionTargetService;
+    private UploadedFileService uploadedFileService;
 
     //
     //  constructor
     //
 
-    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, DynamicCriterionFieldService dynamicCriterionFieldService, OfferService offerService, SubscriberProfileService subscriberProfileService, SegmentationDimensionService segmentationDimensionService, JourneyService journeyService, JourneyObjectiveService journeyObjectiveService, LoyaltyProgramService loyaltyProgramService, PointService pointService, PaymentMeanService paymentMeanService, OfferObjectiveService offerObjectiveService, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, ResellerService resellerService, SubscriberIDService subscriberIDService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader, ProductService productService, DeliverableService deliverableService, CallingChannelService callingChannelService, ExclusionInclusionTargetService exclusionInclusionTargetService)
+    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, DynamicCriterionFieldService dynamicCriterionFieldService, OfferService offerService, SubscriberProfileService subscriberProfileService, SegmentationDimensionService segmentationDimensionService, JourneyService journeyService, JourneyObjectiveService journeyObjectiveService, LoyaltyProgramService loyaltyProgramService, PointService pointService, PaymentMeanService paymentMeanService, OfferObjectiveService offerObjectiveService, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, ResellerService resellerService, SubscriberIDService subscriberIDService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader, ProductService productService, DeliverableService deliverableService, CallingChannelService callingChannelService, ExclusionInclusionTargetService exclusionInclusionTargetService, UploadedFileService uploadedFileService)
     {
       this.kafkaProducer = kafkaProducer;
       this.restServer = restServer;
@@ -705,6 +707,7 @@ public class ThirdPartyManager
       this.deliverableService = deliverableService;
       this.callingChannelService = callingChannelService;
       this.exclusionInclusionTargetService = exclusionInclusionTargetService;
+      this.uploadedFileService = uploadedFileService;
     }
 
     //
@@ -736,6 +739,7 @@ public class ThirdPartyManager
       if (deliverableService != null) deliverableService.stop();
       if (callingChannelService != null) callingChannelService.stop();
       if (exclusionInclusionTargetService != null) exclusionInclusionTargetService.stop();
+      if (uploadedFileService != null) uploadedFileService.stop();
       
       //
       //  rest server
@@ -975,12 +979,14 @@ public class ThirdPartyManager
             case checkOTP:
             	jsonResponse = processCheckOTP(jsonRoot, tenantID);
             	break;
-            	
             case getVoucherList:
               jsonResponse = processGetVoucherList(jsonRoot, tenantID);
               break;
             case deleteCustomer:
               jsonResponse = processDeleteCustomer(jsonRoot, tenantID);
+              break;
+            case getCustomerVouchers:
+              jsonResponse = processGetCustomerVouchers(jsonRoot, tenantID);
               break;
           }
         }
@@ -5646,13 +5652,13 @@ public class ThirdPartyManager
                 errorException = new ThirdPartyManagerException(
                     RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED.getGenericResponseMessage(),
                     RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED.getGenericResponseCode(), additionalDetails);
-              }else if(profileVoucher.getVoucherStatus()==VoucherDelivery.VoucherStatus.Expired||profileVoucher.getVoucherExpiryDate().before(now)){
-          errorException = new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_EXPIRED);
-        }else{
-          //an OK one
-          voucherStored=profileVoucher;
-          break;
-        }
+              }else if(profileVoucher.getVoucherStatusComputed()==VoucherDelivery.VoucherStatus.Expired){
+                errorException = new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_EXPIRED);
+              }else{
+                //an OK one
+                voucherStored=profileVoucher;
+                break;
+              }
       }
     }
 
@@ -6088,6 +6094,114 @@ public class ThirdPartyManager
      
      return constructThirdPartyResponse(response.getReturnStatus(),otpResponse); 
   }
+
+  private JSONObject processGetCustomerVouchers(JSONObject jsonRoot, int tenantID) throws ThirdPartyManagerException
+  {
+
+    HashMap<String,Object> response = new HashMap<>();
+
+    String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
+
+    String stringStartDate = JSONUtilities.decodeString(jsonRoot, "startDate", false);
+    Date startDate = null;
+    if (stringStartDate != null)
+      {
+        try
+        {
+          String timeZone = Deployment.getDeployment(tenantID).getTimeZone();
+          startDate = GUIManager.prepareStartDate(RLMDateUtils.parseDateFromDay(stringStartDate, timeZone), timeZone);
+        }
+        catch (java.text.ParseException e1)
+        {
+          throw new ThirdPartyManagerException(e1);
+        }
+      }
+
+    try
+    {
+
+      SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
+      if (baseSubscriberProfile == null)
+        {
+          updateResponse(response, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND);
+          return JSONUtilities.encodeObject(response);
+        }
+
+      List<JSONObject> vouchersJsonArray = new ArrayList<>();
+      for(VoucherProfileStored voucherProfileStored:baseSubscriberProfile.getVouchers())
+      {
+        // filter
+        if(startDate!=null && voucherProfileStored.getVoucherDeliveryDate().compareTo(startDate)<0) continue;
+
+        // format
+		JSONObject voucherJson = new JSONObject();
+		voucherJson.put("code",voucherProfileStored.getVoucherCode());
+		voucherJson.put("deliveryDate",getDateString(voucherProfileStored.getVoucherDeliveryDate(), tenantID));
+		voucherJson.put("expiryDate",getDateString(voucherProfileStored.getVoucherExpiryDate(), tenantID));
+		voucherJson.put("status",voucherProfileStored.getVoucherStatusComputed().getExternalRepresentation());
+		String voucherID = voucherProfileStored.getVoucherID();
+        voucherJson.put("voucherID",voucherID);
+
+		String voucherName = "";
+		String supplierID = "";
+		String supplier = "";
+        GUIManagedObject voucherObject = voucherService.getStoredVoucher(voucherID);
+		if(voucherObject instanceof Voucher){
+		  Voucher voucher = (Voucher)voucherObject;
+		  voucherName = voucher.getVoucherDisplay();
+          supplierID = voucher.getSupplierID();
+          GUIManagedObject supplierObject = supplierService.getStoredSupplier(supplierID);
+          if(supplierObject!=null){
+            supplier = supplierObject.getGUIManagedObjectDisplay();
+          }
+        }
+        voucherJson.put("voucherName",voucherName);
+        voucherJson.put("supplierID",supplierID);
+        voucherJson.put("supplier",supplier);
+
+		String voucherFormat = "";
+        if(voucherObject instanceof VoucherShared){
+          voucherFormat = ((VoucherShared)voucherObject).getCodeFormatId();
+        } else if (voucherObject instanceof VoucherPersonal){
+          String fileID = voucherProfileStored.getFileID();
+          String fileName = "";
+          for(VoucherFile voucherFile:((VoucherPersonal)voucherObject).getVoucherFiles()){
+            if(voucherFile.getFileId().equals(voucherProfileStored.getFileID())) {
+              voucherFormat = voucherFile.getCodeFormatId();
+              break;
+            }
+          }
+          GUIManagedObject uploadFileObject = uploadedFileService.getStoredUploadedFile(fileID);
+          if(uploadFileObject instanceof UploadedFile){
+            fileName = ((UploadedFile) uploadFileObject).getSourceFilename();
+          }
+          voucherJson.put("fileID",fileID);
+          voucherJson.put("fileName",fileName);
+        }
+        voucherJson.put("format",voucherFormat);
+
+		String offerID = voucherProfileStored.getOfferID();
+		JSONObject offerJSON = new JSONObject();
+		GUIManagedObject offerObject = offerService.getStoredOffer(offerID);
+        offerJSON.put("offerID",offerID);
+        offerJSON.put("offerDisplay",offerObject.getGUIManagedObjectDisplay());
+        voucherJson.put("offerDetails",offerJSON);
+
+        vouchersJsonArray.add(voucherJson);
+      }
+
+      response.put("vouchers", JSONUtilities.encodeArray(vouchersJsonArray));
+      updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
+    }
+    catch (SubscriberProfileServiceException e)
+    {
+      log.error("SubscriberProfileServiceException ", e.getMessage());
+      throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
+    }
+
+    return JSONUtilities.encodeObject(response);
+  }
+
 
   private JSONObject constructThirdPartyResponse(RESTAPIGenericReturnCodes genericCode, Map<String,Object> response){
     if(response==null) response=new HashMap<>();

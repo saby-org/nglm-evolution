@@ -1090,7 +1090,7 @@ public class GUIManager
     subscriberIDService = new SubscriberIDService(redisServer, "guimanager-" + apiProcessKey);
     subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("guimanager-subscribergroupepoch", bootstrapServers, subscriberGroupEpochTopic, SubscriberGroupEpoch::unpack);
     renamedProfileCriterionFieldReader = ReferenceDataReader.<String,RenamedProfileCriterionField>startReader("guimanager-renamedprofilecriterionfield", bootstrapServers, renamedProfileCriterionFieldTopic, RenamedProfileCriterionField::unpack);
-    uploadedFileService = new UploadedFileService(bootstrapServers, "guimanager-uploadfileservice-" + apiProcessKey, uploadedFileTopic, true);
+    uploadedFileService = new UploadedFileService(bootstrapServers, uploadedFileTopic, true);
     targetService = new TargetService(bootstrapServers, "guimanager-targetservice-" + apiProcessKey, targetTopic, true);
     voucherService = new VoucherService(bootstrapServers, "guimanager-voucherservice-" + apiProcessKey, voucherTopic, true,elasticsearch,uploadedFileService);
     communicationChannelBlackoutService = new CommunicationChannelBlackoutService(bootstrapServers, "guimanager-blackoutservice-" + apiProcessKey, communicationChannelBlackoutTopic, true);
