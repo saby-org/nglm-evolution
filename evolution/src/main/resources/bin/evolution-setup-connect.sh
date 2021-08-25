@@ -358,6 +358,28 @@ prepare-curl -XPOST $CONNECT_URL_PARTNER_ES/connectors -H "Content-Type: applica
       "batchSize" : "'$CONNECT_ES_PARTNER_BATCHSIZEMB'"
       }
   }'
+  
+#
+#  sink connector -- Badges (elasticsearch)
+#
+
+export CONNECT_URL_BADGE_ES=${CONNECT_URL_BADGE_ES:-$DEFAULT_CONNECT_URL}
+export CONNECT_ES_BADGE_SINK_TASKS=${CONNECT_ES_BADGE_SINK_TASKS:-$CONNECT_ES_DEFAULT_SINK_TASKS}
+export CONNECT_ES_BADGE_BATCHRECORDCOUNT=${CONNECT_ES_BADGE_BATCHRECORDCOUNT:-$CONNECT_ES_DEFAULT_BATCHRECORDCOUNT}
+export CONNECT_ES_BADGE_BATCHSIZEMB=${CONNECT_ES_BADGE_BATCHSIZEMB:-$CONNECT_ES_DEFAULT_BATCHSIZEMB}
+prepare-curl -XPOST $CONNECT_URL_BADGE_ES/connectors -H "Content-Type: application/json" -d '
+  {
+    "name" : "badge_mapping_es_sink_connector",
+    "config" :
+      {
+      "connector.class" : "com.evolving.nglm.evolution.BadgeMappingsESSinkConnector",
+      "tasks.max" : '$CONNECT_ES_BADGE_SINK_TASKS',
+      "topics" : "${topic.badge}",
+      "indexName" : "mapping_badges",
+      "batchRecordCount" : "'$CONNECT_ES_BADGE_BATCHRECORDCOUNT'",
+      "batchSize" : "'$CONNECT_ES_BADGE_BATCHSIZEMB'"
+      }
+  }'
 
 #
 #  sink connector -- VDR (elasticsearch)
@@ -384,7 +406,32 @@ prepare-curl -XPOST $CONNECT_URL_VDR_ES/connectors -H "Content-Type: application
        "batchSize" : "'$CONNECT_ES_VDR_BATCHSIZEMB'"
        }
    }'
-   
+
+#
+#  sink connector -- BGDR (elasticsearch)
+#
+
+export CONNECT_URL_BGDR_ES=${CONNECT_URL_BGDR_ES:-$DEFAULT_CONNECT_URL}
+export CONNECT_ES_BGDR_SINK_TASKS=${CONNECT_ES_BGDR_SINK_TASKS:-$CONNECT_ES_DEFAULT_SINK_TASKS}
+export CONNECT_ES_BGDR_BATCHRECORDCOUNT=${CONNECT_ES_BGDR_BATCHRECORDCOUNT:-$CONNECT_ES_DEFAULT_BATCHRECORDCOUNT}
+export CONNECT_ES_BGDR_BATCHSIZEMB=${CONNECT_ES_BGDR_BATCHSIZEMB:-$CONNECT_ES_DEFAULT_BATCHSIZEMB}
+prepare-curl -XPOST $CONNECT_URL_BGDR_ES/connectors -H "Content-Type: application/json" -d '
+   {
+     "name" : "bgdr_es_sink_connector",
+     "config" :
+       {
+       "connector.class"		: "com.evolving.nglm.evolution.BGDRSinkConnector",
+       "tasks.max" 				: '$CONNECT_ES_BGDR_SINK_TASKS',
+       "topics" 				: "${topic.badgechange.response}",
+       "connectionHost" 		: "'$MASTER_ESROUTER_HOST'",
+       "connectionPort" 		: "'$MASTER_ESROUTER_PORT'",
+       "connectionUserName" 	: "'$ELASTICSEARCH_USERNAME'",
+       "connectionUserPassword"	: "'$ELASTICSEARCH_USERPASSWORD'",
+       "indexName" 				: "detailedrecords_badges-",
+       "batchRecordCount" 		: "'$CONNECT_ES_BGDR_BATCHRECORDCOUNT'",
+       "batchSize" 				: "'$CONNECT_ES_BGDR_BATCHSIZEMB'"
+       }
+   }'   
 
 #
 #  sink connector -- EDR (elasticsearch)

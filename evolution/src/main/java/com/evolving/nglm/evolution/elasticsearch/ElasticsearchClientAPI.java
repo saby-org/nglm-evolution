@@ -1200,6 +1200,14 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
           }
         break;
         
+      case getCustomerBGDRs:
+        index = "detailedrecords_badges-*";
+        if (startDate != null)
+          {
+            query = query.filter(QueryBuilders.rangeQuery("eventDatetime").gte(RLMDateUtils.formatDateForElasticsearchDefault(startDate)));
+          }
+        break;
+        
       case getCustomerMessages:
         if (startDate != null)
           {

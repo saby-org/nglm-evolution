@@ -148,7 +148,7 @@ public abstract class SubscriberProfile
     //
 
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(11)); //10>11 : adding OneTimePassword list
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(12)); //10>11 : adding OneTimePassword list
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("subscriberTraceEnabled", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("evolutionSubscriberStatus", Schema.OPTIONAL_STRING_SCHEMA);
@@ -172,6 +172,7 @@ public abstract class SubscriberProfile
     schemaBuilder.field("offerPurchaseSalesChannelHistory", SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(SalesChannelPurchaseDate.schema())).name("subscriber_profile_purchase_saleschannel_history").schema());
     schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
     schemaBuilder.field("otps",   SchemaBuilder.array(OTPInstance.serde().schema()).defaultValue(Collections.<OTPInstance>emptyList()).schema());
+    schemaBuilder.field("badges", SchemaBuilder.array(BadgeState.schema()).name("subscriber_profile_badges").optional().schema());
 
     commonSchema = schemaBuilder.build();
   };
@@ -256,6 +257,7 @@ public abstract class SubscriberProfile
   // the field unknownRelationships does not mean to be serialized, it is only used as a temporary parameter to handle the case where, in a journey, 
   // the required relationship does not exist and must go out of the box through a special connector.
   private List<Pair<String, String>> unknownRelationships = new ArrayList<>();
+  private List<BadgeState> badges;
   
  
 
@@ -303,6 +305,11 @@ public abstract class SubscriberProfile
           }
       }
     return result;
+  }
+  public List<BadgeState> getBadges() { return badges; }
+  public BadgeState getBadgeByID(String badgeID) 
+  { 
+    return badges.stream().filter(badge -> badge.getBadgeID().equals(badgeID)).findFirst().orElse(null); 
   }
   
   //
@@ -765,7 +772,33 @@ public abstract class SubscriberProfile
     }
     return result;
   }
- 
+  
+  /****************************************
+  *
+  *  getBadgesJSON - badges
+  *
+  ****************************************/
+
+ public JSONObject getBadgesJSON()
+ {
+   JSONObject result = new JSONObject();
+   if (this.badges != null)
+     {
+       JSONArray array = new JSONArray();
+       for (BadgeState badge : badges)
+         {
+           JSONObject obj = new JSONObject();
+           obj.put("badgeID", badge.getBadgeID());
+           obj.put("badgeType", badge.getBadgeType().getExternalRepresentation());
+           obj.put("badgeStatus", badge.getCustomerBadgeStatus().getExternalRepresentation());
+           obj.put("badgeAwardDate", RLMDateUtils.formatDateForElasticsearchDefault(badge.getBadgeAwardDate()));
+           obj.put("badgeRemoveDate", RLMDateUtils.formatDateForElasticsearchDefault(badge.getBadgeRemoveDate()));
+           array.add(obj);
+         }
+       result.put("badges", array);
+     }
+   return result;
+ }
   
   /****************************************
   *
@@ -946,7 +979,7 @@ public abstract class SubscriberProfile
   //  getProfileMapForGUIPresentation
   //
 
-  public Map<String, Object> getProfileMapForGUIPresentation(SubscriberProfileService subscriberProfileService, LoyaltyProgramService loyaltyProgramService, SegmentationDimensionService segmentationDimensionService, TargetService targetService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService, ExclusionInclusionTargetService exclusionInclusionTargetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
+  public Map<String, Object> getProfileMapForGUIPresentation(SubscriberProfileService subscriberProfileService, LoyaltyProgramService loyaltyProgramService, BadgeService badgeService, SegmentationDimensionService segmentationDimensionService, TargetService targetService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService, ExclusionInclusionTargetService exclusionInclusionTargetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
   {
     //
     //  now
@@ -1055,6 +1088,29 @@ public abstract class SubscriberProfile
     	}
     	complexObjectInstancesjson.add(JSONUtilities.encodeObject(json)) ;
     }
+    
+    //
+    //  badgesPresentation
+    //
+    
+    List<JSONObject> badgesPresentation = new ArrayList<JSONObject>();
+    for (BadgeState badgeState : getBadges())
+      {
+        GUIManagedObject badgeUnchecked = badgeService.getStoredBadge(badgeState.getBadgeID());
+        if (badgeUnchecked != null && badgeUnchecked.getAccepted())
+          {
+            Badge badge = (Badge) badgeUnchecked;
+            Map<String, Object> badgeJSONMap = new HashMap<String, Object>();
+            badgeJSONMap.put("badgeID", badge.getBadgeID());
+            badgeJSONMap.put("badgeName", badge.getGUIManagedObjectName());
+            badgeJSONMap.put("badgeDisplay", badge.getGUIManagedObjectDisplay());
+            badgeJSONMap.put("badgeType", badgeState.getBadgeType().getExternalRepresentation());
+            badgeJSONMap.put("customerBadgeStatus", badgeState.getCustomerBadgeStatus().getExternalRepresentation());
+            badgeJSONMap.put("badgeAwardDate", badgeState.getBadgeAwardDate());
+            badgeJSONMap.put("badgeRemoveDate", badgeState.getBadgeRemoveDate());
+            badgesPresentation.add(JSONUtilities.encodeObject(badgeJSONMap));
+          }
+      }
     
     //prepare Inclusion/Exclusion list
     
@@ -1188,6 +1244,8 @@ public abstract class SubscriberProfile
     generalDetailsPresentation.put("inclusionTargets", JSONUtilities.encodeArray(new ArrayList<String>(getInclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now))));
     generalDetailsPresentation.put("universalControlGroup", getUniversalControlGroup(subscriberGroupEpochReader));
     generalDetailsPresentation.put("complexFields", JSONUtilities.encodeArray(complexObjectInstancesjson));
+    generalDetailsPresentation.put("badges", JSONUtilities.encodeArray(badgesPresentation));
+    
     // prepare basic kpiPresentation (if any)
     //
 
@@ -1224,7 +1282,7 @@ public abstract class SubscriberProfile
   //  getProfileMapForThirdPartyPresentation
   //
 
-  public Map<String,Object> getProfileMapForThirdPartyPresentation(SegmentationDimensionService segmentationDimensionService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ExclusionInclusionTargetService exclusionInclusionTargetService)
+  public Map<String,Object> getProfileMapForThirdPartyPresentation(SegmentationDimensionService segmentationDimensionService, BadgeService badgeService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ExclusionInclusionTargetService exclusionInclusionTargetService)
   {
     HashMap<String, Object> baseProfilePresentation = new HashMap<String,Object>();
     HashMap<String, Object> generalDetailsPresentation = new HashMap<String,Object>();
@@ -1232,6 +1290,27 @@ public abstract class SubscriberProfile
      //prepare Inclusion/Exclusion list
     Date now = SystemTime.getCurrentTime();
     SubscriberEvaluationRequest inclusionExclusionEvaluationRequest = new SubscriberEvaluationRequest(this, subscriberGroupEpochReader, now, tenantID);
+    
+    //
+    //  badgesPresentation
+    //
+    
+    List<JSONObject> badgesPresentation = new ArrayList<JSONObject>();
+    for (BadgeState badgeState : getBadges())
+      {
+        GUIManagedObject badgeUnchecked = badgeService.getStoredBadge(badgeState.getBadgeID());
+        if (badgeUnchecked != null && badgeUnchecked.getAccepted())
+          {
+            Badge badge = (Badge) badgeUnchecked;
+            Map<String, Object> badgeJSONMap = new HashMap<String, Object>();
+            badgeJSONMap.put("badgeDisplay", badge.getGUIManagedObjectDisplay());
+            badgeJSONMap.put("badgeType", badgeState.getBadgeType().getExternalRepresentation());
+            badgeJSONMap.put("customerBadgeStatus", badgeState.getCustomerBadgeStatus().getExternalRepresentation());
+            badgeJSONMap.put("badgeAwardDate", badgeState.getBadgeAwardDate());
+            badgeJSONMap.put("badgeRemoveDate", badgeState.getBadgeRemoveDate());
+            badgesPresentation.add(JSONUtilities.encodeObject(badgeJSONMap));
+          }
+      }
     
 
     //
@@ -1246,6 +1325,7 @@ public abstract class SubscriberProfile
     generalDetailsPresentation.put("exclusionTargets", JSONUtilities.encodeArray(new ArrayList<String>(getExclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now))));
     generalDetailsPresentation.put("inclusionTargets", JSONUtilities.encodeArray(new ArrayList<String>(getInclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now))));
     generalDetailsPresentation.put("universalControlGroup", getUniversalControlGroup(subscriberGroupEpochReader));
+    generalDetailsPresentation.put("badges", JSONUtilities.encodeArray(badgesPresentation));
   
     //
     // prepare basic kpiPresentation (if any)
@@ -1594,6 +1674,7 @@ public abstract class SubscriberProfile
     this.offerPurchaseHistory = new HashMap<>();
     this.offerPurchaseSalesChannelHistory = new HashMap<String, List<Pair<String,Date>>>();
     this.tenantID = tenantID;
+    this.badges = new LinkedList<BadgeState>();
   }
 
   /*****************************************
@@ -1640,6 +1721,7 @@ public abstract class SubscriberProfile
     Map<String, List<Pair<String, Date>>> offerPurchaseSalesChannelHistory = schema.field("offerPurchaseSalesChannelHistory") != null ? unpackOfferPurchaseSalesChannelHistory(schema.field("offerPurchaseSalesChannelHistory").schema(), (Map<String,List<Object>>) valueStruct.get("offerPurchaseSalesChannelHistory")) : new HashMap<String, List<Pair<String,Date>>>();
     int tenantID = schema.field("tenantID") != null ? valueStruct.getInt16("tenantID") : 1; // by default tenant 1
     List<OTPInstance> otpInstances = (schemaVersion >= 11) ? unpackOTPs(schema.field("otps").schema(), valueStruct.get("otps")) : Collections.<OTPInstance>emptyList();
+    List<BadgeState> badges = (schemaVersion >= 12) ? unpackBadges(schema.field("badges").schema(), valueStruct.get("badges")) : new LinkedList<BadgeState>();
 
     //
     //  return
@@ -1668,6 +1750,7 @@ public abstract class SubscriberProfile
     this.tenantID = tenantID;
     this.otpInstances = otpInstances;
     this.offerPurchaseSalesChannelHistory = offerPurchaseSalesChannelHistory;
+    this.badges = badges;
   }
 
   /*****************************************
@@ -1963,7 +2046,39 @@ public abstract class SubscriberProfile
   
   /*****************************************
   *
-  *  unpackVouchers
+  *  unpackBadges
+  *
+  *****************************************/
+
+ private static List<BadgeState> unpackBadges(Schema schema, Object value)
+ {
+   //
+   //  get schema for voucher
+   //
+
+   Schema badgeSchema = schema.valueSchema();
+
+   //
+   //  unpack
+   //
+
+   List<BadgeState> result = new LinkedList<>();
+   List<Object> valueArray = (List<Object>) value;
+   for (Object badgestatObject : valueArray)
+   {
+     result.add(BadgeState.unpack(new SchemaAndValue(badgeSchema, badgestatObject)));
+   }
+
+   //
+   //  return
+   //
+
+   return result;
+ }
+  
+  /*****************************************
+  *
+  *  unpackOTPs
   *
   *****************************************/
 
@@ -2057,6 +2172,7 @@ public abstract class SubscriberProfile
     this.offerPurchaseSalesChannelHistory = subscriberProfile.getOfferPurchaseSalesChannelHistory();
     this.getUnknownRelationships().addAll(subscriberProfile.getUnknownRelationships());
     this.tenantID = subscriberProfile.getTenantID();
+    this.badges = new LinkedList<BadgeState>(subscriberProfile.getBadges());
   }
 
   /*****************************************
@@ -2090,6 +2206,7 @@ public abstract class SubscriberProfile
     struct.put("offerPurchaseSalesChannelHistory", packOfferPurchaseSalesChannelHistory(subscriberProfile.getOfferPurchaseSalesChannelHistory()));
     struct.put("tenantID", (short)(short)subscriberProfile.getTenantID());
     struct.put("otps", packOTPInstances(subscriberProfile.getOTPInstances()));
+    struct.put("badges", packBadges(subscriberProfile.getBadges()));
   }
 
   /*****************************************
@@ -2285,6 +2402,21 @@ public abstract class SubscriberProfile
     return result;
   }
   
+  /****************************************
+  *
+  *  packBadges
+  *
+  ****************************************/
+
+ private static Object packBadges(List<BadgeState> badges)
+ {
+   List<Object> result = new ArrayList<Object>();
+   for (BadgeState badge : badges)
+   {
+     result.add(BadgeState.pack(badge));
+   }
+   return result;
+ }
   
   /****************************************
   *
