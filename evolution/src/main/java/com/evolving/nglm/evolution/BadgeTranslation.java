@@ -36,10 +36,10 @@ public class BadgeTranslation
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("badge_translation");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
-    schemaBuilder.field("display", Schema.STRING_SCHEMA);
-    schemaBuilder.field("description", Schema.STRING_SCHEMA);
-    schemaBuilder.field("imageURL", Schema.STRING_SCHEMA);
-    schemaBuilder.field("languageID", Schema.STRING_SCHEMA);
+    schemaBuilder.field("display", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("description", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("imageURL", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("languageID", Schema.OPTIONAL_STRING_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -80,7 +80,7 @@ public class BadgeTranslation
    *
    *****************************************/
 
-  BadgeTranslation(JSONObject jsonRoot) throws GUIManagerException
+  public BadgeTranslation(JSONObject jsonRoot) throws GUIManagerException
   {
     //
     //  basic fields
