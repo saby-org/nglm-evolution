@@ -1102,28 +1102,33 @@ public abstract class SubscriberProfile
     //prepare complexObjectInstances
     
     ArrayList<JSONObject> complexObjectInstancesjson = new ArrayList<JSONObject>();
-    HashMap<String,HashMap<String,HashMap<String,Object>>> json = new HashMap<String,HashMap<String,HashMap<String,Object>>>();
-    if(getComplexObjectInstances()!=null && getComplexObjectInstances().size()>0) {
-    	for (ComplexObjectInstance instance : getComplexObjectInstances())
-    	{ 	if(!json.containsKey(instance.getComplexObjectTypeID())) {
-    		json.put(instance.getComplexObjectTypeID(), new HashMap<String,HashMap<String,Object>>());
-    	}
-    	HashMap<String,HashMap<String,Object>>  elements=(HashMap<String,HashMap<String,Object>>) json.get(instance.getComplexObjectTypeID());
-    	if(!elements.containsKey(instance.getElementID())) {
-    		elements.put(instance.getElementID(), new HashMap<String,Object>());
-    	} 
-    	HashMap<String,Object> elementVal=elements.get(instance.getElementID());
-    	
-    	for (Map.Entry<String,DataModelFieldValue> entry : instance.getFieldValuesReadOnly().entrySet()) {
-    		Object currVal=entry.getValue().getValue();
-    		if(currVal instanceof Date )
-    			currVal=getDateString((Date)currVal);
-    		
-    		elementVal.put(entry.getKey(), currVal);
-    	}      
-    	}
-    	complexObjectInstancesjson.add(JSONUtilities.encodeObject(json)) ;
-    }
+    HashMap<String, HashMap<String, HashMap<String, Object>>> json = new HashMap<String, HashMap<String, HashMap<String, Object>>>();
+    if (getComplexObjectInstances() != null && getComplexObjectInstances().size() > 0)
+      {
+        for (ComplexObjectInstance instance : getComplexObjectInstances())
+          {
+            if (!json.containsKey(instance.getComplexObjectTypeID()))
+              {
+                json.put(instance.getComplexObjectTypeID(), new HashMap<String, HashMap<String, Object>>());
+              }
+            HashMap<String, HashMap<String, Object>> elements = (HashMap<String, HashMap<String, Object>>) json.get(instance.getComplexObjectTypeID());
+            if (!elements.containsKey(instance.getElementID()))
+              {
+                elements.put(instance.getElementID(), new HashMap<String, Object>());
+              }
+            HashMap<String, Object> elementVal = elements.get(instance.getElementID());
+            if (instance.getFieldValuesReadOnly() != null)
+              {
+                for (Map.Entry<String, DataModelFieldValue> entry : instance.getFieldValuesReadOnly().entrySet())
+                  {
+                    Object currVal = entry.getValue().getValue();
+                    if (currVal instanceof Date) currVal = getDateString((Date) currVal);
+                    elementVal.put(entry.getKey(), currVal);
+                  }
+              }
+          }
+        complexObjectInstancesjson.add(JSONUtilities.encodeObject(json));
+      }
     
     //prepare Inclusion/Exclusion list
     
