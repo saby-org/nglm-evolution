@@ -8864,7 +8864,7 @@ public class GUIManager
 
         // if stock update, and no more stock, need to warn it
         String responseMessage = null;
-        if(existingOffer instanceof Offer && !Objects.equals(((Offer) existingOffer).getStock(),offer.getStock()) && StockMonitor.getRemainingStock(offer)==0) responseMessage = "no remaining stock";
+        if(existingOffer instanceof Offer && !Objects.equals(((Offer) existingOffer).getStock(),offer.getStock()) && offer.getApproximateRemainingStock()!=null && offer.getApproximateRemainingStock()==0) responseMessage = "no remaining stock";
 
         /*****************************************
         *
@@ -12852,7 +12852,7 @@ public class GUIManager
 
 		// if stock update, and no more stock, need to warn it
 		String responseMessage = null;
-		if(existingProduct instanceof Product && !Objects.equals(((Product) existingProduct).getStock(),product.getStock()) && StockMonitor.getRemainingStock(product)==0) responseMessage = "no remaining stock";
+		if(existingProduct instanceof Product && !Objects.equals(((Product) existingProduct).getStock(),product.getStock()) && product.getApproximateRemainingStock()!=null && product.getApproximateRemainingStock()==0) responseMessage = "no remaining stock";
 
 
         /*****************************************
@@ -16047,7 +16047,7 @@ public class GUIManager
         if(voucherType.getCodeType()==VoucherType.CodeType.Shared){
           voucher = new VoucherShared(jsonRoot, epoch, existingVoucher, tenantID);
           if(log.isDebugEnabled()) log.debug("will put shared voucher "+voucher);
-		  if(existingVoucher instanceof VoucherShared && !Objects.equals(((VoucherShared) existingVoucher).getStock(),((VoucherShared)voucher).getStock()) && StockMonitor.getRemainingStock((VoucherShared)voucher)==0) responseMessage = "no remaining stock";
+		  if(existingVoucher instanceof VoucherShared && !Objects.equals(((VoucherShared) existingVoucher).getStock(),((VoucherShared)voucher).getStock()) && ((VoucherShared)voucher).getApproximateRemainingStock()!=null && ((VoucherShared)voucher).getApproximateRemainingStock()==0) responseMessage = "no remaining stock";
         }
         if(voucher==null && voucherType.getCodeType()==VoucherType.CodeType.Personal){
           voucher = new VoucherPersonal(jsonRoot, epoch, existingVoucher,voucherType, tenantID);

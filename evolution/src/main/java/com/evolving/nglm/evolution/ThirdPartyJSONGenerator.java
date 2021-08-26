@@ -118,7 +118,7 @@ public class ThirdPartyJSONGenerator
     offerMap.put("offerEndDate", getDateString(offer.getEffectiveEndDate(), offer.getTenantID()));
     offerMap.put("offerDescription", offer.getDescription());
     offerMap.put("offerExternalID", offer.getJSONRepresentation().get("externalID")!=null?offer.getJSONRepresentation().get("externalID"):"");
-    offerMap.put("offerAvailableStock", offer.getJSONRepresentation().get("presentationStock")!=null?offer.getJSONRepresentation().get("presentationStock"):"");
+    offerMap.put("offerAvailableStock", offer.getApproximateRemainingStock());
     offerMap.put("offerAvailableStockAlertThreshold", offer.getJSONRepresentation().get("presentationStockAlertThreshold")!=null?offer.getJSONRepresentation().get("presentationStockAlertThreshold"):"");
     offerMap.put("offerImageURL", offer.getJSONRepresentation().get("imageURL")!=null?offer.getJSONRepresentation().get("imageURL"):"");
     offerMap.put("offerObjectives", getOfferObjectivesJson(offer, offerObjectiveService, catalogCharacteristicService));

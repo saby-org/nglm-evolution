@@ -196,7 +196,7 @@ public class DNBOProxy
   //  authCache
   //
 
-  TimebasedCache<ThirdPartyCredential, AuthenticatedResponse> authCache = null;
+  TimebasedCache<ThirdPartyCredential, AuthenticatedResponse> authCache;
 
 
   /*****************************************
@@ -239,6 +239,7 @@ public class DNBOProxy
     
     methodPermissionsMapper = Deployment.getThirdPartyMethodPermissionsMap();
     authResponseCacheLifetimeInMinutes = Deployment.getAuthResponseCacheLifetimeInMinutes() == null ? new Integer(0) : Deployment.getAuthResponseCacheLifetimeInMinutes();
+    authCache = TimebasedCache.getInstance(60000*authResponseCacheLifetimeInMinutes);
 
 
     /*****************************************
@@ -545,17 +546,6 @@ public class DNBOProxy
            }
        }
    }
-
-
-
-   //
-   //  hasAccess
-   //
-
-   if (! hasAccess(authResponse, methodAccessLevel, api))
-     {
-       throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.INSUFFICIENT_USER_RIGHTS);
-     }
    
    return authResponse.getTenantID();
 
@@ -649,40 +639,6 @@ public class DNBOProxy
      log.error("IOException: {}", e.getMessage());
      throw e;
    }
- }
-
- /*****************************************
-  *
-  *  hasAccess
-  *
-  *****************************************/
-
- private boolean hasAccess(AuthenticatedResponse authResponse, ThirdPartyMethodAccessLevel methodAccessLevel, String api)
- {
-
-   //
-   // check method access
-   //
-
-   if (methodAccessLevel == null || (methodAccessLevel.getPermissions().isEmpty()))
-     {
-       log.warn("No permission/workgroup is configured for method {} ", api);
-       return false;
-     }
-
-   //
-   // check permissions
-   //
-   for (String userPermission : authResponse.getPermissions())
-     {
-       if (methodAccessLevel.getPermissions().contains(userPermission))
-         {
-           return true;
-         }
-
-     }
-   return false;
-
  }
 
 
@@ -1201,7 +1157,7 @@ public class DNBOProxy
       List<JSONObject> scoredOffersJSON = new ArrayList<JSONObject>();
       for (ProposedOfferDetails proposedOffer : offerAvailabilityFromPropensityAlgo)
       {
-        scoredOffersJSON.add(proposedOffer.getJSONRepresentation());
+        scoredOffersJSON.add(proposedOffer.getJSONRepresentation(offerService));
       }
 
       //
