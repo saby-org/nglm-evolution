@@ -1,11 +1,16 @@
 package com.evolving.nglm.evolution;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
@@ -146,6 +151,40 @@ public class BadgeService extends GUIService
   public void removeBadge(String badgeID, String userID, int tenantID) 
   { 
     removeGUIManagedObject(badgeID, SystemTime.getCurrentTime(), userID, tenantID);
+  }
+  
+  public JSONObject getSummaryJSONRepresentation(GUIManagedObject guiManagedObject)
+  {
+    JSONObject result = super.getSummaryJSONRepresentation(guiManagedObject);
+    JSONObject fullJSON = guiManagedObject.getJSONRepresentation();
+    
+    result.put("badgeType", JSONUtilities.decodeString(fullJSON, "badgeType", false));
+    result.put("badgeObjectives", JSONUtilities.decodeJSONArray(fullJSON, "badgeObjectives", new JSONArray()));
+    
+    List<JSONObject> translations = new ArrayList<>();
+    if (fullJSON.get("translations") != null)
+      {
+        JSONArray existingTranslation = (JSONArray) guiManagedObject.getJSONRepresentation().get("translations");
+        if (existingTranslation != null && !(existingTranslation.isEmpty()))
+          {
+            for (int i = 0; i < existingTranslation.size(); i++)
+              {
+                JSONObject translationObject = (JSONObject) existingTranslation.get(i);
+                if (translationObject != null && translationObject.get("language") != null)
+                  {
+                    String language = (String) translationObject.get("language");
+                    JSONObject languageToBeUpdate = new JSONObject();
+                    languageToBeUpdate.put("language", language);
+                    translations.add(languageToBeUpdate);
+                  }
+
+              }
+          }
+      }
+    result.put("translations", translations);
+    return result;
+  
+    
   }
 
 }

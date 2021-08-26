@@ -38,7 +38,8 @@ public class BadgeTranslation
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
     schemaBuilder.field("display", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("description", Schema.OPTIONAL_STRING_SCHEMA);
-    schemaBuilder.field("imageURL", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("pendingImageURL", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("awardedImageURL", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("languageID", Schema.OPTIONAL_STRING_SCHEMA);
     schema = schemaBuilder.build();
   };
@@ -57,7 +58,8 @@ public class BadgeTranslation
 
   private String display;
   private String description;
-  private String imageURL;
+  private String pendingImageURL;
+  private String awardedImageURL;
   private String languageID;
   
   /*****************************************
@@ -66,11 +68,12 @@ public class BadgeTranslation
    *
    *****************************************/
 
-  private BadgeTranslation(String display, String description, String imageURL, String languageID)
+  private BadgeTranslation(String display, String description, String pendingImageURL, String awardedImageURL, String languageID)
   {
     this.display = display;
     this.description = description;
-    this.imageURL = imageURL;
+    this.pendingImageURL = pendingImageURL;
+    this.awardedImageURL = awardedImageURL;
     this.languageID = languageID;
   }
 
@@ -88,7 +91,8 @@ public class BadgeTranslation
 
     this.display = JSONUtilities.decodeString(jsonRoot, "display", false);
     this.description = JSONUtilities.decodeString(jsonRoot, "description", false);
-    this.imageURL = JSONUtilities.decodeString(jsonRoot, "imageURL", false);
+    this.pendingImageURL = JSONUtilities.decodeString(jsonRoot, "pendingImageURL", false);
+    this.awardedImageURL = JSONUtilities.decodeString(jsonRoot, "awardedImageURL", false);
     this.languageID = JSONUtilities.decodeString(jsonRoot, "languageID", false);
 
     //
@@ -105,7 +109,8 @@ public class BadgeTranslation
 
   public String getDisplay() { return display; }
   public String getDescription() { return description; }
-  public String getImageURL() { return imageURL; }
+  public String getPendingImageURL() { return pendingImageURL; }
+  public String getAwardedImageURL() { return awardedImageURL; }
   public String getLanguageID() { return languageID; }
   
   /*****************************************
@@ -131,7 +136,8 @@ public class BadgeTranslation
     Struct struct = new Struct(schema);
     struct.put("display", badgeTranslation.getDisplay());
     struct.put("description", badgeTranslation.getDescription());
-    struct.put("imageURL", badgeTranslation.getImageURL());
+    struct.put("pendingImageURL", badgeTranslation.getPendingImageURL());
+    struct.put("awardedImageURL", badgeTranslation.getAwardedImageURL());
     struct.put("languageID", badgeTranslation.getLanguageID());
     return struct;
   }
@@ -159,7 +165,8 @@ public class BadgeTranslation
     Struct valueStruct = (Struct) value;
     String display = valueStruct.getString("display");
     String description = valueStruct.getString("description");
-    String imageURL = valueStruct.getString("imageURL");
+    String pendingImageURL = valueStruct.getString("pendingImageURL");
+    String awardedImageURL = valueStruct.getString("awardedImageURL");
     String languageID = valueStruct.getString("languageID");
 
     //
@@ -170,7 +177,7 @@ public class BadgeTranslation
     //  return
     //
 
-    return new BadgeTranslation(display, description, imageURL, languageID);
+    return new BadgeTranslation(display, description, pendingImageURL, awardedImageURL, languageID);
   }
 
   /*****************************************
@@ -188,7 +195,8 @@ public class BadgeTranslation
         result = true;
         result = result && Objects.equals(display, badgeTranslation.getDisplay());
         result = result && Objects.equals(description, badgeTranslation.getDescription());
-        result = result && Objects.equals(imageURL, badgeTranslation.getImageURL());
+        result = result && Objects.equals(pendingImageURL, badgeTranslation.getPendingImageURL());
+        result = result && Objects.equals(awardedImageURL, badgeTranslation.getAwardedImageURL());
         result = result && Objects.equals(languageID, badgeTranslation.getLanguageID());
       }
     return result;
