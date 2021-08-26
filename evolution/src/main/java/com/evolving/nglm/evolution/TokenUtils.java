@@ -586,7 +586,7 @@ public class TokenUtils
     }
     for (Offer offer : filteredOffers)
     {
-      Integer stock = StockMonitor.getRemainingStock(offer);
+      Integer stock = offer.getApproximateRemainingStock();
       if ((stock != null) && (stock <= 0)) { // EVPRO-1105 do not present offers not in stock
         if (log.isTraceEnabled()) log.trace("No stock for offer " + offer.getOfferID());
         continue;
