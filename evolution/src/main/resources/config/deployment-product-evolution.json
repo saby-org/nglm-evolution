@@ -98,7 +98,7 @@
   
   "elasticsearchTemplatesVersion" : {
     "root":                             2,
-    "subscriberprofile":                2,
+    "subscriberprofile":                3,
     "detailedrecords_bonuses":          2,
     "detailedrecords_tokens":           2,
     "detailedrecords_offers":           2,
