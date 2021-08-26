@@ -1,6 +1,7 @@
 package com.evolving.nglm.evolution;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -21,12 +22,14 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 @GUIDependencyDef(objectType = "badge", serviceClass = BadgeService.class, dependencies = { "badgeObjective" })
-public class Badge extends GUIManagedObject
+public class Badge extends GUIManagedObject implements GUIManagedObject.ElasticSearchMapping
 {
   
   //
@@ -580,6 +583,30 @@ public class Badge extends GUIManagedObject
     List<String> badgeObjectivesIDs = getBadgeObjectives().stream().map(badgeObjective -> badgeObjective.getBadgeObjectiveID()).collect(Collectors.toList());
     result.put("badgeObjective", badgeObjectivesIDs);
     return result;
+  }
+  
+  @Override public String getESDocumentID()
+  {
+    return "_badge-" + getGUIManagedObjectID().hashCode();
+  }
+
+  @Override public Map<String, Object> getESDocumentMap(JourneyService journeyService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, ContactPolicyService contactPolicyService)
+  {
+    Map<String, Object> documentMap = new HashMap<String, Object>();
+    Date now = SystemTime.getCurrentTime();
+    documentMap.put("id", getGUIManagedObjectID());
+    documentMap.put("display", getGUIManagedObjectDisplay());
+    documentMap.put("active", getActive());
+    documentMap.put("badgeType", getBadgeType().getExternalRepresentation());
+    documentMap.put("createdDate", RLMDateUtils.formatDateForElasticsearchDefault(getCreatedDate()));
+    documentMap.put("timestamp", RLMDateUtils.formatDateForElasticsearchDefault(now));
+    documentMap.put("tenantID", getTenantID());
+    return documentMap;
+  }
+
+  @Override public String getESIndexName()
+  {
+    return "mapping_badges";
   }
 
 }
