@@ -88,27 +88,14 @@ public class UploadedFileService extends GUIService
   *
   *****************************************/
 
-  public UploadedFileService(String bootstrapServers, String groupID, String uploadFileTopic, boolean masterService, UploadedFileListener uploadedFileListener, boolean notifyOnSignificantChange)
+  public UploadedFileService(String bootstrapServers, String uploadFileTopic, boolean masterService, UploadedFileListener uploadedFileListener, boolean notifyOnSignificantChange)
   {
-    super(bootstrapServers, "UploadedFileService", groupID, uploadFileTopic, masterService, getSuperListener(uploadedFileListener), "putUploadedFile", "deleteUploadedFile", notifyOnSignificantChange);
+    super(bootstrapServers, "UploadedFileService", uploadFileTopic, masterService, getSuperListener(uploadedFileListener), "putUploadedFile", "deleteUploadedFile", notifyOnSignificantChange);
   }
 
-  //
-  //  constructor
-  //
-  
-  public UploadedFileService(String bootstrapServers, String groupID, String uploadFileTopic, boolean masterService, UploadedFileListener uploadedFileListener)
+  public UploadedFileService(String bootstrapServers, String uploadFileTopic, boolean masterService)
   {
-    this(bootstrapServers, groupID, uploadFileTopic, masterService, uploadedFileListener, true);
-  }
-
-  //
-  //  constructor
-  //
-
-  public UploadedFileService(String bootstrapServers, String groupID, String uploadFileTopic, boolean masterService)
-  {
-    this(bootstrapServers, groupID, uploadFileTopic, masterService, (UploadedFileListener) null, true);
+    this(bootstrapServers, uploadFileTopic, masterService, (UploadedFileListener) null, true);
   }
 
   //
@@ -847,47 +834,4 @@ private String resolveSubscriberID(SubscriberIDService subscriberIDService, Stri
     public void fileDeactivated(String guiManagedObjectID);
   }
 
-  /*****************************************
-  *
-  *  example main
-  *
-  *****************************************/
-
-  public static void main(String[] args)
-  {
-    //
-    //  uploadedFileListener
-    //
-
-    UploadedFileListener uploadedFileListener = new UploadedFileListener()
-    {
-      @Override public void fileActivated(UploadedFile uploadedFile) { System.out.println("UploadedFile activated: " + uploadedFile.getApplicationID()); }
-      @Override public void fileDeactivated(String guiManagedObjectID) { System.out.println("UploadedFile deactivated: " + guiManagedObjectID); }
-    };
-
-    //
-    //  offerService
-    //
-
-    UploadedFileService offerService = new UploadedFileService(Deployment.getBrokerServers(), "uploadedfileservice-001", Deployment.getUploadedFileTopic(), true, uploadedFileListener);
-    offerService.start();
-
-    //
-    //  sleep forever
-    //
-
-    while (true)
-      {
-        try
-          {
-            Thread.sleep(Long.MAX_VALUE);
-          }
-        catch (InterruptedException e)
-          {
-            //
-            //  ignore
-            //
-          }
-      }
-  }
 }

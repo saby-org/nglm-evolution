@@ -1006,11 +1006,7 @@ public abstract class SubscriberProfile
           voucherPresentation.put("code", storedVoucher.getVoucherCode());
           // NOTE : DATE OUTPUT FOR GUI HERE MISMATCH OTHER DATE OUTPUT OF THIS OBJECT, WHICH ACTUALLY SEEMS THEY ARE USELESS...
           voucherPresentation.put("expiryDate", getDateString(storedVoucher.getVoucherExpiryDate()));
-          // can be not updated yet
-          if(storedVoucher.getVoucherStatus()!=VoucherDelivery.VoucherStatus.Expired && storedVoucher.getVoucherStatus()!=VoucherDelivery.VoucherStatus.Redeemed && storedVoucher.getVoucherExpiryDate().before(now)){
-            storedVoucher.setVoucherStatus(VoucherDelivery.VoucherStatus.Expired);
-          }
-          voucherPresentation.put("status",storedVoucher.getVoucherStatus().getExternalRepresentation());
+          voucherPresentation.put("status",storedVoucher.getVoucherStatusComputed().getExternalRepresentation());
           vouchersPresentation.add(JSONUtilities.encodeObject(voucherPresentation));
         }
       }
