@@ -2615,15 +2615,15 @@ public class EvaluationCriterion
     switch (criterionSuffix)
     {
       case "tier":
-        query = handleLoyaltyProgramField("loyaltyPrograms.tierName", esField, queryLPID, ExpressionDataType.StringExpression);
+        query = handleLoyaltyProgramField("loyaltyPrograms.tierName", esField, queryLPID, ExpressionDataType.StringSetExpression);
         break;
         
       case "level":
-        query = handleLoyaltyProgramField("loyaltyPrograms.level", esField, queryLPID, ExpressionDataType.StringExpression);
+        query = handleLoyaltyProgramField("loyaltyPrograms.level", esField, queryLPID, ExpressionDataType.StringSetExpression);
         break;
         
       case "step":
-        query = handleLoyaltyProgramField("loyaltyPrograms.step", esField, queryLPID, ExpressionDataType.StringExpression);
+        query = handleLoyaltyProgramField("loyaltyPrograms.step", esField, queryLPID, ExpressionDataType.StringSetExpression);
         break;
 
       case "statuspoint.balance":
@@ -2655,7 +2655,7 @@ public class EvaluationCriterion
         break;
 
       case "tierupdatetype":
-        query = handleLoyaltyProgramField("loyaltyPrograms.tierChangeType", esField, queryLPID, ExpressionDataType.StringExpression);
+        query = handleLoyaltyProgramField("loyaltyPrograms.tierChangeType", esField, queryLPID, ExpressionDataType.StringSetExpression);
         break;
 
       default:
@@ -2763,7 +2763,11 @@ public class EvaluationCriterion
         break;
 
       case IsInSetOperator:
+        queryCompare = QueryBuilders.termsQuery(field, (Set<String>) value);
+        break;
       case NotInSetOperator:
+        queryCompare = QueryBuilders.boolQuery().mustNot(new TermsQueryBuilder(field, (Set<String>) value));
+        break;
       case EmptyIntersectionOperator:
       case NonEmptyIntersectionOperator:
         /*
