@@ -303,7 +303,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/bdr -u $EL
       "operation" : { "type" : "keyword" },
       "moduleID" : { "type" : "keyword" },
       "featureID" : { "type" : "keyword" },
-      "origin" : { "type" : "keyword", "index" : "false" },
+      "origin" : { "type" : "keyword" },
       "returnCode" : { "type" : "keyword" },
       "deliveryStatus" : { "type" : "keyword" },
       "returnCodeDetails" : { "type" : "keyword", "index" : "false" }
@@ -366,7 +366,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/token -u $
       "eventDatetime" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ"},
       "eventID"       : { "type" : "keyword" },
       "returnCode"    : { "type" : "keyword" },
-      "origin"        : { "type" : "keyword", "index" : "false" }
+      "origin"        : { "type" : "keyword" }
     }
   }
 }'
@@ -434,7 +434,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/odr -u $EL
       "offerContent" : { "type" : "keyword", "index" : "false" },
       "moduleID" : { "type" : "keyword" },
       "featureID" : { "type" : "keyword" },
-      "origin" : { "type" : "keyword", "index" : "false" },
+      "origin" : { "type" : "keyword" },
       "returnCode" : { "type" : "keyword" },
       "deliveryStatus" : { "type" : "keyword" },
       "returnCodeDetails" : { "type" : "keyword", "index" : "false" },
@@ -498,7 +498,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/vdr -u $EL
       "eventID" : { "type" : "keyword" },     
       "moduleID" : { "type" : "keyword" },
       "featureID" : { "type" : "keyword" },
-      "origin" : { "type" : "keyword", "index" : "false" },
+      "origin" : { "type" : "keyword" },
       "returnStatus" : { "type" : "keyword" },
       "voucherCode" : { "type" : "keyword" },
       "voucherID" : { "type" : "keyword" },
@@ -566,7 +566,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mdr -u $EL
       "destination" : { "type" : "keyword" }, 
       "moduleID" : { "type" : "keyword" },
       "featureID" : { "type" : "keyword" },
-      "origin" : { "type" : "keyword", "index" : "false" },
+      "origin" : { "type" : "keyword" },
       "returnCode" : { "type" : "integer" },
       "deliveryStatus" : { "type" : "keyword" },
       "returnCodeDetails" : { "type" : "keyword", "index" : "false" },
@@ -774,6 +774,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_o
       "filter.meanOfPayment" : { "type" : "keyword" },
       "filter.meanOfPaymentProviderID" : { "type" : "keyword" },
       "filter.offerObjectives" : { "type" : "keyword" },
+      "filter.origin" : { "type" : "keyword" },
       "count" : { "type" : "integer" },
       "metric.totalAmount" : { "type" : "integer" }
     }
@@ -797,6 +798,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_b
       "filter.salesChannel" : { "type" : "keyword" },
       "filter.deliverable" : { "type" : "keyword" },
       "filter.returnCode" : { "type" : "keyword" },
+      "filter.origin" : { "type" : "keyword" },
       "count" : { "type" : "integer" },
       "metric.totalQty" : { "type" : "integer" }
     }

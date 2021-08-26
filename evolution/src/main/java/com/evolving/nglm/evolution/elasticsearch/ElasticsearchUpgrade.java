@@ -217,7 +217,9 @@ public class ElasticsearchUpgrade
     // - from 1.5.2 (1) to 2.0.0 (2):
     //   - tenantID                                        (new)
     //   - deliverableExpirationDate                       (rename & date format change)
-    loadPatch("detailedrecords_bonuses"           , 1, 2, "detailedrecords_bonuses-_tmp", (s) -> s,
+    // - from to 2.0.0 (2) to 2.0.0_2 (3) :
+    //   - origin                                          (was not indexed: index config was set to false)
+    loadPatch("detailedrecords_bonuses"           , 1, 3, "detailedrecords_bonuses-_tmp", (s) -> s,
         "ctx._source.tenantID = 1;"
       + "def dateString = ctx._source.remove(\\\"deliverableExpirationDate\\\");" 
       + "if (dateString == null) {"
@@ -227,6 +229,7 @@ public class ElasticsearchUpgrade
       + "DateTimeFormatter outputFormat = DateTimeFormatter.ofPattern(\\\"yyyy-MM-dd HH:mm:ss.SSSZZ\\\");"
       + "ZonedDateTime zdt = ZonedDateTime.parse(dateString, inputFormat);"
       + "ctx._source.deliverableExpirationDate = zdt.format(outputFormat);");
+    loadPatch("detailedrecords_bonuses"           , 2, 3, "detailedrecords_bonuses-_tmp", (s) -> s, "");
     
     /*****************************************
     *
@@ -237,8 +240,11 @@ public class ElasticsearchUpgrade
     // - from 1.5.0 (<1) to 1.5.2 (1): No change
     // - from 1.5.2 (1) to 2.0.0 (2):
     //   - tenantID                                        (new)
-    loadPatch("detailedrecords_tokens"            , 1, 2, "detailedrecords_tokens-_tmp", (s) -> s,
+    // - from to 2.0.0 (2) to 2.0.0_2 (3) :
+    //   - origin                                          (was not indexed: index config was set to false)
+    loadPatch("detailedrecords_tokens"            , 1, 3, "detailedrecords_tokens-_tmp", (s) -> s,
         "ctx._source.tenantID = 1;");
+    loadPatch("detailedrecords_tokens"            , 2, 3, "detailedrecords_tokens-_tmp", (s) -> s, "");
     
     /*****************************************
     *
@@ -250,8 +256,11 @@ public class ElasticsearchUpgrade
     //   - creationDate                                    (new)
     // - from 1.5.2 (1) to 2.0.0 (2):
     //   - tenantID                                        (new)
-    loadPatch("detailedrecords_offers"            , 1, 2, "detailedrecords_offers-_tmp", (s) -> s,
+    // - from to 2.0.0 (2) to 2.0.0_2 (3) :
+    //   - origin                                          (was not indexed: index config was set to false)
+    loadPatch("detailedrecords_offers"            , 1, 3, "detailedrecords_offers-_tmp", (s) -> s,
         "ctx._source.tenantID = 1;");
+    loadPatch("detailedrecords_offers"            , 2, 3, "detailedrecords_offers-_tmp", (s) -> s, "");
     
     /*****************************************
     *
@@ -263,8 +272,11 @@ public class ElasticsearchUpgrade
     // - from 1.5.2 (1) to 2.0.0 (2):
     //   - tenantID                                        (new)
     //   - returnCode                                      (definition)
-    loadPatch("detailedrecords_vouchers"          , 1, 2, "detailedrecords_vouchers-_tmp", (s) -> s,
+    // - from to 2.0.0 (2) to 2.0.0_2 (3) :
+    //   - origin                                          (was not indexed: index config was set to false)
+    loadPatch("detailedrecords_vouchers"          , 1, 3, "detailedrecords_vouchers-_tmp", (s) -> s,
         "ctx._source.tenantID = 1;");
+    loadPatch("detailedrecords_vouchers"          , 2, 3, "detailedrecords_vouchers-_tmp", (s) -> s, "");
 
     /*****************************************
     *
@@ -277,8 +289,11 @@ public class ElasticsearchUpgrade
     //   - contactType                                     (definition)
     // - from 1.5.2 (1) to 2.0.0 (2):
     //   - tenantID                                        (new)
-    loadPatch("detailedrecords_messages"          , 1, 2, "detailedrecords_messages-_tmp", (s) -> s,
+    // - from to 2.0.0 (2) to 2.0.0_2 (3) :
+    //   - origin                                          (was not indexed: index config was set to false)
+    loadPatch("detailedrecords_messages"          , 1, 3, "detailedrecords_messages-_tmp", (s) -> s,
         "ctx._source.tenantID = 1;");
+    loadPatch("detailedrecords_messages"          , 2, 3, "detailedrecords_messages-_tmp", (s) -> s, "");
 
     /*****************************************
     *
@@ -380,8 +395,11 @@ public class ElasticsearchUpgrade
     // - from 1.5.2 (1) to 2.0.0 (2):
     //   - INDEX NAME CHANGE                               (tX_)
     //   - filter.tenantID                                 (new)
-    loadPatch("datacube_odr"                      , 1, 2, "t_tmp_datacube_odr", (s) -> "t1_"+s, // Index name change !
+    // - from to 2.0.0 (2) to 2.0.0_2 (3) :
+    //   - filter.origin                                   (new)
+    loadPatch("datacube_odr"                      , 1, 3, "t_tmp_datacube_odr", (s) -> "t1_"+s, // Index name change !
         "ctx._source.tenantID = 1;");
+    loadPatch("datacube_odr"                      , 2, 3, "t_tmp_datacube_odr", (s) -> s, "");
 
     /*****************************************
     *
@@ -393,8 +411,11 @@ public class ElasticsearchUpgrade
     // - from 1.5.2 (1) to 2.0.0 (2):
     //   - INDEX NAME CHANGE                               (tX_)
     //   - filter.tenantID                                 (new)
-    loadPatch("datacube_bdr"                      , 1, 2, "t_tmp_datacube_bdr", (s) -> "t1_"+s, // Index name change !
+    // - from to 2.0.0 (2) to 2.0.0_2 (3) :
+    //   - filter.origin                                   (new)
+    loadPatch("datacube_bdr"                      , 1, 3, "t_tmp_datacube_bdr", (s) -> "t1_"+s, // Index name change !
         "ctx._source.tenantID = 1;");
+    loadPatch("datacube_bdr"                      , 2, 3, "t_tmp_datacube_bdr", (s) -> s, "");
 
     /*****************************************
     *
