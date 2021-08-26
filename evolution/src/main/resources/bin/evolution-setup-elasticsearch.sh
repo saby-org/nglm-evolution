@@ -111,6 +111,8 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/subscriber
       "previousEvolutionSubscriberStatus"   : { "type" : "keyword" },
       "evolutionSubscriberStatusChangeDate" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
       "universalControlGroup"               : { "type" : "boolean" },
+      "universalControlGroupPrevious"       : { "type" : "boolean" },
+      "universalControlGroupChangeDate"     : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
       "language"                            : { "type" : "keyword" },
       "segments"                            : { "type" : "keyword" },
       "exclusionInclusionList"              : { "type" : "keyword" },

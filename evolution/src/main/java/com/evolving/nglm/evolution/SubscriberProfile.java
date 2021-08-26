@@ -152,7 +152,7 @@ public abstract class SubscriberProfile
     //
 
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(11)); //10>11 : adding OneTimePassword list
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(12));
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("subscriberTraceEnabled", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("evolutionSubscriberStatus", Schema.OPTIONAL_STRING_SCHEMA);
@@ -176,6 +176,8 @@ public abstract class SubscriberProfile
     schemaBuilder.field("offerPurchaseSalesChannelHistory", SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(SalesChannelPurchaseDate.schema())).name("subscriber_profile_purchase_saleschannel_history").schema());
     schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
     schemaBuilder.field("otps",   SchemaBuilder.array(OTPInstance.serde().schema()).defaultValue(Collections.<OTPInstance>emptyList()).schema());
+    schemaBuilder.field("universalControlGroupPrevious",Schema.OPTIONAL_BOOLEAN_SCHEMA);
+    schemaBuilder.field("universalControlGroupChangeDate",Timestamp.builder().optional().schema());
 
     commonSchema = schemaBuilder.build();
   };
@@ -257,6 +259,9 @@ public abstract class SubscriberProfile
   private Map<String, List<Pair<String, Date>>> offerPurchaseSalesChannelHistory;
   private int tenantID;
   private List<OTPInstance> otpInstances;
+  //this is defined as reference type because initially had no state
+  private Boolean universalControlGroupPrevious;
+  private Date universalControlGroupChangeDate;
   // the field unknownRelationships does not mean to be serialized, it is only used as a temporary parameter to handle the case where, in a journey, 
   // the required relationship does not exist and must go out of the box through a special connector.
   private List<Pair<String, String>> unknownRelationships = new ArrayList<>();
@@ -295,6 +300,8 @@ public abstract class SubscriberProfile
   public List<Pair<String, String>> getUnknownRelationships() { return unknownRelationships ; }
   public List<OTPInstance> getOTPInstances() { return otpInstances; }
   public int getTenantID() { return tenantID; }
+  public Boolean getUniversalControlGroupPrevious() { return universalControlGroupPrevious; }
+  public Date getUniversalControlGroupChangeDate() { return universalControlGroupChangeDate; }
   public Integer getScore(String challengeID)
   {
     Integer result = null;
@@ -500,7 +507,7 @@ public abstract class SubscriberProfile
   
   /******************************************
   *
-  *  getLoyaltyProgramsJSON - LoyaltyPrograms
+  *  getLoyaltyProgramsJSON - LoyaltyProgramsuniversal
   *
   ******************************************/
   
@@ -1264,6 +1271,8 @@ public abstract class SubscriberProfile
     generalDetailsPresentation.put("inclusionTargets", JSONUtilities.encodeArray(new ArrayList<String>(getInclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now))));
     generalDetailsPresentation.put("universalControlGroup", getUniversalControlGroup(subscriberGroupEpochReader));
     generalDetailsPresentation.put("complexFields", JSONUtilities.encodeArray(complexObjectInstancesjson));
+    generalDetailsPresentation.put("universalControlGroupPrevious",getUniversalControlGroupPrevious());
+    generalDetailsPresentation.put("universalControlGroupChangeDate",getDateString(getUniversalControlGroupChangeDate()));
     // prepare basic kpiPresentation (if any)
     //
 
@@ -1322,6 +1331,9 @@ public abstract class SubscriberProfile
     generalDetailsPresentation.put("exclusionTargets", JSONUtilities.encodeArray(new ArrayList<String>(getExclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now))));
     generalDetailsPresentation.put("inclusionTargets", JSONUtilities.encodeArray(new ArrayList<String>(getInclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now))));
     generalDetailsPresentation.put("universalControlGroup", getUniversalControlGroup(subscriberGroupEpochReader));
+    //to be decided if this info is send out for third party
+    generalDetailsPresentation.put("universalControlGroupPrevious",getUniversalControlGroupPrevious());
+    generalDetailsPresentation.put("universalControlGroupChangeDate",getDateString(getUniversalControlGroupChangeDate()));
   
     //
     // prepare basic kpiPresentation (if any)
@@ -1552,6 +1564,8 @@ public abstract class SubscriberProfile
   public void setExtendedSubscriberProfile(ExtendedSubscriberProfile extendedSubscriberProfile) { this.extendedSubscriberProfile = extendedSubscriberProfile; }
   public void setTenantID(int tenantID) { this.tenantID = tenantID; }
   public void setOTPInstances(List<OTPInstance> otpInstances){ this.otpInstances = otpInstances; }
+  public void setUniversalControlGroupPrevious(Boolean universalControlGroupPrevious) { this.universalControlGroupPrevious = universalControlGroupPrevious; }
+  public void setUniversalControlGroupChangeDate(Date universalControlGroupChangeDate) { this.universalControlGroupChangeDate = universalControlGroupChangeDate; }
   
   //
   //  setEvolutionSubscriberStatus
@@ -1670,6 +1684,8 @@ public abstract class SubscriberProfile
     this.offerPurchaseHistory = new HashMap<>();
     this.offerPurchaseSalesChannelHistory = new HashMap<String, List<Pair<String,Date>>>();
     this.tenantID = tenantID;
+    this.universalControlGroupPrevious = null;
+    this.universalControlGroupChangeDate = null;
   }
 
   /*****************************************
@@ -1717,6 +1733,8 @@ public abstract class SubscriberProfile
     int tenantID = schema.field("tenantID") != null ? valueStruct.getInt16("tenantID") : 1; // by default tenant 1
     List<OTPInstance> otpInstances = (schemaVersion >= 11) ? unpackOTPs(schema.field("otps").schema(), valueStruct.get("otps")) : Collections.<OTPInstance>emptyList();
 
+    Boolean universalControlGroupPrevious = (schemaVersion >= 12) ? valueStruct.getBoolean("universalControlGroupPrevious") : null;
+    Date universalControlGroupChangeDate = (schemaVersion >= 12) ? (Date)valueStruct.get("universalControlGroupChangeDate") : null;
     //
     //  return
     //
@@ -1744,6 +1762,8 @@ public abstract class SubscriberProfile
     this.tenantID = tenantID;
     this.otpInstances = otpInstances;
     this.offerPurchaseSalesChannelHistory = offerPurchaseSalesChannelHistory;
+    this.universalControlGroupPrevious = universalControlGroupPrevious;
+    this.universalControlGroupChangeDate = universalControlGroupChangeDate;
   }
 
   /*****************************************
@@ -2133,6 +2153,8 @@ public abstract class SubscriberProfile
     this.offerPurchaseSalesChannelHistory = subscriberProfile.getOfferPurchaseSalesChannelHistory();
     this.getUnknownRelationships().addAll(subscriberProfile.getUnknownRelationships());
     this.tenantID = subscriberProfile.getTenantID();
+    this.universalControlGroupPrevious = subscriberProfile.getUniversalControlGroupPrevious();
+    this.universalControlGroupChangeDate = subscriberProfile.getUniversalControlGroupChangeDate();
   }
 
   /*****************************************
@@ -2166,6 +2188,8 @@ public abstract class SubscriberProfile
     struct.put("offerPurchaseSalesChannelHistory", packOfferPurchaseSalesChannelHistory(subscriberProfile.getOfferPurchaseSalesChannelHistory()));
     struct.put("tenantID", (short)(short)subscriberProfile.getTenantID());
     struct.put("otps", packOTPInstances(subscriberProfile.getOTPInstances()));
+    struct.put("universalControlGroupPrevious",subscriberProfile.getUniversalControlGroupPrevious());
+    struct.put("universalControlGroupChangeDate",subscriberProfile.getUniversalControlGroupChangeDate());
   }
 
   /*****************************************
@@ -2608,6 +2632,8 @@ public abstract class SubscriberProfile
     b.append("," + languageID);
     b.append("," + extendedSubscriberProfile);
     b.append("," + tenantID);
+    b.append("," + universalControlGroupPrevious);
+    b.append("," + universalControlGroupChangeDate);
     return b.toString();
   }
 
