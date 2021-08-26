@@ -42,19 +42,20 @@
     <nglm.core.version>2.0.0_1-SNAPSHOT</nglm.core.version>
 
     <!-- dependencies - gui -->
-    <gui-fwk.version>2.0.0</gui-fwk.version>
-    <gui-csr.version>2.0.1</gui-csr.version>
+    <gui-fwk.version>2.0.3</gui-fwk.version>
+    <gui-csr.version>2.0.4</gui-csr.version>
     <gui-itm.version>2.0.0</gui-itm.version>
-    <gui-jmr.version>2.0.2</gui-jmr.version>
-    <gui-opc.version>2.0.2</gui-opc.version>
-    <gui-iar.version>2.0.0</gui-iar.version>
+    <gui-jmr.version>2.0.4</gui-jmr.version>
+    <gui-opc.version>2.0.5</gui-opc.version>
+    <gui-iar.version>2.0.1</gui-iar.version>
     <gui-opr.version>1.5.7</gui-opr.version>
-    <gui-stg.version>2.0.2</gui-stg.version>
-    <gui-sbm.version>2.0.2</gui-sbm.version>
-    <gui-lpm.version>2.0.0</gui-lpm.version>
+    <gui-stg.version>2.0.5</gui-stg.version>
+    <gui-sbm.version>2.0.4</gui-sbm.version>
+    <gui-lpm.version>2.0.2</gui-lpm.version>
     <gui-tls.version>1.4.17</gui-tls.version>
     <gui-audit.version>1.0.8</gui-audit.version>
     <gui-links.version>1.0.1</gui-links.version>
+    <gui-onssl.version>1.0.22</gui-onssl.version>
 
     <!-- dependencies - mysql -->
     <mysql.gui.version>8.0.13</mysql.gui.version>    
