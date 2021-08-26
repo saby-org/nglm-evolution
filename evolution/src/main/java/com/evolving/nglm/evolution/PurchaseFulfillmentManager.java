@@ -503,6 +503,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public long getOfferDeliveryOfferPrice() { return getOfferPrice(); }
     public String getOfferDeliveryMeanOfPayment() { return getMeanOfPayment(); }
     public String getOfferDeliveryVoucherCode() { return getVoucherDeliveries()==null?"":getVoucherDeliveries().get(0).getVoucherCode(); }
+    public String getOfferDeliveryVoucherExpiryDate() { return getVoucherDeliveries()==null?"":getVoucherDeliveries().get(0).getVoucherExpiryDate()==null?"":getVoucherDeliveries().get(0).getVoucherExpiryDate().toString(); }
     public String getOfferDeliveryVoucherPartnerId() { return ""; }//TODO
     public String getOfferDeliveryOfferContent() { return getOfferContent(); }
     public String getOfferDeliveryResellerID() { return getResellerID(); }
@@ -830,8 +831,16 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
               List<VoucherDelivery> voucherDeliveries = new ArrayList<VoucherDelivery>();
               for (Map<String, Object> voucher : voucherESList)
                 {
-                  String voucherCode = (String) voucher.get("voucherCode");
-                  VoucherDelivery voucherDelivery = new VoucherDelivery(null, null, voucherCode, null, null); //minimal
+            	  String voucherCode = (String) voucher.get("voucherCode");
+                  String voucherID = (String) voucher.get("voucherID");
+                  String voucherFileID = (String) voucher.get("voucherFileID");
+                  Date voucherExpiryDate = null;
+				try {
+					voucherExpiryDate = RLMDateUtils.parseDateFromElasticsearch((String)voucher.get("voucherExpiryDate"));
+				} catch (java.text.ParseException e) {
+					throw new ServerRuntimeException(e);
+				}
+                  VoucherDelivery voucherDelivery = new VoucherDelivery(voucherID, voucherFileID, voucherCode, null, voucherExpiryDate); //minimal
                   voucherDeliveries.add(voucherDelivery);
                 }
               this.voucherDeliveries = voucherDeliveries;
@@ -1061,7 +1070,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       guiPresentationMap.put(RETURNCODE, getReturnCode());
       guiPresentationMap.put(RETURNCODEDETAILS, PurchaseFulfillmentStatus.fromReturnCode(getReturnCode()).toString());
       guiPresentationMap.put(VOUCHERCODE, getOfferDeliveryVoucherCode());
-      guiPresentationMap.put(VOUCHERPARTNERID, getOfferDeliveryVoucherPartnerId());
+      guiPresentationMap.put(VOUCHEREXPIRYDATE, getOfferDeliveryVoucherExpiryDate());
       guiPresentationMap.put(CUSTOMERID, getSubscriberID());
       guiPresentationMap.put(OFFERID, getOfferID());
       guiPresentationMap.put(OFFERQTY, getQuantity());
@@ -1113,6 +1122,19 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
                 for(OfferVoucher offerVoucher : offer.getOfferVouchers()) {
                   Voucher voucher = (Voucher) voucherService.getStoredVoucher(offerVoucher.getVoucherID());
                   sb.append(offerVoucher.getQuantity()+" ").append(voucher!=null?voucher.getVoucherDisplay():"voucher"+offerVoucher.getVoucherID()).append(",");
+                  String voucherFormat = "";
+                  if(voucher instanceof VoucherShared){
+                	  voucherFormat = ((VoucherShared)voucher).getCodeFormatId();
+                    } else if (voucher instanceof VoucherPersonal){
+                    	for(VoucherFile voucherFile:((VoucherPersonal)voucher).getVoucherFiles()){
+                    		if(voucherFile.getFileId().equals(getVoucherDeliveries()==null?"":getVoucherDeliveries().get(0).getFileID())) {
+                    			voucherFormat = voucherFile.getCodeFormatId();
+                    		}
+                    	}
+                    }
+                  guiPresentationMap.put(VOUCHERFORMAT, voucherFormat);
+                  guiPresentationMap.put(VOUCHERSUPPLIERID, voucher.getSupplierID());
+                  
                 }
               }
               String offerContent = null;
@@ -1183,6 +1205,18 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
             for(OfferVoucher offerVoucher : offer.getOfferVouchers()) {
               Voucher voucher = (Voucher) voucherService.getStoredVoucher(offerVoucher.getVoucherID());
               sb.append(voucher!=null?voucher.getVoucherDisplay():"voucher"+offerVoucher.getVoucherID()).append(";").append(offerVoucher.getQuantity()).append(",");
+              String voucherFormat = "";
+              if(voucher instanceof VoucherShared){
+                  voucherFormat = ((VoucherShared)voucher).getCodeFormatId();
+                } else if (voucher instanceof VoucherPersonal){
+                	for(VoucherFile voucherFile:((VoucherPersonal)voucher).getVoucherFiles()){
+                		if(voucherFile.getFileId().equals(getVoucherDeliveries()==null?"":getVoucherDeliveries().get(0).getFileID())) {
+                			voucherFormat = voucherFile.getCodeFormatId();
+                		}
+                	}
+                }
+              thirdPartyPresentationMap.put(VOUCHERFORMAT, voucherFormat);
+              thirdPartyPresentationMap.put(VOUCHERSUPPLIERID, voucher.getSupplierID());
             }
           }
           String offerContent = sb.length()>0?sb.toString().substring(0, sb.toString().length()-1):"";
@@ -1202,7 +1236,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           thirdPartyPresentationMap.put(RETURNCODEDESCRIPTION, RESTAPIGenericReturnCodes.fromGenericResponseCode(getReturnCode()).getGenericResponseMessage());
           thirdPartyPresentationMap.put(RETURNCODEDETAILS, getOfferDeliveryReturnCodeDetails());
           thirdPartyPresentationMap.put(VOUCHERCODE, getOfferDeliveryVoucherCode());
-          thirdPartyPresentationMap.put(VOUCHERPARTNERID, getOfferDeliveryVoucherPartnerId());
+          thirdPartyPresentationMap.put(VOUCHEREXPIRYDATE, getOfferDeliveryVoucherExpiryDate());
         }
     }
     @Override
