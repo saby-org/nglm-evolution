@@ -222,7 +222,9 @@ public class ElasticsearchUpgrade
     //   - deliverableExpirationDate                       (rename & date format change)
     // - from to 2.0.0 (2) to 2.0.0_2 (3) :
     //   - origin                                          (was not indexed: index config was set to false)
-    loadPatch("detailedrecords_bonuses"           , 1, 3, "detailedrecords_bonuses-_tmp", (s) -> s,
+    // - from to 2.0.0_2 (3) to 2.0.0_2 (4) :
+    //   - returnCode                                      (was a keyword, is now a integer)
+    loadPatch("detailedrecords_bonuses"           , 1, 4, "detailedrecords_bonuses-_tmp", (s) -> s,
         "ctx._source.tenantID = 1;"
       + "def dateString = ctx._source.remove(\\\"deliverableExpirationDate\\\");" 
       + "if (dateString == null) {"
@@ -232,7 +234,8 @@ public class ElasticsearchUpgrade
       + "DateTimeFormatter outputFormat = DateTimeFormatter.ofPattern(\\\"yyyy-MM-dd HH:mm:ss.SSSZZ\\\");"
       + "ZonedDateTime zdt = ZonedDateTime.parse(dateString, inputFormat);"
       + "ctx._source.deliverableExpirationDate = zdt.format(outputFormat);");
-    loadPatch("detailedrecords_bonuses"           , 2, 3, "detailedrecords_bonuses-_tmp", (s) -> s, "");
+    loadPatch("detailedrecords_bonuses"           , 2, 4, "detailedrecords_bonuses-_tmp", (s) -> s, "");
+    loadPatch("detailedrecords_bonuses"           , 3, 4, "detailedrecords_bonuses-_tmp", (s) -> s, "");
     
     /*****************************************
     *
@@ -261,9 +264,12 @@ public class ElasticsearchUpgrade
     //   - tenantID                                        (new)
     // - from to 2.0.0 (2) to 2.0.0_2 (3) :
     //   - origin                                          (was not indexed: index config was set to false)
-    loadPatch("detailedrecords_offers"            , 1, 3, "detailedrecords_offers-_tmp", (s) -> s,
+    // - from to 2.0.0_2 (3) to 2.0.0_2 (4) :
+    //   - returnCode                                      (was a keyword, is now a integer)
+    loadPatch("detailedrecords_offers"            , 1, 4, "detailedrecords_offers-_tmp", (s) -> s,
         "ctx._source.tenantID = 1;");
-    loadPatch("detailedrecords_offers"            , 2, 3, "detailedrecords_offers-_tmp", (s) -> s, "");
+    loadPatch("detailedrecords_offers"            , 2, 4, "detailedrecords_offers-_tmp", (s) -> s, "");
+    loadPatch("detailedrecords_offers"            , 3, 4, "detailedrecords_offers-_tmp", (s) -> s, "");
     
     /*****************************************
     *
@@ -277,9 +283,12 @@ public class ElasticsearchUpgrade
     //   - returnCode                                      (definition)
     // - from to 2.0.0 (2) to 2.0.0_2 (3) :
     //   - origin                                          (was not indexed: index config was set to false)
-    loadPatch("detailedrecords_vouchers"          , 1, 3, "detailedrecords_vouchers-_tmp", (s) -> s,
+    // - from to 2.0.0_2 (3) to 2.0.0_2 (4) :
+    //   - returnCode                                      (was a keyword, is now a integer)
+    loadPatch("detailedrecords_vouchers"          , 1, 4, "detailedrecords_vouchers-_tmp", (s) -> s,
         "ctx._source.tenantID = 1;");
-    loadPatch("detailedrecords_vouchers"          , 2, 3, "detailedrecords_vouchers-_tmp", (s) -> s, "");
+    loadPatch("detailedrecords_vouchers"          , 2, 4, "detailedrecords_vouchers-_tmp", (s) -> s, "");
+    loadPatch("detailedrecords_vouchers"          , 3, 4, "detailedrecords_vouchers-_tmp", (s) -> s, "");
 
     /*****************************************
     *
