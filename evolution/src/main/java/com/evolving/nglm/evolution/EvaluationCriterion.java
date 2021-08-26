@@ -55,6 +55,7 @@ import com.evolving.nglm.evolution.Expression.ExpressionEvaluationException;
 import com.evolving.nglm.evolution.Expression.ExpressionParseException;
 import com.evolving.nglm.evolution.Expression.ExpressionReader;
 import com.evolving.nglm.evolution.Expression.ExpressionTypeCheckException;
+import com.evolving.nglm.evolution.Expression.ReferenceExpression;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
@@ -1567,10 +1568,10 @@ public class EvaluationCriterion
     }
 
     //
-    // Handle criterion "loyaltyprogram.name"
+    // Handle criterion "loyaltyprograms.name"
     //
 
-    if ("loyaltyprogram.name".equals(esField))
+    if ("loyaltyprograms.name".equals(esField))
     {
       QueryBuilder query = null;
       // ES special case for isNull : (must_not -> exists) does not work when inside a nested query : must_not must be on the toplevel query !
@@ -1596,7 +1597,7 @@ public class EvaluationCriterion
     // Handle dynamic criterion "loyaltyprogram.LP1.xxxxx"
     //
 
-    if (esField.startsWith("loyaltyprogram."))
+    if (esField.startsWith("loyaltyprograms."))
     {
       QueryBuilder query = handleLoyaltyProgramDynamicCriterion(esField);
       return query;
@@ -1606,7 +1607,7 @@ public class EvaluationCriterion
     // Handle dynamic criterion "point.POINT001.balance"
     //
 
-    if (esField.startsWith("point."))
+    if (esField.startsWith("pointBalances."))
     {
       QueryBuilder query = handlePointDynamicCriterion(esField);
       return query;
@@ -1692,14 +1693,14 @@ public class EvaluationCriterion
     switch (evaluationDataType)
       {
         case StringCriterion:
-          script.append("def left = (doc." + esField + ".size() != 0) ? doc." + esField + ".value?.toLowerCase() : null; ");
+          script.append("def left = (doc['" + esField + "'].size() != 0) ? doc['" + esField + "']value?.toLowerCase() : null; ");
           break;
           
         case DateCriterion:
           script.append("def left; ");
-          script.append("if (doc." + esField + ".size() != 0) { ");
+          script.append("if (doc['" + esField + "'].size() != 0) { ");
           script.append("def leftSF = new SimpleDateFormat(\"yyyy-MM-dd'T'HH:mm:ss.SSSX\"); ");   // TODO EVPRO-99
-          script.append("def leftMillis = doc." + esField + ".value.getMillis(); ");
+          script.append("def leftMillis = doc['" + esField + "'].value.getMillis(); ");
           script.append("def leftCalendar = leftSF.getCalendar(); ");
           script.append("leftCalendar.setTimeInMillis(leftMillis); ");
           script.append("def leftInstant = leftCalendar.toInstant(); ");
@@ -1709,11 +1710,11 @@ public class EvaluationCriterion
           break;
 
         case StringSetCriterion:
-          script.append("def left = new ArrayList(); for (int i=0;i<doc." + esField + ".size();i++) left.add(doc." + esField + ".get(i)?.toLowerCase()); ");
+          script.append("def left = new ArrayList(); for (int i=0;i<doc['" + esField + "'].size();i++) left.add(doc['" + esField + "'].get(i)?.toLowerCase()); ");
           break;
 
         case IntegerSetCriterion:
-          script.append("def left = new ArrayList(); left.addAll(doc." + esField + "); ");
+          script.append("def left = new ArrayList(); left.addAll(doc['" + esField + "']); ");
           break;
           
         case AniversaryCriterion:
@@ -1723,7 +1724,7 @@ public class EvaluationCriterion
           throw new UnsupportedOperationException("timeCriterion is not supported");
           
         default:
-          script.append("def left = (doc." + esField + ".size() != 0) ? doc." + esField + "?.value : null; ");
+          script.append("def left = (doc['" + esField + "'].size() != 0) ? doc['" + esField + "']?.value : null; ");
           break;
       }
 
@@ -2022,7 +2023,24 @@ public class EvaluationCriterion
         default:
           if (criterionDefault)
             query = QueryBuilders.boolQuery().should(QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery(esField))).should(baseQuery);
-          else
+          else if (argument != null && argument instanceof Expression.FunctionCallExpression) { // redpoint.earliestexpirydate + 1 month
+            Expression.FunctionCallExpression fce = (Expression.FunctionCallExpression) argument;
+            // check if fce.arguments[0] is a ReferenceExpression, then add an exist clause with fce.arguments[0].reference.esField
+            List<String> esFieldsList = fce.getESFields(); // get list of esFields used by arguments
+            BoolQueryBuilder subQuery = QueryBuilders.boolQuery().must(QueryBuilders.existsQuery(esField)).must(baseQuery);
+            for (String esFieldArgument : esFieldsList) {
+              subQuery = subQuery.must(QueryBuilders.existsQuery(esFieldArgument));
+            }
+            query = subQuery;
+          } else if (argument != null && argument instanceof Expression.ReferenceExpression) { // redpoint.earliestexpirydate (instant)
+            Expression.ReferenceExpression re = (ReferenceExpression) argument;
+            BoolQueryBuilder subQuery = QueryBuilders.boolQuery().must(QueryBuilders.existsQuery(esField)).must(baseQuery);
+            String esFieldArg = re.getESField();
+            if (esFieldArg != null) {
+              subQuery = subQuery.must(QueryBuilders.existsQuery(esFieldArg));
+            }
+            query = subQuery;
+          } else
             query = QueryBuilders.boolQuery().must(QueryBuilders.existsQuery(esField)).must(baseQuery);
           break;
       }
@@ -2537,7 +2555,7 @@ public class EvaluationCriterion
   
   public QueryBuilder handlePointDynamicCriterion(String esField) throws CriterionException
   {
-    Pattern fieldNamePattern = Pattern.compile("^point\\.([^.]+)\\.(.+)$");
+    Pattern fieldNamePattern = Pattern.compile("^pointBalances\\.([^.]+)\\.(.+)$");
     Matcher fieldNameMatcher = fieldNamePattern.matcher(esField);
     if (! fieldNameMatcher.find()) throw new CriterionException("invalid point field " + esField);
     String pointID = fieldNameMatcher.group(1);
@@ -2559,15 +2577,16 @@ public class EvaluationCriterion
         queryInternal = buildCompareQuery("pointBalances." + SubscriberProfile.EARLIEST_EXPIRATION_QUANTITY, ExpressionDataType.IntegerExpression);
         break;
         
-      default:  // point.POINT_ID.expired.last7days
+      default:  // point.POINT_ID.expired.last7days  // HERE no nested necessary because pointFluctuations is a dictionary
         String searchStringForPointFluctuations = "pointFluctuations." + pointID + ".";
         fieldNamePattern = Pattern.compile("^([^.]+)\\.([^.]+)$");
         fieldNameMatcher = fieldNamePattern.matcher(criterionFieldBaseName);
         if (! fieldNameMatcher.find()) throw new CriterionException("invalid criterionFieldBaseName field " + criterionFieldBaseName);
         String nature = fieldNameMatcher.group(1); // earned, consumed, expired
-        String interval = fieldNameMatcher.group(2); // yesterday, last7days, last30days
+        String interval = fieldNameMatcher.group(2); // today, yesterday, last7days, last30days
         switch (interval)
         {
+          case "today":
           case "yesterday":
           case "last7days":
           case "last30days":
@@ -2605,7 +2624,7 @@ public class EvaluationCriterion
 
   public QueryBuilder handleLoyaltyProgramDynamicCriterion(String esField) throws CriterionException
   {
-    Pattern fieldNamePattern = Pattern.compile("^loyaltyprogram\\.([^.]+)\\.(.+)$");
+    Pattern fieldNamePattern = Pattern.compile("^loyaltyprograms\\.([^.]+)\\.(.+)$");
     Matcher fieldNameMatcher = fieldNamePattern.matcher(esField);
     if (! fieldNameMatcher.find()) throw new CriterionException("invalid loyaltyprogram field " + esField);
     String loyaltyProgramID = fieldNameMatcher.group(1);
@@ -2896,7 +2915,7 @@ public class EvaluationCriterion
           throw new CriterionException("datatype not yet implemented : " + expectedType);
       }
     }
-    catch (ExpressionParseException|ExpressionTypeCheckException e)
+    catch (Exception e)
     {
       throw new CriterionException("argument " + argument + " must be a constant " + expectedType);
     }

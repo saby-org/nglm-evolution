@@ -662,19 +662,19 @@ public abstract class Expression
           case IntegerExpression:
           case DoubleExpression:
           case BooleanExpression:
-  	    script.append("def right_" + getNodeID() + " = (doc." + esField + ".size() != 0) ? doc." + esField + "?.value : null; ");
+  	    script.append("def right_" + getNodeID() + " = (doc['" + esField + "'].size() != 0) ? doc['" + esField + "']?.value : null; ");
             break;
             
           case StringSetExpression:
           case IntegerSetExpression:
-  	    script.append("def right_" + getNodeID() + " = new ArrayList(); right_" + getNodeID() + ".addAll(doc." + esField + "); ");
+  	    script.append("def right_" + getNodeID() + " = new ArrayList(); right_" + getNodeID() + ".addAll(doc['" + esField + "']); ");
             break;
             
           case DateExpression:
             script.append("def right_" + getNodeID() + "; ");
-            script.append("if (doc." + esField + ".size() != 0) { ");
+            script.append("if (doc['" + esField + "'].size() != 0) { ");
             script.append("def rightSF_" + getNodeID() + " = new SimpleDateFormat(\"yyyy-MM-dd'T'HH:mm:ss.SSSX\"); ");   // TODO EVPRO-99
-            script.append("def rightMillis_" + getNodeID() + " = doc." + esField + ".value.getMillis(); ");
+            script.append("def rightMillis_" + getNodeID() + " = doc['" + esField + "'].value.getMillis(); ");
             script.append("def rightCalendar_" + getNodeID() +" = rightSF_" + getNodeID() + ".getCalendar(); ");
             script.append("rightCalendar_" + getNodeID() + ".setTimeInMillis(rightMillis_" + getNodeID() + "); ");
             script.append("def rightInstant_" + getNodeID() + " = rightCalendar_" + getNodeID() + ".toInstant(); ");
@@ -710,6 +710,11 @@ public abstract class Expression
     {
       super(tenantID);
       this.reference = reference;
+    }
+
+    public String getESField()
+    {
+      return (reference != null && reference.getESField() != null) ? reference.getESField() : null;
     }
   }
 
@@ -3067,6 +3072,25 @@ public abstract class Expression
       return res;
     }
 
+    
+    public List<String> getESFields() {
+      List<String> res = new ArrayList<>();
+      // check if each argument is a ReferenceExpression, then add its esField
+      if (arguments != null) {
+        for (Expression exp : arguments) {
+          if (exp != null && exp instanceof ReferenceExpression) {
+            ReferenceExpression refExp = (ReferenceExpression) exp;
+            if (refExp.reference != null && refExp.reference.getESField() != null) {
+              res.add(refExp.reference.getESField());
+            }
+          }
+        }
+      }
+      return res;
+    }
+    
+    
+    
     /*****************************************
     *
     *  esQuery
