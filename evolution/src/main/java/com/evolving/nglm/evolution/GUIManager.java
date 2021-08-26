@@ -588,6 +588,7 @@ public class GUIManager
     getComplexObjectType("getComplexObjectType"),
     putComplexObjectType("putComplexObjectType"),
     removeComplexObjectType("removeComplexObjectType"),
+    refreshComplexObjectTypeCriteria("refreshComplexObjectTypeCriteria"),
     
     getOTPTypeList("getOTPTypeList"),
     getOTPTypeSummaryList("getOTPTypeSummaryList"),
@@ -1722,6 +1723,7 @@ public class GUIManager
     //
     //  complexObject
     //
+    
     for(Tenant tenant : Deployment.getTenants())
       {
         int tenantID = tenant.getTenantID();
@@ -1733,7 +1735,8 @@ public class GUIManager
                 for (int i=0; i<initialComplexObjectJSONArray.size(); i++)
                   {
                     JSONObject initialComplexObjectJSON = (JSONObject) initialComplexObjectJSONArray.get(i);
-                    guiManagerGeneral.processPutComplexObjectType("0", initialComplexObjectJSON, tenantID);
+                    JSONObject initialComplexObjectJSONCopy = (JSONObject) initialComplexObjectJSON.clone();
+                    guiManagerGeneral.processPutComplexObjectType("0", initialComplexObjectJSONCopy, tenantID);
                   }
               }
             catch (JSONUtilitiesException e)
@@ -2062,6 +2065,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getComplexObjectType", new APISimpleHandler(API.getComplexObjectType));
         restServer.createContext("/nglm-guimanager/putComplexObjectType", new APISimpleHandler(API.putComplexObjectType));
         restServer.createContext("/nglm-guimanager/removeComplexObjectType", new APISimpleHandler(API.removeComplexObjectType));
+        restServer.createContext("/nglm-guimanager/refreshComplexObjectTypeCriteria", new APISimpleHandler(API.refreshComplexObjectTypeCriteria));
         restServer.createContext("/nglm-guimanager/getOfferList", new APISimpleHandler(API.getOfferList));
         restServer.createContext("/nglm-guimanager/getOfferSummaryList", new APISimpleHandler(API.getOfferSummaryList));
         restServer.createContext("/nglm-guimanager/getOffer", new APISimpleHandler(API.getOffer));
@@ -3140,6 +3144,10 @@ public class GUIManager
 
                 case removeComplexObjectType:
                   jsonResponse = guiManagerGeneral.processRemoveComplexObjectType(userID, jsonRoot, tenantID);
+                  break;
+                  
+                case refreshComplexObjectTypeCriteria:
+                  jsonResponse = guiManagerGeneral.processRefreshComplexObjectTypeCriteria(userID, jsonRoot, tenantID);
                   break;
 
                 case getOfferList:

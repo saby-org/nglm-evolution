@@ -204,7 +204,10 @@ public class ElasticsearchUpgrade
     //   - loyaltyPrograms.tierUpdateDate                  (date format change)
     //   - pointBalances.earliestExpirationDate            (date format change)
     //   - pointBalances.expirationDates.date              (date format change)
-    loadPatch("subscriberprofile"                 , 1, 2, "subscriberprofile_tmp", null, null); // Special - do not try to upgrade this index, remove it (or keep it, for snapshots) !
+    // - from 2.0.0 (2) to 2.0.0 (5):
+    //   - complexFields                                   (new)
+    loadPatch("subscriberprofile"                 , 1, 3, "subscriberprofile_tmp", null, null); // Special - do not try to upgrade this index, remove it (or keep it, for snapshots) !
+    loadPatch("subscriberprofile"                 , 2, 3, "subscriberprofile_tmp", null, null);
     
     /*****************************************
     *

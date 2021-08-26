@@ -143,6 +143,13 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/subscriber
           "stepUpdateDate"               : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ"}
         }
       },
+       "complexFields"                   : { "type" : "nested",
+        "properties" : {
+          "complexObjectName" : 	{ "type" : "keyword"},
+          "complexObjectID" : 		{ "type" : "keyword"},
+          "complexObjectDisplay" : 	{ "type" : "keyword"}
+        }
+      },
       "pointBalances"                       : { "type": "nested",
         "properties" : {
           "earliestExpirationDate" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
