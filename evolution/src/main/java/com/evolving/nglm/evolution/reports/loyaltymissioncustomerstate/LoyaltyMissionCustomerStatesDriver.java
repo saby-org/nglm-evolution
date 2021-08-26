@@ -16,6 +16,7 @@ import com.evolving.nglm.evolution.Report;
 import com.evolving.nglm.evolution.reports.FilterObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportDriver.ReportTypeDef;
+import com.evolving.nglm.evolution.reports.loyaltychallengecustomerstate.LoyaltyChallengeCustomerStatesMonoPhase;
 
 @ReportTypeDef(reportType = "subscriberprofile")
 public class LoyaltyMissionCustomerStatesDriver extends ReportDriver
@@ -53,7 +54,8 @@ public class LoyaltyMissionCustomerStatesDriver extends ReportDriver
   @Override
   public List<String> reportHeader()
   {
-    return null;
+    List<String> result = LoyaltyMissionCustomerStatesMonoPhase.headerFieldsOrder;
+    return result;
   }
 
 }

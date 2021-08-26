@@ -54,7 +54,8 @@ public class JourneyCustomerStatisticsReportMultithread implements ReportCsvFact
     headerFieldsOrder.add(customerID);
     for (AlternateID alternateID : Deployment.getAlternateIDs().values())
     {
-      headerFieldsOrder.add(alternateID.getName());
+      if(alternateID.getName().equals("msisdn")) {
+      headerFieldsOrder.add(alternateID.getName());}
     }
     headerFieldsOrder.add(journeyID);
     headerFieldsOrder.add(journeyName);
@@ -65,6 +66,12 @@ public class JourneyCustomerStatisticsReportMultithread implements ReportCsvFact
     headerFieldsOrder.add(dateTime);
     headerFieldsOrder.add(startDate);
     headerFieldsOrder.add(endDate);
+    for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricConfiguration().getMetrics().values())
+    {
+      headerFieldsOrder.add(journeyMetricDeclaration.getESFieldPrior());
+      headerFieldsOrder.add(journeyMetricDeclaration.getESFieldDuring());
+      headerFieldsOrder.add(journeyMetricDeclaration.getESFieldPost());
+    }
   }
   
   public void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders)

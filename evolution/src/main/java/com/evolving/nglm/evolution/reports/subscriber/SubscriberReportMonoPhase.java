@@ -57,9 +57,6 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
   private static final String customerID = "customerID";
   private static final String activationDate = "activationDate";
   private static final String relationships = "relationships";
-  private static final String dimDisplay = "dimDisplay";
-  
-  
   
   static List<String> headerFieldsOrder = new ArrayList<String>();
   static
@@ -71,7 +68,6 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
     }
     headerFieldsOrder.add(activationDate);
     headerFieldsOrder.add(relationships);
-    headerFieldsOrder.add(dimDisplay);
     headerFieldsOrder.add(evolutionSubscriberStatusChangeDate);
   }
   
