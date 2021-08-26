@@ -11,6 +11,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -2493,12 +2494,17 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
 
           //
           //  validate the target exists and is active
-          //
+          //  
           
           if (target == null)
             {
-              log.info("journey {} uses unknown/inactive target: {}", getJourneyID(), currentTargetID);
-              throw new GUIManagerException("journey uses unknown target", currentTargetID);
+              // EVPRO-1226 only invalidate journey if we are inside the provisioning period
+              GUIManagedObject targetGMO = targetService.getStoredGUIManagedObject(currentTargetID);
+              if (targetGMO == null ||
+                  (targetGMO.getEffectiveEndDate() != null && targetGMO.getEffectiveEndDate().before(getEffectiveEntryPeriodEndDate()))) {
+                log.info("journey {} uses unknown/inactive target: {}", getJourneyID(), currentTargetID);
+                throw new GUIManagerException("journey uses unknown/inactive target", currentTargetID);
+              }
             }
           
         }
