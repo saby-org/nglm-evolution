@@ -3,7 +3,7 @@
   <groupId>com.evolving.nglm</groupId>
   <artifactId>nglm-evolution-common-build</artifactId>
   <packaging>pom</packaging>
-  <version>2.0.0_5-SNAPSHOT</version>    
+  <version>EVPRO-1147-SNAPSHOT</version>  
   <name>evolution-common-build</name>
 
   <repositories> 
@@ -151,6 +151,8 @@
     <topic.blackoutperiod>blackoutperiod</topic.blackoutperiod>
     <topic.timewindowperiod>timewindowperiod</topic.timewindowperiod>
     <topic.loyaltyprogram>loyaltyprogram</topic.loyaltyprogram>
+    <topic.badge>badge</topic.badge>
+    <topic.badgeobjective>badgeobjective</topic.badgeobjective>
     <topic.exclusioninclusiontarget>exclusioninclusiontarget</topic.exclusioninclusiontarget>
     <topic.segmentcontactpolicy>segmentcontactpolicy</topic.segmentcontactpolicy>
     <topic.criterionfieldavailablevalues>criterionfieldavailablevalues</topic.criterionfieldavailablevalues>
@@ -159,6 +161,8 @@
     <topic.voucherchange.response>voucherchange-response</topic.voucherchange.response>
     <topic.otpinstancechange.request>otpinstancechange-request</topic.otpinstancechange.request>
     <topic.otpinstancechange.response>otpinstancechange-response</topic.otpinstancechange.response>
+    <topic.badgechange.request>badgechange-request</topic.badgechange.request>
+    <topic.badgechange.response>badgechange-response</topic.badgechange.response>
     
     <topic.tenant>tenant</topic.tenant>
     <topic.edrdetails>edrdetails</topic.edrdetails>

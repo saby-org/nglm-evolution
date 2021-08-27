@@ -250,6 +250,7 @@ public class DeploymentCommon
   private static int elasticsearchRetentionDaysTokens;
   private static int elasticsearchRetentionDaysSnapshots;
   private static int elasticsearchRetentionDaysVDR;
+  private static int elasticsearchRetentionDaysBGDR;
   private static int elasticsearchRetentionDaysEDR;
   private static int elasticsearchRetentionDaysJourneys;
   private static int elasticsearchRetentionDaysCampaigns;
@@ -275,6 +276,8 @@ public class DeploymentCommon
   private static int kafkaRetentionDaysExpiredVouchers;
   private static int kafkaRetentionDaysLoyaltyPrograms;
   private static int kafkaRetentionDaysTargets;
+  private static int kafkaRetentionDaysRemovedBadges;
+  
   //
   // Topics
   //
@@ -350,6 +353,8 @@ public class DeploymentCommon
   private static String communicationChannelTimeWindowTopic;
   private static String tokenChangeTopic;
   private static String loyaltyProgramTopic;
+  private static String badgeTopic;
+  private static String badgeObjectiveTopic;
   private static String exclusionInclusionTargetTopic;
   private static String dnboMatrixTopic;
   private static String segmentContactPolicyTopic;
@@ -365,6 +370,8 @@ public class DeploymentCommon
   private static String workflowEventTopic;
   private static String subscriberProfileForceUpdateResponseTopic;
   private static String notificationEventTopic;
+  private static String badgeChangeRequestTopic;
+  private static String badgeChangeResponseTopic;
     
   //
   // Others
@@ -534,6 +541,7 @@ public class DeploymentCommon
   public static int getElasticsearchRetentionDaysTokens() { return elasticsearchRetentionDaysTokens; }
   public static int getElasticsearchRetentionDaysSnapshots() { return elasticsearchRetentionDaysSnapshots; }
   public static int getElasticsearchRetentionDaysVDR() { return elasticsearchRetentionDaysVDR; }
+  public static int getElasticsearchRetentionDaysBGDR() { return elasticsearchRetentionDaysBGDR; }
   public static int getElasticsearchRetentionDaysEDR() { return elasticsearchRetentionDaysEDR; }
   public static int getElasticsearchRetentionDaysJourneys() { return elasticsearchRetentionDaysJourneys; }
   public static int getElasticsearchRetentionDaysCampaigns() { return elasticsearchRetentionDaysCampaigns; }
@@ -547,6 +555,7 @@ public class DeploymentCommon
   public static Long getElasticsearchTokenTemplateVersion() { return elasticsearchTemplatesVersion.get("detailedrecords_tokens"); }
   public static Long getElasticsearchOdrTemplateVersion() { return elasticsearchTemplatesVersion.get("detailedrecords_offers"); }
   public static Long getElasticsearchVdrTemplateVersion() { return elasticsearchTemplatesVersion.get("detailedrecords_vouchers"); }
+  public static Long getElasticsearchBGdrTemplateVersion() { return elasticsearchTemplatesVersion.get("detailedrecords_badges"); }
   public static Long getElasticsearchMdrTemplateVersion() { return elasticsearchTemplatesVersion.get("detailedrecords_messages"); }
   public static Long getElasticsearchEdrTemplateVersion() { return elasticsearchTemplatesVersion.get("detailedrecords_events"); }
   public static Long getElasticsearcJourneystatisticTemplateVersion() { return elasticsearchTemplatesVersion.get("journeystatistic"); }
@@ -565,6 +574,7 @@ public class DeploymentCommon
   public static Long getElasticsearchMappingDeliverablesTemplateVersion() { return elasticsearchTemplatesVersion.get("mapping_deliverables"); }
   public static Long getElasticsearchMappingPartnersTemplateVersion() { return elasticsearchTemplatesVersion.get("mapping_partners"); }
   public static Long getElasticsearchMappingBasemanagementTemplateVersion() { return elasticsearchTemplatesVersion.get("mapping_basemanagement"); }
+  public static Long getElasticsearchMappingBadgesTemplateVersion() { return elasticsearchTemplatesVersion.get("mapping_badges"); }
   public static Long getElasticsearchMappingJourneyobjectiveTemplateVersion() { return elasticsearchTemplatesVersion.get("mapping_journeyobjective"); }
 
   //
@@ -579,6 +589,7 @@ public class DeploymentCommon
   public static int getKafkaRetentionDaysExpiredTokens() { return kafkaRetentionDaysExpiredTokens; }
   public static int getKafkaRetentionDaysExpiredVouchers() { return kafkaRetentionDaysExpiredVouchers; }
   public static int getKafkaRetentionDaysLoyaltyPrograms() { return kafkaRetentionDaysLoyaltyPrograms; }
+  public static int getKafkaRetentionDaysRemovedBadges() { return kafkaRetentionDaysRemovedBadges; }
   public static int getKafkaRetentionDaysTargets() { return kafkaRetentionDaysTargets; } 
   public static int getJourneysReportMaxParallelThreads() { return journeysReportMaxParallelThreads; }
   public static int getDetailedrecordReportsArrearCount() { return detailedrecordReportsArrearCount; }
@@ -665,6 +676,8 @@ public class DeploymentCommon
   public static String getCommunicationChannelTimeWindowTopic() { return communicationChannelTimeWindowTopic; }
   public static String getTokenChangeTopic() { return tokenChangeTopic; }
   public static String getLoyaltyProgramTopic() { return loyaltyProgramTopic; }
+  public static String getBadgeTopic() { return badgeTopic; }
+  public static String getBadgeObjectiveTopic() { return badgeObjectiveTopic; }
   public static String getExclusionInclusionTargetTopic() { return exclusionInclusionTargetTopic; }
   public static String getDNBOMatrixTopic() { return dnboMatrixTopic; }
   public static String getSegmentContactPolicyTopic() { return segmentContactPolicyTopic; }
@@ -680,11 +693,14 @@ public class DeploymentCommon
   public static String getWorkflowEventTopic() { return workflowEventTopic; }
   public static String getSubscriberProfileForceUpdateResponseTopic() { return subscriberProfileForceUpdateResponseTopic; }    
   public static String getNotificationEventTopic() { return notificationEventTopic; }
+  public static String getBadgeChangeRequestTopic() { return badgeChangeRequestTopic; }
+  public static String getBadgeChangeResponseTopic() { return badgeChangeResponseTopic; }
   
   
   //
   // Others
   //
+  
   public static Map<String,AlternateID> getAlternateIDs() { return alternateIDs; }
   public static String getExternalSubscriberID() { return externalSubscriberID; }
   public static String getSubscriberTraceControlAlternateID() { return subscriberTraceControlAlternateID; }
@@ -850,6 +866,7 @@ public class DeploymentCommon
     elasticsearchRetentionDaysTokens = jsonReader.decodeInteger("ESRetentionDaysTokens");
     elasticsearchRetentionDaysSnapshots = jsonReader.decodeInteger("ESRetentionDaysSnapshots");
     elasticsearchRetentionDaysVDR = jsonReader.decodeInteger("ESRetentionDaysVDR");
+    elasticsearchRetentionDaysBGDR = jsonReader.decodeInteger("ESRetentionDaysBGDR");
     elasticsearchRetentionDaysEDR = jsonReader.decodeInteger("ESRetentionDaysEDR");
     elasticsearchRetentionDaysJourneys = jsonReader.decodeInteger("ESRetentionDaysJourneys");
     elasticsearchRetentionDaysCampaigns = jsonReader.decodeInteger("ESRetentionDaysCampaigns");
@@ -889,6 +906,7 @@ public class DeploymentCommon
     kafkaRetentionDaysExpiredTokens = jsonReader.decodeInteger("kafkaRetentionDaysExpiredTokens");
     kafkaRetentionDaysExpiredVouchers = jsonReader.decodeInteger("kafkaRetentionDaysExpiredVouchers");
     kafkaRetentionDaysLoyaltyPrograms = jsonReader.decodeInteger("kafkaRetentionDaysLoyaltyPrograms");
+    kafkaRetentionDaysRemovedBadges = jsonReader.decodeInteger("kafkaRetentionDaysRemovedBadges");
     kafkaRetentionDaysTargets = jsonReader.decodeInteger("kafkaRetentionDaysTargets");
     maxPollIntervalMs = jsonReader.decodeInteger("maxPollIntervalMs");
     purchaseTimeoutMs = jsonReader.decodeInteger("purchaseTimeoutMs");
@@ -953,6 +971,8 @@ public class DeploymentCommon
     communicationChannelTopic = jsonReader.decodeString("communicationChannelTopic");
     tokenChangeTopic = jsonReader.decodeString("tokenChangeTopic");
     loyaltyProgramTopic = jsonReader.decodeString("loyaltyProgramTopic");
+    badgeTopic = jsonReader.decodeString("badgeTopic");
+    badgeObjectiveTopic = jsonReader.decodeString("badgeObjectiveTopic");
     timedEvaluationTopic = jsonReader.decodeString("timedEvaluationTopic");
     evaluateTargetsTopic = jsonReader.decodeString("evaluateTargetsTopic");
     subscriberProfileForceUpdateTopic = jsonReader.decodeString("subscriberProfileForceUpdateTopic");
@@ -982,6 +1002,8 @@ public class DeploymentCommon
     edrDetailsTopic = jsonReader.decodeString("edrDetailsTopic");
     workflowEventTopic = jsonReader.decodeString("workflowEventTopic");
     notificationEventTopic = jsonReader.decodeString("notificationEventTopic");
+    badgeChangeRequestTopic = jsonReader.decodeString("badgeChangeRequestTopic");
+    badgeChangeResponseTopic = jsonReader.decodeString("badgeChangeResponseTopic");
     
     alternateIDs = jsonReader.decodeMapFromArray(AlternateID.class, "alternateIDs");
     

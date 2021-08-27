@@ -74,6 +74,8 @@ echo create_topic ${topic.communicationchannel}                                 
 echo create_topic ${topic.blackoutperiod}                                           $KAFKA_REPLICATION_FACTOR               1                                       "$TOPIC_CONFIGURATION"   >> /app/setup/topics-evolution
 echo create_topic ${topic.timewindowperiod}                                         $KAFKA_REPLICATION_FACTOR               1                                       "$TOPIC_CONFIGURATION"   >> /app/setup/topics-evolution
 echo create_topic ${topic.loyaltyprogram}                                           $KAFKA_REPLICATION_FACTOR               1                                       "$TOPIC_CONFIGURATION"   >> /app/setup/topics-evolution
+echo create_topic ${topic.badge}                                                    $KAFKA_REPLICATION_FACTOR               1                                       "$TOPIC_CONFIGURATION"   >> /app/setup/topics-evolution
+echo create_topic ${topic.badgeobjective}                                           $KAFKA_REPLICATION_FACTOR               1                                       "$TOPIC_CONFIGURATION"   >> /app/setup/topics-evolution
 echo create_topic ${topic.exclusioninclusiontarget}                                 $KAFKA_REPLICATION_FACTOR               1                                       "$TOPIC_CONFIGURATION"   >> /app/setup/topics-evolution
 echo create_topic ${topic.segmentcontactpolicy}                                     $KAFKA_REPLICATION_FACTOR               1                                       "$TOPIC_CONFIGURATION"   >> /app/setup/topics-evolution
 echo create_topic ${topic.criterionfieldavailablevalues}                            $KAFKA_REPLICATION_FACTOR               1                                       "$TOPIC_CONFIGURATION"   >> /app/setup/topics-evolution
@@ -92,6 +94,8 @@ echo create_topic ${topic.otpinstancechange.response}                           
 echo create_topic ${topic.otpinstancechange.request}                                $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
 echo create_topic ${topic.subscriberProfileForceUpdateResponse}                     $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
 echo create_topic ${topic.notificationEvent}                                        $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
+echo create_topic ${topic.badgechange.request}                                    	$KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
+echo create_topic ${topic.badgechange.response}                                   	$KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
 
 #
 #  regression topics  

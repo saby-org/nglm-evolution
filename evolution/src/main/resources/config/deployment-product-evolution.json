@@ -24,6 +24,7 @@
   "kafkaRetentionDaysExpiredTokens"   : 31,
   "kafkaRetentionDaysExpiredVouchers" : 122,
   "kafkaRetentionDaysLoyaltyPrograms" : 31,
+  "kafkaRetentionDaysRemovedBadges"   : 31,
   "kafkaRetentionDaysTargets"         : 7,
   
   "firstDayOfTheWeek"                 : "Monday",
@@ -92,6 +93,7 @@
   "ESRetentionDaysBulkCampaigns"    : 15,
   "ESRetentionDaysExpiredVouchers"  : 31,
   "ESRetentionDaysVDR"              : 45,
+  "ESRetentionDaysBGDR"             : 45,
   "ESRetentionDaysEDR"              : 45,
   "ESRetentionWeeksDatacubeJourneys.comment": "WARNING: here it is in week",
   "ESRetentionWeeksDatacubeJourneys": 3,
@@ -103,6 +105,7 @@
     "detailedrecords_tokens":           3,
     "detailedrecords_offers":           4,
     "detailedrecords_vouchers":         4,
+    "detailedrecords_badges":         	2,
     "detailedrecords_messages":         3,
     "detailedrecords_events":           2,
     "journeystatistic":                 2,
@@ -121,6 +124,7 @@
     "mapping_deliverables":             2,
     "mapping_partners":                 2,
     "mapping_basemanagement":           2,
+    "mapping_badges":             		2,
     "mapping_journeyobjective":         2
   },
   "elasticsearchIndexByPassVersion.comment" : "WARNING. DEBUG VARIABLE. DO NOT MODIFY IT IF YOU DO NOT KNOW WHAT YOU ARE DOING.",
@@ -232,6 +236,8 @@
   "communicationChannelBlackoutTopic"                    : "${topic.blackoutperiod}",
   "communicationChannelTimeWindowTopic"                  : "${topic.timewindowperiod}",
   "loyaltyProgramTopic"                                  : "${topic.loyaltyprogram}",
+  "badgeTopic"                                           : "${topic.badge}",
+  "badgeObjectiveTopic"                                  : "${topic.badgeobjective}",
   "exclusionInclusionTargetTopic"                        : "${topic.exclusioninclusiontarget}",
   "profileChangeEventTopic"                              : "${topic.profilechangeevent}",
   "profileSegmentChangeEventTopic"                       : "${topic.profilesegmentchangeevent}",
@@ -249,6 +255,8 @@
   "workflowEventTopic"                                   : "${topic.workflowEvent}",
   "subscriberProfileForceUpdateResponseTopic"            : "${topic.subscriberProfileForceUpdateResponse}",
   "notificationEventTopic"                               : "${topic.notificationEvent}",
+  "badgeChangeRequestTopic"                            	 : "${topic.badgechange.request}",
+  "badgeChangeResponseTopic"                           	 : "${topic.badgechange.response}",
 
   "supportedDataTypes" :
     [

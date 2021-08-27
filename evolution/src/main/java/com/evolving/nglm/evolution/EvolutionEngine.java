@@ -20,6 +20,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import com.evolving.nglm.evolution.kafka.EvolutionProductionExceptionHandler;
 import com.evolving.nglm.evolution.otp.OTPInstance;
@@ -95,6 +96,9 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.core.SubscriberStreamEvent.SubscriberAction;
 import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.ActionManager.ActionType;
+import com.evolving.nglm.evolution.Badge.BadgeAction;
+import com.evolving.nglm.evolution.Badge.BadgeType;
+import com.evolving.nglm.evolution.Badge.CustomerBadgeStatus;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
 import com.evolving.nglm.evolution.ContactPolicyCommunicationChannels.ContactType;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
@@ -203,6 +207,7 @@ public class EvolutionEngine
   private static ProductService productService;
   private static ProductTypeService productTypeService;
   private static VoucherService voucherService;
+  private static BadgeService badgeService;
   private static VoucherTypeService voucherTypeService;
   private static CatalogCharacteristicService catalogCharacteristicService;
   private static DNBOMatrixService dnboMatrixService;
@@ -340,6 +345,8 @@ public class EvolutionEngine
     String workflowEventTopic = Deployment.getWorkflowEventTopic();
     String otpInstanceChangeEventRequestTopic = Deployment.getOTPInstanceChangeRequestTopic();
     String notificationEventTopic = Deployment.getNotificationEventTopic();
+    String badgeChangeRequestEventTopic = Deployment.getBadgeChangeRequestTopic();
+    
     //
     //  changelogs
     //
@@ -463,7 +470,14 @@ public class EvolutionEngine
 
     voucherService = new VoucherService(bootstrapServers, "evolutionengine-voucher-" + evolutionEngineKey, Deployment.getVoucherTopic());
     voucherService.start();
+    
+    //
+    //  badgeService
+    //
 
+    badgeService = new BadgeService(bootstrapServers, "evolutionengine-badge-" + evolutionEngineKey, Deployment.getBadgeTopic(), false);
+    badgeService.start();
+    
     //
     //  voucherTypeService
     //
@@ -763,6 +777,7 @@ public class EvolutionEngine
     final ConnectSerde<OTPInstanceChangeEvent> otpInstanceChangeEventSerde = OTPInstanceChangeEvent.serde();
     final ConnectSerde<SubscriberProfileForceUpdateResponse> subscriberProfileForceUpdateResponseSerde = SubscriberProfileForceUpdateResponse.serde();
     final ConnectSerde<NotificationEvent> notificationEventSerde = NotificationEvent.serde();
+    final ConnectSerde<BadgeChange> badgeChangeEventSerde = BadgeChange.serde();
 
     //
     //  special serdes
@@ -831,6 +846,7 @@ public class EvolutionEngine
     KStream<StringKey, WorkflowEvent> workflowEventStream = builder.stream(workflowEventTopic, Consumed.with(stringKeySerde, workflowEventSerde));
     KStream<StringKey, OTPInstanceChangeEvent> otpInstanceChangeEventRequestStream = builder.stream(otpInstanceChangeEventRequestTopic, Consumed.with(stringKeySerde, otpInstanceChangeEventSerde));
     KStream<StringKey, NotificationEvent> notificationEventStream = builder.stream(notificationEventTopic, Consumed.with(stringKeySerde, notificationEventSerde));
+    KStream<StringKey, BadgeChange> badgeChangeEventStream = builder.stream(badgeChangeRequestEventTopic, Consumed.with(stringKeySerde, badgeChangeEventSerde));
     
     //
     //  timedEvaluationStreams
@@ -978,6 +994,7 @@ public class EvolutionEngine
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) workflowEventStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) notificationEventStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) otpInstanceChangeEventRequestStream);
+    evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) badgeChangeEventStream);
     evolutionEventStreams.addAll(standardEvolutionEngineEventStreams);
     evolutionEventStreams.addAll(deliveryManagerResponseStreams);
     evolutionEventStreams.addAll(deliveryManagerRequestToProcessStreams);
@@ -1033,7 +1050,8 @@ public class EvolutionEngine
         (key,value) -> (value instanceof SubscriberProfileForceUpdateResponse),
         (key,value) -> (value instanceof OTPInstanceChangeEvent),
         (key,value) -> (value instanceof CleanupSubscriber),
-        (key,value) -> (value instanceof AssignSubscriberIDs)
+        (key,value) -> (value instanceof AssignSubscriberIDs),
+        (key,value) -> (value instanceof BadgeChange)
     );
 
     KStream<StringKey, DeliveryRequest> deliveryRequestStream = (KStream<StringKey, DeliveryRequest>) branchedEvolutionEngineOutputs[0];
@@ -1058,6 +1076,8 @@ public class EvolutionEngine
     KStream<StringKey, OTPInstanceChangeEvent> otpInstanceChangeEventsStream = (KStream<StringKey, OTPInstanceChangeEvent>) branchedEvolutionEngineOutputs[17];
     KStream<StringKey, CleanupSubscriber> immediateCleanupStream = (KStream<StringKey, CleanupSubscriber>) branchedEvolutionEngineOutputs[18];
     KStream<StringKey, AssignSubscriberIDs> deleteActionStream = (KStream<StringKey, AssignSubscriberIDs>) branchedEvolutionEngineOutputs[19];
+    KStream<StringKey, BadgeChange> badgeChangeResponseStream = (KStream<StringKey, BadgeChange>) branchedEvolutionEngineOutputs[20];
+    
     /*****************************************
     *
     *  sink
@@ -1086,6 +1106,7 @@ public class EvolutionEngine
     otpInstanceChangeEventsStream.to(Deployment.getOTPInstanceChangeResponseTopic(), Produced.with(stringKeySerde, OTPInstanceChangeEvent.serde()));
     immediateCleanupStream.to(Deployment.getCleanupSubscriberTopic(), Produced.with(stringKeySerde, cleanupSubscriberSerde));
     deleteActionStream.to(Deployment.getAssignSubscriberIDsTopic(), Produced.with(stringKeySerde, assignSubscriberIDsSerde));
+    badgeChangeResponseStream.to(Deployment.getBadgeChangeResponseTopic(), Produced.with(stringKeySerde, badgeChangeEventSerde));
 
     //
     //  sink DeliveryRequest
@@ -1364,7 +1385,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(streams, subscriberGroupEpochReader, ucgStateReader, dynamicCriterionFieldService, journeyService, loyaltyProgramService, targetService, journeyObjectiveService, segmentationDimensionService, presentationStrategyService, scoringStrategyService, offerService, salesChannelService, tokenTypeService, subscriberMessageTemplateService, deliverableService, segmentContactPolicyService, timerService, pointService, exclusionInclusionTargetService, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, dnboMatrixService, paymentMeanService, subscriberProfileServer, internalServer, stockService, resellerService, supplierService));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(streams, subscriberGroupEpochReader, ucgStateReader, dynamicCriterionFieldService, journeyService, loyaltyProgramService, targetService, journeyObjectiveService, segmentationDimensionService, presentationStrategyService, scoringStrategyService, offerService, salesChannelService, tokenTypeService, subscriberMessageTemplateService, deliverableService, segmentContactPolicyService, timerService, pointService, exclusionInclusionTargetService, productService, productTypeService, voucherService, badgeService, voucherTypeService, catalogCharacteristicService, dnboMatrixService, paymentMeanService, subscriberProfileServer, internalServer, stockService, resellerService, supplierService));
 
     /*****************************************
     *
@@ -1643,6 +1664,7 @@ public class EvolutionEngine
     private ProductService productService;
     private ProductTypeService productTypeService;
     private VoucherService voucherService;
+    private BadgeService badgeService;
     private VoucherTypeService voucherTypeService;
     private CatalogCharacteristicService catalogCharacteristicService;
     private DNBOMatrixService dnboMatrixService;
@@ -1663,7 +1685,7 @@ public class EvolutionEngine
     //  constructor
     //
 
-    private ShutdownHook(KafkaStreams kafkaStreams, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,UCGState> ucgStateReader, DynamicCriterionFieldService dynamicCriterionFieldsService, JourneyService journeyService, LoyaltyProgramService loyaltyProgramService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, SegmentationDimensionService segmentationDimensionService, PresentationStrategyService presentationStrategyService, ScoringStrategyService scoringStrategyService, OfferService offerService, SalesChannelService salesChannelService, TokenTypeService tokenTypeService, SubscriberMessageTemplateService subscriberMessageTemplateService, DeliverableService deliverableService, SegmentContactPolicyService segmentContactPolicyService, TimerService timerService, PointService pointService, ExclusionInclusionTargetService exclusionInclusionTargetService, ProductService productService, ProductTypeService productTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService, CatalogCharacteristicService catalogCharacteristicService, DNBOMatrixService dnboMatrixService, PaymentMeanService paymentMeanService, HttpServer subscriberProfileServer, HttpServer internalServer, StockMonitor stockService, ResellerService resellerService, SupplierService supplierService)
+    private ShutdownHook(KafkaStreams kafkaStreams, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,UCGState> ucgStateReader, DynamicCriterionFieldService dynamicCriterionFieldsService, JourneyService journeyService, LoyaltyProgramService loyaltyProgramService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, SegmentationDimensionService segmentationDimensionService, PresentationStrategyService presentationStrategyService, ScoringStrategyService scoringStrategyService, OfferService offerService, SalesChannelService salesChannelService, TokenTypeService tokenTypeService, SubscriberMessageTemplateService subscriberMessageTemplateService, DeliverableService deliverableService, SegmentContactPolicyService segmentContactPolicyService, TimerService timerService, PointService pointService, ExclusionInclusionTargetService exclusionInclusionTargetService, ProductService productService, ProductTypeService productTypeService, VoucherService voucherService, BadgeService badgeService, VoucherTypeService voucherTypeService, CatalogCharacteristicService catalogCharacteristicService, DNBOMatrixService dnboMatrixService, PaymentMeanService paymentMeanService, HttpServer subscriberProfileServer, HttpServer internalServer, StockMonitor stockService, ResellerService resellerService, SupplierService supplierService)
     {
       this.kafkaStreams = kafkaStreams;
       this.subscriberGroupEpochReader = subscriberGroupEpochReader;
@@ -1689,6 +1711,7 @@ public class EvolutionEngine
       this.productService = productService;
       this.productTypeService = productTypeService;
       this.voucherService = voucherService;
+      this.badgeService = badgeService;
       this.voucherTypeService = voucherTypeService;
       this.catalogCharacteristicService = catalogCharacteristicService;
       this.dnboMatrixService = dnboMatrixService;
@@ -1725,6 +1748,7 @@ public class EvolutionEngine
       productService.stop();
       productTypeService.stop();
       voucherService.stop();
+      badgeService.stop();
       voucherTypeService.stop();
       catalogCharacteristicService.stop();
       dnboMatrixService.stop();
@@ -1820,7 +1844,7 @@ public class EvolutionEngine
 
     SubscriberProfile subscriberProfile = subscriberState.getSubscriberProfile();
     ExtendedSubscriberProfile extendedSubscriberProfile = (evolutionEvent instanceof TimedEvaluation) ? ((TimedEvaluation) evolutionEvent).getExtendedSubscriberProfile() : null;
-    EvolutionEventContext context = new EvolutionEventContext(subscriberState, evolutionEvent, extendedSubscriberProfile, subscriberGroupEpochReader, journeyService, subscriberMessageTemplateService, deliverableService, segmentationDimensionService, presentationStrategyService, scoringStrategyService, offerService, salesChannelService, tokenTypeService, segmentContactPolicyService, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, dnboMatrixService, paymentMeanService, uniqueKeyServer, resellerService, supplierService, SystemTime.getCurrentTime());
+    EvolutionEventContext context = new EvolutionEventContext(subscriberState, evolutionEvent, extendedSubscriberProfile, subscriberGroupEpochReader, journeyService, subscriberMessageTemplateService, deliverableService, segmentationDimensionService, presentationStrategyService, scoringStrategyService, offerService, salesChannelService, tokenTypeService, segmentContactPolicyService, productService, productTypeService, voucherService, badgeService, voucherTypeService, catalogCharacteristicService, dnboMatrixService, paymentMeanService, uniqueKeyServer, resellerService, supplierService, SystemTime.getCurrentTime());
 
     if(log.isTraceEnabled()) log.trace("updateSubscriberState on event "+evolutionEvent.getClass().getSimpleName()+ " for "+evolutionEvent.getSubscriberID());
 
@@ -2079,7 +2103,14 @@ public class EvolutionEngine
     *****************************************/
 
     subscriberStateUpdated = updateNotifications(context, evolutionEvent, subscriberEvaluationRequest) || subscriberStateUpdated;
+    
+    /*****************************************
+    *
+    *  update updateBadges
+    *
+    *****************************************/
 
+    subscriberStateUpdated = updateBadges(context, evolutionEvent, subscriberEvaluationRequest) || subscriberStateUpdated;
 
     /*****************************************
     *
@@ -2592,7 +2623,7 @@ public class EvolutionEngine
  
  /*****************************************
  *
- *  updateWorkflows
+ *  updateNotifications
  *
  *****************************************/
 
@@ -2608,6 +2639,140 @@ public class EvolutionEngine
        subscriberUpdated = EvolutionUtilities.sendMessage(context, notificationEvent.getTags(), notificationEvent.getTemplateID(), notificationEvent.getContactType(), notificationEvent.getSource(), subscriberEvaluationRequest, subscriberState, notificationEvent.getFeatureID(), notificationEvent.getModuleID());
      }
    return subscriberUpdated;
+ }
+ 
+ /*****************************************
+ *
+ *  updateBadges
+ *
+ *****************************************/
+
+ private static boolean updateBadges(EvolutionEventContext context, SubscriberStreamEvent evolutionEvent, SubscriberEvaluationRequest subscriberEvaluationRequest)
+ {
+   boolean result = evolutionEvent instanceof BadgeChange;
+   if (result)
+     {
+       log.info("RAJ K updateBadges");
+       BadgeChange badgeChangeRequest = (BadgeChange) evolutionEvent;
+       BadgeChange badgeChangeResponse = new BadgeChange(badgeChangeRequest);
+       badgeChangeResponse.changeToBadgeChangeResponse();
+       BadgeAction actionRequest = badgeChangeRequest.getAction();
+       log.info("RAJ K actionRequest {}", actionRequest.getExternalRepresentation());
+       SubscriberProfile subscriberProfile = context.getSubscriberState().getSubscriberProfile();
+       Badge badge = badgeService.getActiveBadge(badgeChangeRequest.getBadgeID(), context.now());
+       if (badge != null)
+         {
+           BadgeState subscriberBadge = subscriberProfile.getBadgeByID(badgeChangeRequest.getBadgeID());
+           switch (actionRequest)
+           {
+             case AWARD:
+               if (subscriberBadge == null)
+                 {
+                   //
+                   //  newBadge
+                   //
+                   
+                   BadgeState newBadge = new BadgeState(badge.getBadgeID(), badge.getBadgeType(), CustomerBadgeStatus.AWARDED, context.now(), null);
+                   subscriberProfile.getBadges().add(newBadge);
+                   badgeChangeResponse.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
+                   log.info("RAJ K newBadge {}", newBadge);
+                   
+                   //
+                   //  triggerBadgeWorflow AwardedWorkflow
+                   //
+                   
+                   triggerBadgeWorflow(badgeChangeRequest, context.getSubscriberState(), badge.getAwardedWorkflowID(), badgeChangeRequest.getFeatureID(), badgeChangeRequest.getOrigin());
+                 }
+               else if (subscriberBadge.getCustomerBadgeStatus().equals(CustomerBadgeStatus.REMOVED))
+                 {
+                   //
+                   //  re award if removed
+                   //
+                   
+                   subscriberBadge.setCustomerBadgeStatus(CustomerBadgeStatus.AWARDED);
+                   subscriberBadge.setBadgeAwardDate(context.now());
+                   subscriberBadge.setBadgeRemoveDate(null);
+                   badgeChangeResponse.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
+                   log.info("RAJ K re award {}", subscriberBadge);
+                   
+                   //
+                   //  triggerBadgeWorflow AwardedWorkflow
+                   //
+                   
+                   triggerBadgeWorflow(badgeChangeRequest, context.getSubscriberState(), badge.getAwardedWorkflowID(), badgeChangeRequest.getFeatureID(), badgeChangeRequest.getOrigin());
+                 }
+               else
+                 {
+                   badgeChangeResponse.setReturnStatus(RESTAPIGenericReturnCodes.BADGE_ALREADY_AWARDED);
+                   log.info("RAJ K BADGE_ALREADY_AWARDED");
+                 }
+               break;
+               
+             case REMOVE:
+               if (subscriberBadge == null || subscriberBadge.getCustomerBadgeStatus().equals(CustomerBadgeStatus.REMOVED))
+                 {
+                   badgeChangeResponse.setReturnStatus(RESTAPIGenericReturnCodes.BADGE_NOT_AVAILABLE);
+                   log.info("RAJ K BADGE_NOT_AVAILABLE");
+                 }
+               else if (badge.getBadgeType().equals(BadgeType.PERMANENT))
+                 {
+                   badgeChangeResponse.setReturnStatus(RESTAPIGenericReturnCodes.BADGE_NOT_REMOVABLE);
+                   log.info("RAJ K BADGE_NOT_REMOVABLE");
+                 }
+               else
+                 {
+                   //
+                   //  removed
+                   //
+                   
+                   subscriberBadge.setCustomerBadgeStatus(CustomerBadgeStatus.REMOVED);
+                   subscriberBadge.setBadgeRemoveDate(context.now());
+                   badgeChangeResponse.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
+                   log.info("RAJ K removed");
+                   
+                   //
+                   //  triggerBadgeWorflow RemoveWorkflow
+                   //
+                   
+                   triggerBadgeWorflow(badgeChangeRequest, context.getSubscriberState(), badge.getRemoveWorkflowID(), badgeChangeRequest.getFeatureID(), badgeChangeRequest.getOrigin());
+                 }
+               break;
+
+             default:
+               if (log.isErrorEnabled()) log.error("invalid badge actionRequest {}", actionRequest);
+               break;
+           }
+         }
+       else
+         {
+           badgeChangeResponse.setReturnStatus(RESTAPIGenericReturnCodes.BADGE_NOT_FOUND);
+           log.info("RAJ K BADGE_NOT_FOUND");
+         }
+       
+       //
+       //  add this response - need to sink
+       //
+       
+       context.getSubscriberState().getBadgeChangeResponses().add(badgeChangeResponse);
+       
+       //
+       //  if badge got deleted (NOT JUST "suspended"), we need to remove to clean it from profile after a while
+       //
+       
+       Collection<GUIManagedObject> allBadges = badgeService.getStoredBadges(true, context.getSubscriberState().getSubscriberProfile().getTenantID());
+       Collection<GUIManagedObject> deletedBadges = allBadges.stream().filter(bdg -> bdg.getDeleted()).collect(Collectors.toList());
+       for (GUIManagedObject deletedBadge : deletedBadges)
+         {
+           BadgeState subscriberBadge = subscriberProfile.getBadgeByID(deletedBadge.getGUIManagedObjectID());
+           if (subscriberBadge != null && !subscriberBadge.getCustomerBadgeStatus().equals(CustomerBadgeStatus.REMOVED))
+             {
+               subscriberBadge.setCustomerBadgeStatus(CustomerBadgeStatus.REMOVED);
+               subscriberBadge.setBadgeRemoveDate(context.now());
+               result = true;
+             }
+         }
+     }
+   return result;
  }
 
   private static void checkRedeemVoucher(VoucherProfileStored voucherStored, VoucherChange voucherChange, boolean redeem)
@@ -4098,6 +4263,25 @@ public class EvolutionEngine
     if(workflowTriggering.contains(toBeAdded))
       {
         // there is a conflict, i.e. this has already be requested, which means the date is not enough to discriminate... will see
+        log.warn("triggerLoyaltyWorflow already has " + toBeAdded);
+        return false;
+      }
+    workflowTriggering.add(toBeAdded);
+    return true;
+  }
+  
+  public static boolean triggerBadgeWorflow(SubscriberStreamEvent eventToTrigWorkflow, SubscriberState subscriberState, String badgeWorflowID, String featureID, String origin)
+  {
+    // 
+    // Tag the subscriber state with the event's information, log a warn if a conflict appears (is the date enough to segregate 2 
+    //
+    
+    if(badgeWorflowID == null) { return false; }
+    
+    String toBeAdded = eventToTrigWorkflow.getClass().getName() + ":" + eventToTrigWorkflow.getEventDate().getTime() + ":" + badgeWorflowID + ":" + featureID + ":" + "Badge_workflow" + ":" + origin ;
+    List<String> workflowTriggering = subscriberState.getWorkflowTriggering();
+    if(workflowTriggering.contains(toBeAdded))
+      {
         log.warn("triggerLoyaltyWorflow already has " + toBeAdded);
         return false;
       }
@@ -7139,6 +7323,11 @@ public class EvolutionEngine
               SubscriberProfileForceUpdate subscriberProfileForceUpdate = (SubscriberProfileForceUpdate) action;
               subscriberState.getSubscriberProfileForceUpdates().add(subscriberProfileForceUpdate);
               break;
+              
+            case BadgeChange:
+              BadgeChange badgeChange = (BadgeChange) action;
+              subscriberState.getBadgeChangeRequests().add(badgeChange);
+              break;
 
             default:
               log.error("unsupported action {} on actionManager.executeOnExit", action.getActionType());
@@ -7406,6 +7595,7 @@ public class EvolutionEngine
         result.addAll(subscriberState.getOTPInstanceChangeEvent());
         result.addAll(subscriberState.getImmediateCleanupActions());
         result.addAll(subscriberState.getDeleteActions());
+        result.addAll(subscriberState.getBadgeChangeResponses());
       }
 
     // add stats about voucherChange done
@@ -7802,6 +7992,7 @@ public class EvolutionEngine
     private ProductService productService;
     private ProductTypeService productTypeService;
     private VoucherService voucherService;
+    private BadgeService badgeService;
     private VoucherTypeService voucherTypeService;
     private CatalogCharacteristicService catalogCharacteristicService;
     private DNBOMatrixService dnboMatrixService;
@@ -7822,7 +8013,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    public EvolutionEventContext(SubscriberState subscriberState, SubscriberStreamEvent event, ExtendedSubscriberProfile extendedSubscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService, DeliverableService deliverableService, SegmentationDimensionService segmentationDimensionService, PresentationStrategyService presentationStrategyService, ScoringStrategyService scoringStrategyService, OfferService offerService, SalesChannelService salesChannelService, TokenTypeService tokenTypeService, SegmentContactPolicyService segmentContactPolicyService, ProductService productService, ProductTypeService productTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService, CatalogCharacteristicService catalogCharacteristicService, DNBOMatrixService dnboMatrixService, PaymentMeanService paymentMeanService, KStreamsUniqueKeyServer uniqueKeyServer, ResellerService resellerService, SupplierService supplierService, Date now)
+    public EvolutionEventContext(SubscriberState subscriberState, SubscriberStreamEvent event, ExtendedSubscriberProfile extendedSubscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService, DeliverableService deliverableService, SegmentationDimensionService segmentationDimensionService, PresentationStrategyService presentationStrategyService, ScoringStrategyService scoringStrategyService, OfferService offerService, SalesChannelService salesChannelService, TokenTypeService tokenTypeService, SegmentContactPolicyService segmentContactPolicyService, ProductService productService, ProductTypeService productTypeService, VoucherService voucherService, BadgeService badgeService, VoucherTypeService voucherTypeService, CatalogCharacteristicService catalogCharacteristicService, DNBOMatrixService dnboMatrixService, PaymentMeanService paymentMeanService, KStreamsUniqueKeyServer uniqueKeyServer, ResellerService resellerService, SupplierService supplierService, Date now)
     {
       this.subscriberState = subscriberState;
       this.event = event;
@@ -7842,6 +8033,7 @@ public class EvolutionEngine
       this.productService = productService;
       this.productTypeService = productTypeService;
       this.voucherService = voucherService;
+      this.badgeService = badgeService;
       this.voucherTypeService = voucherTypeService;
       this.catalogCharacteristicService = catalogCharacteristicService;
       this.dnboMatrixService = dnboMatrixService;
@@ -7917,6 +8109,7 @@ public class EvolutionEngine
     public ProductService getProductService() { return productService; }
     public ProductTypeService getProductTypeService() { return productTypeService; }
     public VoucherService getVoucherService() { return voucherService; }
+    public BadgeService getBadgeService() { return badgeService; }
     public VoucherTypeService getVoucherTypeService() { return voucherTypeService; }
     public CatalogCharacteristicService getCatalogCharacteristicService() { return catalogCharacteristicService; }
     public DNBOMatrixService getDnboMatrixService() { return dnboMatrixService; }
