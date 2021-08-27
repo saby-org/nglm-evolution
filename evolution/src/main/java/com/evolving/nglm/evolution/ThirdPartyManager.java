@@ -2522,7 +2522,7 @@ public class ThirdPartyManager
                   nodeHistoriesMap.put("deliveryRequestID", journeyHistories.getDeliveryRequestID());
                   nodeHistoriesJson.add(JSONUtilities.encodeObject(nodeHistoriesMap));
                 }
-              campaignResponseESMap.put("customerStatus", customerStatusInJourney.getExternalRepresentation());
+              campaignResponseESMap.put("customerStatus", customerStatusInJourney.getDisplay());
               campaignResponseESMap.put("campaignComplete", campaignComplete);
               campaignResponseESMap.put("nodeHistories", JSONUtilities.encodeArray(nodeHistoriesJson));
               campaignResponseESMap.put("currentState", currentStateJson);

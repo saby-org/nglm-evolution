@@ -19683,7 +19683,7 @@ public class GUIManager
                         nodeHistoriesMap.put("deliveryRequestID", journeyHistories.getDeliveryRequestID());
                         nodeHistoriesJson.add(JSONUtilities.encodeObject(nodeHistoriesMap));
                       }
-                    campaignResponseMap.put("customerStatus", customerStatusInJourney.getExternalRepresentation());
+                    campaignResponseMap.put("customerStatus", customerStatusInJourney.getDisplay());
                     campaignResponseMap.put("journeyComplete", campaignComplete);
                     campaignResponseMap.put("nodeHistories", JSONUtilities.encodeArray(nodeHistoriesJson));
                     campaignResponseMap.put("currentState", currentStateJson);
