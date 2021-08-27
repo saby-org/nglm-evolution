@@ -240,6 +240,132 @@ public abstract class CriterionFieldRetriever
     return result;
   }
   
+  public static Object getNumberOfBadgesAwardedForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
+  {
+    int result = 0;
+    SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+    
+    //
+    //  args
+    //
+    
+    log.info("RAJ K getNumberOfBadgesAwardedForPeriod subcriteriaVal {}", subcriteriaVal);
+    
+    return result;
+  }
+  
+  public static Object getNumberOfBadgeTypesAwardedForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
+  {
+    int result = 0;
+    SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+    
+    //
+    //  args
+    //
+    
+    log.info("RAJ K getNumberOfBadgeTypesAwardedForPeriod subcriteriaVal {}", subcriteriaVal);
+    
+    return result;
+  }
+  
+  public static Object getNumberOfBadgeObjectivesAwardedForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
+  {
+    int result = 0;
+    SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+    
+    //
+    //  args
+    //
+    
+    log.info("RAJ K getNumberOfBadgeObjectivesAwardedForPeriod subcriteriaVal {}", subcriteriaVal);
+    
+    return result;
+  }
+  
+  public static Object getNumberOfBadgesRemovedForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
+  {
+    int result = 0;
+    SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+    
+    //
+    //  args
+    //
+    
+    log.info("RAJ K getNumberOfBadgesRemovedForPeriod subcriteriaVal {}", subcriteriaVal);
+    
+    return result;
+  }
+  
+  public static Object getNumberOfBadgeTypesRemovedForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
+  {
+    int result = 0;
+    SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+    
+    //
+    //  args
+    //
+    
+    log.info("RAJ K getNumberOfBadgeTypesRemovedForPeriod subcriteriaVal {}", subcriteriaVal);
+    
+    return result;
+  }
+  
+  public static Object getNumberOfBadgeObjectivesRemovedForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
+  {
+    int result = 0;
+    SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+    
+    //
+    //  args
+    //
+    
+    log.info("RAJ K getNumberOfBadgeObjectivesRemovedForPeriod subcriteriaVal {}", subcriteriaVal);
+    
+    return result;
+  }
+  
+  public static Object getBadgeBalanceForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
+  {
+    int result = 0;
+    SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+    
+    //
+    //  args
+    //
+    
+    log.info("RAJ K getBadgeBalanceForPeriod subcriteriaVal {}", subcriteriaVal);
+    
+    return result;
+  }
+  
+  public static Object getBadgeTypeBalanceForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
+  {
+    int result = 0;
+    SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+    
+    //
+    //  args
+    //
+    
+    log.info("RAJ K getBadgeTypeBalanceForPeriod subcriteriaVal {}", subcriteriaVal);
+    
+    return result;
+  }
+  
+  public static Object getBadgeObjectiveBalanceForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
+  {
+    int result = 0;
+    SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+    
+    //
+    //  args
+    //
+    
+    log.info("RAJ K getBadgeObjectiveBalanceForPeriod subcriteriaVal {}", subcriteriaVal);
+    
+    return result;
+  }
+  
   protected static Pair<Date, Date> getStartAndEndDate(String period, String timeZone)
   {
     Date now = SystemTime.getCurrentTime();

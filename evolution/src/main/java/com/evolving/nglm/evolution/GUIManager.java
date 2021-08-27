@@ -125,6 +125,7 @@ import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.core.UniqueKeyServer;
 import com.evolving.nglm.evolution.Badge.BadgeAction;
+import com.evolving.nglm.evolution.Badge.BadgeType;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryStatus;
@@ -27330,6 +27331,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                 }
             }
           break;
+          
         case "months":
           if (includeDynamic)
             {
@@ -27343,6 +27345,56 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                   result.add(JSONUtilities.encodeObject(availableValue));
                 }
             }
+          break;
+          
+        case "badges":
+          if (includeDynamic)
+          {
+            for (GUIManagedObject badgeUnchecked : badgeService.getStoredBadges(tenantID))
+            {
+              if (badgeUnchecked.getAccepted())
+              {
+                Badge badge = (Badge) badgeUnchecked;
+                HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                availableValue.put("id", badge.getBadgeID());
+                availableValue.put("display", badge.getGUIManagedObjectDisplay());
+                result.add(JSONUtilities.encodeObject(availableValue));
+              }
+            }
+          }
+          break;
+          
+        case "badgeTypes":
+          if (includeDynamic)
+          {
+            for (BadgeType badgeType : BadgeType.values())
+            {
+              if (!badgeType.equals(BadgeType.Unknown))
+              {
+                HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                availableValue.put("id", badgeType.getExternalRepresentation());
+                availableValue.put("display", badgeType.toString());
+                result.add(JSONUtilities.encodeObject(availableValue));
+              }
+            }
+          }
+          break;
+          
+        case "badgeObjectives":
+          if (includeDynamic)
+          {
+            for (GUIManagedObject badgeObjectiveUnchecked : badgeObjectiveService.getStoredBadgeObjectives(tenantID))
+            {
+              if (badgeObjectiveUnchecked.getAccepted())
+              {
+                BadgeObjective badgeObjective = (BadgeObjective) badgeObjectiveUnchecked;
+                HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                availableValue.put("id", badgeObjective.getBadgeObjectiveID());
+                availableValue.put("display", badgeObjective.getGUIManagedObjectDisplay());
+                result.add(JSONUtilities.encodeObject(availableValue));
+              }
+            }
+          }
           break;
           
         case "returnCodesBDR":
