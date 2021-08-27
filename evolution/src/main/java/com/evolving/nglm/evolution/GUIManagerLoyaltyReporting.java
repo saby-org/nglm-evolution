@@ -2448,6 +2448,8 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     response.put("communicationChannelCount", Deployment.getCommunicationChannels().size());
     response.put("communicationChannelBlackoutCount", communicationChannelBlackoutService.getStoredCommunicationChannelBlackouts(includeArchived, tenantID).size());
     response.put("resellerCount", resellerService.getStoredResellers(includeArchived, tenantID).size());
+    response.put("badgeCount", badgeService.getStoredBadges(includeArchived, tenantID).size());
+    response.put("badgeObjectiveCount", badgeObjectiveService.getStoredBadgeObjectives(includeArchived, tenantID).size());
     
     //
     //  LoyaltyProgram
