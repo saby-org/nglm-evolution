@@ -6361,15 +6361,18 @@ public class EvolutionEngine
         *
         *****************************************/
 
-        if (evolutionEvent instanceof DeliveryRequest && !((DeliveryRequest)evolutionEvent).getDeliveryStatus().equals(DeliveryStatus.Pending))
+        if (evolutionEvent instanceof DeliveryRequest && !((DeliveryRequest) evolutionEvent).getDeliveryStatus().equals(DeliveryStatus.Pending))
           {
             DeliveryRequest deliveryResponse = (DeliveryRequest) evolutionEvent;
-            if(deliveryResponse.getOriginatingSubscriberID() == null || deliveryResponse.getOriginatingSubscriberID().startsWith(DeliveryManager.ORIGIN))
+            if (deliveryResponse.getOriginatingSubscriberID() == null || deliveryResponse.getOriginatingSubscriberID().startsWith(DeliveryManager.ORIGIN))
               {
-                // case where the response is to the parent into the relationship, so the history must be taken in account...
-                // this history is not taken in account for a response to the original subscriber as this response is only here to unlock the Journey
+                // case where the response is to the parent into the relationship, so the
+                // history must be taken in account...
+                // this history is not taken in account for a response to the original
+                // subscriber as this response is only here to unlock the Journey
                 if (Objects.equals(deliveryResponse.getModuleID(), DeliveryRequest.Module.Journey_Manager.getExternalRepresentation()) && Objects.equals(deliveryResponse.getFeatureID(), journeyState.getJourneyID()))
                   {
+                    // in case of workflow, here we are already on the mother campaign (not sure why), workflows do not get the reward info, should be ok
                     journeyState.getJourneyHistory().addRewardInformation(deliveryResponse, deliverableService, now);
                   }
               }
@@ -6774,29 +6777,6 @@ public class EvolutionEngine
                 *  journeyStatistic for node transition
                 *
                 *****************************************/
-
-                //
-                //  markNotified
-                //
-
-                boolean currentStatusNotified = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) : Boolean.FALSE;
-                boolean markNotified = originalStatusNotified == false && currentStatusNotified == true;
-
-                //
-                //  markConverted & conversionCount
-                //
-                boolean markConverted = false;
-                
-                if(originalStatusConverted == false) { // first conversion 
-                  markConverted = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) : Boolean.FALSE;
-                }
-                else { // conversion on already converted -- Be careful, we are comparing references here, not the value (as intended) !
-                  markConverted = (convertedReference != journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()));
-                }
-                
-                if(markConverted) {
-                  journeyState.getJourneyHistory().incrementConversions(now);
-                }
                 
                 //
                 // abTesting (we remove it so its only counted once per journey)
@@ -6819,37 +6799,25 @@ public class EvolutionEngine
                 //  journeyStatistic
                 //
                 
+                subscriberState.addJourneyStatistic(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, firedLink, journeyState.getNotifiedThisEvent(), journeyState.getConvertedThisEvent(), sample, subscriberState.getSubscriberProfile().getStatisticsSegmentsMap(subscriberGroupEpochReader, segmentationDimensionService), subscriberState.getSubscriberProfile()));
+                
                 boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getCurrentTime(), journeyState, journeyNode.getExitNode());
                 if(journey.isWorkflow())
                   {
                     // retrieve the journey state of the calling campaign
-                	JourneyState sourceJourneyState = null;
                     if(subscriberState.getJourneyStates() != null)
                       {
-                        for(JourneyState state : subscriberState.getJourneyStates())
+                        for(JourneyState parentState : subscriberState.getJourneyStates())
                           {
-                            if(state.getJourneyID().equals(journeyState.getsourceFeatureID()) && DeliveryRequest.Module.Journey_Manager.getExternalRepresentation().equals(journeyState.getSourceModuleID()))
+                            if(parentState.getJourneyID().equals(journeyState.getsourceFeatureID()) && DeliveryRequest.Module.Journey_Manager.getExternalRepresentation().equals(journeyState.getSourceModuleID()))
                               {
-                                sourceJourneyState = state;
+                                subscriberState.addJourneyStatistic(new JourneyStatistic(context, subscriberState.getSubscriberID(), parentState.getJourneyHistory(), parentState, null, parentState.getNotifiedThisEvent(), parentState.getConvertedThisEvent(), sample, subscriberState.getSubscriberProfile().getStatisticsSegmentsMap(subscriberGroupEpochReader, segmentationDimensionService), subscriberState.getSubscriberProfile()));
+                                break;
                               }
                           }
                       }
-                    if(sourceJourneyState != null)
-                      {
-                        subscriberState.addJourneyStatistic(new JourneyStatistic(context, subscriberState.getSubscriberID(), sourceJourneyState.getJourneyHistory(), journeyState.getJourneyHistory(), sourceJourneyState, journeyState, firedLink, markNotified, markConverted, sample, subscriberState.getSubscriberProfile().getStatisticsSegmentsMap(subscriberGroupEpochReader, segmentationDimensionService), subscriberState.getSubscriberProfile()));
-                      }
-                    else
-                      {
-                        // error...generate a jounrey statistic for the workflow as it it was a normal journey for debug help
-                        log.warn("Can't retrieve source journey state for workflow " + journeyState.getJourneyID() + " and subscriber " + subscriberState.getSubscriberID());
-                        subscriberState.addJourneyStatistic(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), null, journeyState, null, firedLink, markNotified, markConverted, sample, subscriberState.getSubscriberProfile().getStatisticsSegmentsMap(subscriberGroupEpochReader, segmentationDimensionService), subscriberState.getSubscriberProfile()));
-                      }
-                  }
-                else
-                  {
-                	// normal case
-                	subscriberState.addJourneyStatistic(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), null, journeyState, null, firedLink, markNotified, markConverted, sample, subscriberState.getSubscriberProfile().getStatisticsSegmentsMap(subscriberGroupEpochReader, segmentationDimensionService), subscriberState.getSubscriberProfile()));
-                  }
+                  }           	
+
                 /*****************************************
                 *
                 *  update subscriberJourneys in profile
@@ -7075,7 +7043,103 @@ public class EvolutionEngine
 
             case JourneyContextUpdate:
               ContextUpdate journeyContextUpdate = (ContextUpdate) action;
-              journeyState.getJourneyParameters().putAll(journeyContextUpdate.getParameters());
+              if(journeyContextUpdate.getParameters() != null) 
+                {
+                  for(Map.Entry<String, Object> current : journeyContextUpdate.getParameters().entrySet())
+                    {
+                      if(current.getKey().equals(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()))
+                        {
+                          if(journey.isWorkflow())
+                            {
+                              boolean original = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) : Boolean.FALSE;
+                              boolean newValue = (Boolean)current.getValue();
+                              if(!original && newValue)
+                                {
+                                  // this workflow changed to notified
+                                  journeyState.setNotifiedThisEvent(true);
+                                  journeyState.getJourneyParameters().put(current.getKey(), current.getValue());
+                                  // retrieve the main campaign (if exist) that triggered this workflow
+                                  for(JourneyState existing : subscriberState.getJourneyStates())
+                                    {
+                                      if(Module.Journey_Manager.getExternalRepresentation().equals(journeyState.getSourceModuleID()) && existing.getJourneyID().equals(journeyState.getsourceFeatureID())){
+                                        existing.getJourneyParameters().put(current.getKey(), current.getValue());
+                                        break;
+                                      }
+                                    }
+                                }
+                            }
+                          else {
+                            // any other kind of journey
+                            boolean original = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) : Boolean.FALSE;
+                            boolean newValue = (Boolean)current.getValue();
+                            if(!original && newValue)
+                              {
+                                // this journey (not workflow) changed to notified
+                                journeyState.setNotifiedThisEvent(true);
+                                journeyState.getJourneyParameters().put(current.getKey(), current.getValue());
+                                // retrieve the main campaign (if exist) that triggered this workflow
+                                for(JourneyState existing : subscriberState.getJourneyStates())
+                                  {
+                                    if(Module.Journey_Manager.getExternalRepresentation().equals(existing.getSourceModuleID()) && journeyState.getJourneyID().equals(existing.getsourceFeatureID())){
+                                      // this is a workflow of the given journey
+                                      existing.getJourneyParameters().put(current.getKey(), current.getValue());
+                                    }
+                                  }
+                              }
+                          }
+                        }
+                      else if(current.getKey().equals(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()))
+                        {
+                          if(journey.isWorkflow())
+                            {
+                              boolean original = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) : Boolean.FALSE;
+                              boolean newValue = (Boolean)current.getValue();
+                              if(!original && newValue)
+                                {
+                                  // this workflow changed to notified
+                                  journeyState.setConvertedThisEvent(true);
+                                  journeyState.getJourneyHistory().incrementConversions(SystemTime.getCurrentTime());
+                                  journeyState.getJourneyParameters().put(current.getKey(), current.getValue());
+                                  // retrieve the main campaign (if exist) that triggered this workflow
+                                  for(JourneyState existing : subscriberState.getJourneyStates())
+                                    {
+                                      if(Module.Journey_Manager.getExternalRepresentation().equals(journeyState.getSourceModuleID()) && existing.getJourneyID().equals(journeyState.getsourceFeatureID())){
+                                        existing.getJourneyParameters().put(current.getKey(), current.getValue());
+                                        existing.getJourneyHistory().setConversionsCount(journeyState.getJourneyHistory().getConversionCount(), SystemTime.getCurrentTime());
+                                        break;
+                                      }
+                                    }
+                                }
+                            }
+                          else {
+                            // any other kind of journey
+                            boolean original = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) : Boolean.FALSE;
+                            boolean newValue = (Boolean)current.getValue();
+                            if(!original && newValue)
+                              {
+                                // this journey (not workflow) changed to notified
+                                journeyState.setConvertedThisEvent(true);
+                                journeyState.getJourneyHistory().incrementConversions(SystemTime.getCurrentTime());
+                                journeyState.getJourneyParameters().put(current.getKey(), current.getValue());
+                                // retrieve the main campaign (if exist) that triggered this workflow
+                                for(JourneyState existing : subscriberState.getJourneyStates())
+                                  {
+                                    if(Module.Journey_Manager.getExternalRepresentation().equals(existing.getSourceModuleID()) && journeyState.getJourneyID().equals(existing.getsourceFeatureID())){
+                                      // this is a workflow of the given journey
+                                      existing.getJourneyParameters().put(current.getKey(), current.getValue());
+                                      existing.getJourneyHistory().setConversionsCount(journeyState.getJourneyHistory().getConversionCount(), SystemTime.getCurrentTime());
+                                    }
+                                  }
+                              }
+                          }
+                        }
+                      else 
+                        {
+                          journeyState.getJourneyParameters().put(current.getKey(), current.getValue());
+                        }
+                    }
+                }
+              //journeyState.getJourneyParameters().putAll(journeyContextUpdate.getParameters());  
               break;
 
             case ActionManagerContextUpdate:

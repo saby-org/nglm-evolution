@@ -24,6 +24,7 @@ import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
+import com.evolving.nglm.evolution.INFulfillmentManager.INFulfillmentRequest;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatusField;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
@@ -98,7 +99,11 @@ public class JourneyHistory
   public void incrementConversions(Date date) { 
     this.conversionCount += 1; 
     this.lastConversionDate = date;
-  } 
+  }
+  public void setConversionsCount(int conversionCount, Date date) {
+    this.conversionCount = conversionCount; 
+    this.lastConversionDate = date;
+  }
   public Boolean getControlGroupStatus()
   {
     Boolean result = null;
@@ -486,6 +491,18 @@ public class JourneyHistory
       
       history = new RewardHistory(deliverableDisplay, (int)request.getAmount(), request.getDeliveryDate());
     } 
+    else if(deliveryRequest instanceof INFulfillmentRequest) {
+      INFulfillmentRequest request = (INFulfillmentRequest) deliveryRequest;
+      Deliverable deliverable = deliverableService.getActiveDeliverable(request.getCommodityID(), now);
+      String deliverableDisplay = deliverable != null ? deliverable.getGUIManagedObjectDisplay() : request.getCommodityID();
+      history = new RewardHistory(deliverableDisplay, (int)request.getAmount(), request.getDeliveryDate());
+    }
+    else if(deliveryRequest instanceof PointFulfillmentRequest) {
+      PointFulfillmentRequest request = (PointFulfillmentRequest) deliveryRequest;
+      Deliverable deliverable = deliverableService.getActiveDeliverable(request.getBonusDeliveryDeliverableId(), now);
+      String deliverableDisplay = deliverable != null ? deliverable.getGUIManagedObjectDisplay() : request.getBonusDeliveryDeliverableId();
+      history = new RewardHistory(deliverableDisplay, (int)request.getAmount(), request.getDeliveryDate());
+    }
     // Special case for offers. 
     // PurchaseFulfillmentRequest are not managed by the CommodityManager (which is a proxy for a lot of requests)
     else if(deliveryRequest instanceof PurchaseFulfillmentRequest) {

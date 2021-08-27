@@ -97,6 +97,14 @@ public class JourneyState
   private SubscriberJourneyStatus specialExitReason;
   private int priority;
   private String sourceOrigin;
+  
+  /*****************************************
+  *
+  *  data
+  *
+  *****************************************/
+  private boolean notifiedThisEvent = false;
+  private boolean convertedThisEvent = false;
 
   /*****************************************
   *
@@ -130,6 +138,11 @@ public class JourneyState
   public String getsourceOrigin() { return sourceOrigin; }  
   public SubscriberJourneyStatus getSpecialExitReason() {return specialExitReason;}
   public String getSourceModuleID() {return sourceModuleID;}
+  
+  // transient
+  public boolean getNotifiedThisEvent() { return notifiedThisEvent; }
+  public boolean getConvertedThisEvent() { return convertedThisEvent; }
+  
   /*****************************************
   *
   *  setters
@@ -141,6 +154,10 @@ public class JourneyState
   public void setSpecialExitReason(SubscriberJourneyStatus specialExitReason) { this.specialExitReason = specialExitReason;	}
   public void setJourneyNodeID(String journeyNodeID) { this.journeyNodeID = journeyNodeID; }
   public void setPriority(int priority) { this.priority = priority; }
+  
+  // transient
+  public void setNotifiedThisEvent(boolean notifiedThisEvent) { this.notifiedThisEvent = notifiedThisEvent; } 
+  public void setConvertedThisEvent(boolean convertedThisEvent) { this.convertedThisEvent = convertedThisEvent; }
 
   /*****************************************
   *
