@@ -1,5 +1,5 @@
 gui-onssl-logstash-<_KEY_>:
-  image: ${env.DOCKER_REGISTRY}/guionssl.web:${gui-onssl.version}
+  image: ${env.DOCKER_REGISTRY}guionssl.web:${gui-onssl.version}
   environment:
     SITE_CRT_FILE: 'nginx-selfsigned'
     GUI_FWK_WEB_SERVER_HOST_INTERNAL_IP: <_GUI_FWK_WEB_SERVER_HOST_INTERNAL_IP_>
