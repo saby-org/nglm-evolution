@@ -667,7 +667,7 @@ cat $DEPLOY_ROOT/docker/stack-postamble.yml >> $DEPLOY_ROOT/stack/stack-mysql.ym
 
 mkdir -p $DEPLOY_ROOT/stack
 cat $DEPLOY_ROOT/docker/stack-preamble.yml > $DEPLOY_ROOT/stack/stack-gui.yml
-cat $DEPLOY_ROOT/docker/stack-preamble.yml > $DEPLOY_ROOT/stack/stack-gui-ssl-monitoring.yml
+cat $DEPLOY_ROOT/docker/reamble.yml > $DEPLOY_ROOT/stack/stack-gui-ssl-monitoring.yml
 
 #
 #  fwk-web
@@ -1140,7 +1140,7 @@ done
 
 cat $DEPLOY_ROOT/docker/stack-postamble.yml >> $DEPLOY_ROOT/stack/stack-gui.yml
 
-#cat $DEPLOY_ROOT/docker/stack-postamble.yml >> $DEPLOY_ROOT/stack/stack-gui-ssl-monitoring.yml
+cat $DEPLOY_ROOT/docker/stack-postamble.yml >> $DEPLOY_ROOT/stack/stack-gui-ssl-monitoring.yml
 
 ###########################################################################
 #
