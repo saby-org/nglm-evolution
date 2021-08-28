@@ -1,10 +1,10 @@
 #########################################
 #
-#  evolution-deploy-launch-preamble.sh
+#  evolution-deploy-launch-postamble.sh
 #
 #########################################
 
-docker stack deploy -c $DEPLOY_ROOT/stack/stack-gui-ssl-monitoring.yml <_DOCKER_STACK_>-gui-ssl-monitoring
+docker stack deploy -c $DEPLOY_ROOT/stack/stack-gui-ssl-monitoring.yml ${DOCKER_STACK}-gui-ssl-monitoring
 echo "sleeping for 5s before starting gui"
 sleep 5
-docker stack deploy -c $DEPLOY_ROOT/stack/stack-gui.yml <_DOCKER_STACK_>-gui
+docker stack deploy -c $DEPLOY_ROOT/stack/stack-gui.yml ${DOCKER_STACK}-gui
