@@ -83,27 +83,32 @@ public class RetentionService {
 
 		// loyalties
 		subscriberUpdated = !filterOutRetentionOver(subscriberProfile.getLoyaltyPrograms().values().iterator(), Cleanable.RetentionType.KAFKA_DELETION).isEmpty() || subscriberUpdated;
-
+		
 		// vouchers
 		subscriberUpdated = !filterOutRetentionOver(subscriberProfile.getVouchers().iterator(), Cleanable.RetentionType.KAFKA_DELETION).isEmpty() || subscriberUpdated;
-
+		
+		// badges
+        subscriberUpdated = !filterOutRetentionOver(subscriberProfile.getBadges().iterator(), Cleanable.RetentionType.KAFKA_DELETION).isEmpty() || subscriberUpdated;
+        
 		return subscriberUpdated;
-
 	}
 
-	private <T extends Cleanable> Collection<T> filterOutRetentionOver(Iterator<T> cleanableIterator, RetentionType retentionType){
-		Collection<T> toRet=new ArrayList<>();
-		if(cleanableIterator==null || retentionType==null) return toRet;
-		while(cleanableIterator.hasNext()){
-			T toCheck = cleanableIterator.next();
-			if(isRetentionPeriodOver(toCheck,retentionType)){
-				if(log.isTraceEnabled()) log.trace("RetentionService.filterOutRetentionOver : filtering out "+toCheck.getClass().getSimpleName()+" for "+retentionType+", expirationDate : "+toCheck.getExpirationDate(this)+", now : "+SystemTime.getCurrentTime());
-				cleanableIterator.remove();
-				toRet.add(toCheck);
-			}
-		}
-		return toRet;
-	}
+    private <T extends Cleanable> Collection<T> filterOutRetentionOver(Iterator<T> cleanableIterator, RetentionType retentionType)
+    {
+      Collection<T> toRet = new ArrayList<>();
+      if (cleanableIterator == null || retentionType == null) return toRet;
+      while (cleanableIterator.hasNext())
+        {
+          T toCheck = cleanableIterator.next();
+          if (isRetentionPeriodOver(toCheck, retentionType))
+            {
+              if (log.isTraceEnabled()) log.trace("RetentionService.filterOutRetentionOver : filtering out " + toCheck.getClass().getSimpleName() + " for " + retentionType + ", expirationDate : " + toCheck.getExpirationDate(this) + ", now : " + SystemTime.getCurrentTime());
+              cleanableIterator.remove();
+              toRet.add(toCheck);
+            }
+        }
+      return toRet;
+    }
 
 	private boolean isRetentionPeriodOver(Cleanable cleanable, RetentionType retentionType){
 		if(cleanable==null||cleanable.getExpirationDate(this)==null||retentionType==null||cleanable.getRetention(retentionType,this)==null) return false;
