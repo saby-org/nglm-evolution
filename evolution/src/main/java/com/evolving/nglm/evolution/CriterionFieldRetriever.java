@@ -41,6 +41,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.RLMDateUtils;
+import com.evolving.nglm.evolution.Badge.BadgeType;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
@@ -242,127 +243,187 @@ public abstract class CriterionFieldRetriever
   
   public static Object getNumberOfBadgesAwardedForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
   {
+    log.info("RAJ K getNumberOfBadgesAwardedForPeriod subcriteriaVal {}", subcriteriaVal);
     int result = 0;
     SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+    List<BadgeState> badges = subscriberProfile.getBadges();
     
     //
     //  args
     //
     
-    log.info("RAJ K getNumberOfBadgesAwardedForPeriod subcriteriaVal {}", subcriteriaVal);
+    String badgeID = (String) subcriteriaVal.get(0);
+    String period = (String) subcriteriaVal.get(1);
+    String timeZone = Deployment.getDeployment(evaluationRequest.getTenantID()).getTimeZone();
+    Pair<Date, Date> startEndDatePair = getStartAndEndDate(period, timeZone);
+    Date startDate = startEndDatePair.getFirstElement();
+    Date endDate = startEndDatePair.getSecondElement();
     
+    if (badges != null && !badges.isEmpty())
+      {
+        if (badgeID != null) badges = badges.stream().filter(badge -> badge.getBadgeID().equals(badgeID)).collect(Collectors.toList());
+        badges = badges.stream().filter(badge -> badge.getBadgeAwardDate() != null && badge.getBadgeAwardDate().after(startDate) && badge.getBadgeAwardDate().before(endDate)).collect(Collectors.toList());
+        result = badges.size();
+      }
     return result;
   }
   
   public static Object getNumberOfBadgeTypesAwardedForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
   {
+    log.info("RAJ K getNumberOfBadgeTypesAwardedForPeriod subcriteriaVal {}", subcriteriaVal);
     int result = 0;
     SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+    List<BadgeState> badges = subscriberProfile.getBadges();
     
     //
     //  args
     //
     
-    log.info("RAJ K getNumberOfBadgeTypesAwardedForPeriod subcriteriaVal {}", subcriteriaVal);
+    String badgeTypeStr = (String) subcriteriaVal.get(0);
+    String period = (String) subcriteriaVal.get(1);
+    String timeZone = Deployment.getDeployment(evaluationRequest.getTenantID()).getTimeZone();
+    Pair<Date, Date> startEndDatePair = getStartAndEndDate(period, timeZone);
+    Date startDate = startEndDatePair.getFirstElement();
+    Date endDate = startEndDatePair.getSecondElement();
     
+    if (badges != null && !badges.isEmpty())
+      {
+        if (badgeTypeStr != null) badges = badges.stream().filter(badge -> badge.getBadgeType().equals(BadgeType.fromExternalRepresentation(badgeTypeStr))).collect(Collectors.toList());
+        badges = badges.stream().filter(badge -> badge.getBadgeAwardDate() != null && badge.getBadgeAwardDate().after(startDate) && badge.getBadgeAwardDate().before(endDate)).collect(Collectors.toList());
+        result = badges.size();
+      }
     return result;
   }
   
   public static Object getNumberOfBadgeObjectivesAwardedForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
   {
+    log.info("RAJ K getNumberOfBadgeObjectivesAwardedForPeriod subcriteriaVal {}", subcriteriaVal);
     int result = 0;
     SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+    List<BadgeState> badges = subscriberProfile.getBadges();
     
     //
     //  args
     //
     
-    log.info("RAJ K getNumberOfBadgeObjectivesAwardedForPeriod subcriteriaVal {}", subcriteriaVal);
+    String badgeObjID = (String) subcriteriaVal.get(0);
+    String period = (String) subcriteriaVal.get(1);
+    String timeZone = Deployment.getDeployment(evaluationRequest.getTenantID()).getTimeZone();
+    Pair<Date, Date> startEndDatePair = getStartAndEndDate(period, timeZone);
+    Date startDate = startEndDatePair.getFirstElement();
+    Date endDate = startEndDatePair.getSecondElement();
     
+    if (badges != null && !badges.isEmpty())
+      {
+        if (badgeObjID != null) badges = badges.stream().filter(badge -> badge.getBadgeObjectiveIDs().contains(badgeObjID)).collect(Collectors.toList());
+        badges = badges.stream().filter(badge -> badge.getBadgeAwardDate() != null && badge.getBadgeAwardDate().after(startDate) && badge.getBadgeAwardDate().before(endDate)).collect(Collectors.toList());
+        result = badges.size();
+      }
     return result;
   }
   
   public static Object getNumberOfBadgesRemovedForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
   {
+    log.info("RAJ K getNumberOfBadgesRemovedForPeriod subcriteriaVal {}", subcriteriaVal);
     int result = 0;
     SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+    List<BadgeState> badges = subscriberProfile.getBadges();
     
     //
     //  args
     //
     
-    log.info("RAJ K getNumberOfBadgesRemovedForPeriod subcriteriaVal {}", subcriteriaVal);
+    String badgeID = (String) subcriteriaVal.get(0);
+    String period = (String) subcriteriaVal.get(1);
+    String timeZone = Deployment.getDeployment(evaluationRequest.getTenantID()).getTimeZone();
+    Pair<Date, Date> startEndDatePair = getStartAndEndDate(period, timeZone);
+    Date startDate = startEndDatePair.getFirstElement();
+    Date endDate = startEndDatePair.getSecondElement();
+    
+    if (badges != null && !badges.isEmpty())
+      {
+        if (badgeID != null) badges = badges.stream().filter(badge -> badge.getBadgeID().equals(badgeID)).collect(Collectors.toList());
+        badges = badges.stream().filter(badge -> badge.getBadgeRemoveDate() != null && badge.getBadgeRemoveDate().after(startDate) && badge.getBadgeRemoveDate().before(endDate)).collect(Collectors.toList());
+        result = badges.size();
+      }
     
     return result;
   }
   
   public static Object getNumberOfBadgeTypesRemovedForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
   {
+    log.info("RAJ K getNumberOfBadgeTypesRemovedForPeriod subcriteriaVal {}", subcriteriaVal);
     int result = 0;
     SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+    List<BadgeState> badges = subscriberProfile.getBadges();
     
     //
     //  args
     //
     
-    log.info("RAJ K getNumberOfBadgeTypesRemovedForPeriod subcriteriaVal {}", subcriteriaVal);
+    String badgeTypeStr = (String) subcriteriaVal.get(0);
+    String period = (String) subcriteriaVal.get(1);
+    String timeZone = Deployment.getDeployment(evaluationRequest.getTenantID()).getTimeZone();
+    Pair<Date, Date> startEndDatePair = getStartAndEndDate(period, timeZone);
+    Date startDate = startEndDatePair.getFirstElement();
+    Date endDate = startEndDatePair.getSecondElement();
+    
+    if (badges != null && !badges.isEmpty())
+      {
+        if (badgeTypeStr != null) badges = badges.stream().filter(badge -> badge.getBadgeType().equals(BadgeType.fromExternalRepresentation(badgeTypeStr))).collect(Collectors.toList());
+        badges = badges.stream().filter(badge -> badge.getBadgeRemoveDate() != null && badge.getBadgeRemoveDate().after(startDate) && badge.getBadgeRemoveDate().before(endDate)).collect(Collectors.toList());
+        result = badges.size();
+      }
     
     return result;
   }
   
   public static Object getNumberOfBadgeObjectivesRemovedForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
   {
+    log.info("RAJ K getNumberOfBadgesRemovedForPeriod subcriteriaVal {}", subcriteriaVal);
     int result = 0;
     SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+    List<BadgeState> badges = subscriberProfile.getBadges();
     
     //
     //  args
     //
     
-    log.info("RAJ K getNumberOfBadgeObjectivesRemovedForPeriod subcriteriaVal {}", subcriteriaVal);
+    String badgeObjID = (String) subcriteriaVal.get(0);
+    String period = (String) subcriteriaVal.get(1);
+    String timeZone = Deployment.getDeployment(evaluationRequest.getTenantID()).getTimeZone();
+    Pair<Date, Date> startEndDatePair = getStartAndEndDate(period, timeZone);
+    Date startDate = startEndDatePair.getFirstElement();
+    Date endDate = startEndDatePair.getSecondElement();
+    
+    if (badges != null && !badges.isEmpty())
+      {
+        if (badgeObjID != null) badges = badges.stream().filter(badge -> badge.getBadgeObjectiveIDs().contains(badgeObjID)).collect(Collectors.toList());
+        badges = badges.stream().filter(badge -> badge.getBadgeRemoveDate() != null && badge.getBadgeRemoveDate().after(startDate) && badge.getBadgeRemoveDate().before(endDate)).collect(Collectors.toList());
+        result = badges.size();
+      }
     
     return result;
   }
   
   public static Object getBadgeBalanceForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
   {
-    int result = 0;
-    SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
-    
-    //
-    //  args
-    //
-    
-    log.info("RAJ K getBadgeBalanceForPeriod subcriteriaVal {}", subcriteriaVal);
-    
+    int result = (int) getNumberOfBadgesAwardedForPeriod(evaluationRequest, fieldName, subcriteriaVal) - (int) getNumberOfBadgesRemovedForPeriod(evaluationRequest, fieldName, subcriteriaVal);
+    if (result < 0) log.error("bad badge balance value {}, should not be negative and must be checked for subcriteria {}", result, subcriteriaVal);
     return result;
   }
   
   public static Object getBadgeTypeBalanceForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
   {
-    int result = 0;
-    SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
-    
-    //
-    //  args
-    //
-    
-    log.info("RAJ K getBadgeTypeBalanceForPeriod subcriteriaVal {}", subcriteriaVal);
-    
+    int result = (int) getNumberOfBadgeTypesAwardedForPeriod(evaluationRequest, fieldName, subcriteriaVal) - (int) getNumberOfBadgeTypesRemovedForPeriod(evaluationRequest, fieldName, subcriteriaVal);
+    if (result < 0) log.error("bad badge type balance value {}, should not be negative and must be checked for subcriteria {}", result, subcriteriaVal);
     return result;
   }
   
   public static Object getBadgeObjectiveBalanceForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
   {
-    int result = 0;
-    SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
-    
-    //
-    //  args
-    //
-    
-    log.info("RAJ K getBadgeObjectiveBalanceForPeriod subcriteriaVal {}", subcriteriaVal);
-    
+    int result = (int) getNumberOfBadgeObjectivesAwardedForPeriod(evaluationRequest, fieldName, subcriteriaVal) - (int) getNumberOfBadgeObjectivesRemovedForPeriod(evaluationRequest, fieldName, subcriteriaVal);
+    if (result < 0) log.error("bad badge objective balance value {}, should not be negative and must be checked for subcriteria {}", result, subcriteriaVal);
     return result;
   }
   
