@@ -1138,6 +1138,15 @@
       "description"         : "Description of personal vouchers uploaded into solutions",
       "class"               : "com.evolving.nglm.evolution.reports.voucherUploaded.VoucherUploadedReportDriver",
       "availableScheduling" : [ "none","daily", "weekly", "monthly" ]
+    },
+    {
+      "name"                : "BGDRReport",
+      "display"             : "BGDR Report",
+      "description"         : "Description of the Badges Detailed Records (BGDR) report",
+      "class"               : "com.evolving.nglm.evolution.reports.odr.BGDRReportDriver",
+      "availableScheduling" : [ "none","daily" ],
+      "defaultReportPeriodQuantity" : 1,
+      "defaultReportPeriodUnit"     : "DAYS"
     }
   ],
 
