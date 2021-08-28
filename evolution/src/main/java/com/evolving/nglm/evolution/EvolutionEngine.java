@@ -2672,7 +2672,7 @@ public class EvolutionEngine
                    //  newBadge
                    //
                    
-                   BadgeState newBadge = new BadgeState(badge.getBadgeID(), badge.getBadgeType(), CustomerBadgeStatus.AWARDED, context.now(), null);
+                   BadgeState newBadge = new BadgeState(badge.getBadgeID(), badge.getBadgeObjectives().stream().map(badgeObj -> badgeObj.getBadgeObjectiveID()).collect(Collectors.toList()), badge.getBadgeType(), CustomerBadgeStatus.AWARDED, context.now(), null);
                    subscriberProfile.getBadges().add(newBadge);
                    badgeChangeResponse.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
                    log.info("RAJ K newBadge {}", newBadge);
@@ -2689,6 +2689,7 @@ public class EvolutionEngine
                    //  re award if removed
                    //
                    
+                   subscriberBadge.setBadgeObjectiveIDs(badge.getBadgeObjectives().stream().map(badgeObj -> badgeObj.getBadgeObjectiveID()).collect(Collectors.toList()));
                    subscriberBadge.setCustomerBadgeStatus(CustomerBadgeStatus.AWARDED);
                    subscriberBadge.setBadgeAwardDate(context.now());
                    subscriberBadge.setBadgeRemoveDate(null);
@@ -2725,6 +2726,7 @@ public class EvolutionEngine
                    //  removed
                    //
                    
+                   subscriberBadge.setBadgeObjectiveIDs(badge.getBadgeObjectives().stream().map(badgeObj -> badgeObj.getBadgeObjectiveID()).collect(Collectors.toList()));
                    subscriberBadge.setCustomerBadgeStatus(CustomerBadgeStatus.REMOVED);
                    subscriberBadge.setBadgeRemoveDate(context.now());
                    badgeChangeResponse.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);

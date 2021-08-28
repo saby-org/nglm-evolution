@@ -2,6 +2,7 @@ package com.evolving.nglm.evolution;
 
 import java.time.Duration;
 import java.util.Date;
+import java.util.List;
 
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -38,6 +39,7 @@ public class BadgeState implements Cleanable
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
     schemaBuilder.field("badgeType", Schema.STRING_SCHEMA);
     schemaBuilder.field("badgeID", Schema.STRING_SCHEMA);
+    schemaBuilder.field("badgeObjectiveIDs", SchemaBuilder.array(Schema.STRING_SCHEMA).schema());
     schemaBuilder.field("customerBadgeStatus", Schema.STRING_SCHEMA);
     schemaBuilder.field("badgeAwardDate", Timestamp.builder().schema());
     schemaBuilder.field("badgeRemoveDate", Timestamp.builder().optional().schema());
@@ -64,6 +66,7 @@ public class BadgeState implements Cleanable
 
   private BadgeType badgeType;
   private String badgeID;
+  private List<String> badgeObjectiveIDs;
   private CustomerBadgeStatus customerBadgeStatus;
   private Date badgeAwardDate;
   private Date badgeRemoveDate;
@@ -81,6 +84,16 @@ public class BadgeState implements Cleanable
   public String getBadgeID()
   {
     return badgeID;
+  }
+  
+  public List<String> getBadgeObjectiveIDs()
+  {
+    return badgeObjectiveIDs;
+  }
+  
+  public void setBadgeObjectiveIDs(List<String> badgeObjectiveIDs)
+  {
+    this.badgeObjectiveIDs = badgeObjectiveIDs;
   }
 
   public void setBadgeID(String badgeID)
@@ -138,9 +151,10 @@ public class BadgeState implements Cleanable
   *
   *****************************************/
 
-  public BadgeState(String badgeID, BadgeType badgeType, CustomerBadgeStatus customerBadgeStatus, Date badgeAwardDate, Date badgeRemoveDate)
+  public BadgeState(String badgeID, List<String> badgeObjectiveIDs, BadgeType badgeType, CustomerBadgeStatus customerBadgeStatus, Date badgeAwardDate, Date badgeRemoveDate)
   {
     this.badgeID = badgeID;
+    this.badgeObjectiveIDs = badgeObjectiveIDs;
     this.badgeType = badgeType;
     this.customerBadgeStatus = customerBadgeStatus;
     this.badgeAwardDate = badgeAwardDate;
@@ -158,6 +172,7 @@ public class BadgeState implements Cleanable
     BadgeState badgeState = (BadgeState) value;
     Struct struct = new Struct(schema);
     struct.put("badgeID", badgeState.getBadgeID());
+    struct.put("badgeObjectiveIDs", badgeState.getBadgeObjectiveIDs());
     struct.put("badgeType", badgeState.getBadgeType().getExternalRepresentation());
     struct.put("customerBadgeStatus", badgeState.getCustomerBadgeStatus().getExternalRepresentation());
     struct.put("badgeAwardDate", badgeState.getBadgeAwardDate());
@@ -187,6 +202,7 @@ public class BadgeState implements Cleanable
 
     Struct valueStruct = (Struct) value;
     String badgeID = valueStruct.getString("badgeID");
+    List<String> badgeObjectiveIDs = (List<String>) valueStruct.get("badgeObjectiveIDs");
     String badgeType = valueStruct.getString("badgeType");
     String customerBadgeStatus = valueStruct.getString("customerBadgeStatus");
     Date badgeAwardDate = (Date) valueStruct.get("badgeAwardDate");
@@ -196,7 +212,7 @@ public class BadgeState implements Cleanable
     //  return
     //
 
-    return new BadgeState(badgeID, BadgeType.fromExternalRepresentation(badgeType), CustomerBadgeStatus.fromExternalRepresentation(customerBadgeStatus), badgeAwardDate, badgeRemoveDate);
+    return new BadgeState(badgeID, badgeObjectiveIDs, BadgeType.fromExternalRepresentation(badgeType), CustomerBadgeStatus.fromExternalRepresentation(customerBadgeStatus), badgeAwardDate, badgeRemoveDate);
   }
 
 }
