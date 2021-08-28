@@ -99,7 +99,6 @@ public class BGDRReportMonoPhase implements ReportCsvFactory
     headerFieldsOrder.add(eventID);
     headerFieldsOrder.add(eventDatetime);
     headerFieldsOrder.add(deliveryRequestID);
-    headerFieldsOrder.add(deliveryRequestID);
     headerFieldsOrder.add(returnCode);
     headerFieldsOrder.add(returnCodeDescription);
     headerFieldsOrder.add(deliveryStatus);
