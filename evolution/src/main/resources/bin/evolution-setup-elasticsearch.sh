@@ -565,17 +565,18 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/bgdr -u $E
   "mappings" : {
     "_meta": { "bgdr" : { "version": Deployment.getElasticsearchBGdrTemplateVersion() } },
     "properties" : {
-      "subscriberID"	: { "type" : "keyword" },
-      "tenantID" 		: { "type" : "integer" },
-      "eventDatetime" 	: { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ"},
-      "eventID" 		: { "type" : "keyword" },     
-      "moduleID" 		: { "type" : "keyword" },
-      "featureID" 		: { "type" : "keyword" },
-      "origin" 			: { "type" : "keyword" },
-      "returnStatus" 	: { "type" : "keyword" },
-      "badgeID" 		: { "type" : "keyword" },
-      "action" 			: { "type" : "keyword" },
-      "returnCode" 		: { "type" : "keyword" }
+      "subscriberID"		: { "type" : "keyword" },
+      "deliveryRequestID"	: { "type" : "deliveryRequestID" },
+      "tenantID" 			: { "type" : "integer" },
+      "eventDatetime" 		: { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ"},
+      "eventID" 			: { "type" : "keyword" },     
+      "moduleID" 			: { "type" : "keyword" },
+      "featureID" 			: { "type" : "keyword" },
+      "origin" 				: { "type" : "keyword" },
+      "returnStatus" 		: { "type" : "keyword" },
+      "badgeID" 			: { "type" : "keyword" },
+      "action" 				: { "type" : "keyword" },
+      "returnCode" 			: { "type" : "keyword" }
     }
   }
 }'

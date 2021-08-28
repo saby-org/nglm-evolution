@@ -38,6 +38,7 @@ public class BadgeChange extends SubscriberStreamOutput implements EvolutionEngi
           schemaBuilder.field(field.name(), field.schema());
         }
       schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
+      schemaBuilder.field("deliveryRequestID", Schema.STRING_SCHEMA);
       schemaBuilder.field("eventDate", Timestamp.builder().schema());
       schemaBuilder.field("eventID", Schema.STRING_SCHEMA);
       schemaBuilder.field("action", Schema.STRING_SCHEMA);
@@ -57,6 +58,7 @@ public class BadgeChange extends SubscriberStreamOutput implements EvolutionEngi
   public static ConnectSerde<BadgeChange> serde() { return serde; }
   
   private String subscriberID;
+  private String deliveryRequestID;
   private Date eventDate;
   private String eventID;
   private BadgeAction action;
@@ -72,6 +74,11 @@ public class BadgeChange extends SubscriberStreamOutput implements EvolutionEngi
   @Override public String getSubscriberID()
   {
     return subscriberID;
+  }
+  
+  public String getDeliveryRequestID()
+  {
+    return deliveryRequestID;
   }
 
   @Override public Date getEventDate()
@@ -148,6 +155,7 @@ public class BadgeChange extends SubscriberStreamOutput implements EvolutionEngi
     Struct struct = new Struct(schema);
     packSubscriberStreamOutput(struct, badgeChange);
     struct.put("subscriberID", badgeChange.getSubscriberID());
+    struct.put("deliveryRequestID", badgeChange.getSubscriberID());
     struct.put("eventDate", badgeChange.getEventDate());
     struct.put("eventID", badgeChange.getEventID());
     struct.put("action", badgeChange.getAction().getExternalRepresentation());
@@ -169,6 +177,7 @@ public class BadgeChange extends SubscriberStreamOutput implements EvolutionEngi
     Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion1(schema.version()) : null;
     Struct valueStruct = (Struct) value;
     String subscriberID = valueStruct.getString("subscriberID");
+    String deliveryRequestID = valueStruct.getString("deliveryRequestID");
     Date eventDateTime = (Date) valueStruct.get("eventDate");
     String eventID = valueStruct.getString("eventID");
     BadgeAction action = BadgeAction.fromExternalRepresentation(valueStruct.getString("action"));
@@ -181,13 +190,14 @@ public class BadgeChange extends SubscriberStreamOutput implements EvolutionEngi
     ParameterMap infos = ParameterMap.unpack(new SchemaAndValue(schema.field("infos").schema(), valueStruct.get("infos")));
     boolean responseEvent = valueStruct.getBoolean("responseEvent");
     
-    return new BadgeChange(schemaAndValue, subscriberID, eventDateTime, eventID, action, badgeID, moduleID, featureID, origin, returnStatus, tenantID, infos, responseEvent);
+    return new BadgeChange(schemaAndValue, subscriberID, deliveryRequestID, eventDateTime, eventID, action, badgeID, moduleID, featureID, origin, returnStatus, tenantID, infos, responseEvent);
   }
   
-  public BadgeChange(SchemaAndValue schemaAndValue, String subscriberID, Date eventDate, String eventID, BadgeAction action, String badgeID, String moduleID, String featureID, String origin, RESTAPIGenericReturnCodes returnStatus, int tenantID, ParameterMap infos, boolean responseEvent)
+  public BadgeChange(SchemaAndValue schemaAndValue, String subscriberID, String deliveryRequestID, Date eventDate, String eventID, BadgeAction action, String badgeID, String moduleID, String featureID, String origin, RESTAPIGenericReturnCodes returnStatus, int tenantID, ParameterMap infos, boolean responseEvent)
   {
     super(schemaAndValue);
     this.subscriberID = subscriberID;
+    this.deliveryRequestID = deliveryRequestID;
     this.eventDate = eventDate;
     this.eventID = eventID;
     this.action = action;
@@ -204,6 +214,7 @@ public class BadgeChange extends SubscriberStreamOutput implements EvolutionEngi
   public BadgeChange(BadgeChange badgeChange)
   {
     this.subscriberID = badgeChange.getSubscriberID();
+    this.deliveryRequestID = badgeChange.getDeliveryRequestID();
     this.eventDate = badgeChange.getEventDate();
     this.eventID = badgeChange.getEventID();
     this.action = badgeChange.getAction();
@@ -217,10 +228,11 @@ public class BadgeChange extends SubscriberStreamOutput implements EvolutionEngi
     this.responseEvent = badgeChange.IsResponseEvent();
   }
   
-  public BadgeChange(String subscriberID, Date eventDate, String eventID, BadgeAction action, String badgeID, String moduleID, String featureID, String origin, RESTAPIGenericReturnCodes returnStatus, int tenantID, ParameterMap infos)
+  public BadgeChange(String subscriberID, String deliveryRequestID, Date eventDate, String eventID, BadgeAction action, String badgeID, String moduleID, String featureID, String origin, RESTAPIGenericReturnCodes returnStatus, int tenantID, ParameterMap infos)
   {
     super();
     this.subscriberID = subscriberID;
+    this.deliveryRequestID = deliveryRequestID;
     this.eventDate = eventDate;
     this.eventID = eventID;
     this.action = action;
@@ -241,6 +253,7 @@ public class BadgeChange extends SubscriberStreamOutput implements EvolutionEngi
   {
     super();
     this.subscriberID = (String) esFields.get("subscriberID");
+    this.deliveryRequestID = (String) esFields.get("deliveryRequestID");;
     try
       {
         this.eventDate = RLMDateUtils.parseDateFromElasticsearch((String) esFields.get("eventDatetime"));
@@ -271,9 +284,9 @@ public class BadgeChange extends SubscriberStreamOutput implements EvolutionEngi
     result.put("action", action.getExternalRepresentation());
     result.put("badgeID", badgeID);
     result.put("moduleID", moduleID);
-    result.put("moduleName", moduleID + " TO DO");
+    result.put("moduleName", moduleID + " TO DO"); // RAJ K
     result.put("featureID", featureID);
-    result.put("featureName", featureID + "TO DO");
+    result.put("featureName", featureID + "TO DO");  // RAJ K
     result.put("tenantID", tenantID);
     result.put("returnCode", returnStatus.getGenericResponseCode());
     result.put("returnCodeDetails", returnStatus.getGenericResponseMessage());
@@ -300,9 +313,9 @@ public class BadgeChange extends SubscriberStreamOutput implements EvolutionEngi
     result.put("action", action.getExternalRepresentation());
     result.put("badgeID", badgeID);
     result.put("moduleID", moduleID);
-    result.put("moduleName", moduleID + " TO DO");
+    result.put("moduleName", moduleID + " TO DO"); // RAJ K
     result.put("featureID", featureID);
-    result.put("featureName", featureID + "TO DO");
+    result.put("featureName", featureID + "TO DO"); // RAJ K
     result.put("tenantID", tenantID);
     result.put("returnCode", returnStatus.getGenericResponseCode());
     result.put("returnCodeDetails", returnStatus.getGenericResponseMessage());

@@ -1965,7 +1965,8 @@ public class GUIManagerLoyaltyReporting extends GUIManager
        //  badgeChangeRequest
        //
        
-       BadgeChange badgeChangeRequest = new BadgeChange(subscriberID, SystemTime.getCurrentTime(), eventID, action, activeBadgeID, moduleID, featureID, origin, RESTAPIGenericReturnCodes.SUCCESS, tenantID, new ParameterMap());
+       String deliveryRequestID = zuks.getStringKey();
+       BadgeChange badgeChangeRequest = new BadgeChange(subscriberID, deliveryRequestID, SystemTime.getCurrentTime(), eventID, action, activeBadgeID, moduleID, featureID, origin, RESTAPIGenericReturnCodes.SUCCESS, tenantID, new ParameterMap());
        Serializer<StringKey> keySerializer = StringKey.serde().serializer();
        Serializer<BadgeChange> valueSerializer = BadgeChange.serde().serializer();
        kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getBadgeChangeRequestTopic(), keySerializer.serialize(Deployment.getBadgeChangeRequestTopic(), new StringKey(subscriberID)), valueSerializer.serialize(Deployment.getBadgeChangeRequestTopic(), badgeChangeRequest)));

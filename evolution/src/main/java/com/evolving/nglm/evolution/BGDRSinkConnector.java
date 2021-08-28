@@ -57,6 +57,7 @@ public class BGDRSinkConnector extends SimpleESSinkConnector
       Map<String,Object> documentMap = new HashMap<String,Object>();
       documentMap.put(ES_FIELD_SUBSCRIBER_ID, badgeChange.getSubscriberID());
       SinkConnectorUtils.putAlternateIDs(badgeChange.getAlternateIDs(), documentMap);
+      documentMap.put("deliveryRequestID", badgeChange.getDeliveryRequestID());
       documentMap.put("tenantID", badgeChange.getTenantID());
       documentMap.put("eventDatetime", badgeChange.getEventDate()!=null?RLMDateUtils.formatDateForElasticsearchDefault(badgeChange.getEventDate()):"");
       documentMap.put("eventID", badgeChange.getEventID());
