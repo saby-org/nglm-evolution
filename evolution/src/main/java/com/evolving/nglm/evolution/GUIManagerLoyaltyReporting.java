@@ -19,10 +19,15 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -64,7 +69,12 @@ import com.sun.net.httpserver.HttpExchange;
 
 public class GUIManagerLoyaltyReporting extends GUIManager
 {
-
+  private static final String REMOVAL  = "_REMOVAL";
+  private static final String COLUMN  = "_COLUMN";
+  private static final String TOP     = "_TOP";
+  private static final String PERCENT = "_PERCENT";
+  private static final String FILTER  = "_FILTER";
+  
   private static final Logger log = LoggerFactory.getLogger(GUIManagerLoyaltyReporting.class);
 
   public GUIManagerLoyaltyReporting(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService, DNBOMatrixService dnboMatrixService, DynamicCriterionFieldService dynamicCriterionFieldService, DynamicEventDeclarationsService dynamicEventDeclarationsService, JourneyTemplateService journeyTemplateService, KafkaResponseListenerService<StringKey,PurchaseFulfillmentRequest> purchaseResponseListenerService, SharedIDService subscriberGroupSharedIDService, ZookeeperUniqueKeyServer zuks, int httpTimeout, KafkaProducer<byte[], byte[]> kafkaProducer, ElasticsearchClientAPI elasticsearch, SubscriberMessageTemplateService subscriberMessageTemplateService, String getCustomerAlternateID, GUIManagerContext guiManagerContext, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader)
@@ -1029,23 +1039,32 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     response.put("loyaltyProgramTypes", JSONUtilities.encodeArray(programTypeList));
     return JSONUtilities.encodeObject(response);
   }
-
+  
+  void processDownloadReport(String userID, JSONObject jsonRoot, JSONObject jsonResponse, HttpExchange exchange) throws IOException
+  {
+    processDownloadReportInternal(userID, jsonRoot, jsonResponse, exchange, reportService);
+  }
+  
   /*****************************************
   *
-  *  processDownloadReport
- * @throws IOException 
+  * processDownloadReport
+  * @throws IOException 
   *
   *****************************************/
 
-  void processDownloadReport(String userID, JSONObject jsonRoot, JSONObject jsonResponse, HttpExchange exchange) throws IOException
+  public static String  processDownloadReportInternal(String userID, JSONObject jsonRoot, JSONObject jsonResponse, HttpExchange exchange, ReportService reportService) throws IOException
   {
+    String res = null;
     String reportID = JSONUtilities.decodeString(jsonRoot, "id", true);
     JSONArray filters = JSONUtilities.decodeJSONArray(jsonRoot, "criteria", false);
     Integer percentage = JSONUtilities.decodeInteger(jsonRoot, "percentage", false);
     Integer topRows = JSONUtilities.decodeInteger(jsonRoot, "topRows", false);
     JSONArray header = JSONUtilities.decodeJSONArray(jsonRoot, "header", false);
+    if (header != null && header.isEmpty()) header = null; // if empty, same as if not specified
+    JSONArray columnRemoval = JSONUtilities.decodeJSONArray(jsonRoot, "columnRemoval", false);
+    if (columnRemoval != null && columnRemoval.isEmpty()) columnRemoval = null; // if empty, same as if not specified
     Integer tenantID = JSONUtilities.decodeInteger(jsonRoot, "tenantID", true);
-
+    
     GUIManagedObject report1 = reportService.getStoredReport(reportID);
     log.trace("Looking for "+reportID+" and got "+report1);
     String responseCode = null;
@@ -1058,6 +1077,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
       {
         try
           {
+            
             Report report = new Report(report1.getJSONRepresentation(), epochServer.getKey(), null, tenantID);
             String reportName = report.getName();
 
@@ -1065,7 +1085,8 @@ public class GUIManagerLoyaltyReporting extends GUIManager
             String fileExtension = Deployment.getDeployment(tenantID).getReportManagerFileExtension();
 
             File folder = new File(outputPath);
-            String csvFilenameRegex = reportName+ "_"+ ".*"+ "\\."+ fileExtension+ReportUtils.ZIP_EXTENSION;
+            // Following regexp will skip the filtered reports ("XXX.csv.filter.zip")
+            String csvFilenameRegex = reportName+ "_"+ ".*"+ "\\."+ fileExtension + ReportUtils.ZIP_EXTENSION;
 
             File[] listOfFiles = folder.listFiles(new FileFilter(){
               @Override
@@ -1089,228 +1110,267 @@ public class GUIManagerLoyaltyReporting extends GUIManager
             responseCode = "Cant find report with that name";
           }
 
-          String finalFileName = reportFile.getAbsolutePath();
-              
           File filterOutTmpFile = reportFile;
           File percentageOutTmpFile = reportFile;
           File topRowsOutTmpFile = reportFile;
           File headerOutTmpFile = reportFile;
+          File columnRemovalOutTmpFile = reportFile;
           File finalZipFile = null;
-          File internalFile = null;
-          
-          boolean isFilters = false;
-          boolean isPercentage = false;
-          boolean isTop = false;
-          boolean isHeader = false;
 
           if(reportFile != null) {
             if(reportFile.length() > 0) {
               try {
-                String unzippedFile = null;
+                boolean isFilters = (filters != null && !filters.isEmpty());
+                boolean isPercentage = (percentage != null);
+                boolean isTop = (topRows != null);
+                boolean isHeader = (header != null);
+                boolean isColumnRemoval = (columnRemoval != null && !columnRemoval.isEmpty());
+                if (isFilters || isPercentage || isTop || isHeader || isColumnRemoval) {
+                  
+                  //
+                  // Need to extract part of report
+                  //
+                  
+                  int hashCode = 0;
 
-                if (filters != null || percentage != null || topRows != null || header != null) {
-                  filterOutTmpFile = File.createTempFile("tempReportFilter.", ".csv");
-                  percentageOutTmpFile = File.createTempFile("tempReportPercentage.", ".csv");
-                  topRowsOutTmpFile = File.createTempFile("tempReportTopRows.", ".csv");
-                  headerOutTmpFile = File.createTempFile("tempReportHeader.", ".csv");
-                  unzippedFile = ReportUtils.unzip(reportFile.getAbsolutePath());
-
-                  if (filters != null && !filters.isEmpty())
-                    {
-                      List<String> colNames = new ArrayList<>();
-                      List<List<String>> colsValues = new ArrayList<>();
-                      for (int i=0; i<filters.size(); i++)
-                        {
-                          JSONObject filterJSON = (JSONObject) filters.get(i);
-                          Object nameOfColumnObj = filterJSON.get("criterionField");
-                          if (!(nameOfColumnObj instanceof String))
-                            {
-                              log.warn("criterionField is not a String : " + nameOfColumnObj.getClass().getName());
-                              colNames.add("");
-                              break;
-                            }
-                          String nameOfColumn = (String) nameOfColumnObj;
-                          colNames.add(nameOfColumn);
-
-                          Object argumentObj = filterJSON.get("argument");
-                          if (!(argumentObj instanceof JSONObject))
-                            {
-                              log.warn("argument is not a JSONObject : " + argumentObj.getClass().getName());
-                              colsValues.add(new ArrayList<>());
-                              break;
-                            }
-                          JSONObject argument = (JSONObject) argumentObj;
-                          String valueType = (String) argument.get("valueType");
-                          Object value = (Object) argument.get("value");
-
-                          List<String> valuesOfColumns;
-                          switch (valueType) 
+                  // Compute filter
+                  
+                  List<String> colNames = new ArrayList<>();
+                  List<List<String>> colsValues = new ArrayList<>();
+                  if (isFilters) {
+                    for (int i=0; i<filters.size(); i++)
+                      {
+                        JSONObject filterJSON = (JSONObject) filters.get(i);
+                        Object nameOfColumnObj = filterJSON.get("criterionField");
+                        if (!(nameOfColumnObj instanceof String))
                           {
-                            case "simpleSelect.string":
-                              if (!(value instanceof String))
-                                {
-                                  log.warn("value of column " + nameOfColumn + " is not a String : " + value);
-                                  colsValues.add(new ArrayList<>());
-                                }
-                              else
-                                {
-                                  String valueSimpleSelect = (String) value;
-                                  valuesOfColumns = new ArrayList<>();
-                                  valuesOfColumns.add(valueSimpleSelect);
-                                  colsValues.add(valuesOfColumns);
-                                }
-                              break;
-
-                            case "multiple.string":
-                              valuesOfColumns = new ArrayList<>();
-                              if (!(value instanceof JSONArray))
-                                {
-                                  log.warn("value of column " + nameOfColumn + " is not an array : " + value.getClass().getName());
-                                }
-                              else
-                                {
-                                  JSONArray valueMultiple = (JSONArray) value;
-                                  for (int j=0; j<valueMultiple.size(); j++)
-                                    {
-                                      Object obj = valueMultiple.get(j);
-                                      if (!(obj instanceof String))
-                                        {
-                                          log.warn("value is not a String : " + obj.getClass().getName());
-                                        }
-                                      else
-                                        {
-                                          valuesOfColumns.add((String) obj);
-                                        }
-                                    }
-                                }
-                              colsValues.add(valuesOfColumns);
-                              break;
-
-                            default:
-                              log.info("Received unsupported valueType : " + valueType);
-                              break;
+                            log.warn("criterionField is not a String : " + nameOfColumnObj.getClass().getName());
+                            colNames.add("");
+                            break;
                           }
+                        String nameOfColumn = (String) nameOfColumnObj;
+                        colNames.add(nameOfColumn);
+
+                        Object argumentObj = filterJSON.get("argument");
+                        if (!(argumentObj instanceof JSONObject))
+                          {
+                            log.warn("argument is not a JSONObject : " + argumentObj.getClass().getName());
+                            colsValues.add(new ArrayList<>());
+                            break;
+                          }
+                        JSONObject argument = (JSONObject) argumentObj;
+                        String valueType = (String) argument.get("valueType");
+                        Object value = (Object) argument.get("value");
+
+                        List<String> valuesOfColumns;
+                        switch (valueType) 
+                        {
+                          case "simpleSelect.string":
+                            if (!(value instanceof String))
+                              {
+                                log.warn("value of column " + nameOfColumn + " is not a String : " + value);
+                                colsValues.add(new ArrayList<>());
+                              }
+                            else
+                              {
+                                String valueSimpleSelect = (String) value;
+                                valuesOfColumns = new ArrayList<>();
+                                valuesOfColumns.add(valueSimpleSelect);
+                                colsValues.add(valuesOfColumns);
+                              }
+                            break;
+
+                          case "multiple.string":
+                            valuesOfColumns = new ArrayList<>();
+                            if (!(value instanceof JSONArray))
+                              {
+                                log.warn("value of column " + nameOfColumn + " is not an array : " + value.getClass().getName());
+                              }
+                            else
+                              {
+                                JSONArray valueMultiple = (JSONArray) value;
+                                for (int j=0; j<valueMultiple.size(); j++)
+                                  {
+                                    Object obj = valueMultiple.get(j);
+                                    if (!(obj instanceof String))
+                                      {
+                                        log.warn("value is not a String : " + obj.getClass().getName());
+                                      }
+                                    else
+                                      {
+                                        valuesOfColumns.add((String) obj);
+                                      }
+                                  }
+                              }
+                            colsValues.add(valuesOfColumns);
+                            break;
+
+                          default:
+                            log.info("Received unsupported valueType : " + valueType);
+                            break;
                         }
-
-                      ReportUtils.filterReport(unzippedFile, filterOutTmpFile.getAbsolutePath(), colNames, colsValues, Deployment.getReportManagerCsvSeparator(), Deployment.getReportManagerFieldSurrounder());
-                      isFilters = true;
-                    }
-                  else
-                    {
-                      filterOutTmpFile = new File(unzippedFile);
+                      }
+                      hashCode += colNames.hashCode() + colsValues.hashCode();
                     }
 
-                  if (percentage != null) 
+                  // Compute header data
+                  
+                  List<String> columnNames = new ArrayList<>();
+                  if (isHeader)
                     {
-                      ReportUtils.extractPercentageOfRandomRows(filterOutTmpFile.getAbsolutePath(), percentageOutTmpFile.getAbsolutePath(), percentage);
-                      isPercentage = true;
-                    }
-                  else
-                    {
-                      percentageOutTmpFile = filterOutTmpFile;
-                    }
-
-                  if (topRows != null) 
-                    {
-                      ReportUtils.extractTopRows(percentageOutTmpFile.getAbsolutePath(), topRowsOutTmpFile.getAbsolutePath(), topRows);
-                      isTop = true;
-                    }
-                  else
-                    {
-                      topRowsOutTmpFile = percentageOutTmpFile;
-                    }
-
-                  if (header != null)
-                    {
-                      List<String> columnNames = new ArrayList<>();
                       for (int i=0; i<header.size(); i++)
                         {
                           String nameOfColumn = (String) header.get(i);
                           columnNames.add(nameOfColumn);
                         }
-                      ReportUtils.subsetOfCols(topRowsOutTmpFile.getAbsolutePath(), headerOutTmpFile.getAbsolutePath(), columnNames, Deployment.getReportManagerCsvSeparator(), Deployment.getReportManagerFieldSurrounder());
-                      isHeader = true;
+                      hashCode += columnNames.hashCode();
                     }
-                  else
-                    {
-                      headerOutTmpFile = topRowsOutTmpFile;
-                    }
+                  
+                  if (isPercentage) {
+                    hashCode += percentage.hashCode();
+                  }
+                  if (isTop) {
+                    hashCode += topRows.hashCode();
+                  }
 
-                  finalFileName = finalFileName.substring(0, finalFileName.length()-8);
-                  
-                  if(isFilters) {
-                    finalFileName = finalFileName+"_Filter";
-                  }
-                  
-                  if(isPercentage) {
-                    finalFileName = finalFileName+"_Percentage";
-                  }
-                  
-                  if(isTop) {
-                    finalFileName = finalFileName+"_Top";
-                  }
-                  
-                  if(isHeader) {
-                    finalFileName = finalFileName+"_Column";
-                  }
-                  
-                  
-                  internalFile = File.createTempFile(finalFileName + ".", ".csv");
-                                 
-                  try
-                  {
-                      String strLine;
-                      BufferedReader br = new BufferedReader(new FileReader(headerOutTmpFile));
-                      BufferedWriter bw = new BufferedWriter(new FileWriter(internalFile));
-                      while ((strLine = br.readLine()) != null) 
+                  List<String> columnNamesRemoval = new ArrayList<>();
+                  if (isColumnRemoval) {
+                    for (int i=0; i<columnRemoval.size(); i++)
                       {
-                              bw.write(strLine);
-                              bw.write("\n");
-                          }
-                      br.close();
-                      bw.close();
-                
+                        String nameOfColumn = (String) columnRemoval.get(i);
+                        columnNamesRemoval.add(nameOfColumn);
+                      }
+                    hashCode += columnNamesRemoval.hashCode();
                   }
-                  catch (FileNotFoundException e) 
-                  {
-                      log.error("File doesn't exist", e);
-                  }
-                  
-                  finalZipFile = File.createTempFile(finalFileName + ".", ".zip");
-                  String finalZipFileName = finalZipFile.getAbsolutePath();
-                  ReportUtils.zipFile(internalFile.getAbsolutePath(), finalZipFileName);
-                  reportFile = new File(finalZipFileName);
-                }
 
-                FileInputStream fis = new FileInputStream(reportFile);
-                exchange.getResponseHeaders().add("Content-Type", "application/octet-stream");
-                exchange.getResponseHeaders().add("Content-Disposition", "attachment; filename=" + reportFile.getName());
-                exchange.sendResponseHeaders(200, reportFile.length());
-                OutputStream os = exchange.getResponseBody();
-                byte data[] = new byte[10_000]; // allow some bufferization
-                int length;
-                while ((length = fis.read(data)) != -1) {
-                  os.write(data, 0, length);
+                  String finalFileName = reportFile.getAbsolutePath();
+                  finalFileName = finalFileName.substring(0, finalFileName.length()-8); // remove .csv.zip
+                  if(isFilters) {
+                    finalFileName = finalFileName+FILTER;
+                  }
+                  if(isPercentage) {
+                    finalFileName = finalFileName+PERCENT;
+                  }
+                  if(isTop) {
+                    finalFileName = finalFileName+TOP;
+                  }
+                  if(isHeader) {
+                    finalFileName = finalFileName+COLUMN;
+                  }
+                  if (isColumnRemoval) {
+                    finalFileName = finalFileName+REMOVAL;
+                  }
+                  finalZipFile = new File(finalFileName + "_" + hashCode + ".csv.filter.zip"); // "filter" is needed so it is not mistaken for an original report later by the same code
+                  if (finalZipFile.exists()) {
+                    log.info("Report file already exists with same filter, reuse it " + finalZipFile.getAbsolutePath());
+                    reportFile = finalZipFile;
+                  } else {
+                    List<String> unzippedFileList = null;
+                    List<String> filesToZip = new ArrayList<>();
+                    unzippedFileList = ReportUtils.unzip(reportFile.getAbsolutePath());
+
+                    for (String unzippedFile : unzippedFileList) {
+                      filterOutTmpFile = File.createTempFile("tempReportFilter.", ".csv");
+                      percentageOutTmpFile = File.createTempFile("tempReportPercentage.", ".csv");
+                      topRowsOutTmpFile = File.createTempFile("tempReportTopRows.", ".csv");
+                      headerOutTmpFile = File.createTempFile("tempReportHeader.", ".csv");
+                      columnRemovalOutTmpFile = File.createTempFile("tempReportColRemoval.", ".csv");
+                      String finalInternalFileName = unzippedFile.substring(0, unzippedFile.length()-4); // remove .csv
+                      if (isFilters) {
+                        ReportUtils.filterReport(unzippedFile, filterOutTmpFile.getAbsolutePath(), colNames, colsValues, Deployment.getReportManagerCsvSeparator(), Deployment.getReportManagerFieldSurrounder());
+                        finalInternalFileName = finalInternalFileName+FILTER;
+                      } else {
+                        filterOutTmpFile = new File(unzippedFile);
+                      }
+
+                      if (isPercentage) {
+                        ReportUtils.extractPercentageOfRandomRows(filterOutTmpFile.getAbsolutePath(), percentageOutTmpFile.getAbsolutePath(), percentage);
+                        finalInternalFileName = finalInternalFileName+PERCENT;
+                      } else {
+                        percentageOutTmpFile = filterOutTmpFile;
+                      }
+
+                      if (isTop) {
+                        ReportUtils.extractTopRows(percentageOutTmpFile.getAbsolutePath(), topRowsOutTmpFile.getAbsolutePath(), topRows);
+                        finalInternalFileName = finalInternalFileName+TOP;
+                      } else {
+                        topRowsOutTmpFile = percentageOutTmpFile;
+                      }
+
+                      if (isHeader) {
+                        ReportUtils.subsetOfCols(topRowsOutTmpFile.getAbsolutePath(), headerOutTmpFile.getAbsolutePath(), columnNames, Deployment.getReportManagerCsvSeparator(), Deployment.getReportManagerFieldSurrounder());
+                        finalInternalFileName = finalInternalFileName+COLUMN;
+                      } else {
+                        headerOutTmpFile = topRowsOutTmpFile;
+                      }
+                      
+                      if (isColumnRemoval) {
+                        ReportUtils.removeCols(headerOutTmpFile.getAbsolutePath(), columnRemovalOutTmpFile.getAbsolutePath(), columnNamesRemoval, Deployment.getReportManagerCsvSeparator(), Deployment.getReportManagerFieldSurrounder());
+                        finalInternalFileName = finalInternalFileName+REMOVAL;
+                      } else {
+                        columnRemovalOutTmpFile = headerOutTmpFile;
+                      }
+                      File internalFile = new File(finalInternalFileName + "_" + hashCode + ".csv");
+                      try {
+                        String strLine;
+                        BufferedReader br = new BufferedReader(new FileReader(columnRemovalOutTmpFile));
+                        BufferedWriter bw = new BufferedWriter(new FileWriter(internalFile));
+                        while ((strLine = br.readLine()) != null) 
+                          {
+                            bw.write(strLine);
+                            bw.write("\n");
+                          }
+                        br.close();
+                        bw.close();
+                        filterOutTmpFile.delete();
+                        percentageOutTmpFile.delete();
+                        topRowsOutTmpFile.delete();
+                        headerOutTmpFile.delete();
+                        columnRemovalOutTmpFile.delete();
+                      } catch (FileNotFoundException e) {
+                        log.error("File doesn't exist", e);
+                      }
+                      log.debug("Adding file for zip archive " + internalFile.getAbsolutePath());
+                      filesToZip.add(internalFile.getAbsolutePath());
+                    } // loop through all files in zip archive
+
+                    ReportUtils.zipFiles(filesToZip, finalZipFile.getAbsolutePath());
+                    for (String fileInZip : filesToZip) {
+                      (new File(fileInZip)).delete();
+                    }
+                    reportFile = finalZipFile;
+                  }
+                } // filtering
+
+                
+                if (exchange != null) {
+                  FileInputStream fis = new FileInputStream(reportFile);
+                  exchange.getResponseHeaders().add("Content-Type", "application/octet-stream");
+                  exchange.getResponseHeaders().add("Content-Disposition", "attachment; filename=" + reportFile.getName());
+                  exchange.sendResponseHeaders(200, reportFile.length());
+                  OutputStream os = exchange.getResponseBody();
+                  byte data[] = new byte[10_000]; // allow some bufferization
+                  int length;
+                  while ((length = fis.read(data)) != -1) {
+                    os.write(data, 0, length);
+                  }
+                  fis.close();
+                  os.flush();
+                  os.close();
+                } else {
+                  // we were called from ReportScheduler (report extract). Need to move file to reports directory
+                  log.info("Move " + reportFile.getAbsolutePath() + " to " + ReportService.getReportOutputPath(tenantID));
+                  res = reportFile.getName();
+                  Files.move(
+                      FileSystems.getDefault().getPath(reportFile.getAbsolutePath()),
+                      FileSystems.getDefault().getPath(ReportService.getReportOutputPath(tenantID)+res),
+                      StandardCopyOption.REPLACE_EXISTING);
                 }
-                fis.close();
-                os.flush();
-                os.close();
               } catch (Exception excp) {
                 StringWriter stackTraceWriter = new StringWriter();
                 excp.printStackTrace(new PrintWriter(stackTraceWriter, true));
                 log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
               }
-
-              if (filters != null || percentage != null || topRows != null || header != null)
-              {
-                if (filterOutTmpFile != null) filterOutTmpFile.delete();
-                if (percentageOutTmpFile != null) percentageOutTmpFile.delete();
-                if (topRowsOutTmpFile != null) topRowsOutTmpFile.delete();
-                if (headerOutTmpFile != null) headerOutTmpFile.delete();
-                if (finalZipFile != null) finalZipFile.delete();
-                if (internalFile != null) internalFile.delete();
-              }
-
             } else {
               responseCode = "Report size is 0, report file is empty";
             }
@@ -1327,17 +1387,20 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     if(responseCode != null) {
       try {
         jsonResponse.put("responseCode", responseCode);
-        exchange.sendResponseHeaders(200, 0);
-        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
-        writer.write(jsonResponse.toString());
-        writer.close();
-        exchange.close();
+        if (exchange != null) {
+          exchange.sendResponseHeaders(200, 0);
+          BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
+          writer.write(jsonResponse.toString());
+          writer.close();
+          exchange.close();
+        }
       }catch(Exception e) {
         StringWriter stackTraceWriter = new StringWriter();
         e.printStackTrace(new PrintWriter(stackTraceWriter, true));
         log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
       }
     }
+    return res;
   }
 
   /*****************************************
@@ -1749,7 +1812,6 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     String reportID = JSONUtilities.decodeString(jsonRoot, "id", false);
     Boolean dryRun = false;
     
-
     /*****************************************
     *
     *  dryRun
@@ -1761,6 +1823,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     if (reportID == null)
       {
         reportID = reportService.generateReportID();
+        log.info("generating " + reportID + " in tenant " + tenantID + " for " + JSONUtilities.decodeString(jsonRoot, "display", false));
         jsonRoot.put("id", reportID);
       }
     log.trace("ID : "+reportID);
@@ -1791,7 +1854,6 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                   SchedulingInterval eSchedule = SchedulingInterval.fromExternalRepresentation(schedulingIntervalStr);
                   log.trace("Checking that "+eSchedule+" is allowed");
                   if (! availableScheduling.contains(eSchedule)) {
-                	 
                     response.put("id", jsonRoot.get("id"));
                     response.put("responseCode", "reportNotValid");
                     response.put("responseMessage", "scheduling "+eSchedule+" is not valid");
@@ -1803,25 +1865,54 @@ public class GUIManagerLoyaltyReporting extends GUIManager
                     response.put("responseParameter", respMsg.toString());
                     return JSONUtilities.encodeObject(response);
                   }
-                 
-
                 }
               }
             }
           }
       }
-    JSONArray effectiveScheduling = new JSONArray();
+    
+    Set<String> effectiveSchedulingSet = new HashSet<>();
     JSONArray effectiveSchedulingJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, Report.EFFECTIVE_SCHEDULING, false);
     if (effectiveSchedulingJSONArray != null) { 
         for (int i=0; i<effectiveSchedulingJSONArray.size(); i++) {
         	 String schedulingIntervalStr = (String) effectiveSchedulingJSONArray.get(i);
         	 SchedulingInterval eSchedule = SchedulingInterval.fromExternalRepresentation(schedulingIntervalStr);
-              if(eSchedule.equals(SchedulingInterval.NONE))
-           		continue;
-            effectiveScheduling.add(schedulingIntervalStr);
+        	 if (!eSchedule.equals(SchedulingInterval.NONE) &&
+               !effectiveSchedulingSet.contains(eSchedule.getExternalRepresentation())) { // do not add it multiple times)
+                 effectiveSchedulingSet.add(schedulingIntervalStr);
+        	 }
         }
+    }
+    /*
+     EVPRO-1121 Scheduling of reports extractions
+     
+     Add scheduling indicated in extractScheduling, if not already there
+     
+       "extractScheduling" : [{
+          "scheduling" : ["daily"],
+          "filtering" : {...}
+        }]
+     */
+    JSONArray extractSchedulingJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, Report.EXTRACT_SCHEDULING, false);
+    if (extractSchedulingJSONArray != null) { 
+      for (int i=0; i<extractSchedulingJSONArray.size(); i++) {
+        JSONObject extractSchedulingJSON = (JSONObject) extractSchedulingJSONArray.get(i);
+        JSONArray schedulingJSONArray = JSONUtilities.decodeJSONArray(extractSchedulingJSON, "scheduling");
+        for (int j=0; j<schedulingJSONArray.size(); j++) {
+          String schedulingIntervalStr = (String) schedulingJSONArray.get(j);
+          log.info("Extracting " + schedulingIntervalStr + " from extractScheduling for " + JSONUtilities.decodeString(jsonRoot, "id", false) + " " + JSONUtilities.decodeString(jsonRoot, "display", false));
+          SchedulingInterval eSchedule = SchedulingInterval.fromExternalRepresentation(schedulingIntervalStr);
+          if (!eSchedule.equals(SchedulingInterval.NONE) &&
+              !effectiveSchedulingSet.contains(schedulingIntervalStr)) { // do not add it multiple times
+                effectiveSchedulingSet.add(schedulingIntervalStr); // add this scheduling
+          }
         }
-        
+      }
+    }
+
+    JSONArray effectiveScheduling = new JSONArray();
+    for (String schedule : effectiveSchedulingSet)
+      effectiveScheduling.add(schedule);
     jsonRoot.remove(Report.EFFECTIVE_SCHEDULING);
     jsonRoot.put(Report.EFFECTIVE_SCHEDULING, effectiveScheduling);  
     long epoch = epochServer.getKey();
@@ -1831,9 +1922,8 @@ public class GUIManagerLoyaltyReporting extends GUIManager
         log.trace("new report : "+report);
         if (!dryRun)
           {
-        	            reportService.putReport(report, (existingReport == null), userID);
+            reportService.putReport(report, (existingReport == null), userID);
           }
-      
         response.put("id", report.getReportID());
         response.put("accepted", report.getAccepted());
         response.put("valid", report.getAccepted());

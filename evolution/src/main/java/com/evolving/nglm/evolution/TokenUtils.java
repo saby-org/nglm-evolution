@@ -293,7 +293,7 @@ public class TokenUtils
       ScoringStrategyService scoringStrategyService,
       ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader,
       SegmentationDimensionService segmentationDimensionService,
-      DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameters, OfferService offerService, StringBuffer returnedLog,
+      DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameters, OfferService offerService, SupplierService supplierService, StringBuffer returnedLog,
       String msisdn, Supplier supplier, int tenantID) throws GetOfferException
   {
     // check if we can call this PS
@@ -374,7 +374,7 @@ public class TokenUtils
         Collection<ProposedOfferDetails> localScoring = scoringCache.get(scoringStrategyID);
         if (localScoring == null) // cache miss
           {
-            localScoring = getOffersWithScoringStrategy(now, salesChannelID, subscriberProfile, scoringStrategy, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, subscriberGroupEpochReader, segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, msisdn, supplier, tenantID);
+            localScoring = getOffersWithScoringStrategy(now, salesChannelID, subscriberProfile, scoringStrategy, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, subscriberGroupEpochReader, segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, supplierService, returnedLog, msisdn, supplier, tenantID);
             scoringCache.put(scoringStrategyID, localScoring);
           }
         if (localScoring.size() < indexResult+1)
@@ -396,7 +396,7 @@ public class TokenUtils
     CatalogCharacteristicService catalogCharacteristicService,
     ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader,
     SegmentationDimensionService segmentationDimensionService, DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameters,
-    OfferService offerService, StringBuffer returnedLog, String msisdn, Supplier supplier, int tenantID) throws GetOfferException
+    OfferService offerService, SupplierService supplierService, StringBuffer returnedLog, String msisdn, Supplier supplier, int tenantID) throws GetOfferException
   {
     String logFragment;
     ScoringSegment selectedScoringSegment = getScoringSegment(scoringStrategy, subscriberProfile, subscriberGroupEpochReader, tenantID);
@@ -407,7 +407,7 @@ public class TokenUtils
       log.debug(logFragment);
     }
 
-    Set<Offer> offersForAlgo = getOffersToOptimize(now, selectedScoringSegment.getOfferObjectiveIDs(), subscriberProfile, offerService, subscriberGroupEpochReader, supplier, productService, voucherService, tenantID);
+    Set<Offer> offersForAlgo = getOffersToOptimize(now, selectedScoringSegment.getOfferObjectiveIDs(), subscriberProfile, offerService, supplierService, subscriberGroupEpochReader, supplier, productService, voucherService, tenantID);
 
     OfferOptimizationAlgorithm algo = selectedScoringSegment.getOfferOptimizationAlgorithm();
     if (algo == null)
@@ -513,7 +513,7 @@ public class TokenUtils
   }
   
   private static Set<Offer> getOffersToOptimize(Date now, Set<String> catalogObjectiveIDs,
-      SubscriberProfile subscriberProfile, OfferService offerService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader, Supplier supplier, ProductService productService, VoucherService voucherService, int tenantID)
+      SubscriberProfile subscriberProfile, OfferService offerService, SupplierService supplierService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader, Supplier supplier, ProductService productService, VoucherService voucherService, int tenantID)
   {
     // Browse all offers:
     // - filter by offer objective coming from the split strategy
@@ -530,6 +530,10 @@ public class TokenUtils
      */
     if (supplier != null)
       {
+        List<String> supplierSonsIDs = new ArrayList<>();
+        for (Supplier supplierSon : getSupplierSons(now, supplierService, supplier, tenantID)) {
+          supplierSonsIDs.add(supplierSon.getSupplierID());
+        }
         for (Offer offer : offers)
           {
             Set<OfferProduct> offerProducts = offer.getOfferProducts();
@@ -544,7 +548,7 @@ public class TokenUtils
                     if (productObject != null && productObject instanceof Product)
                       {
                         Product product = (Product) productObject;
-                        if (product.getSupplierID().equals(supplier.getSupplierID()))
+                        if (supplierSonsIDs.contains(product.getSupplierID()))
                           {
                             filteredOffers.add(offer);
                             break;
@@ -565,7 +569,7 @@ public class TokenUtils
                     if (voucherObject != null && voucherObject instanceof Voucher)
                       {
                         Voucher voucher = (Voucher) voucherObject;
-                        if (voucher.getSupplierID().equals(supplier.getSupplierID()))
+                        if (supplierSonsIDs.contains(voucher.getSupplierID()))
                           {
                             filteredOffers.add(offer);
                             break;
@@ -586,7 +590,7 @@ public class TokenUtils
     }
     for (Offer offer : filteredOffers)
     {
-      Integer stock = StockMonitor.getRemainingStock(offer);
+      Integer stock = offer.getApproximateRemainingStock();
       if ((stock != null) && (stock <= 0)) { // EVPRO-1105 do not present offers not in stock
         if (log.isTraceEnabled()) log.trace("No stock for offer " + offer.getOfferID());
         continue;
@@ -658,6 +662,20 @@ public class TokenUtils
       }
     }
     return result;
+  }
+  
+  // returns list of all suppliers that have "supplier" as parent.
+  // returned list also includes "supplier".
+  private static List<Supplier> getSupplierSons(Date now, SupplierService supplierService, Supplier supplier, int tenantID)
+  {
+    ArrayList<Supplier> supplierSons = new ArrayList<>();
+    supplierSons.add(supplier);
+    for (Supplier sup : supplierService.getActiveSuppliers(now, tenantID)) {
+      if (sup.getParentSupplierID() != null && sup.getParentSupplierID().equals(supplier.getSupplierID())) {
+        supplierSons.addAll(getSupplierSons(now, supplierService, sup, tenantID)); // recursive call
+      }
+    }
+    return supplierSons;
   }
   
   private static ScoringSegment getScoringSegment(ScoringStrategy strategy, SubscriberProfile subscriberProfile,

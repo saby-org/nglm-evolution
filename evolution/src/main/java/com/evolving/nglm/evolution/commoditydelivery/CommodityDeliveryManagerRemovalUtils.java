@@ -127,7 +127,8 @@ public class CommodityDeliveryManagerRemovalUtils {
 
 		Map<String, String> diplomaticBriefcase = commodityDeliveryRequest.getDiplomaticBriefcase();
 		if(diplomaticBriefcase == null){
-			diplomaticBriefcase = new HashMap<String, String>();
+			diplomaticBriefcase = new HashMap<>();
+			commodityDeliveryRequest.setDiplomaticBriefcase(diplomaticBriefcase);
 		}
 		//diplomaticBriefcase.put(CommodityDeliveryManager.APPLICATION_ID, applicationID == null ? CommodityDeliveryManager.COMMODITY_DELIVERY_ID : applicationID);
 		diplomaticBriefcase.put(CommodityDeliveryManager.COMMODITY_DELIVERY_BRIEFCASE, commodityDeliveryRequest.getJSONRepresentation(commodityDeliveryRequest.getTenantID()).toJSONString());

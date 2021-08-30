@@ -31,7 +31,7 @@ import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
-@GUIDependencyDef(objectType = "loyaltyProgramChallenge", serviceClass = LoyaltyProgramService.class, dependencies = { "catalogcharacteristic"})
+@GUIDependencyDef(objectType = "loyaltyProgramChallenge", serviceClass = LoyaltyProgramService.class, dependencies = { "catalogcharacteristic", "workflow" })
 public class LoyaltyProgramChallenge extends LoyaltyProgram
 {
   
@@ -711,6 +711,7 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
     List<String> catalogcharacteristicIDs = new ArrayList<String>();
+    List<String> wrkflowIDs = new ArrayList<String>();
     
     if (getCharacteristics() != null)
       {
@@ -720,6 +721,17 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
           }
       }
     
+    if (getLevels() != null)
+      {
+        for (ChallengeLevel level : getLevels())
+          {
+            if (level.getWorkflowChange() != null && !level.getWorkflowChange().isEmpty()) wrkflowIDs.add(level.getWorkflowChange());
+            if (level.getWorkflowDaily() != null && !level.getWorkflowDaily().isEmpty()) wrkflowIDs.add(level.getWorkflowDaily());
+            if (level.getWorkflowScore() != null && !level.getWorkflowScore().isEmpty()) wrkflowIDs.add(level.getWorkflowScore());
+          }
+      }
+    
+    result.put("workflow", wrkflowIDs);
     result.put("catalogcharacteristic", catalogcharacteristicIDs);
     return result;
   }

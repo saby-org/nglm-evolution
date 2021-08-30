@@ -588,6 +588,7 @@ public class GUIManager
     getComplexObjectType("getComplexObjectType"),
     putComplexObjectType("putComplexObjectType"),
     removeComplexObjectType("removeComplexObjectType"),
+    refreshComplexObjectTypeCriteria("refreshComplexObjectTypeCriteria"),
     
     getOTPTypeList("getOTPTypeList"),
     getOTPTypeSummaryList("getOTPTypeSummaryList"),
@@ -1090,7 +1091,7 @@ public class GUIManager
     subscriberIDService = new SubscriberIDService(redisServer, "guimanager-" + apiProcessKey);
     subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("guimanager-subscribergroupepoch", bootstrapServers, subscriberGroupEpochTopic, SubscriberGroupEpoch::unpack);
     renamedProfileCriterionFieldReader = ReferenceDataReader.<String,RenamedProfileCriterionField>startReader("guimanager-renamedprofilecriterionfield", bootstrapServers, renamedProfileCriterionFieldTopic, RenamedProfileCriterionField::unpack);
-    uploadedFileService = new UploadedFileService(bootstrapServers, "guimanager-uploadfileservice-" + apiProcessKey, uploadedFileTopic, true);
+    uploadedFileService = new UploadedFileService(bootstrapServers, uploadedFileTopic, true);
     targetService = new TargetService(bootstrapServers, "guimanager-targetservice-" + apiProcessKey, targetTopic, true);
     voucherService = new VoucherService(bootstrapServers, "guimanager-voucherservice-" + apiProcessKey, voucherTopic, true,elasticsearch,uploadedFileService);
     communicationChannelBlackoutService = new CommunicationChannelBlackoutService(bootstrapServers, "guimanager-blackoutservice-" + apiProcessKey, communicationChannelBlackoutTopic, true);
@@ -1430,7 +1431,7 @@ public class GUIManager
     //
 
     // Always update reports with initialReports. When we upgrade, new effectiveScheduling is merged with existing one (EVPRO-244)
-    for(Tenant tenant : Deployment.getTenants())
+    for(Tenant tenant : Deployment.getRealTenants())
       { 
         int tenantID = tenant.getTenantID();
         try
@@ -1441,6 +1442,7 @@ public class GUIManager
           for (int i=0; i<initialReportsJSONArray.size(); i++)
             {
               JSONObject reportJSON = (JSONObject) initialReportsJSONArray.get(i);
+              reportJSON.remove("id"); // might have been added by processPutReport for another tenant, but need to use differentIDs for every tenant
               String name = JSONUtilities.decodeString(reportJSON, "display", false);
               boolean create = true;
               if (name != null)
@@ -1451,14 +1453,15 @@ public class GUIManager
                         {
                           // this report already exists (same name), do not create it
                           create = false;
-                          log.info("Report " + name + " (id " + report.getReportID() + " ) already exists, do not create");
+                          log.info("Report " + name + " (id " + report.getReportID() + " ) already exists in tenant " + tenantID + " do not create");
                           break;
                         }
                     }
                 }
               if (create)
               {
-                guiManagerLoyaltyReporting.processPutReport("0", reportJSON, tenantID); // TODO-EVPRO-99 check this related to tenancy...
+                log.info("processPutReport in tenant " + tenantID + " for " + JSONUtilities.decodeString(reportJSON, "id", false) + " " + JSONUtilities.decodeString(reportJSON, "display", false));
+                guiManagerLoyaltyReporting.processPutReport("0", reportJSON, tenantID);
               }
             }
         }
@@ -1720,6 +1723,7 @@ public class GUIManager
     //
     //  complexObject
     //
+    
     for(Tenant tenant : Deployment.getTenants())
       {
         int tenantID = tenant.getTenantID();
@@ -1731,7 +1735,8 @@ public class GUIManager
                 for (int i=0; i<initialComplexObjectJSONArray.size(); i++)
                   {
                     JSONObject initialComplexObjectJSON = (JSONObject) initialComplexObjectJSONArray.get(i);
-                    guiManagerGeneral.processPutComplexObjectType("0", initialComplexObjectJSON, tenantID);
+                    JSONObject initialComplexObjectJSONCopy = (JSONObject) initialComplexObjectJSON.clone();
+                    guiManagerGeneral.processPutComplexObjectType("0", initialComplexObjectJSONCopy, tenantID);
                   }
               }
             catch (JSONUtilitiesException e)
@@ -2060,6 +2065,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getComplexObjectType", new APISimpleHandler(API.getComplexObjectType));
         restServer.createContext("/nglm-guimanager/putComplexObjectType", new APISimpleHandler(API.putComplexObjectType));
         restServer.createContext("/nglm-guimanager/removeComplexObjectType", new APISimpleHandler(API.removeComplexObjectType));
+        restServer.createContext("/nglm-guimanager/refreshComplexObjectTypeCriteria", new APISimpleHandler(API.refreshComplexObjectTypeCriteria));
         restServer.createContext("/nglm-guimanager/getOfferList", new APISimpleHandler(API.getOfferList));
         restServer.createContext("/nglm-guimanager/getOfferSummaryList", new APISimpleHandler(API.getOfferSummaryList));
         restServer.createContext("/nglm-guimanager/getOffer", new APISimpleHandler(API.getOffer));
@@ -3138,6 +3144,10 @@ public class GUIManager
 
                 case removeComplexObjectType:
                   jsonResponse = guiManagerGeneral.processRemoveComplexObjectType(userID, jsonRoot, tenantID);
+                  break;
+                  
+                case refreshComplexObjectTypeCriteria:
+                  jsonResponse = guiManagerGeneral.processRefreshComplexObjectTypeCriteria(userID, jsonRoot, tenantID);
                   break;
 
                 case getOfferList:
@@ -8854,7 +8864,7 @@ public class GUIManager
 
         // if stock update, and no more stock, need to warn it
         String responseMessage = null;
-        if(existingOffer instanceof Offer && !Objects.equals(((Offer) existingOffer).getStock(),offer.getStock()) && StockMonitor.getRemainingStock(offer)==0) responseMessage = "no remaining stock";
+        if(existingOffer instanceof Offer && !Objects.equals(((Offer) existingOffer).getStock(),offer.getStock()) && offer.getApproximateRemainingStock()!=null && offer.getApproximateRemainingStock()==0) responseMessage = "no remaining stock";
 
         /*****************************************
         *
@@ -12842,7 +12852,7 @@ public class GUIManager
 
 		// if stock update, and no more stock, need to warn it
 		String responseMessage = null;
-		if(existingProduct instanceof Product && !Objects.equals(((Product) existingProduct).getStock(),product.getStock()) && StockMonitor.getRemainingStock(product)==0) responseMessage = "no remaining stock";
+		if(existingProduct instanceof Product && !Objects.equals(((Product) existingProduct).getStock(),product.getStock()) && product.getApproximateRemainingStock()!=null && product.getApproximateRemainingStock()==0) responseMessage = "no remaining stock";
 
 
         /*****************************************
@@ -16037,7 +16047,7 @@ public class GUIManager
         if(voucherType.getCodeType()==VoucherType.CodeType.Shared){
           voucher = new VoucherShared(jsonRoot, epoch, existingVoucher, tenantID);
           if(log.isDebugEnabled()) log.debug("will put shared voucher "+voucher);
-		  if(existingVoucher instanceof VoucherShared && !Objects.equals(((VoucherShared) existingVoucher).getStock(),((VoucherShared)voucher).getStock()) && StockMonitor.getRemainingStock((VoucherShared)voucher)==0) responseMessage = "no remaining stock";
+		  if(existingVoucher instanceof VoucherShared && !Objects.equals(((VoucherShared) existingVoucher).getStock(),((VoucherShared)voucher).getStock()) && ((VoucherShared)voucher).getApproximateRemainingStock()!=null && ((VoucherShared)voucher).getApproximateRemainingStock()==0) responseMessage = "no remaining stock";
         }
         if(voucher==null && voucherType.getCodeType()==VoucherType.CodeType.Personal){
           voucher = new VoucherPersonal(jsonRoot, epoch, existingVoucher,voucherType, tenantID);
@@ -30753,6 +30763,10 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
 
     String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
     String areaAvailability = JSONUtilities.decodeString(jsonRoot, "areaAvailability", true);
+    String userName = JSONUtilities.decodeString(jsonRoot, "userName", false);
+    String featureID = (userName != null) ? userName : "administrator";
+    Module moduleID = JSONUtilities.decodeString(jsonRoot, "moduleID", false) != null ? Module.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "moduleID", false)) : Module.Customer_Care;
+    
     JSONObject tags = JSONUtilities.decodeJSONObject(jsonRoot, "tags", true);
     Map<String, List<String>> tagsMap = null;
     List<String> dialogMessageTags = new ArrayList<>();
@@ -30807,7 +30821,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
             String topic = Deployment.getNotificationEventTopic();
             Serializer<StringKey> keySerializer = StringKey.serde().serializer();
             Serializer<NotificationEvent> valueSerializer = NotificationEvent.serde().serializer();
-            NotificationEvent notificationEvent = new NotificationEvent(subscriberID, now, "eventID", templateID, tagValue, communicationChannelID, contactType, source); 
+            NotificationEvent notificationEvent = new NotificationEvent(subscriberID, now, "eventID", templateID, tagValue, communicationChannelID, contactType, source, featureID, moduleID); 
             
             kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
                 topic,

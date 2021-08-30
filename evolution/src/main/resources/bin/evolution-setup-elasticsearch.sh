@@ -111,6 +111,8 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/subscriber
       "previousEvolutionSubscriberStatus"   : { "type" : "keyword" },
       "evolutionSubscriberStatusChangeDate" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
       "universalControlGroup"               : { "type" : "boolean" },
+      "universalControlGroupPrevious"       : { "type" : "boolean" },
+      "universalControlGroupChangeDate"     : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
       "language"                            : { "type" : "keyword" },
       "segments"                            : { "type" : "keyword" },
       "exclusionInclusionList"              : { "type" : "keyword" },
@@ -141,6 +143,13 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/subscriber
           "rewardYesterdayRedeemer"      : { "type" : "boolean" },
           "levelUpdateDate"              : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ"},
           "stepUpdateDate"               : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ"}
+        }
+      },
+       "complexFields"                   : { "type" : "nested",
+        "properties" : {
+          "complexObjectName" : 	{ "type" : "keyword"},
+          "complexObjectID" : 		{ "type" : "keyword"},
+          "complexObjectDisplay" : 	{ "type" : "keyword"}
         }
       },
       "pointBalances"                       : { "type": "nested",
@@ -303,8 +312,8 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/bdr -u $EL
       "operation" : { "type" : "keyword" },
       "moduleID" : { "type" : "keyword" },
       "featureID" : { "type" : "keyword" },
-      "origin" : { "type" : "keyword", "index" : "false" },
-      "returnCode" : { "type" : "keyword" },
+      "origin" : { "type" : "keyword" },
+      "returnCode" : { "type" : "integer" },
       "deliveryStatus" : { "type" : "keyword" },
       "returnCodeDetails" : { "type" : "keyword", "index" : "false" }
     }
@@ -366,7 +375,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/token -u $
       "eventDatetime" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ"},
       "eventID"       : { "type" : "keyword" },
       "returnCode"    : { "type" : "keyword" },
-      "origin"        : { "type" : "keyword", "index" : "false" }
+      "origin"        : { "type" : "keyword" }
     }
   }
 }'
@@ -434,8 +443,8 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/odr -u $EL
       "offerContent" : { "type" : "keyword", "index" : "false" },
       "moduleID" : { "type" : "keyword" },
       "featureID" : { "type" : "keyword" },
-      "origin" : { "type" : "keyword", "index" : "false" },
-      "returnCode" : { "type" : "keyword" },
+      "origin" : { "type" : "keyword" },
+      "returnCode" : { "type" : "integer" },
       "deliveryStatus" : { "type" : "keyword" },
       "returnCodeDetails" : { "type" : "keyword", "index" : "false" },
       "voucherCode" : { "type" : "keyword" },
@@ -495,14 +504,14 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/vdr -u $EL
       "subscriberID" : { "type" : "keyword" },
       "tenantID" : { "type" : "integer" },
       "eventDatetime" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ"},
-      "eventID" : { "type" : "keyword" },     
+      "eventID" : { "type" : "keyword" },
       "moduleID" : { "type" : "keyword" },
       "featureID" : { "type" : "keyword" },
-      "origin" : { "type" : "keyword", "index" : "false" },
+      "origin" : { "type" : "keyword" },
       "returnStatus" : { "type" : "keyword" },
       "voucherCode" : { "type" : "keyword" },
       "voucherID" : { "type" : "keyword" },
-      "returnCode" : { "type" : "keyword" },
+      "returnCode" : { "type" : "integer" },
       "expiryDate" : { "type" : "keyword" }
     }
   }
@@ -566,7 +575,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mdr -u $EL
       "destination" : { "type" : "keyword" }, 
       "moduleID" : { "type" : "keyword" },
       "featureID" : { "type" : "keyword" },
-      "origin" : { "type" : "keyword", "index" : "false" },
+      "origin" : { "type" : "keyword" },
       "returnCode" : { "type" : "integer" },
       "deliveryStatus" : { "type" : "keyword" },
       "returnCodeDetails" : { "type" : "keyword", "index" : "false" },
@@ -774,6 +783,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_o
       "filter.meanOfPayment" : { "type" : "keyword" },
       "filter.meanOfPaymentProviderID" : { "type" : "keyword" },
       "filter.offerObjectives" : { "type" : "keyword" },
+      "filter.origin" : { "type" : "keyword" },
       "count" : { "type" : "integer" },
       "metric.totalAmount" : { "type" : "integer" }
     }
@@ -797,6 +807,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_b
       "filter.salesChannel" : { "type" : "keyword" },
       "filter.deliverable" : { "type" : "keyword" },
       "filter.returnCode" : { "type" : "keyword" },
+      "filter.origin" : { "type" : "keyword" },
       "count" : { "type" : "integer" },
       "metric.totalQty" : { "type" : "integer" }
     }

@@ -29,6 +29,7 @@ import com.evolving.nglm.core.Pair;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.ContactPolicyCommunicationChannels.ContactType;
+import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.NotificationManager.NotificationManagerRequest;
 
@@ -366,7 +367,7 @@ public class EvolutionUtilities
     return result;
   }
   
-  public static boolean sendMessage(EvolutionEventContext context, Map<String, String> specificTags, String templateID, ContactType contactType, String sourceAddress, SubscriberEvaluationRequest subscriberEvaluationRequest, SubscriberState subscriberState)
+  public static boolean sendMessage(EvolutionEventContext context, Map<String, String> specificTags, String templateID, ContactType contactType, String sourceAddress, SubscriberEvaluationRequest subscriberEvaluationRequest, SubscriberState subscriberState, String featureID, Module moduleID)
   {
     boolean subscriberUpdated;
     /*****************************************
@@ -455,6 +456,8 @@ public class EvolutionUtilities
 
             request.forceDeliveryPriority(contactType.getDeliveryPriority());
             request.setRestricted(contactType.getRestricted());
+            request.setFeatureID(featureID);
+            request.setModuleID(moduleID.getExternalRepresentation());
             subscriberState.getDeliveryRequests().add(request);
           }
         else

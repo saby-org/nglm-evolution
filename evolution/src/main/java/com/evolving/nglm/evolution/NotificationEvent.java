@@ -41,7 +41,7 @@ public class NotificationEvent extends SubscriberStreamOutput implements Evoluti
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("notification_event");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),2));
     for (Field field : subscriberStreamOutputSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("subscriberID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("eventDateTime", Timestamp.builder().schema());
@@ -51,6 +51,8 @@ public class NotificationEvent extends SubscriberStreamOutput implements Evoluti
     schemaBuilder.field("channelID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("contactType", SchemaBuilder.string().optional().defaultValue("unknown").schema());
     schemaBuilder.field("source", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("featureID", Schema.STRING_SCHEMA);
+    schemaBuilder.field("moduleID", Schema.STRING_SCHEMA);
     
     schema = schemaBuilder.build();
   };
@@ -82,6 +84,8 @@ public class NotificationEvent extends SubscriberStreamOutput implements Evoluti
   private String channelID;
   private ContactType contactType;
   private String source;
+  private String featureID;
+  private Module moduleID;
     
   /****************************************
   *
@@ -115,6 +119,9 @@ public class NotificationEvent extends SubscriberStreamOutput implements Evoluti
   }
   public ContactType getContactType() { return contactType; }
   public String getSource() { return source; }
+  public String getFeatureID() { return featureID; }
+  public Module getModuleID() { return moduleID; }
+  
   
 
   //
@@ -129,16 +136,16 @@ public class NotificationEvent extends SubscriberStreamOutput implements Evoluti
   public void setChannelID(String channelID) { this.channelID = channelID; }
   public void setContactType(ContactType contactType) { this.contactType = contactType; }
   public void setSource(String source) { this.source = source; }
-
-  
- 
+  public void setFeatureID(String featureID) { this.featureID = featureID; }
+  public void setModuleID(Module moduleID) { this.moduleID = moduleID; }
+   
   /*****************************************
   *
   * constructor (simple)
   *
   *****************************************/
 
-  public NotificationEvent(String subscriberID, Date eventDateTime, String eventID, String templateID, Map<String, String> tags, String channelID, ContactType contactType, String source)
+  public NotificationEvent(String subscriberID, Date eventDateTime, String eventID, String templateID, Map<String, String> tags, String channelID, ContactType contactType, String source, String featureID, Module moduleID)
   {
     this.subscriberID = subscriberID;
     this.eventDateTime = eventDateTime;
@@ -148,6 +155,8 @@ public class NotificationEvent extends SubscriberStreamOutput implements Evoluti
     this.channelID = channelID;
     this.contactType = contactType;
     this.source = source;
+    this.featureID = featureID;
+    this.moduleID = moduleID;
   }
 
   /*****************************************
@@ -155,7 +164,7 @@ public class NotificationEvent extends SubscriberStreamOutput implements Evoluti
    * constructor unpack
    *
    *****************************************/
-  public NotificationEvent(SchemaAndValue schemaAndValue, String subscriberID, Date eventDateTime, String eventID, String templateID, Map<String, String> tags, String channelID, ContactType contactType, String source)
+  public NotificationEvent(SchemaAndValue schemaAndValue, String subscriberID, Date eventDateTime, String eventID, String templateID, Map<String, String> tags, String channelID, ContactType contactType, String source, String featureID, Module moduleID)
   {
     super(schemaAndValue);
     this.subscriberID = subscriberID;
@@ -166,6 +175,8 @@ public class NotificationEvent extends SubscriberStreamOutput implements Evoluti
     this.channelID = channelID;
     this.contactType = contactType;
     this.source = source;
+    this.featureID = featureID;
+    this.moduleID = moduleID;
   }
   
 
@@ -188,6 +199,8 @@ public class NotificationEvent extends SubscriberStreamOutput implements Evoluti
     struct.put("channelID", notificationEvent.getChannelID());
     struct.put("contactType", notificationEvent.getContactType() != null ? notificationEvent.getContactType().getExternalRepresentation() : null);
     struct.put("source", notificationEvent.getSource());
+    struct.put("featureID", notificationEvent.getFeatureID());
+    struct.put("moduleID", notificationEvent.getModuleID().getExternalRepresentation());
     return struct;
   }
 
@@ -224,6 +237,9 @@ public class NotificationEvent extends SubscriberStreamOutput implements Evoluti
         
       }
     String source = valueStruct.getString("source");
+    String featureID = schema.field("featureID") != null ? valueStruct.getString("featureID") : "";
+    String moduleString = schema.field("moduleID") != null ? valueStruct.getString("moduleID") : Module.Unknown.getExternalRepresentation();
+    Module moduleID = Module.fromExternalRepresentation(moduleString);
     
     //
     // validate
@@ -233,7 +249,7 @@ public class NotificationEvent extends SubscriberStreamOutput implements Evoluti
     // return
     //
 
-    return new NotificationEvent(schemaAndValue, subscriberID, eventDateTime, eventID,templateID, tags, channelID, contactTypeEnum, source);
+    return new NotificationEvent(schemaAndValue, subscriberID, eventDateTime, eventID,templateID, tags, channelID, contactTypeEnum, source, featureID, moduleID);
   }
   
   

@@ -2,6 +2,9 @@ package com.evolving.nglm.evolution.offeroptimizer;
 
 import java.util.HashMap;
 
+import com.evolving.nglm.evolution.GUIManagedObject;
+import com.evolving.nglm.evolution.Offer;
+import com.evolving.nglm.evolution.OfferService;
 import org.json.simple.JSONObject;
 
 import com.evolving.nglm.core.JSONUtilities;
@@ -110,6 +113,18 @@ public class ProposedOfferDetails implements Comparable<ProposedOfferDetails>
     jsonRepresentation.put("offerScore", offerScore);
     jsonRepresentation.put("offerRank", offerRank);
     return JSONUtilities.encodeObject(jsonRepresentation);
+  }
+
+  // enriched
+  public JSONObject getJSONRepresentation(OfferService offerService)
+  {
+    JSONObject jsonObject = getJSONRepresentation();
+    GUIManagedObject offerObject = offerService.getStoredOffer(offerId);
+    if(offerObject instanceof Offer){
+      Offer offer = (Offer) offerObject;
+      jsonObject.put("remainingStock", offer.getApproximateRemainingStock());
+    }
+    return jsonObject;
   }
   
 }

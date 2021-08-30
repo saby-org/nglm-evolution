@@ -70,7 +70,8 @@ public class TokenReportMonoPhase implements ReportCsvFactory
     headerFieldsOrder.add(customerID);
     for (AlternateID alternateID : Deployment.getAlternateIDs().values())
     {
-      headerFieldsOrder.add(alternateID.getName());
+      if(alternateID.getName().equals("msisdn")) {
+      headerFieldsOrder.add(alternateID.getName());}
     }
     headerFieldsOrder.add(tokenCode);
     headerFieldsOrder.add(tokenType);

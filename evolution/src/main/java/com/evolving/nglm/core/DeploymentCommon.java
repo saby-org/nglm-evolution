@@ -86,6 +86,13 @@ public class DeploymentCommon
   public static void initialize() { /* Just to be sure the static bloc is read. */ }
   public static Set<Tenant> getTenants() { return jsonConfigPerTenant.keySet(); }
   public static Tenant getDefaultTenant() { return defaultTenant; }
+  public static Set<Tenant> getRealTenants() { // all but tenant 0
+    Set<Tenant> tenants = new HashSet<>();
+    for (Tenant tenant : getTenants()) {
+      if (tenant.getTenantID() != 0) tenants.add(tenant);
+    }
+    return tenants;
+  }
   public static Deployment getDeployment(int tenantID) { return deploymentsPerTenant.get(tenantID); }
   public static Deployment getDefault() { return getDeployment(0); }
   
@@ -557,7 +564,7 @@ public class DeploymentCommon
   public static Long getElasticsearchMappingJourneyrewardsTemplateVersion() { return elasticsearchTemplatesVersion.get("mapping_journeyrewards"); }
   public static Long getElasticsearchMappingDeliverablesTemplateVersion() { return elasticsearchTemplatesVersion.get("mapping_deliverables"); }
   public static Long getElasticsearchMappingPartnersTemplateVersion() { return elasticsearchTemplatesVersion.get("mapping_partners"); }
-  public static Long getElasticsearchMappingBasemanagementTemplateVersion() { return elasticsearchTemplatesVersion.get("mapping_basemanagment"); }
+  public static Long getElasticsearchMappingBasemanagementTemplateVersion() { return elasticsearchTemplatesVersion.get("mapping_basemanagement"); }
   public static Long getElasticsearchMappingJourneyobjectiveTemplateVersion() { return elasticsearchTemplatesVersion.get("mapping_journeyobjective"); }
 
   //

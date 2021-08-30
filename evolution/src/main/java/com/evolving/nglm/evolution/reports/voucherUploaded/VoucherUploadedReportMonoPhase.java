@@ -66,10 +66,6 @@ public class VoucherUploadedReportMonoPhase implements ReportCsvFactory
   static List<String> headerFieldsOrder = new ArrayList<String>();
   static
   {
-    for (AlternateID alternateID : Deployment.getAlternateIDs().values())
-    {
-      headerFieldsOrder.add(alternateID.getName());
-    }
     headerFieldsOrder.add(voucherCode);
     headerFieldsOrder.add(supplier);
     headerFieldsOrder.add(expiryDate);

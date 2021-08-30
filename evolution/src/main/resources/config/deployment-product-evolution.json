@@ -31,7 +31,6 @@
   "datacubeJobsScheduling.comment": "CRON are scheduled in the time-zone of THE TENANT. Two jobs scheduled at midnight for different tenants in different time-zone will therefore not run at the same time. Fields name are JobUniqueID. They can be used to override them in the project deployment.json. You can also add new jobs by using a different JobUniqueID. BEWARE that every job will have an instance for EVERY tenants. CRON Format: minute (0-59), hour (0-23), day of month (1-31), month of year (1-12:JAN-DEC case-insensitive), day of week (0-7:MON-SUN case-insensitive) 1 is always Monday",
   "datacubeJobsScheduling" : {
     "ODR-daily-preview"              : { "type": "ODR-daily-preview",            "enabled": true,  "scheduledAtRestart": false, "cronEntry": "0 * * * *" },
-    "ODR-daily-preview"              : { "type": "ODR-daily-preview",            "enabled": true,  "scheduledAtRestart": false, "cronEntry": "0 * * * *" },
     "ODR-daily-definitive"           : { "type": "ODR-daily-definitive",         "enabled": true,  "scheduledAtRestart": false, "cronEntry": "0 1 * * *" },
     "ODR-hourly-preview"             : { "type": "ODR-hourly-preview",           "enabled": false, "scheduledAtRestart": false, "cronEntry": "0 * * * *" },
     "ODR-hourly-definitive"          : { "type": "ODR-hourly-definitive",        "enabled": false, "scheduledAtRestart": false, "cronEntry": "0 1 * * *" },
@@ -99,12 +98,12 @@
   
   "elasticsearchTemplatesVersion" : {
     "root":                             2,
-    "subscriberprofile":                2,
-    "detailedrecords_bonuses":          2,
-    "detailedrecords_tokens":           2,
-    "detailedrecords_offers":           2,
-    "detailedrecords_vouchers":         2,
-    "detailedrecords_messages":         2,
+    "subscriberprofile":                3,
+    "detailedrecords_bonuses":          4,
+    "detailedrecords_tokens":           3,
+    "detailedrecords_offers":           4,
+    "detailedrecords_vouchers":         4,
+    "detailedrecords_messages":         3,
     "detailedrecords_events":           2,
     "journeystatistic":                 2,
     "datacube_subscriberprofile":       2,
@@ -112,16 +111,16 @@
     "datacube_loyaltyprogramschanges":  2,
     "datacube_journeytraffic":          2,
     "datacube_journeyrewards":          2,
-    "datacube_odr":                     2,
-    "datacube_bdr":                     2,
+    "datacube_odr":                     3,
+    "datacube_bdr":                     3,
     "datacube_messages":                2,
     "datacube_vdr":                     2,
     "mapping_modules":                  2,
     "mapping_journeys":                 2,
     "mapping_journeyrewards":           2,
     "mapping_deliverables":             2,
-    "mapping_partners":             	2,
-    "mapping_basemanagment":            2,
+    "mapping_partners":                 2,
+    "mapping_basemanagement":           2,
     "mapping_journeyobjective":         2
   },
   "elasticsearchIndexByPassVersion.comment" : "WARNING. DEBUG VARIABLE. DO NOT MODIFY IT IF YOU DO NOT KNOW WHAT YOU ARE DOING.",
@@ -133,7 +132,9 @@
   },
 
   "hourlyReportCronEntryString"   : "0 * * * *",
+  
   "dailyReportCronEntryString"    : "5 2 * * *",
+  
   "weeklyReportCronEntryString"   : "10 2 * * 0",
   "monthlyReportCronEntryString"  : "15 3 1 * *",
   
@@ -947,7 +948,12 @@
       "id"           : "deleteCustomer",
       "methodName"   : "deleteCustomer",
       "permissions"  : ["API-DELETE-CUSTOMER"]
-    }    
+    },
+    {
+      "id"           : "getCustomerVouchers",
+      "methodName"   : "getCustomerVouchers",
+      "permissions"  : ["API-GET-CUSTOMER-VOUCHERS"]
+    }
   ],
 
   "uploadedFileSeparator" : ";",
