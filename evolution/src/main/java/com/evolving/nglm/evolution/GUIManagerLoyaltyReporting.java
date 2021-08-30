@@ -1750,6 +1750,12 @@ public class GUIManagerLoyaltyReporting extends GUIManager
             log.trace("In processGetReportList, adding : " + report);
           }
         JSONObject reportResponse = reportService.generateResponseJSON(report, true, now);
+        Date lastGenerationDate = getReportLastGenerationDate(report, tenantID);
+        if (lastGenerationDate != null)
+          {
+            // reportResponse.put("updatedDate", getDateString(lastGenerationDate));
+            reportResponse.put("createdDate", getDateString(lastGenerationDate, tenantID));
+          }
         reportResponse.put("isRunning", reportService.isReportRunning(((Report)report).getName(), tenantID));
         reports.add(reportResponse);
       }
@@ -1763,6 +1769,59 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     return JSONUtilities.encodeObject(response);
   }
 
+  private Date getReportLastGenerationDate(GUIManagedObject report, int tenantID)
+  {
+    Date res = null;
+    if (report != null)
+      {
+        if (report.getJSONRepresentation() != null)
+          {
+            Object nameObj = report.getJSONRepresentation().get("name");
+            if (nameObj != null && nameObj instanceof String)
+              {
+                String reportName = (String) nameObj;
+                String outputPath = ReportService.getReportOutputPath(tenantID);
+                String fileExtension = Deployment.getReportManagerFileExtension();
+                File folder = new File(outputPath);
+                
+                // String csvFilename = "" + outputPath + File.separator + reportName + "_" + tenantID + "_" + fileSuffix + "." + fileExtension;
+                
+                String csvFilenameRegex = reportName+"_"+tenantID + "_" + ".*"+ "\\."+ fileExtension+ReportUtils.ZIP_EXTENSION;
+                log.debug("For report " + reportName + " looking for files like " + csvFilenameRegex);
+                File[] listOfFiles = folder.listFiles(new FileFilter(){
+                  @Override
+                  public boolean accept(File f) {
+                    return Pattern.compile(csvFilenameRegex).matcher(f.getName()).matches();
+                  }});
+                File reportFile = null;
+                long lastMod = Long.MIN_VALUE;
+                if (listOfFiles == null) {
+                  log.debug("Cannot find report with name " + reportName);
+                } else {
+                  for (File file : listOfFiles) {
+                    if (file.isFile() && file.length() > 0 && file.lastModified() > lastMod) {
+                      reportFile = file;
+                      lastMod = reportFile.lastModified();
+                    }
+                  }
+                  if (reportFile != null) {
+                    log.debug("Found file " + reportFile.getAbsolutePath() + " of length " + reportFile.length());
+                    res = new Date(lastMod);
+                  }
+                }
+              }
+            else
+              {
+                log.info("Error when retrieving report name from " + nameObj + " with " + report.getJSONRepresentation());
+              }
+          }
+        else
+          {
+            log.info("Error when retrieving report name from "+report.getJSONRepresentation());
+          }
+      }
+    return res;
+  }
   /*****************************************
   *
   *  processLaunchReport
