@@ -2683,7 +2683,7 @@ public class EvolutionEngine
                    
                    triggerBadgeWorflow(badgeChangeRequest, context.getSubscriberState(), badge.getAwardedWorkflowID(), badgeChangeRequest.getFeatureID(), badgeChangeRequest.getOrigin());
                  }
-               else if (subscriberBadge.getCustomerBadgeStatus().equals(CustomerBadgeStatus.REMOVED))
+               else if (subscriberBadge.getCustomerBadgeStatus().equals(CustomerBadgeStatus.PENDING))
                  {
                    //
                    //  re award if removed
@@ -2710,7 +2710,7 @@ public class EvolutionEngine
                break;
                
              case REMOVE:
-               if (subscriberBadge == null || subscriberBadge.getCustomerBadgeStatus().equals(CustomerBadgeStatus.REMOVED))
+               if (subscriberBadge == null || subscriberBadge.getCustomerBadgeStatus().equals(CustomerBadgeStatus.PENDING))
                  {
                    badgeChangeResponse.setReturnStatus(RESTAPIGenericReturnCodes.BADGE_NOT_AVAILABLE);
                    log.info("RAJ K BADGE_NOT_AVAILABLE");
@@ -2727,7 +2727,7 @@ public class EvolutionEngine
                    //
                    
                    subscriberBadge.setBadgeObjectiveIDs(badge.getBadgeObjectives().stream().map(badgeObj -> badgeObj.getBadgeObjectiveID()).collect(Collectors.toList()));
-                   subscriberBadge.setCustomerBadgeStatus(CustomerBadgeStatus.REMOVED);
+                   subscriberBadge.setCustomerBadgeStatus(CustomerBadgeStatus.PENDING);
                    subscriberBadge.setBadgeRemoveDate(context.now());
                    badgeChangeResponse.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
                    log.info("RAJ K removed");
@@ -2766,9 +2766,9 @@ public class EvolutionEngine
        for (GUIManagedObject deletedBadge : deletedBadges)
          {
            BadgeState subscriberBadge = subscriberProfile.getBadgeByID(deletedBadge.getGUIManagedObjectID());
-           if (subscriberBadge != null && !subscriberBadge.getCustomerBadgeStatus().equals(CustomerBadgeStatus.REMOVED))
+           if (subscriberBadge != null && !subscriberBadge.getCustomerBadgeStatus().equals(CustomerBadgeStatus.PENDING))
              {
-               subscriberBadge.setCustomerBadgeStatus(CustomerBadgeStatus.REMOVED);
+               subscriberBadge.setCustomerBadgeStatus(CustomerBadgeStatus.PENDING);
                subscriberBadge.setBadgeRemoveDate(context.now());
                result = true;
              }

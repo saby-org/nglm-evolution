@@ -74,7 +74,6 @@ public class Badge extends GUIManagedObject implements GUIManagedObject.ElasticS
   public enum CustomerBadgeStatus
   {
     AWARDED("AWARDED"),
-    REMOVED("REMOVED"),
     PENDING("PENDING"),
     Unknown("(unknown)");
     private String externalRepresentation;
