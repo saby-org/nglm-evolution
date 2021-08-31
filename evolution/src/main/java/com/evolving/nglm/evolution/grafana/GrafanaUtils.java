@@ -176,43 +176,46 @@ public class GrafanaUtils
                     fileNames = reflections.getResources(x -> x.startsWith("grafana-gui"));
 
                     for (String currentFileName : fileNames)
-                      {
-                        try {
-                          // check if the dashboard exists
-                          InputStream is = GrafanaUtils.class.getResourceAsStream("/" + currentFileName);
-                          java.util.Scanner scanner = new java.util.Scanner(is).useDelimiter("\\A");
-                          String s = scanner.hasNext() ? scanner.next() : "";
-                          s = s.replace("tenantID:camptenantID", "tenantID:" + tenantID);
-                          s = s.replace("replaceWithTenantID", "" + tenantID );
-                          scanner.close();
-  
-                          log.info("GrafanaUtils.prepareGrafanaForTenants ===parsing a Dashboard==== " + currentFileName + "\n" + s);
-                          JSONObject fullDashbaordDef = (JSONObject) (new JSONParser()).parse(s);
-                          JSONObject dashbaordDef = (JSONObject) fullDashbaordDef.get("dashboard");
-                          String expectedTitle = (String) dashbaordDef.get("title");
-                          
-                          log.info("The dashboard under-study is: =" + expectedTitle + "=");
-                          if (exisitingDashBoards.containsKey(expectedTitle))
-                          {
-                            log.info("GrafanaUtils.prepareGrafanaForTenants: Dashboard " + expectedTitle + " already exists for orgID " + orgID + " for dashboard file name " + currentFileName + " and it'll be overwritten.");
-                          }
-                              // Overwrite / create the dashboard
-                              Pair<String, Integer> db = createGrafanaDashBoardForOrg(orgID, fullDashbaordDef);
-                              if (db != null && db.getFirstElement() != null && db.getSecondElement() != null)
-                                {
-                                  log.info("GrafanaUtils.prepareGrafanaForTenants: Dashboard " + db.getFirstElement() + " " + db.getSecondElement() + " is well created");
-                                }
-                              else
-                                {
-                                  log.warn("GrafanaUtils.prepareGrafanaForTenants: Problem while creating Dashboard " + db.getFirstElement() + " for orgID " + orgID + " for dashboard file name " + currentFileName);
-                                }
-                        }
-                        catch(Exception e)
+                    {
+                      try {
+                        // check if the dashboard exists
+                        InputStream is = GrafanaUtils.class.getResourceAsStream("/" + currentFileName);
+                        java.util.Scanner scanner = new java.util.Scanner(is).useDelimiter("\\A");
+                        String s = scanner.hasNext() ? scanner.next() : "";
+                        s = s.replace("tenantID:camptenantID", "tenantID:" + tenantID);
+                        s = s.replace("replaceWithTenantID", "" + tenantID );
+                        scanner.close();
+
+                        log.info("GrafanaUtils.prepareGrafanaForTenants ===parsing a Dashboard==== " + currentFileName + "\n" + s);
+                        JSONObject fullDashbaordDef = (JSONObject) (new JSONParser()).parse(s);
+                        JSONObject dashbaordDef = (JSONObject) fullDashbaordDef.get("dashboard");
+                        String expectedTitle = (String) dashbaordDef.get("title");
+
+                        log.info("The dashboard under-study is: " + expectedTitle);
+                        if (exisitingDashBoards.containsKey(expectedTitle))
                         {
-                          log.warn("Exception " + e.getClass().getName() + " while creating dasboard from file " + currentFileName + " for tenant " + tenantID, e);
+                          log.info("GrafanaUtils.prepareGrafanaForTenants: Dashboard " + expectedTitle + " already exists for orgID " + orgID + " for dashboard file name " + currentFileName + " and it'll be overwritten.");
                         }
-                        
+                        else {
+                          log.info("GrafanaUtils.prepareGrafanaForTenants: Dashboard " + expectedTitle + " doesn't exist for orgID " + orgID + " for dashboard file name " + currentFileName + " and it'll be created.");
+                        }
+                        // Overwrite / create the dashboard
+                        Pair<String, Integer> db = createGrafanaDashBoardForOrg(orgID, fullDashbaordDef);
+                        if (db != null && db.getFirstElement() != null && db.getSecondElement() != null)
+                        {
+                          log.info("GrafanaUtils.prepareGrafanaForTenants: Dashboard " + db.getFirstElement() + " " + db.getSecondElement() + " is well loaded");
+                        }
+                        else
+                        {
+                          log.warn("GrafanaUtils.prepareGrafanaForTenants: Problem while loading Dashboard " + db.getFirstElement() + " for orgID " + orgID + " for dashboard file name " + currentFileName);
+                        }
                       }
+                      catch(Exception e)
+                      {
+                        log.warn("Exception " + e.getClass().getName() + " while loading dasboard from file " + currentFileName + " for tenant " + tenantID, e);
+                      }
+
+                    }
                   }
                 else
                   {
@@ -438,11 +441,11 @@ public class GrafanaUtils
     HttpResponse response = sendGrafanaCurl(dbDefinition, "/api/dashboards/db", "POST");
     
     if (response == null) {
-      log.warn("GrafanaUtils.prepareGrafanaForTenants: Could not get a non null response while creating dashboard " + dbDefinition.get("title") + " for organisation "  + orgID);
+      log.warn("GrafanaUtils.prepareGrafanaForTenants: Could not get a non null response while loading dashboard " + dbDefinition.get("title") + " for organisation "  + orgID);
       return null;
     }
     if (response.getStatusLine().getStatusCode() != 200) {
-      log.warn("GrafanaUtils.prepareGrafanaForTenants: Problem while creating dashboard " + dbDefinition.get("title") + " for organisation orgID, " + orgID + " error code " + response.getStatusLine().getStatusCode() + " response message " + response.getStatusLine().getReasonPhrase());
+      log.warn("GrafanaUtils.prepareGrafanaForTenants: Problem while loading dashboard " + dbDefinition.get("title") + " for organisation orgID, " + orgID + " error code " + response.getStatusLine().getStatusCode() + " response message " + response.getStatusLine().getReasonPhrase());
       return null;
     }
     
@@ -454,7 +457,7 @@ public class GrafanaUtils
       return new Pair<String, Integer>(title, id != null ? (int)id.longValue() : null);
     }
     catch(Exception e) {
-      log.warn("GrafanaUtils.prepareGrafanaForTenants: Exception " + e.getClass().getName() + " while creating dashboard " + dbDefinition.get("title") + " for organisation orgID " + orgID, e);
+      log.warn("GrafanaUtils.prepareGrafanaForTenants: Exception " + e.getClass().getName() + " while loading dashboard " + dbDefinition.get("title") + " for organisation orgID " + orgID, e);
       return null;
     }
   }
