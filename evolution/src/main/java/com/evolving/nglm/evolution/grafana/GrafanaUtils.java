@@ -190,19 +190,22 @@ public class GrafanaUtils
                           JSONObject fullDashbaordDef = (JSONObject) (new JSONParser()).parse(s);
                           JSONObject dashbaordDef = (JSONObject) fullDashbaordDef.get("dashboard");
                           String expectedTitle = (String) dashbaordDef.get("title");
-                          if (!exisitingDashBoards.containsKey(expectedTitle))
-                            {
-                              // create the dashboard
+                          
+                          log.info("The dashboard under-study is: =" + expectedTitle + "=");
+                          if (exisitingDashBoards.containsKey(expectedTitle))
+                          {
+                            log.info("GrafanaUtils.prepareGrafanaForTenants: Dashboard " + expectedTitle + " already exists for orgID " + orgID + " for dashboard file name " + currentFileName + " and it'll be overwritten.");
+                          }
+                              // Overwrite / create the dashboard
                               Pair<String, Integer> db = createGrafanaDashBoardForOrg(orgID, fullDashbaordDef);
                               if (db != null && db.getFirstElement() != null && db.getSecondElement() != null)
                                 {
-                                  log.info("GrafanaUtils.prepareGrafanaForTenants Dashboard " + db.getFirstElement() + " " + db.getSecondElement() + " well created");
+                                  log.info("GrafanaUtils.prepareGrafanaForTenants: Dashboard " + db.getFirstElement() + " " + db.getSecondElement() + " is well created");
                                 }
                               else
                                 {
-                                  log.warn("GrafanaUtils.prepareGrafanaForTenants Problem while creating Dashboard " + db + " for orgID " + orgID + " for dashboard file name " + currentFileName);
+                                  log.warn("GrafanaUtils.prepareGrafanaForTenants: Problem while creating Dashboard " + db.getFirstElement() + " for orgID " + orgID + " for dashboard file name " + currentFileName);
                                 }
-                            }
                         }
                         catch(Exception e)
                         {
@@ -213,7 +216,7 @@ public class GrafanaUtils
                   }
                 else
                   {
-                    log.warn("GrafanaUtils.prepareGrafanaForTenants Can't switch to org " + orgID);
+                    log.warn("GrafanaUtils.prepareGrafanaForTenants: Can't switch to org " + orgID);
                     return false;
                   }
               }
@@ -278,7 +281,7 @@ public class GrafanaUtils
     HttpResponse response = sendGrafanaCurl(null, "/api/orgs", "GET");
 
     if (response == null) {
-      log.warn("GrafanaUtils.prepareGrafanaForTenants Could not get a non null response of grafana orgs, maybe grafana is not fully started yet");
+      log.warn("GrafanaUtils.prepareGrafanaForTenants: Could not get a non null response of grafana orgs, maybe grafana is not fully started yet");
       try {
         Thread.sleep(10000);
       } catch (InterruptedException e) {
@@ -287,7 +290,7 @@ public class GrafanaUtils
       return null;
     }
     if (response.getStatusLine().getStatusCode() != 200) {
-      log.warn("GrafanaUtils.prepareGrafanaForTenants Could not get list of grafana orgs, error code " + response.getStatusLine().getStatusCode()+ " response message " + response.getStatusLine().getReasonPhrase());
+      log.warn("GrafanaUtils.prepareGrafanaForTenants: Could not get list of grafana orgs, error code " + response.getStatusLine().getStatusCode()+ " response message " + response.getStatusLine().getReasonPhrase());
       try {
         Thread.sleep(10000);
       } catch (InterruptedException e) {
@@ -312,7 +315,7 @@ public class GrafanaUtils
       return existingOrgs;
     }
     catch(Exception e) {
-      log.warn("GrafanaUtils.prepareGrafanaForTenants Exception " + e.getClass().getName() + " while getting all grafana orgs", e);
+      log.warn("GrafanaUtils.prepareGrafanaForTenants: Exception " + e.getClass().getName() + " while getting all grafana orgs", e);
       return null;
     }
   }
@@ -324,7 +327,7 @@ public class GrafanaUtils
     HttpResponse response = sendGrafanaCurl(orgDef, "/api/orgs", "POST");
 
     if (response == null) {
-      log.warn("GrafanaUtils.prepareGrafanaForTenants Could not get a non null response of grafana orgs creation ");
+      log.warn("GrafanaUtils.prepareGrafanaForTenants: Could not get a non null response of grafana orgs creation ");
       try {
         Thread.sleep(10000);
       } catch (InterruptedException e) {
@@ -333,7 +336,7 @@ public class GrafanaUtils
       return null;
     }
     if (response.getStatusLine().getStatusCode() != 200) {
-      log.warn("GrafanaUtils.prepareGrafanaForTenants Could not get list of grafana orgs creation, error code " + response.getStatusLine().getStatusCode()+ " response message " + response.getStatusLine().getReasonPhrase());
+      log.warn("GrafanaUtils.prepareGrafanaForTenants: Could not get list of grafana orgs creation, error code " + response.getStatusLine().getStatusCode()+ " response message " + response.getStatusLine().getReasonPhrase());
       try {
         Thread.sleep(10000);
       } catch (InterruptedException e) {
@@ -358,7 +361,7 @@ public class GrafanaUtils
         }
       }
     catch(Exception e) {
-      log.warn("GrafanaUtils.prepareGrafanaForTenants Exception " + e.getClass().getName() + " while creating grafana orgs " + orgName, e);
+      log.warn("GrafanaUtils.prepareGrafanaForTenants: Exception " + e.getClass().getName() + " while creating grafana orgs " + orgName, e);
       return null;
     }
   }
@@ -369,11 +372,11 @@ public class GrafanaUtils
     HttpResponse response = sendGrafanaCurl(null, "/api/user/using/" + orgID, "POST");
     
     if (response == null) {
-      log.warn("GrafanaUtils.prepareGrafanaForTenants Could not get a non null response of grafana orgs switch " + orgID);
+      log.warn("GrafanaUtils.prepareGrafanaForTenants: Could not get a non null response of grafana orgs switch " + orgID);
       return false;
     }
     if (response.getStatusLine().getStatusCode() != 200) {
-      log.warn("GrafanaUtils.prepareGrafanaForTenants Could not switch to grafana org " + orgID + ", error code " + response.getStatusLine().getStatusCode()+ " response message " + response.getStatusLine().getReasonPhrase());
+      log.warn("GrafanaUtils.prepareGrafanaForTenants: Could not switch to grafana org " + orgID + ", error code " + response.getStatusLine().getStatusCode()+ " response message " + response.getStatusLine().getReasonPhrase());
       return false;
     }
     
@@ -387,12 +390,12 @@ public class GrafanaUtils
         }
       else 
         {
-          log.warn("GrafanaUtils.prepareGrafanaForTenants Wrong message while switching org " + orgID + " " + responseJson.get("message"));
+          log.warn("GrafanaUtils.prepareGrafanaForTenants: Wrong message while switching org " + orgID + " " + responseJson.get("message"));
           return false;
         }
     }
     catch(Exception e) {
-      log.warn("GrafanaUtils.prepareGrafanaForTenants Exception " + e.getClass().getName() + " while switching to grafana orgs " + orgID, e);
+      log.warn("GrafanaUtils.prepareGrafanaForTenants: Exception " + e.getClass().getName() + " while switching to grafana orgs " + orgID, e);
       return false;
     }
   }
@@ -401,11 +404,11 @@ public class GrafanaUtils
   {
     HttpResponse response = sendGrafanaCurl(null, "/api/search", "GET");
     if (response == null) {
-      log.warn("GrafanaUtils.prepareGrafanaForTenants Could not get a non null response when getting list of dashboard for orgID " + orgID);
+      log.warn("GrafanaUtils.prepareGrafanaForTenants: Could not get a non null response when getting list of dashboard for orgID " + orgID);
       return null;
     }
     if (response.getStatusLine().getStatusCode() != 200) {
-      log.warn("GrafanaUtils.prepareGrafanaForTenants Could not get list of dashboards for org " + orgID + ", error code " + response.getStatusLine().getStatusCode()+ " response message " + response.getStatusLine().getReasonPhrase());
+      log.warn("GrafanaUtils.prepareGrafanaForTenants: Could not get list of dashboards for org " + orgID + ", error code " + response.getStatusLine().getStatusCode()+ " response message " + response.getStatusLine().getReasonPhrase());
       return null;
     }
     
@@ -425,7 +428,7 @@ public class GrafanaUtils
       return existingDashboard;
     }
     catch(Exception e) {
-      log.warn("GrafanaUtils.prepareGrafanaForTenants Exception " + e.getClass().getName() + " while getting all grafana dashboard for orgs " + orgID, e);
+      log.warn("GrafanaUtils.prepareGrafanaForTenants: Exception " + e.getClass().getName() + " while getting all grafana dashboard for orgs " + orgID, e);
       return null;
     }
   }
@@ -435,11 +438,11 @@ public class GrafanaUtils
     HttpResponse response = sendGrafanaCurl(dbDefinition, "/api/dashboards/db", "POST");
     
     if (response == null) {
-      log.warn("GrafanaUtils.prepareGrafanaForTenants Could not get a non null response while creating dashboard " + dbDefinition.get("title") + " for organisation "  + orgID);
+      log.warn("GrafanaUtils.prepareGrafanaForTenants: Could not get a non null response while creating dashboard " + dbDefinition.get("title") + " for organisation "  + orgID);
       return null;
     }
     if (response.getStatusLine().getStatusCode() != 200) {
-      log.warn("GrafanaUtils.prepareGrafanaForTenants Could not while creating dashboard " + dbDefinition.get("title") + " for organisation orgID, error code " + response.getStatusLine().getStatusCode() + " response message " + response.getStatusLine().getReasonPhrase());
+      log.warn("GrafanaUtils.prepareGrafanaForTenants: Problem while creating dashboard " + dbDefinition.get("title") + " for organisation orgID, " + orgID + " error code " + response.getStatusLine().getStatusCode() + " response message " + response.getStatusLine().getReasonPhrase());
       return null;
     }
     
@@ -451,7 +454,7 @@ public class GrafanaUtils
       return new Pair<String, Integer>(title, id != null ? (int)id.longValue() : null);
     }
     catch(Exception e) {
-      log.warn("GrafanaUtils.prepareGrafanaForTenants Exception " + e.getClass().getName() + " while creating dashboard " + dbDefinition.get("title") + " for organisation orgID " + orgID, e);
+      log.warn("GrafanaUtils.prepareGrafanaForTenants: Exception " + e.getClass().getName() + " while creating dashboard " + dbDefinition.get("title") + " for organisation orgID " + orgID, e);
       return null;
     }
   }
@@ -461,11 +464,11 @@ public class GrafanaUtils
   {
     HttpResponse response = sendGrafanaCurl(null, "/api/datasources", "GET");
     if (response == null) {
-      log.warn("GrafanaUtils.prepareGrafanaForTenants Could not get a non null response when getting list of datasources for orgID " + orgID);
+      log.warn("GrafanaUtils.prepareGrafanaForTenants: Could not get a non null response when getting list of datasources for orgID " + orgID);
       return null;
     }
     if (response.getStatusLine().getStatusCode() != 200) {
-      log.warn("GrafanaUtils.prepareGrafanaForTenants Could not get list of datasources for org " + orgID + ", error code " + response.getStatusLine().getStatusCode());
+      log.warn("GrafanaUtils.prepareGrafanaForTenants: Could not get list of datasources for org " + orgID + ", error code " + response.getStatusLine().getStatusCode());
       return null;
     }
     
@@ -485,7 +488,7 @@ public class GrafanaUtils
       return existingDatasources;
     }
     catch(Exception e) {
-      log.warn("GrafanaUtils.prepareGrafanaForTenants Exception " + e.getClass().getName() + " while getting all grafana datasource for orgs " + orgID, e);
+      log.warn("GrafanaUtils.prepareGrafanaForTenants: Exception " + e.getClass().getName() + " while getting all grafana datasource for orgs " + orgID, e);
       return null;
     }
   }
@@ -495,11 +498,11 @@ public class GrafanaUtils
     HttpResponse response = sendGrafanaCurl(dsDefinition, "/api/datasources", "POST");
     
     if (response == null) {
-      log.warn("GrafanaUtils.prepareGrafanaForTenants Could not get a non null response while creating datasource " + dsDefinition.get("title") + " for organisation "  + orgID);
+      log.warn("GrafanaUtils.prepareGrafanaForTenants: Could not get a non null response while creating datasource " + dsDefinition.get("title") + " for organisation "  + orgID);
       return null;
     }
     if (response.getStatusLine().getStatusCode() != 200) {
-      log.warn("GrafanaUtils.prepareGrafanaForTenants Could not while creating datasource " + dsDefinition.get("title") + " for organisation orgID, error code " + response.getStatusLine().getStatusCode()+ " response message " + response.getStatusLine().getReasonPhrase());
+      log.warn("GrafanaUtils.prepareGrafanaForTenants: Problem while creating datasource " + dsDefinition.get("title") + " for organisation orgID, " + orgID + " error code " + response.getStatusLine().getStatusCode()+ " response message " + response.getStatusLine().getReasonPhrase());
       return null;
     }
     
@@ -511,7 +514,7 @@ public class GrafanaUtils
       return new Pair<String, Integer>(name, id != null ? (int)id.longValue() : null);
     }
     catch(Exception e) {
-      log.warn("GrafanaUtils.prepareGrafanaForTenants Exception " + e.getClass().getName() + " while creating datasource " + dsDefinition.get("title") + " for organisation orgID " + orgID, e);
+      log.warn("GrafanaUtils.prepareGrafanaForTenants: Exception " + e.getClass().getName() + " while creating datasource " + dsDefinition.get("title") + " for organisation orgID " + orgID, e);
       return null;
     }
   }
