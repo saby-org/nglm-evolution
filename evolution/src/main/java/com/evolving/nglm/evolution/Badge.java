@@ -52,7 +52,7 @@ public class Badge extends GUIManagedObject implements GUIManagedObject.ElasticS
   {
     PERMANENT("PERMANENT"),
     STATUS("STATUS"),
-    COLLECTIBLE("COLLECTIBLE"),
+    //COLLECTIBLE("COLLECTIBLE"), (TO BE IMPLEMENTED LATER)
     Unknown("(unknown)");
     private String externalRepresentation;
     private BadgeType(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
