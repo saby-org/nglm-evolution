@@ -54,8 +54,7 @@ public class JourneyCustomerStatisticsReportMultithread implements ReportCsvFact
     headerFieldsOrder.add(customerID);
     for (AlternateID alternateID : Deployment.getAlternateIDs().values())
     {
-      if(alternateID.getName().equals("msisdn")) {
-      headerFieldsOrder.add(alternateID.getName());}
+      headerFieldsOrder.add(alternateID.getName());
     }
     headerFieldsOrder.add(journeyID);
     headerFieldsOrder.add(journeyName);
@@ -106,13 +105,17 @@ public class JourneyCustomerStatisticsReportMultithread implements ReportCsvFact
             journeyInfo.put(customerID, subscriberIDField);
           }
         for (AlternateID alternateID : DeploymentCommon.getAlternateIDs().values())
+        {
+          if (journeyStats.get(alternateID.getID()) != null)
           {
-            if (journeyStats.get(alternateID.getID()) != null)
-              {
-                Object alternateId = journeyStats.get(alternateID.getID());
-                journeyInfo.put(alternateID.getID(), alternateId);
-              }
+            Object alternateId = journeyStats.get(alternateID.getID());
+            journeyInfo.put(alternateID.getID(), alternateId);
           }
+          else
+          {
+            journeyInfo.put(alternateID.getName(), "");
+          }
+        }
         journeyInfo.put(journeyID, journey.getJourneyID());
         journeyInfo.put(journeyName, journey.getGUIManagedObjectDisplay());
         journeyInfo.put(journeyType, journey.getTargetingType());
