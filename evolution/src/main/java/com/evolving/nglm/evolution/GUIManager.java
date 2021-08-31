@@ -1441,8 +1441,10 @@ public class GUIManager
           JSONArray initialReportsJSONArray = Deployment.getDeployment(tenantID).getInitialReportsJSONArray();
           for (int i=0; i<initialReportsJSONArray.size(); i++)
             {
-              JSONObject reportJSON = (JSONObject) initialReportsJSONArray.get(i);
-              reportJSON.remove("id"); // might have been added by processPutReport for another tenant, but need to use differentIDs for every tenant
+              JSONObject reportJSONorig = (JSONObject) initialReportsJSONArray.get(i);
+              // duplicate object so that it is not modified
+              JSONObject reportJSON = new JSONObject();
+              reportJSON.putAll(reportJSONorig);
               String name = JSONUtilities.decodeString(reportJSON, "display", false);
               boolean create = true;
               if (name != null)
@@ -1461,6 +1463,7 @@ public class GUIManager
               if (create)
               {
                 log.info("processPutReport in tenant " + tenantID + " for " + JSONUtilities.decodeString(reportJSON, "id", false) + " " + JSONUtilities.decodeString(reportJSON, "display", false));
+                reportJSON.put("tenantID", tenantID); // this info is missing in deployment.json
                 guiManagerLoyaltyReporting.processPutReport("0", reportJSON, tenantID);
               }
             }

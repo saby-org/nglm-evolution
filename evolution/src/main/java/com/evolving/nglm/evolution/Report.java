@@ -388,22 +388,21 @@ public class Report extends GUIManagedObject
   @Override
   public String toString() {
     return "Report ["
-        + (getReportID() != null ? "getReportID()=" + getReportID() + ", " : "")
-        + (getName() != null ? "getName()=" + getName() + ", " : "")
-        + (getReportClass() != null ? "getReportClass()=" + getReportClass() + ", " : "")
+        + (getReportID() != null ? "reportID=" + getReportID() + ", " : "")
+        + (getName() != null ? "name=" + getName() + ", " : "")
+        + (getReportClass() != null ? "reportClass=" + getReportClass() + ", " : "")
+        + "tenantID=" + getTenantID() + ", "
         + (getJobIDs() != null ? "getJobIDs()=" + getJobIDs() + ", " : "")
-        + (getDefaultReportPeriodUnit() != null ? "getDefaultReportPeriodUnit()=" + getDefaultReportPeriodUnit() + ", " : "")
-        + (getDefaultReportPeriodQuantity() != 0 ? "getDefaultReportPeriodQuantity()=" + getDefaultReportPeriodQuantity() + ", " : "")
-        + (getReportClass() != null ? "getReportClass()=" + getReportClass() + ", " : "")
         + (effectiveScheduling != null ? "effectiveScheduling=" + effectiveScheduling + ", " : "")
         + (availableScheduling != null ? "availableScheduling=" + availableScheduling + ", " : "")
-        + (getGUIManagedObjectID() != null ? "getGUIManagedObjectID()=" + getGUIManagedObjectID() + ", " : "")
-        + (getJSONRepresentation() != null ? "getJSONRepresentation()=" + getJSONRepresentation() + ", " : "")
+        + (getJSONRepresentation() != null ? "JSONRepresentation()=" + getJSONRepresentation() + ", " : "")
         + "getEpoch()=" + getEpoch() + ", "
         + (getEffectiveStartDate() != null ? "getEffectiveStartDate()="+ getEffectiveStartDate() + ", " : "")
         + (getEffectiveEndDate() != null ? "getEffectiveEndDate()=" + getEffectiveEndDate() + ", " : "")
+        + (getDefaultReportPeriodUnit() != null ? "getDefaultReportPeriodUnit()=" + getDefaultReportPeriodUnit() + ", " : "")
+        + (getDefaultReportPeriodQuantity() != 0 ? "getDefaultReportPeriodQuantity()=" + getDefaultReportPeriodQuantity() + ", " : "")
         + "getActive()=" + getActive() + ", getAccepted()=" + getAccepted() + "]";
-  }
+    }
   
   public int getMissingReportArearCount()
   {
