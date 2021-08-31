@@ -109,6 +109,7 @@ public class Badge extends GUIManagedObject implements GUIManagedObject.ElasticS
     schemaBuilder.field("awardedWorkflowID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("removeWorkflowID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("profileCriteria", SchemaBuilder.array(EvaluationCriterion.schema()).schema());
+    schemaBuilder.field("badgeCharacteristics", BadgeCharacteristics.schema());
     schema = schemaBuilder.build();
   };
   
@@ -139,6 +140,7 @@ public class Badge extends GUIManagedObject implements GUIManagedObject.ElasticS
   private String awardedWorkflowID;
   private String removeWorkflowID;
   private List<EvaluationCriterion> profileCriteria;
+  private BadgeCharacteristics badgeCharacteristics;
   private String badgeTypeExternal;
 
   /****************************************
@@ -181,6 +183,11 @@ public class Badge extends GUIManagedObject implements GUIManagedObject.ElasticS
   {
     return profileCriteria;
   }
+  public BadgeCharacteristics getBadgeCharacteristics()
+  {
+    return badgeCharacteristics;
+  }
+  
   public BadgeType getBadgeType()
   {
     return BadgeType.fromExternalRepresentation(badgeTypeExternal);
@@ -361,6 +368,7 @@ public class Badge extends GUIManagedObject implements GUIManagedObject.ElasticS
     struct.put("awardedWorkflowID", badge.getAwardedWorkflowID());
     struct.put("removeWorkflowID", badge.getRemoveWorkflowID());
     struct.put("profileCriteria", packProfileCriteria(badge.getProfileCriteria()));
+    struct.put("badgeCharacteristics", BadgeCharacteristics.pack(badge.getBadgeCharacteristics()));
     return struct;
   }
   
@@ -370,7 +378,7 @@ public class Badge extends GUIManagedObject implements GUIManagedObject.ElasticS
   *
   *****************************************/
 
-  public Badge(SchemaAndValue schemaAndValue, Set<BadgeObjectiveInstance> badgeObjectives, Set<BadgeTranslation> badgeTranslations, String description, String badgeTypeExternal, String pendingImageURL, String awardedImageURL, String awardedWorkflowID, String removeWorkflowID, List<EvaluationCriterion> profileCriteria)
+  public Badge(SchemaAndValue schemaAndValue, Set<BadgeObjectiveInstance> badgeObjectives, Set<BadgeTranslation> badgeTranslations, String description, String badgeTypeExternal, String pendingImageURL, String awardedImageURL, String awardedWorkflowID, String removeWorkflowID, List<EvaluationCriterion> profileCriteria, BadgeCharacteristics badgeCharacteristics)
   {
     super(schemaAndValue);
     this.badgeObjectives = badgeObjectives;
@@ -382,6 +390,7 @@ public class Badge extends GUIManagedObject implements GUIManagedObject.ElasticS
     this.awardedWorkflowID = awardedWorkflowID;
     this.removeWorkflowID = removeWorkflowID;
     this.profileCriteria = profileCriteria;
+    this.badgeCharacteristics = badgeCharacteristics;
   }
   
   /*****************************************
@@ -414,12 +423,13 @@ public class Badge extends GUIManagedObject implements GUIManagedObject.ElasticS
     String awardedWorkflowID = valueStruct.getString("awardedWorkflowID");
     String removeWorkflowID = valueStruct.getString("removeWorkflowID");
     List<EvaluationCriterion> profileCriteria = unpackProfileCriteria(schema.field("profileCriteria").schema(), valueStruct.get("profileCriteria"));
+    BadgeCharacteristics badgeCharacteristics = BadgeCharacteristics.unpack(new SchemaAndValue(schema.field("badgeCharacteristics").schema(), valueStruct.get("badgeCharacteristics")));
     
     //
     //  return
     //
 
-    return new Badge(schemaAndValue, badgeObjectives, badgeTranslations, description, badgeTypeExternal, pendingImageURL, awardedImageURL, awardedWorkflowID, removeWorkflowID, profileCriteria);
+    return new Badge(schemaAndValue, badgeObjectives, badgeTranslations, description, badgeTypeExternal, pendingImageURL, awardedImageURL, awardedWorkflowID, removeWorkflowID, profileCriteria, badgeCharacteristics);
   }
 
   /*****************************************
@@ -461,6 +471,7 @@ public class Badge extends GUIManagedObject implements GUIManagedObject.ElasticS
     this.removeWorkflowID = JSONUtilities.decodeString(jsonRoot, "removeWorkflowID", false);
     this.badgeTranslations = decodeBadgeTranslations(JSONUtilities.decodeJSONArray(jsonRoot, "translations", false));
     this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", true), tenantID);
+    this.badgeCharacteristics = new BadgeCharacteristics(JSONUtilities.decodeJSONObject(jsonRoot, "badgeCharacteristics", false), catalogCharacteristicService);
     
     /*****************************************
     *
@@ -549,6 +560,7 @@ public class Badge extends GUIManagedObject implements GUIManagedObject.ElasticS
         epochChanged = epochChanged || ! Objects.equals(awardedWorkflowID, existingBadge.getAwardedWorkflowID());
         epochChanged = epochChanged || ! Objects.equals(removeWorkflowID, existingBadge.getRemoveWorkflowID());
         epochChanged = epochChanged || ! Objects.equals(profileCriteria, existingBadge.getProfileCriteria());
+        epochChanged = epochChanged || ! Objects.equals(badgeCharacteristics, existingBadge.getBadgeCharacteristics());
         return epochChanged;
       }
     else
