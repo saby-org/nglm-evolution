@@ -32,6 +32,12 @@ public class DatacubeUtils
     filters.put("returnCode", RESTAPIGenericReturnCodes.fromGenericResponseCode(returnCodeInt).getGenericResponseMessage());
   }
 
+  public static void embelishTokenChangeReturnCode(Map<String, Object> filters)
+  {
+    String returnCode = (String) filters.remove("returnCode");
+    filters.put("returnCode", RESTAPIGenericReturnCodes.fromGenericResponseMessage(returnCode).getGenericResponseMessage());
+  }
+
   public static void embelishFeature(Map<String, Object> filters, String moduleID, ModulesMap modulesMap, LoyaltyProgramsMap loyaltyProgramsMap, DeliverablesMap deliverablesMap, OffersMap offersMap, JourneysMap journeysMap)
   {
     String featureID = (String) filters.remove("featureID");

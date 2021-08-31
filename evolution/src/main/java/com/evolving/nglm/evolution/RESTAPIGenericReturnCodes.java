@@ -119,8 +119,15 @@ public enum RESTAPIGenericReturnCodes
   BLOCKED_BY_CHANNEL_QUOTA(714, "BLOCKED_BY_CHANNEL_QUOTA", "Message is blocked due to channel quota"),
 //  RESET_YOUR_PASSWORD(999,"RESET_YOUR_PASSWORD","Reset Your Password"),
   NO_MESSAGE_TEMPLATE_FOR_AREA_AVAILABILITY(800, "NO_MESSAGE_TEMPLATE_FOR_AREA_AVAILABILITY", "no message template has been found for requested area availability"),
-  UNKNOWN(-1, "UNKNOWN", "UNKNOWN");
-  
+  UNKNOWN(-1, "UNKNOWN", "UNKNOWN"),
+  //for tokenchange
+  OK(801,"OK","OK"),
+  NO_OFFERS_PRESENTED(802,"no offers presented","no offers presented"),
+  ALREADY_REDEEMED(803,"already redeemed","already redeemed"),
+  UNABLE_TO_GENERATE_A_NEW_TOKEN_CODE(804,"unable to generate a new token code","unable to generate a new token code"),
+  TOKENCHANGE_NO_TOKENS_RETURNED(805,"no tokens returned","no tokens returned"),
+  TOKEN_ALREADY_IN_REDEEMED_STATE(806,"Token already in redeemed state","Token already in redeemed state");
+
   private int genericResponseCode;
   private String genericResponseMessage;
   private String genericDescription;

@@ -80,7 +80,6 @@ public class TDRDatacubeGenerator extends SimpleDatacubeGenerator
     this.loyaltyProgramsMap = new LoyaltyProgramsMap(loyaltyProgramService);
     this.deliverablesMap = new DeliverablesMap();
     this.journeysMap = new JourneysMap(journeyService);
-    
     //
     // Filter fields
     //
@@ -91,7 +90,7 @@ public class TDRDatacubeGenerator extends SimpleDatacubeGenerator
     this.filterFields.add("origin");
     this.filterFields.add("returnCode");
     this.filterFields.add("action");
-    this.filterFields.add("acceptedOffer");
+    this.filterFields.add("acceptedOfferID");
 
   }
   
@@ -167,9 +166,12 @@ public class TDRDatacubeGenerator extends SimpleDatacubeGenerator
     String moduleID = (String) filters.remove("moduleID");
     filters.put("module", modulesMap.getDisplay(moduleID, "module"));
 
-    DatacubeUtils.embelishFeature(filters, moduleID, modulesMap, loyaltyProgramsMap, deliverablesMap, offersMap, journeysMap);
+    String acceptedOfferID =  (String) filters.remove("acceptedOfferID");
+    filters.put("acceptedOffer",offersMap.getDisplay(acceptedOfferID,"acceptedOffer"));
     
-    DatacubeUtils.embelishReturnCode(filters);
+    DatacubeUtils.embelishFeature(filters, moduleID, modulesMap, loyaltyProgramsMap, deliverablesMap, offersMap, journeysMap);
+
+    DatacubeUtils.embelishTokenChangeReturnCode(filters);
     
     // Specials for timestamp (will not be display in filter but extracted later in DatacubeGenerator)
     if(this.hourlyMode) {
