@@ -28935,7 +28935,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
   *
   *****************************************/
   @Deprecated // TODO EVPRO-99 TO BE REMOVED
-  private String getDateString(Date date, int tenantID)
+  public String getDateString(Date date, int tenantID)
   {
     String result = null;
     if (date == null) return result;
