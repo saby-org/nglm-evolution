@@ -1,5 +1,9 @@
 FROM confluentinc/cp-kafka:${confluent.version}
 
+USER root
+
+RUN yum install -y perl
+
 #
 #  permissions
 #

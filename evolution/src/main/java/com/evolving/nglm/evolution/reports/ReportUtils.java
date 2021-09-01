@@ -37,16 +37,12 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-import org.I0Itec.zkclient.ZkClient;
-import org.I0Itec.zkclient.ZkConnection;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
-import org.apache.kafka.clients.admin.CreateTopicsResult;
 import org.apache.kafka.clients.admin.DeleteTopicsResult;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.KafkaFuture;
-import org.apache.kafka.common.errors.TopicExistsException;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
@@ -60,14 +56,6 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.EvolutionSetup;
 import com.evolving.nglm.core.JSONUtilities;
-
-import kafka.admin.AdminUtils;
-import kafka.admin.RackAwareMode;
-import kafka.utils.ZKStringSerializer$;
-import kafka.utils.ZkUtils;
-import scala.Option;
-import scala.collection.Iterator;
-import scala.collection.Set;
 
 /**
  * This class defines constants and utility functions than can be used in custom reports.

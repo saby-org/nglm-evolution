@@ -5,7 +5,7 @@ FROM evolving/ev-e4o-flyway:${flyway.version} as original
 FROM evolving/ev-gui.sqlscripts:${flyway.gui.version} as guioriginal
 
 # Main upgrade image
-FROM confluentinc/cp-zookeeper:${confluent.version}
+FROM confluentinc/cp-zookeeper:5.3.1
 
 RUN apt-get update; exit 0
 
