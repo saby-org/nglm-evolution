@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.Map.Entry;
 import java.util.zip.ZipOutputStream;
 
 public class VDRReportMonoPhase implements ReportCsvFactory
@@ -119,6 +120,43 @@ public class VDRReportMonoPhase implements ReportCsvFactory
       }
   }
 
+  /****************************************
+  *
+  * dumpElementToCsv
+  *
+  ****************************************/
+ public boolean dumpElementToCsvMono(Map<String,Object> map, ZipOutputStream writer, boolean addHeaders) throws IOException
+ {
+   Map<String, List<Map<String, Object>>> mapLocal = getSplittedReportElementsForFileMono(map);  
+   if(mapLocal.size() != 1) {
+     log.debug("We have multiple dates in the same index " + mapLocal.size());
+   } else {
+     if(mapLocal.values().size() != 1) {
+       log.debug("We have multiple values for this date " + mapLocal.values().size());
+     }
+     else {
+       Set<Entry<String, List<Map<String, Object>>>> setLocal = mapLocal.entrySet();
+       if(setLocal.size() != 1) {
+         log.debug("We have multiple dates in this report " + setLocal.size());
+       } else {
+         for (Entry<String, List<Map<String, Object>>> entry : setLocal) {
+           List<Map<String, Object>> list = entry.getValue();
+
+           if(list.size() != 1) {
+             log.debug("We have multiple reports in this folder " + list.size());
+           } else {
+             Map<String, Object> reportMap = list.get(0);
+             dumpLineToCsv(reportMap, writer, addHeaders);
+             return false;
+           }
+         }
+       }
+     }
+   }
+   return true;
+ }
+
+ 
   public Map<String, List<Map<String, Object>>> getSplittedReportElementsForFileMono(Map<String, Object> map)
   {
     Map<String, List<Map<String, Object>>> result = new LinkedHashMap<String, List<Map<String, Object>>>();
@@ -464,7 +502,7 @@ public class VDRReportMonoPhase implements ReportCsvFactory
           csvfile
           );
 
-      if (!reportMonoPhase.startOneToOne(true))
+      if (!reportMonoPhase.startOneToOne(false))
         {
           if (log.isWarnEnabled()) log.warn("An error occured, the report might be corrupted");
           throw new RuntimeException("An error occurred, report must be restarted");
