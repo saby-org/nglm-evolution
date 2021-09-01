@@ -25,7 +25,7 @@ public class JourneyCustomerStatesReportDriverMultithread extends ReportDriver
     int defaultReportPeriodQuantity = report.getDefaultReportPeriodQuantity();
     String JOURNEY_ES_INDEX = "journeystatistic-";
     log.debug("PHASE 1 : read ElasticSearch");
-    JourneyCustomerStatesReportMultithread.main(new String[] { elasticSearch, JOURNEY_ES_INDEX, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit }, reportGenerationDate, tenantID);
+    JourneyCustomerStatesReportMultithread.main(new String[] { elasticSearch, JOURNEY_ES_INDEX, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit, tenantID+"" }, reportGenerationDate, tenantID);
     log.debug("Finished with Journey Customer States Report Multithread");
 
   }

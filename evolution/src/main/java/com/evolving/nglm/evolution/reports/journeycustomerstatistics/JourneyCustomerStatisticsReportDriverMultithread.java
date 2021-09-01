@@ -39,7 +39,7 @@ public class JourneyCustomerStatisticsReportDriverMultithread extends ReportDriv
       log.debug("data for report : "+JOURNEY_ES_INDEX);
 
       JourneyCustomerStatisticsReportMultithread.main(new String[]{
-          elasticSearch, JOURNEY_ES_INDEX, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit
+          elasticSearch, JOURNEY_ES_INDEX, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit, tenantID+""
       }, reportGenerationDate, tenantID);         
       try { TimeUnit.SECONDS.sleep(1); } catch (InterruptedException e) {}
       

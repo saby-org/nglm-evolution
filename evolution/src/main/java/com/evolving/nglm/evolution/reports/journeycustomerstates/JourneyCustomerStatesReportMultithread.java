@@ -344,6 +344,7 @@ public class JourneyCustomerStatesReportMultithread implements ReportCsvFactory
     String esNode          = args[0];
     String esIndexJourney  = args[1];
     String csvfile         = args[2];
+    if (args.length > 5) tenantID = Integer.parseInt(args[5]);
 
     journeyService = new JourneyService(DeploymentCommon.getBrokerServers(), "journeycustomerstatesreportMultithread-journeyservice-JourneyCustomerStatesReportMultithread", DeploymentCommon.getJourneyTopic(), false);
     journeyService.start();

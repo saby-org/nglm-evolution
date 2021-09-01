@@ -73,6 +73,7 @@ public class VoucherUploadedReportMonoPhase implements ReportCsvFactory
     headerFieldsOrder.add(voucherType);
     headerFieldsOrder.add(fileName);
   }
+  private int tenantID = 0;
 
   public void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders)
   {
@@ -256,7 +257,8 @@ public class VoucherUploadedReportMonoPhase implements ReportCsvFactory
     String esNode          = args[0];
     String esIndexVoucher  = args[1];
     String csvfile         = args[2];
-    
+    if (args.length > 5) tenantID = Integer.parseInt(args[5]);
+
     
     String supplierTopic = Deployment.getSupplierTopic();
     String voucherTypeTopic = Deployment.getVoucherTypeTopic();

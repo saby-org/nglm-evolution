@@ -72,6 +72,7 @@ public class VoucherCustomerReportMonoPhase implements ReportCsvFactory
   private VoucherService voucherService = null;
   private SupplierService supplierService = null;
   private VoucherTypeService voucherTypeService = null;
+  private int tenantID = 0;
 
 
   /****************************************
@@ -297,12 +298,14 @@ public class VoucherCustomerReportMonoPhase implements ReportCsvFactory
     String esNode          = args[0];
     String esIndexCustomer = args[1];
     String csvfile         = args[2];
+    if (args.length > 3) tenantID = Integer.parseInt(args[3]);
+
     if(log.isInfoEnabled())
     log.info("Reading data from ES in "+esIndexCustomer+"  index and writing to "+csvfile+" file.");  
     ReportCsvFactory reportFactory = new VoucherCustomerReportMonoPhase();
 
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
-    esIndexWithQuery.put(esIndexCustomer, QueryBuilders.matchAllQuery());
+    esIndexWithQuery.put(esIndexCustomer, QueryBuilders.boolQuery().filter(QueryBuilders.termQuery("tenantID", tenantID)));
       
     ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
         esNode,
