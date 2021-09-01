@@ -5205,8 +5205,14 @@ public class ThirdPartyManager
             // 2. subscriberID == null and event is an autoprovision event, so in this case, we provide in the constructor, the alternateID coming from the REST request
             if(subscriberID != null)
               {
-                eev = constructor.newInstance(new Object[]{subscriberID, SystemTime.getCurrentTime(), eventBody, (short) tenantID });
-                eev.forceDeliveryPriority(DELIVERY_REQUEST_PRIORITY);
+                if(autoProvisionEvent != null)
+                {
+                  eev = constructor.newInstance(new Object[]{subscriberID, SystemTime.getCurrentTime(), eventBody, (short) tenantID });
+                  eev.forceDeliveryPriority(DELIVERY_REQUEST_PRIORITY);
+                }else{
+                  eev = constructor.newInstance(new Object[]{subscriberID, SystemTime.getCurrentTime(), eventBody});
+                  eev.forceDeliveryPriority(DELIVERY_REQUEST_PRIORITY);
+                }
               }
             else if(autoProvisionEvent != null)
               {
