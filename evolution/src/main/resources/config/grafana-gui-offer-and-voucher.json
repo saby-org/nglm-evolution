@@ -1826,5 +1826,6 @@
   "title": "Business _ Offer and Voucher Dashboard",
   "uid": "2lqroD9Mk",
   "version": 6
-  }
+  },
+  "overwrite": true
 }
