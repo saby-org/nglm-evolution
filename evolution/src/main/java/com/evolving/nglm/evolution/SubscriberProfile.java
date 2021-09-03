@@ -15,6 +15,7 @@ import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -40,11 +41,17 @@ import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
 import com.evolving.nglm.evolution.LoyaltyProgramMission.MissionStep;
+import com.evolving.nglm.evolution.LoyaltyProgramMissionHistory.StepHistory;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
+import com.evolving.nglm.evolution.complexobjects.ComplexObjectException;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectInstance;
+import com.evolving.nglm.evolution.complexobjects.ComplexObjectType;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectTypeService;
+import com.evolving.nglm.evolution.complexobjects.ComplexObjectTypeSubfield;
+import com.evolving.nglm.evolution.complexobjects.ComplexObjectUtils;
 import com.evolving.nglm.evolution.datamodel.DataModelFieldValue;
+import com.evolving.nglm.evolution.otp.OTPInstance;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
@@ -82,6 +89,7 @@ public abstract class SubscriberProfile
   {
     Active("active"),
     Inactive("inactive"),
+    Terminated("terminated"),
     Unknown("(unknown)");
     private String externalRepresentation;
     private EvolutionSubscriberStatus(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }
@@ -144,7 +152,7 @@ public abstract class SubscriberProfile
     //
 
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(10));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(12));
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("subscriberTraceEnabled", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("evolutionSubscriberStatus", Schema.OPTIONAL_STRING_SCHEMA);
@@ -165,7 +173,11 @@ public abstract class SubscriberProfile
     schemaBuilder.field("extendedSubscriberProfile", ExtendedSubscriberProfile.getExtendedSubscriberProfileSerde().optionalSchema());
     schemaBuilder.field("complexObjectInstances", SchemaBuilder.array(ComplexObjectInstance.serde().schema()).defaultValue(Collections.<ComplexObjectInstance>emptyList()).schema());
     schemaBuilder.field("offerPurchaseHistory", SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Timestamp.SCHEMA)).name("subscriber_profile_purchase_history").schema());
+    schemaBuilder.field("offerPurchaseSalesChannelHistory", SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(SalesChannelPurchaseDate.schema())).name("subscriber_profile_purchase_saleschannel_history").schema());
     schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
+    schemaBuilder.field("otps",   SchemaBuilder.array(OTPInstance.serde().schema()).defaultValue(Collections.<OTPInstance>emptyList()).schema());
+    schemaBuilder.field("universalControlGroupPrevious",Schema.OPTIONAL_BOOLEAN_SCHEMA);
+    schemaBuilder.field("universalControlGroupChangeDate",Timestamp.builder().optional().schema());
 
     commonSchema = schemaBuilder.build();
   };
@@ -242,8 +254,14 @@ public abstract class SubscriberProfile
   private ExtendedSubscriberProfile extendedSubscriberProfile;
   private Map<String,Integer> exclusionInclusionTargets; 
   private List<ComplexObjectInstance> complexObjectInstances; 
+  @Deprecated
   private Map<String, List<Date>> offerPurchaseHistory;
+  private Map<String, List<Pair<String, Date>>> offerPurchaseSalesChannelHistory;
   private int tenantID;
+  private List<OTPInstance> otpInstances;
+  //this is defined as reference type because initially had no state
+  private Boolean universalControlGroupPrevious;
+  private Date universalControlGroupChangeDate;
   // the field unknownRelationships does not mean to be serialized, it is only used as a temporary parameter to handle the case where, in a journey, 
   // the required relationship does not exist and must go out of the box through a special connector.
   private List<Pair<String, String>> unknownRelationships = new ArrayList<>();
@@ -276,9 +294,14 @@ public abstract class SubscriberProfile
   public Map<String, Integer> getExclusionInclusionTargets() { return exclusionInclusionTargets; }
   public List<ComplexObjectInstance> getComplexObjectInstances() { return complexObjectInstances; }
   public void setComplexObjectInstances(List<ComplexObjectInstance> instances) { this.complexObjectInstances = instances; }
+  @Deprecated
   public Map<String, List<Date>> getOfferPurchaseHistory() { return offerPurchaseHistory; }
+  public Map<String, List<Pair<String, Date>>> getOfferPurchaseSalesChannelHistory() { return offerPurchaseSalesChannelHistory; }
   public List<Pair<String, String>> getUnknownRelationships() { return unknownRelationships ; }
+  public List<OTPInstance> getOTPInstances() { return otpInstances; }
   public int getTenantID() { return tenantID; }
+  public Boolean getUniversalControlGroupPrevious() { return universalControlGroupPrevious; }
+  public Date getUniversalControlGroupChangeDate() { return universalControlGroupChangeDate; }
   public Integer getScore(String challengeID)
   {
     Integer result = null;
@@ -484,7 +507,7 @@ public abstract class SubscriberProfile
   
   /******************************************
   *
-  *  getLoyaltyProgramsJSON - LoyaltyPrograms
+  *  getLoyaltyProgramsJSON - LoyaltyProgramsuniversal
   *
   ******************************************/
   
@@ -584,12 +607,101 @@ public abstract class SubscriberProfile
                     MissionStep step = loyaltyProgramMission.getStep(loyaltyProgramMissionState.getStepName());
                     MissionStep previousStep = loyaltyProgramMission.getStep(loyaltyProgramMissionState.getPreviousStepName());
                     loyalty.put("stepChangeType", MissionStep.changeFromStepToStep(previousStep, step).getExternalRepresentation());
+                    List<JSONObject> completedStepsJsonObjects = new ArrayList<JSONObject>();
+                    if (loyaltyProgramMissionState.getLoyaltyProgramExitDate() == null)
+                      {
+                        List<StepHistory> stepHistories = loyaltyProgramMissionState.getLoyaltyProgramMissionHistory().getStepHistory();
+                        if (stepHistories != null)
+                          {
+                            List<StepHistory> completedStepHistories = loyaltyProgramMissionState.getLoyaltyProgramMissionHistory().getStepHistory();
+                            if (!loyaltyProgramMissionState.isMissionCompleted()) completedStepHistories = completedStepHistories.stream().filter(stepHistory -> !loyaltyProgramMissionState.getStepName().equals(stepHistory.getToStep())).collect(Collectors.toList());
+                            if (!completedStepHistories.isEmpty())
+                              {
+                                for (StepHistory stepHistory : completedStepHistories)
+                                  {
+                                    Map<String, String> stepAndCompletionDate = new HashMap<String, String>();
+                                    String completedStep = stepHistory.getToStep();
+                                    StepHistory nextStep = loyaltyProgramMissionState.getLoyaltyProgramMissionHistory().getStepHistoryByFromName(completedStep);
+                                    Date completionDate = nextStep == null ? loyaltyProgramMissionState.getStepEnrollmentDate() : nextStep.getTransitionDate();
+                                    stepAndCompletionDate.put("completedStep", completedStep);
+                                    stepAndCompletionDate.put("completionDate", RLMDateUtils.formatDateForElasticsearchDefault(completionDate));
+                                    completedStepsJsonObjects.add(JSONUtilities.encodeObject(stepAndCompletionDate));
+                                  }
+                              }
+                          }
+                      }
+                    loyalty.put("completedSteps", JSONUtilities.encodeArray(completedStepsJsonObjects));
                   }
               }
             array.add(JSONUtilities.encodeObject(loyalty));
           }
       }
     return array;
+  }
+  
+  public JSONArray getComplexFieldsJSON(ComplexObjectTypeService complexObjectTypeService)
+  {
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> complexFields = new ArrayList<JSONObject>();
+    Collection<ComplexObjectType> complexObjectTypes = complexObjectTypeService.getActiveComplexObjectTypes(now, tenantID);
+    for (ComplexObjectType complexObjectType : complexObjectTypes)
+      {
+        Map<String, Object> elementJSONMAP = new HashMap<String, Object>();
+        List<String> elements = complexObjectType.getAvailableElements();
+        for (String element : elements)
+          {
+            Map<String, Object> subfieldJSONMap = new HashMap<String, Object>();
+            for (ComplexObjectTypeSubfield subfield : complexObjectType.getSubfields().values())
+              {
+                Object value = null;
+                try
+                  {
+                    switch (subfield.getCriterionDataType())
+                    {
+
+                      case StringCriterion:
+                        value = ComplexObjectUtils.getComplexObjectString(this, complexObjectType.getGUIManagedObjectName(), element, subfield.getSubfieldName());
+                        break;
+
+                      case DateCriterion:
+                        value = ComplexObjectUtils.getComplexObjectDate(this, complexObjectType.getGUIManagedObjectName(), element, subfield.getSubfieldName());
+                        if (value != null) value = RLMDateUtils.formatDateForElasticsearchDefault((Date) value);
+                        break;
+
+                      case BooleanCriterion:
+                        value = ComplexObjectUtils.getComplexObjectBoolean(this, complexObjectType.getGUIManagedObjectName(), element, subfield.getSubfieldName());
+                        break;
+
+                      case IntegerCriterion:
+                        value = ComplexObjectUtils.getComplexObjectInteger(this, complexObjectType.getGUIManagedObjectName(), element, subfield.getSubfieldName());
+                        break;
+
+                      case StringSetCriterion:
+                        value = ComplexObjectUtils.getComplexObjectStringSet(this, complexObjectType.getGUIManagedObjectName(), element, subfield.getSubfieldName());
+                        break;
+
+                      default:
+                        log.error("invalid data type {} for sub field {}", subfield.getCriterionDataType(), subfield.getSubfieldName());
+                        break;
+                    }
+                  } 
+                catch (ComplexObjectException e)
+                  {
+                    log.error("ComplexObjectException {}", e.getMessage());
+                  }
+                if (value != null) subfieldJSONMap.put(subfield.getSubfieldName(), value);
+              }
+            if (!subfieldJSONMap.isEmpty()) elementJSONMAP.put(element, JSONUtilities.encodeObject(subfieldJSONMap));
+          }
+        
+        Map<String, Object> complexObjectTypeJSON = new HashMap<String, Object>();
+        complexObjectTypeJSON.put("complexObjectName", complexObjectType.getGUIManagedObjectName());
+        complexObjectTypeJSON.put("complexObjectID", complexObjectType.getGUIManagedObjectID());
+        complexObjectTypeJSON.put("complexObjectDisplay", complexObjectType.getGUIManagedObjectDisplay());
+        complexObjectTypeJSON.put("elements", JSONUtilities.encodeObject(elementJSONMAP));
+        if (!elementJSONMAP.isEmpty()) complexFields.add(JSONUtilities.encodeObject(complexObjectTypeJSON));
+      }
+    return JSONUtilities.encodeArray(complexFields);
   }
   
   /******************************************
@@ -639,6 +751,12 @@ public abstract class SubscriberProfile
             last30daysFluctuations.put("expired", point.getValue().getExpiredHistory().getPrevious30Days(evaluationDate));
             fluctuations.put("last30days", last30daysFluctuations);
             
+            Date earliestExpirationDate = point.getValue().getFirstExpirationDate(SystemTime.getCurrentTime());
+            int earliestExpirationQuantity = point.getValue().getBalance(earliestExpirationDate);
+            fluctuations.put("earliestexpirydate", earliestExpirationDate);
+            fluctuations.put("earliestexpiryquantity", earliestExpirationQuantity);
+            fluctuations.put("balance", point.getValue().getBalance(SystemTime.getCurrentTime()));
+
             result.put(point.getKey(), fluctuations);
           }
       }
@@ -729,7 +847,7 @@ public abstract class SubscriberProfile
     }
     return result;
   }
-  
+ 
   
   /****************************************
   *
@@ -970,11 +1088,7 @@ public abstract class SubscriberProfile
           voucherPresentation.put("code", storedVoucher.getVoucherCode());
           // NOTE : DATE OUTPUT FOR GUI HERE MISMATCH OTHER DATE OUTPUT OF THIS OBJECT, WHICH ACTUALLY SEEMS THEY ARE USELESS...
           voucherPresentation.put("expiryDate", getDateString(storedVoucher.getVoucherExpiryDate()));
-          // can be not updated yet
-          if(storedVoucher.getVoucherStatus()!=VoucherDelivery.VoucherStatus.Expired && storedVoucher.getVoucherStatus()!=VoucherDelivery.VoucherStatus.Redeemed && storedVoucher.getVoucherExpiryDate().before(now)){
-            storedVoucher.setVoucherStatus(VoucherDelivery.VoucherStatus.Expired);
-          }
-          voucherPresentation.put("status",storedVoucher.getVoucherStatus().getExternalRepresentation());
+          voucherPresentation.put("status",storedVoucher.getVoucherStatusComputed().getExternalRepresentation());
           vouchersPresentation.add(JSONUtilities.encodeObject(voucherPresentation));
         }
       }
@@ -994,31 +1108,45 @@ public abstract class SubscriberProfile
           }
       }
     
-  //prepare complexObjectInstances
+    //prepare complexObjectInstances
     
     ArrayList<JSONObject> complexObjectInstancesjson = new ArrayList<JSONObject>();
-	HashMap<String,HashMap<String,HashMap<String,Object>>> json = new HashMap<String,HashMap<String,HashMap<String,Object>>>();
-    if(getComplexObjectInstances()!=null && getComplexObjectInstances().size()>0) {
-    	for (ComplexObjectInstance instance : getComplexObjectInstances())
-    	{ 	if(!json.containsKey(instance.getComplexObjectTypeID())) {
-    		json.put(instance.getComplexObjectTypeID(), new HashMap<String,HashMap<String,Object>>());
-    	}
-    	HashMap<String,HashMap<String,Object>>  elements=(HashMap<String,HashMap<String,Object>>) json.get(instance.getComplexObjectTypeID());
-    	if(!elements.containsKey(instance.getElementID())) {
-    		elements.put(instance.getElementID(), new HashMap<String,Object>());
-    	} 
-    	HashMap<String,Object> elementVal=elements.get(instance.getElementID());
-    	
-    	for (Map.Entry<String,DataModelFieldValue> entry : instance.getFieldValues().entrySet()) {
-    		Object currVal=entry.getValue().getValue();
-    		if(currVal instanceof Date )
-    			currVal=getDateString((Date)currVal);
-    		
-    		elementVal.put(entry.getKey(), currVal);
-    	}      
-    	}
-    	complexObjectInstancesjson.add(JSONUtilities.encodeObject(json)) ;
-    }
+    HashMap<String, HashMap<String, HashMap<String, Object>>> json = new HashMap<String, HashMap<String, HashMap<String, Object>>>();
+    if (getComplexObjectInstances() != null && getComplexObjectInstances().size() > 0)
+      {
+        for (ComplexObjectInstance instance : getComplexObjectInstances())
+          {
+            ComplexObjectType complexObjectType = complexObjectTypeService.getActiveComplexObjectType(instance.getComplexObjectTypeID(), now);
+            if (complexObjectType != null)
+              {
+                if (!json.containsKey(complexObjectType.getGUIManagedObjectName()))
+                  {
+                    json.put(complexObjectType.getGUIManagedObjectName(), new HashMap<String, HashMap<String, Object>>());
+                  }
+                HashMap<String, HashMap<String, Object>> elements = (HashMap<String, HashMap<String, Object>>) json.get(complexObjectType.getGUIManagedObjectName());
+                if (!elements.containsKey(instance.getElementID()))
+                  {
+                    elements.put(instance.getElementID(), new HashMap<String, Object>());
+                  }
+                HashMap<String, Object> elementVal = elements.get(instance.getElementID());
+                if (instance.getFieldValuesReadOnly() != null)
+                  {
+                    for (Map.Entry<String, DataModelFieldValue> entry : instance.getFieldValuesReadOnly().entrySet())
+                      {
+                        Object currVal = entry.getValue().getValue();
+                        if (currVal instanceof Date) currVal = getDateString((Date) currVal);
+                        elementVal.put(entry.getKey(), currVal);
+                      }
+                  }
+
+              }
+            else
+              {
+                // may be we need to clear subscriber profile
+              }
+          }
+        complexObjectInstancesjson.add(JSONUtilities.encodeObject(json));
+      }
     
     //prepare Inclusion/Exclusion list
     
@@ -1152,6 +1280,8 @@ public abstract class SubscriberProfile
     generalDetailsPresentation.put("inclusionTargets", JSONUtilities.encodeArray(new ArrayList<String>(getInclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now))));
     generalDetailsPresentation.put("universalControlGroup", getUniversalControlGroup(subscriberGroupEpochReader));
     generalDetailsPresentation.put("complexFields", JSONUtilities.encodeArray(complexObjectInstancesjson));
+    generalDetailsPresentation.put("universalControlGroupPrevious",getUniversalControlGroupPrevious());
+    generalDetailsPresentation.put("universalControlGroupChangeDate",getDateString(getUniversalControlGroupChangeDate()));
     // prepare basic kpiPresentation (if any)
     //
 
@@ -1210,6 +1340,9 @@ public abstract class SubscriberProfile
     generalDetailsPresentation.put("exclusionTargets", JSONUtilities.encodeArray(new ArrayList<String>(getExclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now))));
     generalDetailsPresentation.put("inclusionTargets", JSONUtilities.encodeArray(new ArrayList<String>(getInclusionList(inclusionExclusionEvaluationRequest, exclusionInclusionTargetService, subscriberGroupEpochReader, now))));
     generalDetailsPresentation.put("universalControlGroup", getUniversalControlGroup(subscriberGroupEpochReader));
+    //to be decided if this info is send out for third party
+    generalDetailsPresentation.put("universalControlGroupPrevious",getUniversalControlGroupPrevious());
+    generalDetailsPresentation.put("universalControlGroupChangeDate",getDateString(getUniversalControlGroupChangeDate()));
   
     //
     // prepare basic kpiPresentation (if any)
@@ -1439,6 +1572,9 @@ public abstract class SubscriberProfile
   public void setLanguageID(String languageID) { this.languageID = languageID; }
   public void setExtendedSubscriberProfile(ExtendedSubscriberProfile extendedSubscriberProfile) { this.extendedSubscriberProfile = extendedSubscriberProfile; }
   public void setTenantID(int tenantID) { this.tenantID = tenantID; }
+  public void setOTPInstances(List<OTPInstance> otpInstances){ this.otpInstances = otpInstances; }
+  public void setUniversalControlGroupPrevious(Boolean universalControlGroupPrevious) { this.universalControlGroupPrevious = universalControlGroupPrevious; }
+  public void setUniversalControlGroupChangeDate(Date universalControlGroupChangeDate) { this.universalControlGroupChangeDate = universalControlGroupChangeDate; }
   
   //
   //  setEvolutionSubscriberStatus
@@ -1555,7 +1691,10 @@ public abstract class SubscriberProfile
     this.exclusionInclusionTargets = new HashMap<String, Integer>();
     this.complexObjectInstances = new ArrayList<>();
     this.offerPurchaseHistory = new HashMap<>();
+    this.offerPurchaseSalesChannelHistory = new HashMap<String, List<Pair<String,Date>>>();
     this.tenantID = tenantID;
+    this.universalControlGroupPrevious = null;
+    this.universalControlGroupChangeDate = null;
   }
 
   /*****************************************
@@ -1599,7 +1738,12 @@ public abstract class SubscriberProfile
     List<ComplexObjectInstance> complexObjectInstances = (schema.field("complexObjectInstances") != null) ? unpackComplexObjectInstances(schema.field("complexObjectInstances").schema(), valueStruct.get("complexObjectInstances")) : Collections.<ComplexObjectInstance>emptyList();
     Map<String,LoyaltyProgramState> loyaltyPrograms = (schemaVersion >= 2) ? unpackLoyaltyPrograms(schema.field("loyaltyPrograms").schema(), (Map<String,Object>) valueStruct.get("loyaltyPrograms")): Collections.<String,LoyaltyProgramState>emptyMap();
     Map<String, List<Date>> offerPurchaseHistory = (schemaVersion >= 7) ? (Map<String, List<Date>>) valueStruct.get("offerPurchaseHistory") : new HashMap<>();
+    Map<String, List<Pair<String, Date>>> offerPurchaseSalesChannelHistory = schema.field("offerPurchaseSalesChannelHistory") != null ? unpackOfferPurchaseSalesChannelHistory(schema.field("offerPurchaseSalesChannelHistory").schema(), (Map<String,List<Object>>) valueStruct.get("offerPurchaseSalesChannelHistory")) : new HashMap<String, List<Pair<String,Date>>>();
     int tenantID = schema.field("tenantID") != null ? valueStruct.getInt16("tenantID") : 1; // by default tenant 1
+    List<OTPInstance> otpInstances = (schemaVersion >= 11) ? unpackOTPs(schema.field("otps").schema(), valueStruct.get("otps")) : Collections.<OTPInstance>emptyList();
+
+    Boolean universalControlGroupPrevious = (schemaVersion >= 12) ? valueStruct.getBoolean("universalControlGroupPrevious") : null;
+    Date universalControlGroupChangeDate = (schemaVersion >= 12) ? (Date)valueStruct.get("universalControlGroupChangeDate") : null;
     //
     //  return
     //
@@ -1625,8 +1769,50 @@ public abstract class SubscriberProfile
     this.complexObjectInstances = complexObjectInstances;
     this.offerPurchaseHistory = offerPurchaseHistory;
     this.tenantID = tenantID;
+    this.otpInstances = otpInstances;
+    this.offerPurchaseSalesChannelHistory = offerPurchaseSalesChannelHistory;
+    this.universalControlGroupPrevious = universalControlGroupPrevious;
+    this.universalControlGroupChangeDate = universalControlGroupChangeDate;
   }
 
+  /*****************************************
+  *
+  *  unpackEvaluationCriteriaParameters
+  *
+  *****************************************/
+
+  public static Map<String, List<Pair<String, Date>>> unpackOfferPurchaseSalesChannelHistory(Schema schema, Map<String,List<Object>> value)
+  {
+    //
+    //  get schema
+    //
+
+    Schema salesChannelSchema = schema.valueSchema().valueSchema();
+
+    //
+    //  unpack
+    //
+
+    Map<String, List<Pair<String, Date>>> result = new HashMap<String, List<Pair<String,Date>>>();
+    for (String key : value.keySet())
+      {
+        List<Pair<String, Date>> salesChannelPurchaseDates = new ArrayList<Pair<String, Date>>();
+        List<Object> packedSalesChannelPurchaseDates = value.get(key);
+        for (Object packedSalesChannelPurchaseDate : packedSalesChannelPurchaseDates)
+          {
+            SalesChannelPurchaseDate salesChannelPurchaseDate = SalesChannelPurchaseDate.unpack(new SchemaAndValue(salesChannelSchema, packedSalesChannelPurchaseDate));
+            salesChannelPurchaseDates.add(new Pair<String, Date>(salesChannelPurchaseDate.getSalesChannelID(), salesChannelPurchaseDate.getPurchaseDate()));
+          }
+        result.put(key, salesChannelPurchaseDates);
+      }
+
+    //
+    //  return
+    //
+
+    return result;
+  }
+  
   /*****************************************
   *
   *  unpackSegments
@@ -1882,6 +2068,38 @@ public abstract class SubscriberProfile
   
   /*****************************************
   *
+  *  unpackVouchers
+  *
+  *****************************************/
+
+ private static List<OTPInstance> unpackOTPs(Schema schema, Object value)
+ {
+   //
+   //  get schema for voucher
+   //
+
+   Schema otpSchema = schema.valueSchema();
+
+   //
+   //  unpack
+   //
+
+   List<OTPInstance> result = new LinkedList<>();
+   List<Object> valueArray = (List<Object>) value;
+   for (Object otpInst : valueArray)
+   {
+     result.add(OTPInstance.unpack(new SchemaAndValue(otpSchema, otpInst)));
+   }
+
+   //
+   //  return
+   //
+
+   return result;
+ }
+
+  /*****************************************
+  *
   *  unpackComplexObjectInstances
   *
   *****************************************/
@@ -1941,8 +2159,11 @@ public abstract class SubscriberProfile
     this.exclusionInclusionTargets = new HashMap<String, Integer>(subscriberProfile.getExclusionInclusionTargets());
     this.complexObjectInstances = subscriberProfile.getComplexObjectInstances();
     this.offerPurchaseHistory = subscriberProfile.getOfferPurchaseHistory();
+    this.offerPurchaseSalesChannelHistory = subscriberProfile.getOfferPurchaseSalesChannelHistory();
     this.getUnknownRelationships().addAll(subscriberProfile.getUnknownRelationships());
     this.tenantID = subscriberProfile.getTenantID();
+    this.universalControlGroupPrevious = subscriberProfile.getUniversalControlGroupPrevious();
+    this.universalControlGroupChangeDate = subscriberProfile.getUniversalControlGroupChangeDate();
   }
 
   /*****************************************
@@ -1973,9 +2194,36 @@ public abstract class SubscriberProfile
     struct.put("exclusionInclusionTargets", packTargets(subscriberProfile.getExclusionInclusionTargets()));
     struct.put("complexObjectInstances", packComplexObjectInstances(subscriberProfile.getComplexObjectInstances()));
     struct.put("offerPurchaseHistory", subscriberProfile.getOfferPurchaseHistory());
+    struct.put("offerPurchaseSalesChannelHistory", packOfferPurchaseSalesChannelHistory(subscriberProfile.getOfferPurchaseSalesChannelHistory()));
     struct.put("tenantID", (short)(short)subscriberProfile.getTenantID());
+    struct.put("otps", packOTPInstances(subscriberProfile.getOTPInstances()));
+    struct.put("universalControlGroupPrevious",subscriberProfile.getUniversalControlGroupPrevious());
+    struct.put("universalControlGroupChangeDate",subscriberProfile.getUniversalControlGroupChangeDate());
   }
 
+  /*****************************************
+  *
+  *  packEvaluationCriteriaParameters
+  *
+  *****************************************/
+
+  private static Map<String, List<Object>> packOfferPurchaseSalesChannelHistory(Map<String, List<Pair<String, Date>>> offerPurchaseSalesChannelHistoryMap)
+  {
+    Map<String,List<Object>> result = new HashMap<String,List<Object>>();
+    for (String offerID : offerPurchaseSalesChannelHistoryMap.keySet())
+      {
+        List<Object> packedOfferPurchaseSalesChannels = new ArrayList<Object>();
+        List<Pair<String, Date>> packedOfferPurchaseSalesChannelsPair = offerPurchaseSalesChannelHistoryMap.get(offerID);
+        for (Pair<String, Date> packedOfferPurchaseSalesChannelPair : packedOfferPurchaseSalesChannelsPair)
+          {
+            SalesChannelPurchaseDate channelPurchaseDate = new SalesChannelPurchaseDate(packedOfferPurchaseSalesChannelPair.getFirstElement(), packedOfferPurchaseSalesChannelPair.getSecondElement());
+            packedOfferPurchaseSalesChannels.add(SalesChannelPurchaseDate.pack(channelPurchaseDate));
+          }
+        result.put(offerID, packedOfferPurchaseSalesChannels);
+      }
+    return result;
+  }
+  
   /****************************************
   *
   *  packSegments
@@ -2092,6 +2340,24 @@ public abstract class SubscriberProfile
     for (Token token : tokens)
       {
         result.add(Token.commonSerde().pack(token));
+      }
+    return result;
+  }
+  
+  
+  /****************************************
+  *
+  *  packOTPInstances
+  *
+  ****************************************/
+
+  private static Object packOTPInstances(List<OTPInstance> otps)
+  {
+    List<Object> result = new ArrayList<Object>();
+    if (otps == null) return result;
+    for (OTPInstance otp : otps)
+      {
+        result.add(OTPInstance.serde().pack(otp));
       }
     return result;
   }
@@ -2375,6 +2641,8 @@ public abstract class SubscriberProfile
     b.append("," + languageID);
     b.append("," + extendedSubscriberProfile);
     b.append("," + tenantID);
+    b.append("," + universalControlGroupPrevious);
+    b.append("," + universalControlGroupChangeDate);
     return b.toString();
   }
 

@@ -29,6 +29,10 @@ public class Tenant
 	public boolean isDefault() {
 		return isDefault;
 	}
+	public void setDefault(boolean isDefault)
+	{
+	  this.isDefault = isDefault;
+	}
 	public boolean isActive() {
 		return active;
 	}

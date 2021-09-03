@@ -118,14 +118,14 @@ public class ProductService extends GUIService
   public Product getActiveProduct(String productID, Date date) { return (Product) getActiveGUIManagedObject(productID, date); }
   public Collection<Product> getActiveProducts(Date date, int tenantID) { return (Collection<Product>) getActiveGUIManagedObjects(date, tenantID); }
 
-  //this call trigger stock count, this for stock information for GUI, so DO NOT USE it for traffic calls
+  //this call trigger stock count, this for stock information for GUI
   public GUIManagedObject getStoredProductWithCurrentStocks(String productID, boolean includeArchived){
     GUIManagedObject uncheckedProduct = getStoredProduct(productID,includeArchived);
     if(!(uncheckedProduct instanceof Product)) return uncheckedProduct;//cant do more than normal one
-    uncheckedProduct.getJSONRepresentation().put("remainingStock",StockMonitor.getRemainingStock((Product)uncheckedProduct));
+    uncheckedProduct.getJSONRepresentation().put("remainingStock",((Product)uncheckedProduct).getApproximateRemainingStock());
     return uncheckedProduct;
   }
-  //this call trigger stock count, this for stock information for GUI, so DO NOT USE it for traffic calls
+  //this call trigger stock count, this for stock information for GUI
   public Collection<GUIManagedObject> getStoredProductsWithCurrentStocks(boolean includeArchived, int tenantID) {
     Collection<GUIManagedObject> toRet = getStoredGUIManagedObjects(includeArchived, tenantID);
     // populate all with stocks info

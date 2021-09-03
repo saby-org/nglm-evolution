@@ -17,7 +17,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-public class AssignSubscriberIDs implements com.evolving.nglm.core.SubscriberStreamEvent
+public class AssignSubscriberIDs extends SubscriberStreamOutput implements com.evolving.nglm.core.SubscriberStreamEvent
 {
   /*****************************************
   *
@@ -118,6 +118,7 @@ public class AssignSubscriberIDs implements com.evolving.nglm.core.SubscriberStr
     switch (subscriberAction)
       {
         case Delete:
+        case DeleteImmediate:
           this.subscriberAction = subscriberAction;
           this.alternateIDs = new HashMap<String,String>();
           for (String configuredAlternateID : Deployment.getAlternateIDs().keySet())

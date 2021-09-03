@@ -11,6 +11,7 @@ import com.evolving.nglm.evolution.Report;
 import com.evolving.nglm.evolution.reports.FilterObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportDriver.ReportTypeDef;
+import com.evolving.nglm.evolution.reports.journeycustomerstates.JourneyCustomerStatesReportMultithread;
 
 @ReportTypeDef(reportType = "journeys")
 public class JourneyCustomerStatisticsReportDriverMultithread extends ReportDriver {
@@ -38,7 +39,7 @@ public class JourneyCustomerStatisticsReportDriverMultithread extends ReportDriv
       log.debug("data for report : "+JOURNEY_ES_INDEX);
 
       JourneyCustomerStatisticsReportMultithread.main(new String[]{
-          elasticSearch, JOURNEY_ES_INDEX, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit
+          elasticSearch, JOURNEY_ES_INDEX, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit, tenantID+""
       }, reportGenerationDate, tenantID);         
       try { TimeUnit.SECONDS.sleep(1); } catch (InterruptedException e) {}
       
@@ -54,8 +55,8 @@ public class JourneyCustomerStatisticsReportDriverMultithread extends ReportDriv
 
   @Override
   public List<String> reportHeader() {
-    // TODO Auto-generated method stub
-    return null;
+    List<String> result = JourneyCustomerStatisticsReportMultithread.headerFieldsOrder;
+    return result;
   }
   
 }

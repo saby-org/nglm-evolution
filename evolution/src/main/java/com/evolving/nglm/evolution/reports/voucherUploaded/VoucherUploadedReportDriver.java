@@ -7,7 +7,9 @@ import com.evolving.nglm.evolution.VoucherService;
 import com.evolving.nglm.evolution.Report;
 import com.evolving.nglm.evolution.reports.FilterObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
+import com.evolving.nglm.evolution.reports.bdr.BDRReportMonoPhase;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -24,7 +26,7 @@ public class VoucherUploadedReportDriver extends ReportDriver
     int defaultReportPeriodQuantity = report.getDefaultReportPeriodQuantity();
     String Voucher_ES_INDEX = "voucher_live_";    
     log.debug("PHASE 1 : read ElasticSearch");
-    VoucherUploadedReportMonoPhase.main(new String[] { elasticSearch, Voucher_ES_INDEX, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit }, reportGenerationDate);
+    VoucherUploadedReportMonoPhase.main(new String[] { elasticSearch, Voucher_ES_INDEX, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit, tenantID+"" }, reportGenerationDate);
    
     log.debug("Finished with Journey Customer States Report");
 
@@ -40,7 +42,7 @@ public class VoucherUploadedReportDriver extends ReportDriver
   @Override
   public List<String> reportHeader()
   {
-    // TODO Auto-generated method stub
-    return null;
+    List<String> result = VoucherUploadedReportMonoPhase.headerFieldsOrder;
+    return result;
   }
 }

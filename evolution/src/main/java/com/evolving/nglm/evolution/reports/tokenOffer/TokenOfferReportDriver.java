@@ -12,6 +12,7 @@ import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.ReportDriver.ReportTypeDef;
 import com.evolving.nglm.evolution.reports.subscriber.SubscriberReportMonoPhase;
+import com.evolving.nglm.evolution.reports.token.TokenReportMonoPhase;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +42,7 @@ public class TokenOfferReportDriver extends ReportDriver{
       int defaultReportPeriodQuantity = report.getDefaultReportPeriodQuantity();
 
       TokenOfferReportMonoPhase.main(new String[]{
-          elasticSearch, esIndexSubscriber, csvFilename
+          elasticSearch, esIndexSubscriber, csvFilename, tenantID+""
       }, reportGenerationDate);     
   
 	  log.debug("Finished with Token Report");
@@ -53,7 +54,7 @@ public class TokenOfferReportDriver extends ReportDriver{
 
 	@Override
 	public List<String> reportHeader() {
-		// TODO Auto-generated method stub
-		return null;
+	  List<String> result = TokenOfferReportMonoPhase.headerFieldsOrder;
+	  return result;
 	}
 }

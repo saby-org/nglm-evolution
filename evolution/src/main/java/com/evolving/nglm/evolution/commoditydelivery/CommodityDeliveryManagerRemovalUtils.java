@@ -8,9 +8,11 @@ import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.Future;
 
 /*
 * This class is an attempt to replace the CommodityDeliveryManager process by just few utils functions
@@ -29,6 +31,36 @@ public class CommodityDeliveryManagerRemovalUtils {
 		kafkaProducerProperties.put("key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
 		kafkaProducerProperties.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
 		deliveryRequestProducer = new KafkaProducer<byte[], byte[]>(kafkaProducerProperties);
+	}
+
+	// a static holder of response listeners lazy initiated if needed (blocking call waiting response)
+	private static HashMap<String,HashMap<ConnectSerde<BonusDelivery>,KafkaResponseListenerService<StringKey,BonusDelivery>>> responseListeners = new HashMap<>();
+	private static KafkaResponseListenerService<StringKey,BonusDelivery> getResponseListener(String topic, ConnectSerde<BonusDelivery> serde){
+
+		HashMap<ConnectSerde<BonusDelivery>,KafkaResponseListenerService<StringKey,BonusDelivery>> perTopicResponseListener = responseListeners.get(topic);
+		if(perTopicResponseListener==null){
+			synchronized (responseListeners){
+				perTopicResponseListener = responseListeners.get(topic);
+				if(perTopicResponseListener==null){
+					perTopicResponseListener = new HashMap<>();
+					responseListeners.put(topic,perTopicResponseListener);
+				}
+			}
+		}
+
+		KafkaResponseListenerService<StringKey,BonusDelivery> perSerdeResponseListener = perTopicResponseListener.get(serde);
+		if(perSerdeResponseListener==null){
+			synchronized (responseListeners){
+				perSerdeResponseListener = perTopicResponseListener.get(serde);
+				if(perSerdeResponseListener==null){
+					perSerdeResponseListener = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),topic,StringKey.serde(),serde);
+					perSerdeResponseListener.start();
+					perTopicResponseListener.put(serde,perSerdeResponseListener);
+				}
+			}
+		}
+
+		return perSerdeResponseListener;
 	}
 
 	public static DeliveryRequest createDeliveryRequest(/*String applicationID, */CommodityDeliveryManager.CommodityDeliveryRequest commodityDeliveryRequest, PaymentMeanService paymentMeanService, DeliverableService deliverableService) throws CommodityDeliveryException {
@@ -95,7 +127,8 @@ public class CommodityDeliveryManagerRemovalUtils {
 
 		Map<String, String> diplomaticBriefcase = commodityDeliveryRequest.getDiplomaticBriefcase();
 		if(diplomaticBriefcase == null){
-			diplomaticBriefcase = new HashMap<String, String>();
+			diplomaticBriefcase = new HashMap<>();
+			commodityDeliveryRequest.setDiplomaticBriefcase(diplomaticBriefcase);
 		}
 		//diplomaticBriefcase.put(CommodityDeliveryManager.APPLICATION_ID, applicationID == null ? CommodityDeliveryManager.COMMODITY_DELIVERY_ID : applicationID);
 		diplomaticBriefcase.put(CommodityDeliveryManager.COMMODITY_DELIVERY_BRIEFCASE, commodityDeliveryRequest.getJSONRepresentation(commodityDeliveryRequest.getTenantID()).toJSONString());
@@ -231,15 +264,15 @@ public class CommodityDeliveryManagerRemovalUtils {
 		HashMap<String,Object> requestData = createCommodityDeliveryRequest(briefcase,applicationID,deliveryRequestID,originatingDeliveryRequestID,originatingRequest,eventID,moduleID,featureID,subscriberID,providerID,commodityID,operation,amount,validityPeriodType,validityPeriodQuantity,origin);
 		CommodityDeliveryManager.CommodityDeliveryRequest commodityDeliveryRequest = new CommodityDeliveryManager.CommodityDeliveryRequest(originatingDeliveryRequest,JSONUtilities.encodeObject(requestData), Deployment.getDeliveryManagers().get(CommodityDeliveryManager.COMMODITY_DELIVERY_TYPE), originatingDeliveryRequest.getTenantID());
 		DeliveryRequest deliveryRequest = createDeliveryRequest(/*applicationID, */commodityDeliveryRequest,paymentMeanService,deliverableService);
-		send(deliveryRequest);
+		send(deliveryRequest,false);
 	}
 
-	public static void sendCommodityDeliveryRequest(PaymentMeanService paymentMeanService, DeliverableService deliverableService, SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JSONObject briefcase, String applicationID, String deliveryRequestID, String originatingDeliveryRequestID, boolean originatingRequest, String eventID, String moduleID, String featureID, String subscriberID, String providerID, String commodityID, CommodityDeliveryManager.CommodityDeliveryOperation operation, long amount, EvolutionUtilities.TimeUnit validityPeriodType, Integer validityPeriodQuantity, DeliveryRequest.DeliveryPriority priority, String origin, int tenantID) throws CommodityDeliveryException {
+	public static @Nullable Future<BonusDelivery> sendCommodityDeliveryRequest(boolean returnResponse/*return null if false*/, PaymentMeanService paymentMeanService, DeliverableService deliverableService, SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JSONObject briefcase, String applicationID, String deliveryRequestID, String originatingDeliveryRequestID, boolean originatingRequest, String eventID, String moduleID, String featureID, String subscriberID, String providerID, String commodityID, CommodityDeliveryManager.CommodityDeliveryOperation operation, long amount, EvolutionUtilities.TimeUnit validityPeriodType, Integer validityPeriodQuantity, DeliveryRequest.DeliveryPriority priority, String origin, int tenantID) throws CommodityDeliveryException {
 		HashMap<String,Object> requestData = createCommodityDeliveryRequest(briefcase,applicationID,deliveryRequestID,originatingDeliveryRequestID,originatingRequest,eventID,moduleID,featureID,subscriberID,providerID,commodityID,operation,amount,validityPeriodType,validityPeriodQuantity,origin);
 		CommodityDeliveryManager.CommodityDeliveryRequest commodityDeliveryRequest = new CommodityDeliveryManager.CommodityDeliveryRequest(subscriberProfile, subscriberGroupEpochReader, JSONUtilities.encodeObject(requestData), Deployment.getDeliveryManagers().get(CommodityDeliveryManager.COMMODITY_DELIVERY_TYPE), tenantID);
 		commodityDeliveryRequest.forceDeliveryPriority(priority);
 		DeliveryRequest deliveryRequest = createDeliveryRequest(/*applicationID, */commodityDeliveryRequest,paymentMeanService,deliverableService);
-		send(deliveryRequest);
+		return send(deliveryRequest,returnResponse);
 	}
 
 	private static HashMap<String,Object> createCommodityDeliveryRequest(JSONObject briefcase, String applicationID, String deliveryRequestID, String originatingDeliveryRequestID, boolean originatingRequest, String eventID, String moduleID, String featureID, String subscriberID, String providerID, String commodityID, CommodityDeliveryManager.CommodityDeliveryOperation operation, long amount, EvolutionUtilities.TimeUnit validityPeriodType, Integer validityPeriodQuantity, String origin){
@@ -269,12 +302,26 @@ public class CommodityDeliveryManagerRemovalUtils {
 		return requestData;
 	}
 
-	private static void send(DeliveryRequest deliveryRequest){
+	private static @Nullable Future<BonusDelivery> send(DeliveryRequest deliveryRequest, boolean returnResponse/*return null if false*/){
 		DeliveryManagerDeclaration deliveryManagerDeclaration = Deployment.getDeliveryManagers().get(deliveryRequest.getDeliveryType());
 		String topic = deliveryManagerDeclaration.getRequestTopic(deliveryRequest.getDeliveryPriority());
+		ConnectSerde<DeliveryRequest> valueSerde = (ConnectSerde<DeliveryRequest>) deliveryManagerDeclaration.getRequestSerde();
 		//I feel we should always key by subscriberId, we are loosing a possible important ordering in bonus delivery not doing so, and I think we just increase complexity for nothing
 		String key = deliveryManagerDeclaration.isProcessedByEvolutionEngine() ? deliveryRequest.getSubscriberID() : deliveryRequest.getDeliveryRequestID();
-		deliveryRequestProducer.send(new ProducerRecord<>(topic, StringKey.serde().serializer().serialize(topic, new StringKey(key)), ((ConnectSerde<DeliveryRequest>)deliveryManagerDeclaration.getRequestSerde()).serializer().serialize(topic, deliveryRequest)));
+
+		// if response asked, we need to probe the response topic before sending the request
+		Future<BonusDelivery> deliveryResponse = null;
+		if(returnResponse){
+			String responseTopic = deliveryManagerDeclaration.getResponseTopic(deliveryRequest.getDeliveryPriority());
+			ConnectSerde<BonusDelivery> responseValueSerde = (ConnectSerde<BonusDelivery>) deliveryManagerDeclaration.getRequestSerde();
+			KafkaResponseListenerService<StringKey,BonusDelivery> responseListener = getResponseListener(responseTopic,responseValueSerde);
+			deliveryResponse = responseListener.addWithOnValueFilter(response -> response.getDeliveryRequestID().equals(deliveryRequest.getDeliveryRequestID()));
+		}
+
+		// we send the request to the topic
+		deliveryRequestProducer.send(new ProducerRecord<>(topic, StringKey.serde().serializer().serialize(topic, new StringKey(key)), valueSerde.serializer().serialize(topic, deliveryRequest)));
+
+		return deliveryResponse;//can be null, or the future response
 	}
 
 }

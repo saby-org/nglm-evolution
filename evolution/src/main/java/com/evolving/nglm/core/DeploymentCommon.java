@@ -80,10 +80,19 @@ public class DeploymentCommon
   protected static final Logger log = LoggerFactory.getLogger(DeploymentCommon.class);
   
   private static Map<Tenant, JSONObject> jsonConfigPerTenant;
+  private static Tenant defaultTenant;
   private static Map<Integer, Deployment> deploymentsPerTenant; // Will contains instance of Deployment class from nglm-project.
 
   public static void initialize() { /* Just to be sure the static bloc is read. */ }
   public static Set<Tenant> getTenants() { return jsonConfigPerTenant.keySet(); }
+  public static Tenant getDefaultTenant() { return defaultTenant; }
+  public static Set<Tenant> getRealTenants() { // all but tenant 0
+    Set<Tenant> tenants = new HashSet<>();
+    for (Tenant tenant : getTenants()) {
+      if (tenant.getTenantID() != 0) tenants.add(tenant);
+    }
+    return tenants;
+  }
   public static Deployment getDeployment(int tenantID) { return deploymentsPerTenant.get(tenantID); }
   public static Deployment getDefault() { return getDeployment(0); }
   
@@ -305,6 +314,7 @@ public class DeploymentCommon
   private static String ucgRuleTopic;
   private static String deliverableTopic;
   private static String tokenTypeTopic;
+  private static String otpTypeTopic;
   private static String voucherTypeTopic;
   private static String voucherTopic;
   private static String subscriberMessageTemplateTopic;
@@ -329,6 +339,7 @@ public class DeploymentCommon
   private static String profileLoyaltyProgramChangeEventTopic;
   private static String profileChangeEventTopic;
   private static String profileSegmentChangeEventTopic;
+
   private static String voucherActionTopic;
   private static String fileWithVariableEventTopic;
   private static String tokenRedeemedTopic;
@@ -348,8 +359,12 @@ public class DeploymentCommon
   private static String sourceAddressTopic;
   private static String voucherChangeRequestTopic;
   private static String voucherChangeResponseTopic;
+  private static String otpInstanceChangeRequestTopic;
+  private static String otpInstanceChangeResponseTopic;
   private static String edrDetailsTopic;
   private static String workflowEventTopic;
+  private static String subscriberProfileForceUpdateResponseTopic;
+  private static String notificationEventTopic;
     
   //
   // Others
@@ -408,6 +423,7 @@ public class DeploymentCommon
   private static JSONArray initialOfferObjectivesJSONArray;
   private static JSONArray initialProductTypesJSONArray;
   private static JSONArray initialTokenTypesJSONArray;
+  private static JSONArray initialOTPTypesJSONArray;
   private static JSONArray initialVoucherCodeFormatsJSONArray;
   private static JSONArray initialSegmentationDimensionsJSONArray;
   private static JSONArray initialComplexObjectJSONArray;
@@ -470,6 +486,8 @@ public class DeploymentCommon
   private static long guiConfigurationCleanerThreadPeriodMs;
   private static int guiConfigurationInitialConsumerMaxPollRecords;
   private static int guiConfigurationInitialConsumerMaxFetchBytes;
+
+  private static boolean addSubscribersToUcgByCounting;
 
 
   
@@ -545,7 +563,8 @@ public class DeploymentCommon
   public static Long getElasticsearchMappingJourneysTemplateVersion() { return elasticsearchTemplatesVersion.get("mapping_journeys"); }
   public static Long getElasticsearchMappingJourneyrewardsTemplateVersion() { return elasticsearchTemplatesVersion.get("mapping_journeyrewards"); }
   public static Long getElasticsearchMappingDeliverablesTemplateVersion() { return elasticsearchTemplatesVersion.get("mapping_deliverables"); }
-  public static Long getElasticsearchMappingBasemanagementTemplateVersion() { return elasticsearchTemplatesVersion.get("mapping_basemanagment"); }
+  public static Long getElasticsearchMappingPartnersTemplateVersion() { return elasticsearchTemplatesVersion.get("mapping_partners"); }
+  public static Long getElasticsearchMappingBasemanagementTemplateVersion() { return elasticsearchTemplatesVersion.get("mapping_basemanagement"); }
   public static Long getElasticsearchMappingJourneyobjectiveTemplateVersion() { return elasticsearchTemplatesVersion.get("mapping_journeyobjective"); }
 
   //
@@ -611,6 +630,7 @@ public class DeploymentCommon
   public static String getUCGRuleTopic() { return ucgRuleTopic; }
   public static String getDeliverableTopic() { return deliverableTopic; }
   public static String getTokenTypeTopic() { return tokenTypeTopic; }
+  public static String getOTPTypeTopic() { return otpTypeTopic; }
   public static String getVoucherTypeTopic() { return voucherTypeTopic; }
   public static String getVoucherTopic() { return voucherTopic; }
   public static String getSubscriberMessageTemplateTopic() { return subscriberMessageTemplateTopic; }
@@ -654,9 +674,12 @@ public class DeploymentCommon
   public static String getSourceAddressTopic() { return sourceAddressTopic; }
   public static String getVoucherChangeRequestTopic() { return voucherChangeRequestTopic; }
   public static String getVoucherChangeResponseTopic() { return voucherChangeResponseTopic; }
+  public static String getOTPInstanceChangeRequestTopic() { return otpInstanceChangeRequestTopic;}
+  public static String getOTPInstanceChangeResponseTopic() { return otpInstanceChangeResponseTopic;}
   public static String getEdrDetailsTopic() { return edrDetailsTopic; }
   public static String getWorkflowEventTopic() { return workflowEventTopic; }
-  
+  public static String getSubscriberProfileForceUpdateResponseTopic() { return subscriberProfileForceUpdateResponseTopic; }    
+  public static String getNotificationEventTopic() { return notificationEventTopic; }
   
   
   //
@@ -700,6 +723,7 @@ public class DeploymentCommon
   public static JSONArray getInitialOfferObjectivesJSONArray() { return initialOfferObjectivesJSONArray; }
   public static JSONArray getInitialProductTypesJSONArray() { return initialProductTypesJSONArray; }
   public static JSONArray getInitialTokenTypesJSONArray() { return initialTokenTypesJSONArray; }
+  public static JSONArray getInitialOTPTypesJSONArray() { return initialOTPTypesJSONArray; }
   public static JSONArray getInitialVoucherCodeFormatsJSONArray() { return initialVoucherCodeFormatsJSONArray; }
   public static JSONArray getInitialSegmentationDimensionsJSONArray() { return initialSegmentationDimensionsJSONArray; }
   public static JSONArray getInitialComplexObjectJSONArray() { return initialComplexObjectJSONArray; }
@@ -768,6 +792,7 @@ public class DeploymentCommon
   public static boolean isPreprocessorNeeded() { return isPreprocessorNeeded; }
   public static int getNodesTransitionsHistorySize() { return nodesTransitionsHistorySize; }
   public static int getFirstDayOfTheWeek() { return firstDayOfTheWeek; }
+  public static boolean getAddSubscribersToUcgByCounting() { return addSubscribersToUcgByCounting; }
   
   
   /****************************************
@@ -907,6 +932,7 @@ public class DeploymentCommon
     ucgRuleTopic = jsonReader.decodeString("ucgRuleTopic");
     deliverableTopic = jsonReader.decodeString("deliverableTopic");
     tokenTypeTopic = jsonReader.decodeString("tokenTypeTopic");
+    otpTypeTopic = jsonReader.decodeString("otpTypeTopic");
     voucherTypeTopic = jsonReader.decodeString("voucherTypeTopic");
     voucherTopic = jsonReader.decodeString("voucherTopic");
     subscriberMessageTemplateTopic = jsonReader.decodeString("subscriberMessageTemplateTopic");
@@ -950,8 +976,12 @@ public class DeploymentCommon
     sourceAddressTopic = jsonReader.decodeString("sourceAddressTopic");
     voucherChangeRequestTopic = jsonReader.decodeString("voucherChangeRequestTopic");
     voucherChangeResponseTopic = jsonReader.decodeString("voucherChangeResponseTopic");
+    otpInstanceChangeRequestTopic = jsonReader.decodeString("otpInstanceChangeRequestTopic");
+    otpInstanceChangeResponseTopic = jsonReader.decodeString("otpInstanceChangeResponseTopic");
+    subscriberProfileForceUpdateResponseTopic = jsonReader.decodeString("subscriberProfileForceUpdateResponseTopic");
     edrDetailsTopic = jsonReader.decodeString("edrDetailsTopic");
     workflowEventTopic = jsonReader.decodeString("workflowEventTopic");
+    notificationEventTopic = jsonReader.decodeString("notificationEventTopic");
     
     alternateIDs = jsonReader.decodeMapFromArray(AlternateID.class, "alternateIDs");
     
@@ -1081,6 +1111,7 @@ public class DeploymentCommon
     initialOfferObjectivesJSONArray = jsonReader.decodeJSONArray("initialOfferObjectives");
     initialProductTypesJSONArray = jsonReader.decodeJSONArray("initialProductTypes");
     initialTokenTypesJSONArray = jsonReader.decodeJSONArray("initialTokenTypes");
+    initialOTPTypesJSONArray = jsonReader.decodeJSONArray("initialOTPTypes");
     initialVoucherCodeFormatsJSONArray = jsonReader.decodeJSONArray("initialVoucherCodeFormats");
     initialSegmentationDimensionsJSONArray = jsonReader.decodeJSONArray("initialSegmentationDimensions");
     initialComplexObjectJSONArray = jsonReader.decodeJSONArray("initialComplexObjects");
@@ -1403,6 +1434,8 @@ public class DeploymentCommon
           allTopics.put(declaration.getPreprocessTopic().getName(),declaration.getPreprocessTopic());
         }
       }
+
+    addSubscribersToUcgByCounting = jsonReader.decodeBoolean("addSubscribersToUcgByCounting");
     
   }
 
@@ -1998,6 +2031,32 @@ public class DeploymentCommon
         
         jsonConfigPerTenant.put(tenant, tenantJSON);
       }
+    // now let ensure exactly one tenant is the default... consider the fist one default as the default
+    Tenant tenantDefault = null;
+    Tenant firstTenant = null;
+    for(Tenant t : jsonConfigPerTenant.keySet())
+      {
+        if(firstTenant == null) { firstTenant = t;}
+        if(t.isDefault()) 
+          { 
+            if(tenantDefault == null)
+              {
+                tenantDefault = t;
+              }
+            else 
+              {
+                log.warn("Tenant " + t.getName() + " is defined as default but " + tenantDefault.getName() + " is already default, so ignore default for " + t.getName());
+                t.setDefault(false);
+              }
+          }
+      }
+    if(tenantDefault == null)
+      {
+        firstTenant.setDefault(true);
+        log.warn("DeploymentCommon.buildJsonPerTenant No default tenant has been define, we consider tenant " + firstTenant.getName() + " as default");
+      }
+    defaultTenant = tenantDefault;
+    
   }
   
   /****************************************

@@ -8,6 +8,7 @@ package com.evolving.nglm.evolution;
 
 import java.time.Duration;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import com.evolving.nglm.core.*;
 import com.evolving.nglm.evolution.commoditydelivery.CommodityDeliveryException;
@@ -502,6 +503,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public long getOfferDeliveryOfferPrice() { return getOfferPrice(); }
     public String getOfferDeliveryMeanOfPayment() { return getMeanOfPayment(); }
     public String getOfferDeliveryVoucherCode() { return getVoucherDeliveries()==null?"":getVoucherDeliveries().get(0).getVoucherCode(); }
+    public String getOfferDeliveryVoucherExpiryDate() { return getVoucherDeliveries()==null?"":getVoucherDeliveries().get(0).getVoucherExpiryDate()==null?"":getVoucherDeliveries().get(0).getVoucherExpiryDate().toString(); }
     public String getOfferDeliveryVoucherPartnerId() { return ""; }//TODO
     public String getOfferDeliveryOfferContent() { return getOfferContent(); }
     public String getOfferDeliveryResellerID() { return getResellerID(); }
@@ -829,8 +831,16 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
               List<VoucherDelivery> voucherDeliveries = new ArrayList<VoucherDelivery>();
               for (Map<String, Object> voucher : voucherESList)
                 {
-                  String voucherCode = (String) voucher.get("voucherCode");
-                  VoucherDelivery voucherDelivery = new VoucherDelivery(null, null, voucherCode, null, null); //minimal
+            	  String voucherCode = (String) voucher.get("voucherCode");
+                  String voucherID = (String) voucher.get("voucherID");
+                  String voucherFileID = (String) voucher.get("voucherFileID");
+                  Date voucherExpiryDate = null;
+				try {
+					voucherExpiryDate = RLMDateUtils.parseDateFromElasticsearch((String)voucher.get("voucherExpiryDate"));
+				} catch (java.text.ParseException e) {
+					throw new ServerRuntimeException(e);
+				}
+                  VoucherDelivery voucherDelivery = new VoucherDelivery(voucherID, voucherFileID, voucherCode, null, voucherExpiryDate); //minimal
                   voucherDeliveries.add(voucherDelivery);
                 }
               this.voucherDeliveries = voucherDeliveries;
@@ -1060,7 +1070,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       guiPresentationMap.put(RETURNCODE, getReturnCode());
       guiPresentationMap.put(RETURNCODEDETAILS, PurchaseFulfillmentStatus.fromReturnCode(getReturnCode()).toString());
       guiPresentationMap.put(VOUCHERCODE, getOfferDeliveryVoucherCode());
-      guiPresentationMap.put(VOUCHERPARTNERID, getOfferDeliveryVoucherPartnerId());
+      guiPresentationMap.put(VOUCHEREXPIRYDATE, getOfferDeliveryVoucherExpiryDate());
       guiPresentationMap.put(CUSTOMERID, getSubscriberID());
       guiPresentationMap.put(OFFERID, getOfferID());
       guiPresentationMap.put(OFFERQTY, getQuantity());
@@ -1112,6 +1122,19 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
                 for(OfferVoucher offerVoucher : offer.getOfferVouchers()) {
                   Voucher voucher = (Voucher) voucherService.getStoredVoucher(offerVoucher.getVoucherID());
                   sb.append(offerVoucher.getQuantity()+" ").append(voucher!=null?voucher.getVoucherDisplay():"voucher"+offerVoucher.getVoucherID()).append(",");
+                  String voucherFormat = "";
+                  if(voucher instanceof VoucherShared){
+                	  voucherFormat = ((VoucherShared)voucher).getCodeFormatId();
+                    } else if (voucher instanceof VoucherPersonal){
+                    	for(VoucherFile voucherFile:((VoucherPersonal)voucher).getVoucherFiles()){
+                    		if(voucherFile.getFileId().equals(getVoucherDeliveries()==null?"":getVoucherDeliveries().get(0).getFileID())) {
+                    			voucherFormat = voucherFile.getCodeFormatId();
+                    		}
+                    	}
+                    }
+                  guiPresentationMap.put(VOUCHERFORMAT, voucherFormat);
+                  guiPresentationMap.put(VOUCHERSUPPLIERID, voucher.getSupplierID());
+                  
                 }
               }
               String offerContent = null;
@@ -1182,6 +1205,18 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
             for(OfferVoucher offerVoucher : offer.getOfferVouchers()) {
               Voucher voucher = (Voucher) voucherService.getStoredVoucher(offerVoucher.getVoucherID());
               sb.append(voucher!=null?voucher.getVoucherDisplay():"voucher"+offerVoucher.getVoucherID()).append(";").append(offerVoucher.getQuantity()).append(",");
+              String voucherFormat = "";
+              if(voucher instanceof VoucherShared){
+                  voucherFormat = ((VoucherShared)voucher).getCodeFormatId();
+                } else if (voucher instanceof VoucherPersonal){
+                	for(VoucherFile voucherFile:((VoucherPersonal)voucher).getVoucherFiles()){
+                		if(voucherFile.getFileId().equals(getVoucherDeliveries()==null?"":getVoucherDeliveries().get(0).getFileID())) {
+                			voucherFormat = voucherFile.getCodeFormatId();
+                		}
+                	}
+                }
+              thirdPartyPresentationMap.put(VOUCHERFORMAT, voucherFormat);
+              thirdPartyPresentationMap.put(VOUCHERSUPPLIERID, voucher.getSupplierID());
             }
           }
           String offerContent = sb.length()>0?sb.toString().substring(0, sb.toString().length()-1):"";
@@ -1201,7 +1236,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           thirdPartyPresentationMap.put(RETURNCODEDESCRIPTION, RESTAPIGenericReturnCodes.fromGenericResponseCode(getReturnCode()).getGenericResponseMessage());
           thirdPartyPresentationMap.put(RETURNCODEDETAILS, getOfferDeliveryReturnCodeDetails());
           thirdPartyPresentationMap.put(VOUCHERCODE, getOfferDeliveryVoucherCode());
-          thirdPartyPresentationMap.put(VOUCHERPARTNERID, getOfferDeliveryVoucherPartnerId());
+          thirdPartyPresentationMap.put(VOUCHEREXPIRYDATE, getOfferDeliveryVoucherExpiryDate());
         }
     }
     @Override
@@ -1426,20 +1461,50 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         // check offer purchase limit for this subscriber
         //
         
+        Date earliestDateToKeep = EvolutionEngine.computeEarliestDateToKeep(now, offer, deliveryRequest.getTenantID());
+        List<Date> purchaseHistory = new ArrayList<Date>();
+        
+      //TODO: before EVPRO-1066 all the purchase were kept like Map<String,List<Date>, now it is Map<String, List<Pair<String, Date>>> <saleschnl, Date>
+        // so it is important to migrate data, but once all customer run over this version, this should be removed
+        // ------ START DATA MIGRATION COULD BE REMOVED
         Map<String, List<Date>> offerPurchaseHistory = subscriberProfile.getOfferPurchaseHistory();
-        List<Date> purchaseHistory = offerPurchaseHistory.get(offerID);
-        int alreadyPurchased = (purchaseHistory != null) ? purchaseHistory.size() : 0;
-        // "Allow no more than 0 purchases" OR "within 0 days/months" <==> unlimited (no limit check)
-        boolean unlimited = (
-               (offer.getMaximumAcceptances() == 0)
-            || ((offer.getMaximumAcceptancesPeriodDays() != null) && (offer.getMaximumAcceptancesPeriodDays() == 0))
-            || ((offer.getMaximumAcceptancesPeriodMonths() != null) && (offer.getMaximumAcceptancesPeriodMonths() == 0)));
-        if (!unlimited && (alreadyPurchased+purchaseRequest.getQuantity() > offer.getMaximumAcceptances()))
+        if (offerPurchaseHistory.get(offerID) != null)
           {
-            log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.checkOffer (offer, subscriberProfile) : maximumAcceptances : " + offer.getMaximumAcceptances() + " of offer "+offer.getOfferID()+" exceeded for subscriber "+subscriberProfile.getSubscriberID()+" (date = "+now+")");
-            submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.CUSTOMER_OFFER_LIMIT_REACHED, "maximumAcceptances : " + offer.getMaximumAcceptances() + " of offer "+offer.getOfferID()+" exceeded for subscriber "+subscriberProfile.getSubscriberID()+" (date = "+now+")");
-            continue mainLoop;
+            purchaseHistory = offerPurchaseHistory.get(offerID).stream().filter(date -> date.after(earliestDateToKeep)).collect(Collectors.toList());
           }
+        
+        // ------ END DATA MIGRATION COULD BE REMOVED
+        
+        //
+        // new version
+        //
+        
+        if (subscriberProfile.getOfferPurchaseSalesChannelHistory().get(offerID) != null)
+          {
+            purchaseHistory.addAll(subscriberProfile.getOfferPurchaseSalesChannelHistory().get(offerID).stream().filter(datepair -> datepair.getSecondElement().after(earliestDateToKeep)).map(datepair -> datepair.getSecondElement()).collect(Collectors.toList()));
+          }
+        
+        int totalPurchased = (purchaseHistory != null) ? purchaseHistory.size() : 0;
+
+        if (offerPurchaseHistory.get("TBR_"+purchaseRequest.getDeliveryRequestID()) == null && subscriberProfile.getOfferPurchaseSalesChannelHistory().get("TBR_"+purchaseRequest.getDeliveryRequestID()) == null) { // EvolEngine has not processed this one yet
+          if (purchaseHistory != null)
+            {
+              // only keep recent purchase dates (discard dates that are too old)
+              totalPurchased = purchaseRequest.getQuantity();
+              for (Date purchaseDate : purchaseHistory)
+                {
+                  if (purchaseDate.after(earliestDateToKeep))
+                    {
+                      totalPurchased++;
+                    }
+                }
+            }
+        }
+        if (EvolutionEngine.isPurchaseLimitReached(offer, totalPurchased)) {
+          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.checkOffer():maximumAcceptances : " + offer.getMaximumAcceptances() + " of offer "+offer.getOfferID()+" exceeded for subscriber "+subscriberProfile.getSubscriberID()+" as totalPurchased = " + totalPurchased+" (date = "+now+")");
+          submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.CUSTOMER_OFFER_LIMIT_REACHED, "maximumAcceptances : " + offer.getMaximumAcceptances() + " of offer "+offer.getOfferID()+" exceeded for subscriber "+subscriberProfile.getSubscriberID()+" (date = "+now+")");
+          continue mainLoop;
+        }
         
         /*****************************************
         *
@@ -1452,7 +1517,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         
       }
   }
-
+  
   /*****************************************
   *
   *  CorrelatorUpdate
@@ -1502,6 +1567,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
     statsCounter.withLabel(StatsBuilders.LABEL.status.name(),purchaseFulfillmentRequest.getDeliveryStatus().getExternalRepresentation())
                 .withLabel(StatsBuilders.LABEL.module.name(), purchaseFulfillmentRequest.getModule().name())
+                .withLabel(StatsBuilders.LABEL.tenant.name(), String.valueOf(purchaseFulfillmentRequest.getTenantID()))
                 .getStats().increment();
 
     if (log.isDebugEnabled()) log.debug("PurchaseFulfillmentManager.processCorrelatorUpdate("+deliveryRequest.getDeliveryRequestID()+", "+correlatorUpdate+") : DONE");

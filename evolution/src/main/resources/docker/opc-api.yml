@@ -2,19 +2,19 @@ opc-api-<_KEY_>:
   image: ${env.DOCKER_REGISTRY}opc.api:${gui-opc.version}
   user: '<_DOCKER_UID_>:<_DOCKER_GID_>'
   environment:
-    FwkSettings__AuthorizationBaseUrl: 'http://<_GUI_FWK_AUTH_SERVER_HOST_IP_>:<_GUI_FWK_AUTH_SERVER_PORT_>/api'
+    FwkSettings__AuthorizationBaseUrl: "http://<_GUI_FWK_AUTH_SERVER_HOST_IP_>:<_GUI_FWK_AUTH_SERVER_PORT_>/api"
     FwkSettings__UploadFolder: '/mnt/upload'
-    FwkSettings__FwkApiBaseUrl: 'http://<_GUI_FWK_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_FWK_API_SERVER_PORT_>/'
-    GuiManagerSettings__ApiBaseUrl: 'http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/'
+    FwkSettings__FwkApiBaseUrl: "http://<_GUI_FWK_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_FWK_API_SERVER_PORT_>/"
+    GuiManagerSettings__ApiBaseUrl: "http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/"
     ConnectionStrings__FwkConnection: 'Server=<_MYSQL_GUI_SERVER_HOST_>;Port=<_MYSQL_GUI_SERVER_PORT_>;Database=dbframework;UID=root;Password=<_MYSQL_ROOT_PASSWORD_>'
     DNBOSettings__DNBO_INSTALL: '${gui.opc.dnbo.display}'
     DNBOSettings__DNBO_Scoring_AlwaysAppendOfferObjectiveIDs: 'true'
-    DNBOSettings__DNBOEngineSettings__ApiBaseUrl: '<_IOM_SERVER_URL_>'
+    DNBOSettings__DNBOEngineSettings__ApiBaseUrl: "<_IOM_SERVER_URL_>"
     DNBOSettings__DNBOEngineSettings__UseSubscriberId: 'true'
     DNBOSettings__DNBOEngineSettings__SalesChannelId: <_OPC_WEB_SALE_CHANNEL_ID_>
     DNBOSettings__DNBOEngineSettings__ChannelId: <_OPC_WEB_CALLING_CHANNEL_ID_>
     DNBOSettings__RedisConfigurationSettings__InternalIdRedisConnectionString: '<_SUBSCRIBERIDS_REDIS_CONNECTION_STRING_>,allowAdmin=true,syncTimeout=5000'
-    ReportSettings__ApiElasticsearchUrl: 'http://<_MASTER_ESROUTER_HOST_>:<_MASTER_ESROUTER_PORT_>/'   
+    ReportSettings__ApiElasticsearchUrl: "http://<_MASTER_ESROUTER_HOST_>:<_MASTER_ESROUTER_PORT_>/"
     ReportSettings__ODUser: 'admin'
     ReportSettings__ODPassword: '<_ELASTICSEARCH_ADMIN_PASSWORD_>'
     DNBOSettings__DNBOEngineSettings__MsisdnParam: '<_OPC_DNBO_MSISDNPARAM_>'

@@ -88,7 +88,7 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
   private static final String templateID = "templateID";
   private static final String language = "language";
   
-  private static List<String> headerFieldsOrder = new LinkedList<String>();
+  static List<String> headerFieldsOrder = new LinkedList<String>();
   static
   {
     headerFieldsOrder.add(moduleId);
@@ -569,7 +569,10 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
     log.info("Reading data from ES in (" + esIndexNotifList.toString() + ") indexes and writing to " + csvfile);
 
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
-    esIndexWithQuery.put(esIndexNotifList.toString(), QueryBuilders.rangeQuery("creationDate").gte(RLMDateUtils.formatDateForElasticsearchDefault(fromDate)).lte(RLMDateUtils.formatDateForElasticsearchDefault(toDate)));
+    esIndexWithQuery.put(esIndexNotifList.toString(), 
+        QueryBuilders.boolQuery()
+        .filter(QueryBuilders.termQuery("tenantID", tenantID))
+        .filter(QueryBuilders.rangeQuery("creationDate").gte(RLMDateUtils.formatDateForElasticsearchDefault(fromDate)).lte(RLMDateUtils.formatDateForElasticsearchDefault(toDate))));
 
     String journeyTopic = Deployment.getJourneyTopic();
     String offerTopic = Deployment.getOfferTopic();

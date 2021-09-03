@@ -1,10 +1,12 @@
 package com.evolving.nglm.evolution;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 
@@ -16,6 +18,12 @@ import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 
 public class GUIDependencyModelTree
 {
+  //
+  //  logger
+  //
+
+  private static final Logger log = LoggerFactory.getLogger(GUIDependencyModelTree.class);
+  
   //
   //  data
   //

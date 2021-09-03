@@ -14,6 +14,7 @@ import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectType;
+import com.evolving.nglm.evolution.otp.OTPType;
 
 import org.json.simple.JSONObject;
 import org.apache.commons.lang3.builder.HashCodeExclude;
@@ -179,10 +180,11 @@ public abstract class GUIManagedObject
     guiManagedObjectSerdes.add(ExclusionInclusionTarget.serde());
     guiManagedObjectSerdes.add(DNBOMatrix.serde());
     guiManagedObjectSerdes.add(SegmentContactPolicy.serde());
-	guiManagedObjectSerdes.add(DynamicEventDeclarations.serde());
-	guiManagedObjectSerdes.add(DynamicCriterionField.serde());
-	guiManagedObjectSerdes.add(CriterionFieldAvailableValues.serde());
-	guiManagedObjectSerdes.add(SourceAddress.serde());
+    guiManagedObjectSerdes.add(DynamicEventDeclarations.serde());
+    guiManagedObjectSerdes.add(DynamicCriterionField.serde());
+    guiManagedObjectSerdes.add(CriterionFieldAvailableValues.serde());
+    guiManagedObjectSerdes.add(SourceAddress.serde());
+    guiManagedObjectSerdes.add(OTPType.serde());
     commonSerde = new ConnectSerde<GUIManagedObject>("guiManagedObject", false, guiManagedObjectSerdes.toArray(new ConnectSerde[0]));
     incompleteObjectSerde = new ConnectSerde<GUIManagedObject>("guiManagedObjectIncomplete", false, IncompleteObject::unpack, guiManagedObjectSerdes.toArray(new ConnectSerde[0]));
   }

@@ -25,7 +25,15 @@ public enum RESTAPIGenericReturnCodes
   LOCK_ERROR(25, "LOCK_ERROR", "Lock error"),
   CUSTOMER_ALREADY_EXISTS(50, "CUSTOMER_ALREADY_EXISTS", "Customer already exists"),
   CUSTOMER_NOT_ELIGIBLE(51, "CUSTOMER_NOT_ELIGIBLE", "Customer not eligible"),
+  CUSTOMER_NOT_ALLOWED(52, "CUSTOMER_NOT_ALLOWED", "Customer not allowed"),
   RELATIONSHIP_NOT_FOUND(60, "RELATIONSHIP_NOT_FOUND", "Relationship not found"),
+  OTP_EXPIRED(61,"OTP_EXPIRED","OTP already expired"),
+  MAX_NB_OF_ATTEMPT_REACHED(62,"MAX_NB_OF_ATTEMPT_REACHED","Maximum number of attempts reached"),
+//  GUESSABLE_PASSWORD(63,"GUESSABLE_PASSWORD","Guessable password"),
+//  BREACHED_PASSWORD(64,"BREACHED_PASSWORD","Breached password"),
+//  PASSWORD_ALREADY_USED(65,"PASSWORD_ALREADY_USED","Password already used"),
+  INVALID_OTP(66,"INVALID_OTP","Value does not match"),
+  OTP_BURNT(67,"OTP_BURNT","OTP was no longer active"),
   ELEMENT_NOT_FOUND(80, "ELEMENT_NOT_FOUND", "Element not found"),
   ALREADY_APPROVED(81, "ALREADY_APPROVED", "Request already approved"),
   APPROBATION_EXPIRED(82, "APPROBATION_EXPIRED", "Approbation request expired"),
@@ -110,6 +118,8 @@ public enum RESTAPIGenericReturnCodes
   BLOCKED_BY_EXCLUSION_LIST(712, "BLOCKED_BY_EXCLUSION_LIST", "Message is blocked due to exclusion list"),
   BLOCKED_BY_CUSTOMER_STATUS(713, "BLOCKED_BY_CUSTOMER_STATUS", "Message is blocked due to customer status"),
   BLOCKED_BY_CHANNEL_QUOTA(714, "BLOCKED_BY_CHANNEL_QUOTA", "Message is blocked due to channel quota"),
+//  RESET_YOUR_PASSWORD(999,"RESET_YOUR_PASSWORD","Reset Your Password"),
+  NO_MESSAGE_TEMPLATE_FOR_AREA_AVAILABILITY(800, "NO_MESSAGE_TEMPLATE_FOR_AREA_AVAILABILITY", "no message template has been found for requested area availability"),
   UNKNOWN(-1, "UNKNOWN", "UNKNOWN");
   
   private int genericResponseCode;

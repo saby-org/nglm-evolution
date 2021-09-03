@@ -4,6 +4,9 @@
   "language"                             : "<_DEPLOYMENT_LOCALE_LANGUAGE_>",
   "country"                              : "<_DEPLOYMENT_LOCALE_COUNTRY_>",
   "APIresponseDateFormat"                : "yyyy-MM-dd'T'HH:mm:ssZZZZ",
+  
+  "subscriberDeletionTimeUnit"           : "day",
+  "subscriberDeletionTimeUnitNumber"     : 0,		
 
   "topicSubscriberPartitions" : "<_SUBSCRIBER_PARTITIONS_>",
   "topicReplication"          : "<_KAFKA_REPLICATION_FACTOR_>",
@@ -19,7 +22,7 @@
   "guiConfigurationInitialConsumerMaxFetchBytes": 3145728,
 
   "kafkaRetentionDaysExpiredTokens"   : 31,
-  "kafkaRetentionDaysExpiredVouchers" : 31,
+  "kafkaRetentionDaysExpiredVouchers" : 122,
   "kafkaRetentionDaysLoyaltyPrograms" : 31,
   "kafkaRetentionDaysTargets"         : 7,
   
@@ -27,7 +30,6 @@
 
   "datacubeJobsScheduling.comment": "CRON are scheduled in the time-zone of THE TENANT. Two jobs scheduled at midnight for different tenants in different time-zone will therefore not run at the same time. Fields name are JobUniqueID. They can be used to override them in the project deployment.json. You can also add new jobs by using a different JobUniqueID. BEWARE that every job will have an instance for EVERY tenants. CRON Format: minute (0-59), hour (0-23), day of month (1-31), month of year (1-12:JAN-DEC case-insensitive), day of week (0-7:MON-SUN case-insensitive) 1 is always Monday",
   "datacubeJobsScheduling" : {
-    "ODR-daily-preview"              : { "type": "ODR-daily-preview",            "enabled": true,  "scheduledAtRestart": false, "cronEntry": "0 * * * *" },
     "ODR-daily-preview"              : { "type": "ODR-daily-preview",            "enabled": true,  "scheduledAtRestart": false, "cronEntry": "0 * * * *" },
     "ODR-daily-definitive"           : { "type": "ODR-daily-definitive",         "enabled": true,  "scheduledAtRestart": false, "cronEntry": "0 1 * * *" },
     "ODR-hourly-preview"             : { "type": "ODR-hourly-preview",           "enabled": false, "scheduledAtRestart": false, "cronEntry": "0 * * * *" },
@@ -96,12 +98,12 @@
   
   "elasticsearchTemplatesVersion" : {
     "root":                             2,
-    "subscriberprofile":                2,
-    "detailedrecords_bonuses":          2,
-    "detailedrecords_tokens":           2,
-    "detailedrecords_offers":           2,
-    "detailedrecords_vouchers":         2,
-    "detailedrecords_messages":         2,
+    "subscriberprofile":                3,
+    "detailedrecords_bonuses":          4,
+    "detailedrecords_tokens":           3,
+    "detailedrecords_offers":           4,
+    "detailedrecords_vouchers":         4,
+    "detailedrecords_messages":         3,
     "detailedrecords_events":           2,
     "journeystatistic":                 2,
     "datacube_subscriberprofile":       2,
@@ -109,15 +111,16 @@
     "datacube_loyaltyprogramschanges":  2,
     "datacube_journeytraffic":          2,
     "datacube_journeyrewards":          2,
-    "datacube_odr":                     2,
-    "datacube_bdr":                     2,
+    "datacube_odr":                     3,
+    "datacube_bdr":                     3,
     "datacube_messages":                2,
     "datacube_vdr":                     2,
     "mapping_modules":                  2,
     "mapping_journeys":                 2,
     "mapping_journeyrewards":           2,
     "mapping_deliverables":             2,
-    "mapping_basemanagment":            2,
+    "mapping_partners":                 2,
+    "mapping_basemanagement":           2,
     "mapping_journeyobjective":         2
   },
   "elasticsearchIndexByPassVersion.comment" : "WARNING. DEBUG VARIABLE. DO NOT MODIFY IT IF YOU DO NOT KNOW WHAT YOU ARE DOING.",
@@ -129,7 +132,9 @@
   },
 
   "hourlyReportCronEntryString"   : "0 * * * *",
+  
   "dailyReportCronEntryString"    : "5 2 * * *",
+  
   "weeklyReportCronEntryString"   : "10 2 * * 0",
   "monthlyReportCronEntryString"  : "15 3 1 * *",
   
@@ -180,6 +185,9 @@
   "ucgRuleTopic"                                         : "${topic.ucgrule}",
   "deliverableTopic"                                     : "${topic.deliverable}",
   "tokenTypeTopic"                                       : "${topic.tokentype}",  
+  "otpTypeTopic"                                         : "${topic.otptype}",
+  "otpInstanceChangeRequestTopic"                        : "${topic.otpinstancechange.request}",
+  "otpInstanceChangeResponseTopic"                       : "${topic.otpinstancechange.response}",
   "voucherTypeTopic"                                     : "${topic.vouchertype}",  
   "voucherTopic"                                         : "${topic.voucher}",  
   "guiAuditTopic"                                        : "${topic.guiaudit}",
@@ -239,6 +247,8 @@
   "edrDetailsTopic"                           			 : "${topic.edrdetails}",
   "fileWithVariableEventTopic"                           : "${topic.filewithvariableevent}",
   "workflowEventTopic"                                   : "${topic.workflowEvent}",
+  "subscriberProfileForceUpdateResponseTopic"            : "${topic.subscriberProfileForceUpdateResponse}",
+  "notificationEventTopic"                               : "${topic.notificationEvent}",
 
   "supportedDataTypes" :
     [
@@ -390,12 +400,13 @@
 
   "supportedTimeUnits" :
     [ 
-      { "id" : "instant", "display" : "Instant" },
-      { "id" : "minute",  "display" : "Minute" },
-      { "id" : "hour",    "display" : "Hour" },
-      { "id" : "day",     "display" : "Day" },
-      { "id" : "month",   "display" : "Month" },
-      { "id" : "year",    "display" : "Year" }
+      { "id" : "instant",	"display" : "Instant" },
+      { "id" : "minute",	"display" : "Minute" },
+      { "id" : "hour",		"display" : "Hour" },
+      { "id" : "day",		"display" : "Day" },
+      { "id" : "month",		"display" : "Month" },
+      { "id" : "year",		"display" : "Year" },
+      { "id" : "quarter",	"display" : "Quarter" }
     ],
 
     "supportedTokenCodesFormats" :
@@ -533,7 +544,13 @@
       { "id" : "campaign.customer.status",     "display" : "Campaign Customer Status",     "dataType" : "stringSet",    "tagFormat" : null, "tagMaxLength" : null, "esField" : "specialCriterionCampaignStatus",     "retriever" : "getEvaluationJourneyStatus", "minValue" : null, "maxValue" : null, "includedOperators" : null,     "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : [ "#subscriberJourneyStatuses#" ] },
       { "id" : "bulkcampaign.customer.status", "display" : "BulkCampaign Customer Status", "dataType" : "stringSet",    "tagFormat" : null, "tagMaxLength" : null, "esField" : "specialCriterionBulkcampaignStatus", "retriever" : "getEvaluationJourneyStatus", "minValue" : null, "maxValue" : null, "includedOperators" : null,     "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : [ "#subscriberJourneyStatuses#" ] },
 	  { "id" : "loyaltyprograms.challenge.levels",     "display" : "Loyalty Challenges Current Levels",   "dataType" : "stringSet", "tagFormat" : null, "tagMaxLength" : 100,  "esField" : null,               		 "retriever" : "getLoyaltyChallengesLevels",    "minValue" : null, "maxValue" : null, "includedOperators" : null,     "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : null },
-	  { "id" : "loyaltyprograms.mission.steps",        "display" : "Loyalty Mission Current Steps",       "dataType" : "stringSet", "tagFormat" : null, "tagMaxLength" : 100,  "esField" : null,               		 "retriever" : "getLoyaltyMissionsSteps",    "minValue" : null, "maxValue" : null, "includedOperators" : null,     "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : null }
+	  { "id" : "loyaltyprograms.mission.steps",        "display" : "Loyalty Mission Current Steps",       "dataType" : "stringSet", "tagFormat" : null, "tagMaxLength" : 100,  "esField" : null,               		 "retriever" : "getLoyaltyMissionsSteps",    "minValue" : null, "maxValue" : null, "includedOperators" : null,     "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : null },
+	  { "id" : "offer.offername.purchased.period",     "display" : "Offer purchased over a period",      		"dataType" : "integer",  "tagFormat" : null, "tagMaxLength" : 100,  "esField" : null,               		 "retriever" : "getNumberOfOfferPurchasedForPeriod",     "minValue" : null, "maxValue" : null, "includedOperators" : null,     "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : null, 					"subcriteria" : [{	"id": "offer.id", 			"display": "Offer Name", 			"dataType": "string",	"availableValues": ["#offers#"]	},			{	"id": "period",	"display": "Period",	"mandatory" : true,	"dataType": "string", "availableValues": [{"id": "today" , "display" : "Today"}, {"id": "yesterday" , "display" : "Yesterday"},{"id": "this.month" , "display" : "This month"},{"id": "last.1.month" , "display" : "Last month"},{"id": "last.3.month" , "display" : "Last 3 months"}]}]},
+	  { "id" : "offer.saleschannel.purchased.period",  "display" : "Offers purchased over a period",      		"dataType" : "integer",  "tagFormat" : null, "tagMaxLength" : 100,  "esField" : null,               		 "retriever" : "getNumberOfOfferPurchasedFromSalesChnlForPeriod",     "minValue" : null, "maxValue" : null, "includedOperators" : null,     "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : null, 		"subcriteria" : [{	"id": "saleschannel.id", 	"display": "Sales Channel Name", 	"dataType": "string",	"availableValues": ["#saleschannels#"]},	{	"id": "period",	"display": "Period",	"mandatory" : true,	"dataType": "string", "availableValues": [{"id": "today" , "display" : "Today"}, {"id": "yesterday" , "display" : "Yesterday"},{"id": "this.month" , "display" : "This month"},{"id": "last.1.month" , "display" : "Last month"},{"id": "last.3.month" , "display" : "Last 3 months"}]}]},
+      { "id" : "voucher.vouchername.delivered.period", "display" : "Vouchers delivered over a period",      	"dataType" : "integer",  "tagFormat" : null, "tagMaxLength" : 100,  "esField" : null,               		 "retriever" : "getNumberOfVoucherDeliveredForPeriod",     "minValue" : null, "maxValue" : null, "includedOperators" : null,     "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : null, 				"subcriteria" : [{	"id": "voucher.id",			 "display": "Voucher Name", 		"dataType": "string",	"availableValues": ["#vouchers#"]	}, 		{	"id": "period",	"display": "Period",	"mandatory" : true,	"dataType": "string", "availableValues": [{"id": "today" , "display" : "Today"}, {"id": "yesterday" , "display" : "Yesterday"},{"id": "this.month" , "display" : "This month"},{"id": "last.1.month" , "display" : "Last month"},{"id": "last.3.month" , "display" : "Last 3 months"}]}]},
+	  { "id" : "voucher.vouchername.redeemed.period",  "display" : "Vouchers redeemed over a period",      		"dataType" : "integer",  "tagFormat" : null, "tagMaxLength" : 100,  "esField" : null,               		 "retriever" : "getNumberOfVoucherRedeemedForPeriod",      "minValue" : null, "maxValue" : null, "includedOperators" : null,     "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : null, 				"subcriteria" : [{	"id": "voucher.id",			 "display": "Voucher Name", 		"dataType": "string",	"availableValues": ["#vouchers#"]	}, 		{	"id": "period",	"display": "Period",	"mandatory" : true,	"dataType": "string", "availableValues": [{"id": "today" , "display" : "Today"}, {"id": "yesterday" , "display" : "Yesterday"},{"id": "this.month" , "display" : "This month"},{"id": "last.1.month" , "display" : "Last month"},{"id": "last.3.month" , "display" : "Last 3 months"}]}]},
+	  { "id" : "voucher.vouchername.expired.period",   "display" : "Vouchers expired over a period",      		"dataType" : "integer",  "tagFormat" : null, "tagMaxLength" : 100,  "esField" : null,               		 "retriever" : "getNumberOfVoucherExpiredForPeriod",       "minValue" : null, "maxValue" : null, "includedOperators" : null,     "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : [ ], "availableValues" : null, 				"subcriteria" : [{	"id": "voucher.id",			 "display": "Voucher Name", 		"dataType": "string",	"availableValues": ["#vouchers#"]	}, 		{	"id": "period",	"display": "Period",	"mandatory" : true,	"dataType": "string", "availableValues": [{"id": "today" , "display" : "Today"}, {"id": "yesterday" , "display" : "Yesterday"},{"id": "this.month" , "display" : "This month"},{"id": "last.1.month" , "display" : "Last month"},{"id": "last.3.month" , "display" : "Last 3 months"}]}]}
+ 
    ],
 
   "offerOptimizationAlgorithms": 
@@ -647,9 +664,9 @@
   {
     "generalDetailsMetaData" :
     [
-      { "id" : "1000",   "textProperty" : true,  "display" : "Evolution Subscriber Status",             "editable" : true,  "alternateID" : false, "topLevel": true,      "dataType" : "string",      "name" : "evolutionSubscriberStatus",                 "imageURL": "fa fa-user",     "maxLength" : 100, "availableValues" : ["active", "inactive", "(unknown)"] },
+      { "id" : "1000",   "textProperty" : true,  "display" : "Evolution Subscriber Status",             "editable" : true,  "alternateID" : false, "topLevel": true,      "dataType" : "string",      "name" : "evolutionSubscriberStatus",                 "imageURL": "fa fa-user",     "maxLength" : 100, "availableValues" : ["active", "inactive", "terminated", "(unknown)"] },
       { "id" : "1001",   "textProperty" : true,  "display" : "Evolution Subscriber Status Change Date", "editable" : false, "alternateID" : false, "topLevel": false,     "dataType" : "date",        "name" : "evolutionSubscriberStatusChangeDate",       "imageURL": "fa fa-user",     "maxLength" : 100, "availableValues" : null },
-      { "id" : "1002",   "textProperty" : true,  "display" : "Previous Evolution Subscriber Status",    "editable" : false, "alternateID" : false, "topLevel": false,     "dataType" : "string",      "name" : "previousEvolutionSubscriberStatus",         "imageURL": "fa fa-user",     "maxLength" : 100, "availableValues" : ["active", "inactive", "(unknown)"] },
+      { "id" : "1002",   "textProperty" : true,  "display" : "Previous Evolution Subscriber Status",    "editable" : false, "alternateID" : false, "topLevel": false,     "dataType" : "string",      "name" : "previousEvolutionSubscriberStatus",         "imageURL": "fa fa-user",     "maxLength" : 100, "availableValues" : ["active", "inactive", "terminated", "(unknown)"] },
       { "id" : "1003",   "textProperty" : true,  "display" : "Subscriber Language",                     "editable" : true,  "alternateID" : false, "topLevel": false,     "dataType" : "string",      "name" : "language",                                  "imageURL": "fa fa-user",     "maxLength" : 100, "availableValues" : null },
       { "id" : "1004",   "textProperty" : true,  "display" : "Subscriber Segments",                     "editable" : false, "alternateID" : false, "topLevel": false,     "dataType" : "stringSet",   "name" : "segments",                                  "imageURL": "fa fa-user",     "maxLength" : 100, "availableValues" : null },
       { "id" : "1005",   "textProperty" : true,  "display" : "Subscriber ID",                           "editable" : false, "alternateID" : false, "topLevel": false,     "dataType" : "string",      "name" : "subscriberID",                              "imageURL": "fa fa-user",     "maxLength" : 100, "availableValues" : null },
@@ -659,7 +676,7 @@
     ],
     "kpisMetaData" :
     [
-      { "id": "1",   "textProperty": true,  "display": "Activity", "displayGroups" : [{"rangeUpTo": "active", "imageURL": "ffa fa-ok", "color" : "#3adc3a"}, {"rangeUpTo": "inactive", "imageURL": "fa fa-times", "color" : "#ff0000"}, {"rangeUpTo": null, "imageURL": "fa fa-times", "color" : "#ffff00"}],  "dataType": "int", "name": "activity", "kpiUnit": null, "topLevel": false, "additionalGeneralDetails": [] }
+      { "id": "1",   "textProperty": true,  "display": "Activity", "displayGroups" : [{"rangeUpTo": "active", "imageURL": "fa fa-check-square-o", "color" : "#54a133"}, {"rangeUpTo": "inactive", "imageURL": "fa fa-times", "color" : "#c43333"}, {"rangeUpTo": null, "imageURL": "fa fa-times", "color" : "#ffff00"}],  "dataType": "string", "name": "activity", "kpiUnit": null, "topLevel": true, "additionalGeneralDetails": [] }
     ]
   },
 
@@ -711,6 +728,7 @@
   "initialOfferObjectives" : [],
   "initialProductTypes" : [],
   "initialTokenTypes" : [],
+  "initialOTPTypes" : [],
   "initialSegmentationDimensions" : [],
   "initialComplexObjects" : [],
   "initialCallingChannels": [],
@@ -910,8 +928,32 @@
       "id"           : "getResellerDetails",
       "methodName"   : "getResellerDetails",
       "permissions"  : ["API-GET-RESELLER-DETAILS"]
+    },
+    {
+      "id"           : "generateOTP",
+      "methodName"   : "generateOTP",
+      "permissions"  : ["API-GENERATE-OTP"]
+    },
+    {
+      "id"           : "checkOTP",
+      "methodName"   : "checkOTP",
+      "permissions"  : ["API-CHECK-OTP"]
+    },
+    {
+      "id"           : "getVoucherList",
+      "methodName"   : "getVoucherList",
+      "permissions"  : ["API-GET-VOUCHER-LIST"]
+    },
+    {
+      "id"           : "deleteCustomer",
+      "methodName"   : "deleteCustomer",
+      "permissions"  : ["API-DELETE-CUSTOMER"]
+    },
+    {
+      "id"           : "getCustomerVouchers",
+      "methodName"   : "getCustomerVouchers",
+      "permissions"  : ["API-GET-CUSTOMER-VOUCHERS"]
     }
-    
   ],
 
   "uploadedFileSeparator" : ";",
@@ -1022,6 +1064,20 @@
       "display"             : "Loyalty Program Customer States",
       "description"         : "Description of the Loyalty Program Customer States Report",
       "class"               : "com.evolving.nglm.evolution.reports.loyaltyprogramcustomerstate.LoyaltyProgramCustomerStatesDriver",
+      "availableScheduling" : [ "none","daily", "weekly", "monthly" ]
+    },
+    {
+      "name"                : "loyaltyChallengeCustomerStates",
+      "display"             : "Loyalty Challenge Customer States",
+      "description"         : "Description of the Loyalty Challenge Customer States Report",
+      "class"               : "com.evolving.nglm.evolution.reports.loyaltychallengecustomerstate.LoyaltyChallengeCustomerStatesDriver",
+      "availableScheduling" : [ "none","daily", "weekly", "monthly" ]
+    },
+    {
+      "name"                : "loyaltyMissionCustomerStates",
+      "display"             : "Loyalty Mission Customer States",
+      "description"         : "Description of the Loyalty Mission Customer States Report",
+      "class"               : "com.evolving.nglm.evolution.reports.loyaltymissioncustomerstate.LoyaltyMissionCustomerStatesDriver",
       "availableScheduling" : [ "none","daily", "weekly", "monthly" ]
     },
     {
@@ -1201,6 +1257,8 @@
   "externalAPITopics" : [],
   
   "generateSimpleProfileDimensions" : true,
-  "recurrentCampaignCreationDaysRange" : 3
+  "recurrentCampaignCreationDaysRange" : 3,
+
+  "addSubscribersToUcgByCounting" : true
   
 }

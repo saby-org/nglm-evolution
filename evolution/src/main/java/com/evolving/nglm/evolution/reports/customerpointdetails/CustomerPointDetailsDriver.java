@@ -1,5 +1,6 @@
 package com.evolving.nglm.evolution.reports.customerpointdetails;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -10,6 +11,7 @@ import com.evolving.nglm.evolution.Report;
 import com.evolving.nglm.evolution.reports.FilterObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportDriver.ReportTypeDef;
+import com.evolving.nglm.evolution.reports.bdr.BDRReportMonoPhase;
 
 @ReportTypeDef(reportType = "subscriberprofile")
 public class CustomerPointDetailsDriver extends ReportDriver
@@ -25,7 +27,7 @@ public class CustomerPointDetailsDriver extends ReportDriver
     log.debug("data for report : " +SUBSCRIBER_ES_INDEX);
     log.debug("PHASE 1 : read ElasticSearch");
     log.trace(kafka+","+zookeeper+","+elasticSearch+","+SUBSCRIBER_ES_INDEX);
-    CustomerPointDetailsMonoPhase.main(new String[]{elasticSearch, SUBSCRIBER_ES_INDEX, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit}, reportGenerationDate);     
+    CustomerPointDetailsMonoPhase.main(new String[]{elasticSearch, SUBSCRIBER_ES_INDEX, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit, tenantID+""}, reportGenerationDate);     
     
     log.debug("Finished with CustomerPointDetails Report");
   }
@@ -37,8 +39,8 @@ public class CustomerPointDetailsDriver extends ReportDriver
 
   @Override
   public List<String> reportHeader() {
-    // TODO Auto-generated method stub
-    return null;
+    List<String> result = CustomerPointDetailsMonoPhase.headerFieldsOrder;
+    return result;
   }
 
 }

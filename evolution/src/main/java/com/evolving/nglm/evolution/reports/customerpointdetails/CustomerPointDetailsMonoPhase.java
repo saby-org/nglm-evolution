@@ -34,8 +34,32 @@ public class CustomerPointDetailsMonoPhase implements ReportCsvFactory
 
   private static final Logger log = LoggerFactory.getLogger(CustomerPointDetailsMonoPhase.class);
   private static final String CSV_SEPARATOR = ReportUtils.getSeparator();
-  List<String> headerFieldsOrder = new ArrayList<String>();
+  
+  private static final String customerID = "customerID";
+  private static final String dateTime = "dateTime";
+  private static final String pointName = "pointName";
+  private static final String pointBalance = "pointBalance";
+  private static final String pointValidity = "pointValidity";
+  
+  
+  
+  static List<String> headerFieldsOrder = new ArrayList<String>();
+  static
+  {
+    headerFieldsOrder.add(customerID);
+    for (AlternateID alternateID : Deployment.getAlternateIDs().values())
+    {
+      if(alternateID.getName().equals("msisdn")) {
+      headerFieldsOrder.add(alternateID.getName());}
+    }
+    headerFieldsOrder.add(dateTime);
+    headerFieldsOrder.add(pointName);
+    headerFieldsOrder.add(pointBalance);
+    headerFieldsOrder.add(pointValidity);
+  }
+  
   private PointService pointService;
+  private int tenantID = 0;
 
   @Override
   public boolean dumpElementToCsvMono(Map<String,Object> map, ZipOutputStream writer, boolean addHeaders) throws IOException
@@ -56,14 +80,14 @@ public class CustomerPointDetailsMonoPhase implements ReportCsvFactory
             //  get subscriber information
             //
             
-            subscriberComputedFields.put("customerID", subscriberID);
+            subscriberComputedFields.put(customerID, subscriberID);
             for(AlternateID alternateID : Deployment.getAlternateIDs().values()){
               if(subscriberFields.get(alternateID.getESField()) != null){
                 Object alternateId = subscriberFields.get(alternateID.getESField());
                 subscriberComputedFields.put(alternateID.getName(),alternateId);   
               }
             }
-            subscriberComputedFields.put("dateTime", ReportsCommonCode.getDateString(now));  
+            subscriberComputedFields.put(dateTime, ReportsCommonCode.getDateString(now));  
 
             List<Map<String, Object>> pointsArray = (List<Map<String, Object>>) subscriberFields.get("pointBalances");
             if (!pointsArray.isEmpty())
@@ -97,8 +121,8 @@ public class CustomerPointDetailsMonoPhase implements ReportCsvFactory
                             balances.put(new Date((Long) insideExpiration.get("date")), amount);
                           }
 
-                        loyaltyComputedFields.put("pointName", storedPoint.getDisplay());
-                        loyaltyComputedFields.put("pointBalance", getBalance(now, balances));
+                        loyaltyComputedFields.put(pointName, storedPoint.getDisplay());
+                        loyaltyComputedFields.put(pointBalance, getBalance(now, balances));
 
                         List<Map<String, Object>> outputJSON = new ArrayList<>();
                         for (Entry<Date, Integer> balance : balances.entrySet())
@@ -108,7 +132,7 @@ public class CustomerPointDetailsMonoPhase implements ReportCsvFactory
                             validityJSON.put("validityDate", ReportsCommonCode.getDateString(balance.getKey()));
                             outputJSON.add(validityJSON);
                           }
-                        loyaltyComputedFields.put("pointValidity", ReportUtils.formatJSON(outputJSON));
+                        loyaltyComputedFields.put(pointValidity, ReportUtils.formatJSON(outputJSON));
 
                         // store subscriber information + point information
                         LinkedHashMap<String, Object> fullFields = new LinkedHashMap<String, Object>();
@@ -173,6 +197,8 @@ public class CustomerPointDetailsMonoPhase implements ReportCsvFactory
     String esNode             = args[0];
     String esIndexSubscriber  = args[1];
     String csvfile            = args[2];
+    if (args.length > 5) tenantID = Integer.parseInt(args[5]);
+
     // Other arguments are ignored in original report
 
     log.info("Reading data from "+esIndexSubscriber + " producing "+csvfile+" with '"+CSV_SEPARATOR+"' separator");

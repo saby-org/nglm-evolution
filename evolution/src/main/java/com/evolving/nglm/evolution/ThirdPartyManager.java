@@ -17,6 +17,7 @@ import java.lang.reflect.Constructor;
 import java.net.InetSocketAddress;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -32,7 +33,6 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -67,11 +67,13 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.Alarm;
 import com.evolving.nglm.core.AlternateID;
+import com.evolving.nglm.core.AssignSubscriberIDs;
 import com.evolving.nglm.core.AutoProvisionEvent;
 import com.evolving.nglm.core.AutoProvisionSubscriberStreamEvent;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.KStreamsUniqueKeyServer;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.LicenseChecker;
 import com.evolving.nglm.core.LicenseChecker.LicenseState;
@@ -84,12 +86,14 @@ import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.StringKey;
 import com.evolving.nglm.core.SubscriberIDService;
 import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
+import com.evolving.nglm.core.SubscriberStreamEvent.SubscriberAction;
 import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
+import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
@@ -99,8 +103,6 @@ import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.LoyaltyProgramChallengeHistory.LevelHistory;
 import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
 import com.evolving.nglm.evolution.LoyaltyProgramMissionHistory.StepHistory;
-import com.evolving.nglm.evolution.MailNotificationManager.MailNotificationManagerRequest;
-import com.evolving.nglm.evolution.NotificationManager.NotificationManagerRequest;
 import com.evolving.nglm.evolution.OfferCharacteristics.OfferCharacteristicsLanguageProperty;
 import com.evolving.nglm.evolution.OfferCharacteristics.OfferCharacteristicsProperty;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
@@ -115,6 +117,7 @@ import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 import com.evolving.nglm.evolution.offeroptimizer.DNBOMatrixAlgorithmParameters;
 import com.evolving.nglm.evolution.offeroptimizer.GetOfferException;
 import com.evolving.nglm.evolution.offeroptimizer.ProposedOfferDetails;
+import com.evolving.nglm.evolution.otp.OTPInstanceChangeEvent;
 import com.evolving.nglm.evolution.statistics.DurationStat;
 import com.evolving.nglm.evolution.statistics.StatBuilder;
 import com.evolving.nglm.evolution.statistics.StatsBuilders;
@@ -126,7 +129,11 @@ public class ThirdPartyManager
 {
   private static final String DEFAULT_FEATURE_ID = "<anonymous>";
   private static final String CUSTOMER_ID = "customerID";
+  private static final String CUSTOMER_ID_TYPE = "customerIDType";
+  private static final String CUSTOMER_ID_VALUE = "customerIDValue";
   private static final DeliveryRequest.DeliveryPriority DELIVERY_REQUEST_PRIORITY = DeliveryRequest.DeliveryPriority.High;
+  
+  private static KStreamsUniqueKeyServer uniqueKeyServer = new KStreamsUniqueKeyServer();
 
   /*****************************************
    *
@@ -176,6 +183,7 @@ public class ThirdPartyManager
   private SupplierService supplierService;
   private CallingChannelService callingChannelService;
   private ExclusionInclusionTargetService exclusionInclusionTargetService;
+  private UploadedFileService uploadedFileService;
 
   private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
   private static final int RESTAPIVersion = 1;
@@ -184,7 +192,12 @@ public class ThirdPartyManager
   private ZookeeperUniqueKeyServer zuksVoucherChange;
   private ElasticsearchClientAPI elasticsearch;
   private KafkaResponseListenerService<StringKey,PurchaseFulfillmentRequest> purchaseResponseListenerService;
+  private KafkaResponseListenerService<StringKey,TokenChange> tokenChangeResponseListenerService;
   private KafkaResponseListenerService<StringKey,VoucherChange> voucherChangeResponseListenerService;
+  private KafkaResponseListenerService<StringKey,OTPInstanceChangeEvent> otpChangeResponseListenerService;
+  private KafkaResponseListenerService<StringKey,JourneyRequest> enterCampaignResponseListenerService;
+  private KafkaResponseListenerService<StringKey,SubscriberProfileForceUpdateResponse> subscriberProfileForceUpdateResponseListenerService;
+  private KafkaResponseListenerService<StringKey,LoyaltyProgramRequest> loyaltyProgramOptInOutResponseListenerService;
   private static Map<String, ThirdPartyMethodAccessLevel> methodPermissionsMapper = new LinkedHashMap<String,ThirdPartyMethodAccessLevel>();
   private static Map<String, Constructor<? extends SubscriberStreamOutput>> JSON3rdPartyEventsConstructor = new HashMap<>();
   private static Integer authResponseCacheLifetimeInMinutes = null;
@@ -196,6 +209,8 @@ public class ThirdPartyManager
   // all this conf which should not makes no sense at then end :
   //private static final Class<?> PURCHASE_FULFILLMENT_REQUEST_CLASS = com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest.class;
   public static final String PURCHASE_FULFILLMENT_MANAGER_TYPE = "purchaseFulfillment";
+  public static final String JOURNEY_FULFILLMENT_MANAGER_TYPE  = "journeyFulfillment";
+  public static final String LOYALTYPROGRAM_FULFILLMENT_MANAGER_TYPE  = "loyaltyProgramFulfillment";
 
 
   /*****************************************
@@ -264,7 +279,12 @@ public class ThirdPartyManager
     getSimpleOfferList(33),
     removeSimpleOffer(34),
     getResellerDetails(35),
-    getCustomerEDRs(36);
+    getCustomerEDRs(36),
+    generateOTP(37),
+    checkOTP(38),
+    getVoucherList(39),
+    deleteCustomer(40),
+    getCustomerVouchers(41);
     private int methodIndex;
     private API(int methodIndex) { this.methodIndex = methodIndex; }
     public int getMethodIndex() { return methodIndex; }
@@ -488,7 +508,7 @@ public class ThirdPartyManager
     productService = new ProductService(bootstrapServers, "thirdpartymanager-productservice-" + apiProcessKey, Deployment.getProductTopic(), false);
     productService.start();
     
-    voucherService = new VoucherService(bootstrapServers, "thirdpartymanager-voucherservice-" + apiProcessKey, Deployment.getVoucherTopic());
+    voucherService = new VoucherService(bootstrapServers, "thirdpartymanager-voucherservice-" + apiProcessKey, Deployment.getVoucherTopic(), elasticsearch);
     voucherService.start();
 
     deliverableService = new DeliverableService(bootstrapServers, "thirdpartymanager-deliverableservice-" + apiProcessKey, Deployment.getDeliverableTopic(), false);
@@ -528,8 +548,28 @@ public class ThirdPartyManager
     purchaseResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),dmd.getResponseTopic(DELIVERY_REQUEST_PRIORITY),StringKey.serde(),PurchaseFulfillmentRequest.serde());
     purchaseResponseListenerService.start();
 
+    tokenChangeResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),Deployment.getTokenChangeTopic(),StringKey.serde(),TokenChange.serde());
+    tokenChangeResponseListenerService.start();
+
     voucherChangeResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),Deployment.getVoucherChangeResponseTopic(),StringKey.serde(),VoucherChange.serde());
     voucherChangeResponseListenerService.start();
+    
+    otpChangeResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),Deployment.getOTPInstanceChangeResponseTopic(),StringKey.serde(),OTPInstanceChangeEvent.serde());
+    otpChangeResponseListenerService.start();
+
+    DeliveryManagerDeclaration dmdj = Deployment.getDeliveryManagers().get(JOURNEY_FULFILLMENT_MANAGER_TYPE);
+    enterCampaignResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),dmdj.getResponseTopic(DELIVERY_REQUEST_PRIORITY),StringKey.serde(),JourneyRequest.serde());
+    enterCampaignResponseListenerService.start();
+    
+    DeliveryManagerDeclaration dmdl = Deployment.getDeliveryManagers().get(LOYALTYPROGRAM_FULFILLMENT_MANAGER_TYPE);
+    loyaltyProgramOptInOutResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),dmdl.getResponseTopic(DELIVERY_REQUEST_PRIORITY),StringKey.serde(),LoyaltyProgramRequest.serde());
+    loyaltyProgramOptInOutResponseListenerService.start();
+    
+    subscriberProfileForceUpdateResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),Deployment.getSubscriberProfileForceUpdateResponseTopic(),StringKey.serde(),SubscriberProfileForceUpdateResponse.serde());
+    subscriberProfileForceUpdateResponseListenerService.start();
+
+    uploadedFileService = new UploadedFileService(Deployment.getBrokerServers(),Deployment.getUploadedFileTopic(),false);
+    uploadedFileService.start();
 
     /*****************************************
      *
@@ -544,7 +584,6 @@ public class ThirdPartyManager
       restServer.createContext("/nglm-thirdpartymanager/ping", new APIHandler(API.ping));
       restServer.createContext("/nglm-thirdpartymanager/getCustomer", new APIHandler(API.getCustomer));
       restServer.createContext("/nglm-thirdpartymanager/getCustomerBDRs", new APIHandler(API.getCustomerBDRs));
-      restServer.createContext("/nglm-thirdpartymanager/getCustomerEDRs", new APIHandler(API.getCustomerEDRs));
       restServer.createContext("/nglm-thirdpartymanager/getCustomerODRs", new APIHandler(API.getCustomerODRs));
       restServer.createContext("/nglm-thirdpartymanager/getCustomerPoints", new APIHandler(API.getCustomerPoints));
       restServer.createContext("/nglm-thirdpartymanager/creditBonus", new APIHandler(API.creditBonus));
@@ -575,6 +614,12 @@ public class ThirdPartyManager
       restServer.createContext("/nglm-thirdpartymanager/getSimpleOfferList", new APIHandler(API.getSimpleOfferList));
       restServer.createContext("/nglm-thirdpartymanager/removeSimpleOffer", new APIHandler(API.removeSimpleOffer));
       restServer.createContext("/nglm-thirdpartymanager/getResellerDetails", new APIHandler(API.getResellerDetails));
+      restServer.createContext("/nglm-thirdpartymanager/getCustomerEDRs", new APIHandler(API.getCustomerEDRs));
+      restServer.createContext("/nglm-thirdpartymanager/generateOTP", new APIHandler(API.generateOTP));
+      restServer.createContext("/nglm-thirdpartymanager/checkOTP", new APIHandler(API.checkOTP));      
+      restServer.createContext("/nglm-thirdpartymanager/getVoucherList", new APIHandler(API.getVoucherList));
+      restServer.createContext("/nglm-thirdpartymanager/deleteCustomer", new APIHandler(API.deleteCustomer));
+      restServer.createContext("/nglm-thirdpartymanager/getCustomerVouchers", new APIHandler(API.getCustomerVouchers));
       restServer.setExecutor(Executors.newFixedThreadPool(threadPoolSize));
       restServer.start();
 
@@ -590,7 +635,7 @@ public class ThirdPartyManager
      *
      *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, dynamicCriterionFieldService, offerService, subscriberProfileService, segmentationDimensionService, journeyService, journeyObjectiveService, loyaltyProgramService, pointService, paymentMeanService, offerObjectiveService, subscriberMessageTemplateService, salesChannelService, resellerService, subscriberIDService, subscriberGroupEpochReader, productService, deliverableService, callingChannelService, exclusionInclusionTargetService));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, dynamicCriterionFieldService, offerService, subscriberProfileService, segmentationDimensionService, journeyService, journeyObjectiveService, loyaltyProgramService, pointService, paymentMeanService, offerObjectiveService, subscriberMessageTemplateService, salesChannelService, resellerService, subscriberIDService, subscriberGroupEpochReader, productService, deliverableService, callingChannelService, exclusionInclusionTargetService, uploadedFileService));
 
     /*****************************************
      *
@@ -634,13 +679,14 @@ public class ThirdPartyManager
     private DeliverableService deliverableService;
     private DynamicCriterionFieldService dynamicCriterionFieldService;
     private CallingChannelService callingChannelService;
-    private ExclusionInclusionTargetService exclusionInclusionTargetService;    
+    private ExclusionInclusionTargetService exclusionInclusionTargetService;
+    private UploadedFileService uploadedFileService;
 
     //
     //  constructor
     //
 
-    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, DynamicCriterionFieldService dynamicCriterionFieldService, OfferService offerService, SubscriberProfileService subscriberProfileService, SegmentationDimensionService segmentationDimensionService, JourneyService journeyService, JourneyObjectiveService journeyObjectiveService, LoyaltyProgramService loyaltyProgramService, PointService pointService, PaymentMeanService paymentMeanService, OfferObjectiveService offerObjectiveService, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, ResellerService resellerService, SubscriberIDService subscriberIDService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader, ProductService productService, DeliverableService deliverableService, CallingChannelService callingChannelService, ExclusionInclusionTargetService exclusionInclusionTargetService)
+    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, DynamicCriterionFieldService dynamicCriterionFieldService, OfferService offerService, SubscriberProfileService subscriberProfileService, SegmentationDimensionService segmentationDimensionService, JourneyService journeyService, JourneyObjectiveService journeyObjectiveService, LoyaltyProgramService loyaltyProgramService, PointService pointService, PaymentMeanService paymentMeanService, OfferObjectiveService offerObjectiveService, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, ResellerService resellerService, SubscriberIDService subscriberIDService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader, ProductService productService, DeliverableService deliverableService, CallingChannelService callingChannelService, ExclusionInclusionTargetService exclusionInclusionTargetService, UploadedFileService uploadedFileService)
     {
       this.kafkaProducer = kafkaProducer;
       this.restServer = restServer;
@@ -663,6 +709,7 @@ public class ThirdPartyManager
       this.deliverableService = deliverableService;
       this.callingChannelService = callingChannelService;
       this.exclusionInclusionTargetService = exclusionInclusionTargetService;
+      this.uploadedFileService = uploadedFileService;
     }
 
     //
@@ -694,6 +741,7 @@ public class ThirdPartyManager
       if (deliverableService != null) deliverableService.stop();
       if (callingChannelService != null) callingChannelService.stop();
       if (exclusionInclusionTargetService != null) exclusionInclusionTargetService.stop();
+      if (uploadedFileService != null) uploadedFileService.stop();
       
       //
       //  rest server
@@ -737,6 +785,7 @@ public class ThirdPartyManager
           }
       }
 
+    int tenantID = -1; // initialize with unknown tenant
     try
       {
       /*****************************************
@@ -788,7 +837,7 @@ public class ThirdPartyManager
        *
        *****************************************/
 
-      int tenantID = authenticateAndCheckAccess(jsonRoot, api.name());
+      tenantID = authenticateAndCheckAccess(jsonRoot, api.name());
 
       /*****************************************
        *
@@ -843,10 +892,10 @@ public class ThirdPartyManager
               jsonResponse = processGetCustomerPoints(jsonRoot, tenantID);
               break;
             case creditBonus:
-              jsonResponse = processCreditBonus(jsonRoot, tenantID);
+              jsonResponse = processCreditBonus(jsonRoot, sync, tenantID);
               break;
             case debitBonus:
-              jsonResponse = processDebitBonus(jsonRoot, tenantID);
+              jsonResponse = processDebitBonus(jsonRoot, sync, tenantID);
               break;
             case getCustomerMessages:
               jsonResponse = processGetCustomerMessages(jsonRoot, tenantID);
@@ -873,13 +922,13 @@ public class ThirdPartyManager
               jsonResponse = processGetCustomerAvailableCampaigns(jsonRoot, tenantID);
               break;
             case updateCustomer:
-              jsonResponse = processUpdateCustomer(jsonRoot, tenantID);
+              jsonResponse = processUpdateCustomer(jsonRoot, sync, tenantID);
               break;
             case updateCustomerParent:
-              jsonResponse = processUpdateCustomerParent(jsonRoot, tenantID);
+              jsonResponse = processUpdateCustomerParent(jsonRoot, sync, tenantID);
               break;
             case removeCustomerParent:
-              jsonResponse = processRemoveCustomerParent(jsonRoot, tenantID);
+              jsonResponse = processRemoveCustomerParent(jsonRoot, sync, tenantID);
               break;
             case getCustomerNBOs:
               jsonResponse = processGetCustomerNBOs(jsonRoot, tenantID);
@@ -900,13 +949,13 @@ public class ThirdPartyManager
               jsonResponse = processTriggerEvent(jsonRoot, tenantID);
               break;
             case enterCampaign:
-              jsonResponse = processEnterCampaign(jsonRoot, tenantID);
+              jsonResponse = processEnterCampaign(jsonRoot, sync,  tenantID);
               break;
             case loyaltyProgramOptIn:
-              jsonResponse = processLoyaltyProgramOptInOut(jsonRoot, true, tenantID);
+              jsonResponse = processLoyaltyProgramOptInOut(jsonRoot, true, sync, tenantID);
               break;
             case loyaltyProgramOptOut:
-              jsonResponse = processLoyaltyProgramOptInOut(jsonRoot, false, tenantID);
+              jsonResponse = processLoyaltyProgramOptInOut(jsonRoot, false, sync, tenantID);
               break;
             case validateVoucher:
               jsonResponse = processValidateVoucher(jsonRoot, tenantID);
@@ -926,6 +975,21 @@ public class ThirdPartyManager
             case removeSimpleOffer:
               jsonResponse = processRemoveSimpleOffer(jsonRoot);
               break;
+            case generateOTP:
+            	jsonResponse = processGenerateOTP(jsonRoot, tenantID);
+            	break;
+            case checkOTP:
+            	jsonResponse = processCheckOTP(jsonRoot, tenantID);
+            	break;
+            case getVoucherList:
+              jsonResponse = processGetVoucherList(jsonRoot, tenantID);
+              break;
+            case deleteCustomer:
+              jsonResponse = processDeleteCustomer(jsonRoot, tenantID);
+              break;
+            case getCustomerVouchers:
+              jsonResponse = processGetCustomerVouchers(jsonRoot, tenantID);
+              break;
           }
         }
       else
@@ -940,7 +1004,7 @@ public class ThirdPartyManager
 
       if (jsonResponse == null)
         {
-          addUnknownStats(api.name(),startTime);
+          addUnknownStats(api.name(),startTime, tenantID);
           throw new ServerException("no handler for " + api);
         }
 
@@ -961,7 +1025,7 @@ public class ThirdPartyManager
       //
 
       if (log.isDebugEnabled()) log.debug("API (raw response): {}", jsonResponse.toString());
-      addOKStats(api.name(),startTime);
+      addOKStats(api.name(),startTime, tenantID);
 
       //
       //  send
@@ -990,7 +1054,7 @@ public class ThirdPartyManager
       //  statistics
       //
 
-      addKOStats(api.name(),startTime);
+      addKOStats(api.name(),startTime, tenantID);
 
       //
       //  send error response
@@ -1044,7 +1108,7 @@ public class ThirdPartyManager
         //  statistics
         //
 
-        addKOStats(api.name(),startTime);
+        addKOStats(api.name(),startTime, tenantID);
 
         //
         //  send error response
@@ -1088,7 +1152,7 @@ public class ThirdPartyManager
         //  statistics
         //
 
-        addKOStats(api.name(),startTime);
+        addKOStats(api.name(),startTime, tenantID);
 
         //
         //  send error response
@@ -1636,7 +1700,7 @@ public class ThirdPartyManager
   *
   *****************************************/
   
-  private JSONObject processCreditBonus(JSONObject jsonRoot, int tenantID) throws ThirdPartyManagerException, IOException, ParseException{
+  private JSONObject processCreditBonus(JSONObject jsonRoot, boolean sync, int tenantID) throws ThirdPartyManagerException, IOException, ParseException{
     /****************************************
     *
     *  response
@@ -1710,21 +1774,21 @@ public class ThirdPartyManager
         validityPeriodType = point.getValidity().getPeriodType();
         validityPeriod = point.getValidity().getPeriodQuantity();
       }
-      CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(paymentMeanService,deliverableService,subscriberProfile,subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, eventID, Module.Customer_Care.getExternalRepresentation(), featureID, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Credit, quantity, validityPeriodType, validityPeriod, DELIVERY_REQUEST_PRIORITY, origin, tenantID);
+      Future<BonusDelivery> futureResponse = CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(sync,paymentMeanService,deliverableService,subscriberProfile,subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, eventID, Module.Customer_Care.getExternalRepresentation(), featureID, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Credit, quantity, validityPeriodType, validityPeriod, DELIVERY_REQUEST_PRIORITY, origin, tenantID);
+      BonusDelivery deliveryResponse = null;
+      if(sync){
+        deliveryResponse = handleWaitingResponse(futureResponse);
+      }
+
+      response.put("deliveryRequestID", deliveryRequestID);
+      updateResponse(response, deliveryResponse == null ? RESTAPIGenericReturnCodes.SUCCESS : RESTAPIGenericReturnCodes.fromGenericResponseCode(deliveryResponse.getBonusDeliveryReturnCode()));
+      return JSONUtilities.encodeObject(response);
+
+
     } catch (SubscriberProfileServiceException|CommodityDeliveryException e) {
       log.error("SubscriberProfileServiceException ", e.getMessage());
       throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
     }
-    
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    response.put("deliveryRequestID", deliveryRequestID);
-    updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
-    return JSONUtilities.encodeObject(response);
   }
   
   /*****************************************
@@ -1733,7 +1797,7 @@ public class ThirdPartyManager
   *
   *****************************************/
   
-  private JSONObject processDebitBonus(JSONObject jsonRoot, int tenantID) throws ThirdPartyManagerException, IOException, ParseException {
+  private JSONObject processDebitBonus(JSONObject jsonRoot, boolean sync, int tenantID) throws ThirdPartyManagerException, IOException, ParseException {
     
     /****************************************
     *
@@ -1791,21 +1855,20 @@ public class ThirdPartyManager
     String eventID = deliveryRequestID.concat("-").concat(Module.REST_API.toString());
     try {
       SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
-      CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(paymentMeanService,deliverableService,subscriberProfile, subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, eventID, Module.REST_API.getExternalRepresentation(), featureID, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getPaymentMeanID(), CommodityDeliveryOperation.Debit, quantity, null, null, DELIVERY_REQUEST_PRIORITY, origin, tenantID);
+      Future<BonusDelivery> futureResponse = CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(sync,paymentMeanService,deliverableService,subscriberProfile, subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, eventID, Module.REST_API.getExternalRepresentation(), featureID, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getPaymentMeanID(), CommodityDeliveryOperation.Debit, quantity, null, null, DELIVERY_REQUEST_PRIORITY, origin, tenantID);
+      BonusDelivery deliveryResponse = null;
+      if(sync){
+        deliveryResponse = handleWaitingResponse(futureResponse);
+      }
+
+      response.put("deliveryRequestID", deliveryRequestID);
+      updateResponse(response, deliveryResponse == null ? RESTAPIGenericReturnCodes.SUCCESS : RESTAPIGenericReturnCodes.fromGenericResponseCode(deliveryResponse.getBonusDeliveryReturnCode()));
+      return JSONUtilities.encodeObject(response);
     } catch (SubscriberProfileServiceException|CommodityDeliveryException e) {
       log.error("SubscriberProfileServiceException ", e.getMessage());
       throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
     }
-    
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
 
-    response.put("deliveryRequestID", deliveryRequestID);
-    updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
-    return JSONUtilities.encodeObject(response);
   }
  
   /*****************************************
@@ -2171,7 +2234,7 @@ public class ThirdPartyManager
                   nodeHistoriesMap.put("deliveryRequestID", journeyHistories.getDeliveryRequestID());
                   nodeHistoriesJson.add(JSONUtilities.encodeObject(nodeHistoriesMap));
                 }
-              journeyResponseMap.put("customerStatus", customerStatusInJourney.getExternalRepresentation());
+              journeyResponseMap.put("customerStatus", customerStatusInJourney.getDisplay());
               journeyResponseMap.put("journeyComplete", journeyComplete);
               journeyResponseMap.put("nodeHistories", JSONUtilities.encodeArray(nodeHistoriesJson));
               journeyResponseMap.put("currentState", currentStateJson);
@@ -2378,7 +2441,7 @@ public class ThirdPartyManager
               // filter on customerStatus
               //
 
-              boolean statusNotified = subsLatestStatistic.getStatusHistory().stream().filter(campaignStat -> SubscriberJourneyStatus.Notified.getExternalRepresentation().equals(campaignStat.getStatus())).count() > 0L;
+              boolean statusNotified = subsLatestStatistic.getStatusHistory().stream().filter(campaignStat -> (SubscriberJourneyStatus.Notified.getExternalRepresentation().equals(campaignStat.getStatus()) || SubscriberJourneyStatus.ConvertedNotified.getExternalRepresentation().equals(campaignStat.getStatus()) )).count() > 0L;
               boolean statusConverted = subsLatestStatistic.getStatusHistory().stream().filter(campaignStat -> campaignStat.isConverted()).count() > 0L;
               Boolean statusTargetGroup = subsLatestStatistic.getStatusHistory().stream().filter(campaignStat -> SubscriberJourneyStatus.Targeted.getExternalRepresentation().equals(campaignStat.getStatus())).count() > 0L;
               Boolean statusControlGroup = subsLatestStatistic.getStatusHistory().stream().filter(campaignStat -> SubscriberJourneyStatus.ControlGroup.getExternalRepresentation().equals(campaignStat.getStatus()) || SubscriberJourneyStatus.ControlGroupConverted.getExternalRepresentation().equals(campaignStat.getStatus())).count() > 0L;
@@ -2467,7 +2530,7 @@ public class ThirdPartyManager
                   nodeHistoriesMap.put("deliveryRequestID", journeyHistories.getDeliveryRequestID());
                   nodeHistoriesJson.add(JSONUtilities.encodeObject(nodeHistoriesMap));
                 }
-              campaignResponseESMap.put("customerStatus", customerStatusInJourney.getExternalRepresentation());
+              campaignResponseESMap.put("customerStatus", customerStatusInJourney.getDisplay());
               campaignResponseESMap.put("campaignComplete", campaignComplete);
               campaignResponseESMap.put("nodeHistories", JSONUtilities.encodeArray(nodeHistoriesJson));
               campaignResponseESMap.put("currentState", currentStateJson);
@@ -3326,7 +3389,7 @@ public class ThirdPartyManager
    *
    *****************************************/
 
-  private JSONObject processUpdateCustomer(JSONObject jsonRoot, int tenantID) throws ThirdPartyManagerException
+  private JSONObject processUpdateCustomer(JSONObject jsonRoot, Boolean sync, int tenantID) throws ThirdPartyManagerException
   {
     Map<String, Object> response = new HashMap<String, Object>();
 
@@ -3337,6 +3400,8 @@ public class ThirdPartyManager
      ****************************************/
 
     String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
+    String subscriberProfileForceUpdateRequestID = UUID.randomUUID().toString();
+    jsonRoot.put("subscriberProfileForceUpdateRequestID", subscriberProfileForceUpdateRequestID); 
     
     SubscriberProfile baseSubscriberProfile = null;
     try
@@ -3351,13 +3416,36 @@ public class ThirdPartyManager
 
       jsonRoot.put("subscriberID", subscriberID);
       SubscriberProfileForceUpdate subscriberProfileForceUpdate = new SubscriberProfileForceUpdate(jsonRoot);
+      
+      Future<SubscriberProfileForceUpdateResponse> waitingResponse=null;
+      if(sync){
+        waitingResponse = subscriberProfileForceUpdateResponseListenerService.addWithOnValueFilter((value)->value.getSubscriberProfileForceUpdateRequestID().equals(subscriberProfileForceUpdateRequestID));
+      }
 
       //
       //  submit to kafka
       //
 
       kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(subscriberProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), subscriberProfileForceUpdate)));
+      
+      if(sync){
+        SubscriberProfileForceUpdateResponse subscriberProfileForceUpdateresponse = handleWaitingResponse(waitingResponse);
+        String responseCode = subscriberProfileForceUpdateresponse.getReturnCode();
+        if (responseCode.equals("success"))
+          {
+            updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
+            return JSONUtilities.encodeObject(response);
+          }
+        else {
+          updateResponse(response, RESTAPIGenericReturnCodes.SYSTEM_ERROR);
+          return JSONUtilities.encodeObject(response);
+        }
+        
+        
+      }
+      else {
       updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
+      }
     }
     catch (GUIManagerException | SubscriberProfileServiceException e) 
     {
@@ -3384,7 +3472,7 @@ public class ThirdPartyManager
    *
    *****************************************/
 
-  private JSONObject processUpdateCustomerParent(JSONObject jsonRoot, int tenantID) throws ThirdPartyManagerException
+  private JSONObject processUpdateCustomerParent(JSONObject jsonRoot, Boolean sync, int tenantID) throws ThirdPartyManagerException
   {
     /****************************************
     *
@@ -3404,6 +3492,9 @@ public class ThirdPartyManager
 
     String relationshipDisplay = JSONUtilities.decodeString(jsonRoot, "relationship", true);
     String newParentSubscriberID = resolveParentSubscriberID(jsonRoot);
+    
+    String subscriberProfileForceUpdateRequestID = UUID.randomUUID().toString();
+    jsonRoot.put("subscriberProfileForceUpdateRequestID", subscriberProfileForceUpdateRequestID); //unique id added for listener to check if the request and response are same
 
     /*****************************************
     *
@@ -3495,7 +3586,16 @@ public class ThirdPartyManager
             newParentParameterMap.put("subscriberRelationsUpdateMethod", SubscriberRelationsUpdateMethod.AddChild.getExternalRepresentation());
             newParentParameterMap.put("relationshipID", relationshipID);
             newParentParameterMap.put("relativeSubscriberID", subscriberID);
-              
+            
+
+            //
+            //  submit to kafka
+            //
+            
+            kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(newParentProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), newParentProfileForceUpdate)));
+                     
+            
+           
             //
             // Set parent 
             //
@@ -3507,12 +3607,35 @@ public class ThirdPartyManager
             subscriberParameterMap.put("relationshipID", relationshipID);
             subscriberParameterMap.put("relativeSubscriberID", newParentSubscriberID);
             
+            
+            
+            Future<SubscriberProfileForceUpdateResponse> waitingResponse=null;
+            if(sync){
+              waitingResponse = subscriberProfileForceUpdateResponseListenerService.addWithOnValueFilter((value)->value.getSubscriberProfileForceUpdateRequestID().equals(subscriberProfileForceUpdateRequestID));
+            }
+
             //
-            // submit to kafka 
+            //  submit to kafka
             //
-              
-            kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(newParentProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), newParentProfileForceUpdate)));
+
             kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(subscriberProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), subscriberProfileForceUpdate)));
+            
+            if(sync){
+              SubscriberProfileForceUpdateResponse subscriberProfileForceUpdateresponse = handleWaitingResponse(waitingResponse);
+              String responseCode = subscriberProfileForceUpdateresponse.getReturnCode();
+              if (responseCode.equals("success"))
+                {
+                  updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
+                  return JSONUtilities.encodeObject(response);
+                }
+              else {
+                updateResponse(response, RESTAPIGenericReturnCodes.SYSTEM_ERROR);
+                return JSONUtilities.encodeObject(response);
+              }
+              
+              
+            }                   
+            
           }
         updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
       } 
@@ -3536,7 +3659,7 @@ public class ThirdPartyManager
    *
    *****************************************/
 
-  private JSONObject processRemoveCustomerParent(JSONObject jsonRoot, int tenantID) throws ThirdPartyManagerException
+  private JSONObject processRemoveCustomerParent(JSONObject jsonRoot, Boolean sync, int tenantID) throws ThirdPartyManagerException
   {
     /****************************************
     *
@@ -3555,6 +3678,10 @@ public class ThirdPartyManager
     String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
 
     String relationshipDisplay = JSONUtilities.decodeString(jsonRoot, "relationship", true);
+    
+    String subscriberProfileForceUpdateRequestID = UUID.randomUUID().toString();
+    jsonRoot.put("subscriberProfileForceUpdateRequestID", subscriberProfileForceUpdateRequestID); //unique id added for listener to check if the request and response are same
+    
 
     try
       {
@@ -3590,6 +3717,13 @@ public class ThirdPartyManager
             
             
             //
+            //  submit to kafka
+            //
+            kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(parentProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), parentProfileForceUpdate)));
+                      
+          
+            
+            //
             // Set parent null 
             //
             
@@ -3600,12 +3734,33 @@ public class ThirdPartyManager
             subscriberParameterMap.put("relationshipID", relationshipID);
             // "relativeSubscriberID" must stay null
             
+            Future<SubscriberProfileForceUpdateResponse> waitingResponse=null;
+            if(sync){
+              waitingResponse = subscriberProfileForceUpdateResponseListenerService.addWithOnValueFilter((value)->value.getSubscriberProfileForceUpdateRequestID().equals(subscriberProfileForceUpdateRequestID));
+            }
+
             //
-            // submit to kafka 
+            //  submit to kafka
             //
-            
-            kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(parentProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), parentProfileForceUpdate)));
+
             kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(subscriberProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), subscriberProfileForceUpdate)));
+            
+            if(sync){
+              SubscriberProfileForceUpdateResponse subscriberProfileForceUpdateresponse = handleWaitingResponse(waitingResponse);
+              String responseCode = subscriberProfileForceUpdateresponse.getReturnCode();
+              if (responseCode.equals("success"))
+                {
+                  updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
+                  return JSONUtilities.encodeObject(response);
+                }
+              else {
+                updateResponse(response, RESTAPIGenericReturnCodes.SYSTEM_ERROR);
+                return JSONUtilities.encodeObject(response);
+              }
+              
+              
+            }
+            
           }
         updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
       } 
@@ -4075,7 +4230,7 @@ public class ThirdPartyManager
         catalogCharacteristicService,
         scoringStrategyService,
         subscriberGroupEpochReader,
-        segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, returnedLog, subscriberID, supplierFilter, tenantID
+        segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, supplierService, returnedLog, subscriberID, supplierFilter, tenantID
         );
 
     if (presentedOffers.isEmpty())
@@ -4125,11 +4280,10 @@ public class ThirdPartyManager
         Presentation presentation = new Presentation(now, presentedOfferIDs);
         List<Presentation> currentPresentationHistory = token.getPresentationHistory();
         currentPresentationHistory.add(presentation);
-        log.debug("Added " + presentation + " to presentationHistory " + currentPresentationHistory + " size " + currentPresentationHistory.size());
+        if(log.isDebugEnabled()) log.debug("Added " + presentation + " to presentationHistory " + currentPresentationHistory + " size " + currentPresentationHistory.size());
         
         // clean list by removing presentations older than oldest limit of all offers in the lists
          
-        List<Presentation> cleanPresentationHistory = new ArrayList<>();
         Set<String> allOfferIDs = new HashSet<>();
         for (Presentation pres : currentPresentationHistory) {
           for (String offerID : pres.getOfferIDs()) {
@@ -4140,8 +4294,22 @@ public class ThirdPartyManager
         for (String offerID : allOfferIDs) {
           Offer offer = offerService.getActiveOffer(offerID, now);
           if (offer != null) {
-            Integer maximumAcceptancesPeriodDays = offer.getMaximumAcceptancesPeriodDays();
-            Date offerEarliest = RLMDateUtils.addDays(now, -maximumAcceptancesPeriodDays, Deployment.getDeployment(tenantID).getTimeZone());
+            Date offerEarliest = now;
+            Long maximumPresentationsPeriod = (Long) offer.getJSONRepresentation().get("maximumPresentationsPeriod");
+            String maximumPresentationsUnitStr = (String) offer.getJSONRepresentation().get("maximumPresentationsUnit");
+            TimeUnit maximumPresentationsUnit = TimeUnit.fromExternalRepresentation(maximumPresentationsUnitStr);
+            if (maximumPresentationsUnit.equals(TimeUnit.Day)) {
+              offerEarliest = RLMDateUtils.addDays(now, (int)(-maximumPresentationsPeriod), Deployment.getDeployment(tenantID).getTimeZone());
+            } else if (maximumPresentationsUnit.equals(TimeUnit.Month)) {
+              if (maximumPresentationsPeriod == 1) { // current month
+                offerEarliest = RLMDateUtils.truncate(now, Calendar.MONTH, Deployment.getDeployment(tenantID).getTimeZone());
+              } else {
+                offerEarliest = RLMDateUtils.addMonths(now, (int)(-maximumPresentationsPeriod), Deployment.getDeployment(tenantID).getTimeZone());
+              }
+            } else {
+              log.info("internal error : unknown maximumPresentationsUnit " + maximumPresentationsUnitStr + " in offer " + offer.getOfferID() + " , using 1 day");
+              offerEarliest = RLMDateUtils.addDays(now, -1, Deployment.getDeployment(tenantID).getTimeZone());
+            }
             if (offerEarliest.before(earliestDateToKeep)) {
               earliestDateToKeep = offerEarliest;
             }
@@ -4154,11 +4322,11 @@ public class ThirdPartyManager
             if (date.after(earliestDateToKeep)) {
               newPresentationHistory.add(pres);
             } else {
-              log.debug("Removed history because too old : " + pres);
+              if(log.isDebugEnabled()) log.debug("Removed history because too old : " + pres);
             }
           }
         token.setPresentationHistory(newPresentationHistory);
-        log.info("Cleanup of presentation history moved list from " + currentPresentationHistory.size() + " to " + newPresentationHistory.size() + " elements, earliest date to keep : " + earliestDateToKeep);
+        if(log.isDebugEnabled()) log.debug("Cleanup of presentation history moved list from " + currentPresentationHistory.size() + " to " + newPresentationHistory.size() + " elements, earliest date to keep : " + earliestDateToKeep);
         
         PresentationLog presentationLog = new PresentationLog(
             subscriberID, subscriberID, now, 
@@ -4166,7 +4334,7 @@ public class ThirdPartyManager
             tokenCode, 
             presentationStrategyID, transactionDurationMs, 
             presentedOfferIDs, presentedOfferScores, positions, 
-            controlGroupState, scoringStrategyIDs, null, null, null, moduleID, featureID, token.getPresentationDates(), tokenTypeID, null, newPresentationHistory
+            controlGroupState, scoringStrategyIDs, null, null, null, moduleID, featureID, token.getPresentationDates(), tokenTypeID, token, newPresentationHistory
             );
 
        //
@@ -4235,6 +4403,7 @@ public class ThirdPartyManager
      *
      *****************************************/
     String deliveryRequestID = "";
+    TokenChange redeemResponse=null;
     PurchaseFulfillmentRequest purchaseResponse=null;
     try
     {
@@ -4347,26 +4516,12 @@ public class ThirdPartyManager
             }
         }
       
-       if (!sync)
-          {
-            deliveryRequestID = purchaseOffer(subscriberProfile, false, subscriberID, offerID, salesChannelID, 1,
-                moduleID, featureID, origin, resellerID, kafkaProducer, tenantID).getDeliveryRequestID();
-          }
-        else
-          {
-            purchaseResponse = purchaseOffer(subscriberProfile, true, subscriberID, offerID, salesChannelID, 1,
-                moduleID, featureID, origin, resellerID, kafkaProducer, tenantID);
-
-            deliveryRequestID = purchaseResponse.getDeliveryRequestID();
-          }
-      
       // Redeem the token : Send an AcceptanceLog to EvolutionEngine
 
       String msisdn = subscriberID; // TODO check this
       String presentationStrategyID = subscriberStoredToken.getPresentationStrategyID();
 
       // TODO BEGIN Following fields are currently not used in EvolutionEngine, might need to be set later
-      String callUniqueIdentifier = "";
       String controlGroupState = "controlGroupState";
       String channelID = "channelID";
       Integer actionCall = 1;
@@ -4374,6 +4529,8 @@ public class ThirdPartyManager
       // TODO END
       
       Date fulfilledDate = now;
+      String callUniqueIdentifier = zuks.getStringKey();
+      deliveryRequestID = callUniqueIdentifier;//EvE will reused that field while triggering purchase
       String userID = JSONUtilities.decodeString(jsonRoot, "loginName", true);
       String tokenTypeID = subscriberStoredToken.getTokenTypeID();
       
@@ -4383,12 +4540,17 @@ public class ThirdPartyManager
           userID, tokenCode,
           presentationStrategyID, transactionDurationMs,
           controlGroupState, offerID, fulfilledDate, position, actionCall, moduleID, featureID, tokenTypeID);
-      
+
+      Future<TokenChange> tokenChangeWaitingResponse = null;
+      Future<PurchaseFulfillmentRequest> purchaseWaitingResponse = null;
+      if(sync){
+        tokenChangeWaitingResponse = tokenChangeResponseListenerService.addWithOnValueFilter(tokenChange -> tokenChange.getCallUniqueIdentifier()!=null && tokenChange.getCallUniqueIdentifier().equals(callUniqueIdentifier));
+        purchaseWaitingResponse = purchaseResponseListenerService.addWithOnValueFilter(purchaseFulfillmentRequest -> purchaseFulfillmentRequest.getDeliveryRequestID().equals(callUniqueIdentifier));
+      }
       //
       //  submit to kafka
       //
 
-      {
       String topic = Deployment.getAcceptanceLogTopic();
       Serializer<StringKey> keySerializer = StringKey.serde().serializer();
       Serializer<AcceptanceLog> valueSerializer = AcceptanceLog.serde().serializer();
@@ -4398,24 +4560,17 @@ public class ThirdPartyManager
           valueSerializer.serialize(topic, acceptanceLog)
           ));
       keySerializer.close(); valueSerializer.close(); // to make Eclipse happy
-      }
-      
-      //
-      // trigger event (for campaigns)
-      //
 
-      {
-        TokenRedeemed tokenRedeemed = new TokenRedeemed(subscriberID, now, subscriberStoredToken.getTokenTypeID(), offerID);
-        String topic = Deployment.getTokenRedeemedTopic();
-        Serializer<StringKey> keySerializer = StringKey.serde().serializer();
-        Serializer<TokenRedeemed> valueSerializer = TokenRedeemed.serde().serializer();
-        kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
-            topic,
-            keySerializer.serialize(topic, new StringKey(subscriberID)),
-            valueSerializer.serialize(topic, tokenRedeemed)
-            ));
-        keySerializer.close(); valueSerializer.close(); // to make Eclipse happy
+      if(tokenChangeWaitingResponse!=null){
+        redeemResponse = handleWaitingResponse(tokenChangeWaitingResponse);
       }
+
+      if(redeemResponse!=null && redeemResponse.getReturnStatus().equals(TokenChange.OK) && purchaseWaitingResponse!=null){
+        purchaseResponse = handleWaitingResponse(purchaseWaitingResponse);
+      }else if(purchaseWaitingResponse!=null){
+        purchaseWaitingResponse.cancel(true);
+      }
+
     }
     catch (SubscriberProfileServiceException e) 
     {
@@ -4430,8 +4585,24 @@ public class ThirdPartyManager
      *****************************************/
     response.put("deliveryRequestID", deliveryRequestID);
     if(sync){
-      response.put(GENERIC_RESPONSE_CODE, purchaseResponse.getStatus().getReturnCode());
-      response.put(GENERIC_RESPONSE_MSG, purchaseResponse.getStatus().name());
+      if(purchaseResponse==null){
+        if(redeemResponse!=null){
+          log.info("unable to process acceptOffer for {}, {}", subscriberID, redeemResponse.getReturnStatus());
+          if(redeemResponse.getReturnStatus().equals(TokenChange.ALREADY_REDEEMED)){
+            updateResponse(response, RESTAPIGenericReturnCodes.CONCURRENT_ACCEPT);
+          }else if(redeemResponse.getReturnStatus().equals(TokenChange.BAD_TOKEN_TYPE)){
+            updateResponse(response, RESTAPIGenericReturnCodes.TOKEN_BAD_TYPE);
+          }else if(redeemResponse.getReturnStatus().equals(TokenChange.NO_TOKEN)){
+            updateResponse(response, RESTAPIGenericReturnCodes.NO_TOKENS_RETURNED);
+          }
+        }else{
+          log.info("unable to process acceptOffer for {}, null redeem response", subscriberID);
+          updateResponse(response, RESTAPIGenericReturnCodes.SYSTEM_ERROR);
+        }
+      }else{
+        response.put(GENERIC_RESPONSE_CODE, purchaseResponse.getStatus().getReturnCode());
+        response.put(GENERIC_RESPONSE_MSG, purchaseResponse.getStatus().name());
+      }
     }else{
       updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
     }
@@ -4671,7 +4842,7 @@ public class ThirdPartyManager
    *
    *****************************************/
 
-  private JSONObject processLoyaltyProgramOptInOut(JSONObject jsonRoot, boolean optIn, int tenantID) throws ThirdPartyManagerException
+  private JSONObject processLoyaltyProgramOptInOut(JSONObject jsonRoot, boolean optIn, boolean sync, int tenantID) throws ThirdPartyManagerException
   {
     /****************************************
      *
@@ -4696,7 +4867,7 @@ public class ThirdPartyManager
         response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.LOYALTY_PROJECT_NOT_FOUND.getGenericResponseMessage());
         return JSONUtilities.encodeObject(response);          
       }
-    String loyaltyProgramRequestID = "";
+    //String loyaltyProgramRequestID = "";
 
     /*****************************************
      *
@@ -4737,7 +4908,7 @@ public class ThirdPartyManager
       String featureID = JSONUtilities.decodeString(jsonRoot, "loginName", DEFAULT_FEATURE_ID);
       String operation = optIn ? "opt-in" : "opt-out";
       String moduleID = DeliveryRequest.Module.REST_API.getExternalRepresentation();
-      loyaltyProgramRequestID = zuks.getStringKey();
+      String loyaltyProgramRequestID = zuks.getStringKey();
 
       /*****************************************
       *
@@ -4769,12 +4940,40 @@ public class ThirdPartyManager
       String topic = Deployment.getDeliveryManagers().get(loyaltyProgramRequest.getDeliveryType()).getRequestTopic(loyaltyProgramRequest.getDeliveryPriority());
 
       // Write it to the right topic
+      
+      
+      Future<LoyaltyProgramRequest> waitingResponse=null;
+      if(sync){
+        
+        waitingResponse = loyaltyProgramOptInOutResponseListenerService.addWithOnValueFilter(loyaltyprogramResponse->!loyaltyprogramResponse.isPending()&&loyaltyprogramResponse.getLoyaltyProgramRequestID().equals(loyaltyProgramRequestID));
+      }
+      
       kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
           topic,
           keySerializer.serialize(topic, new StringKey(subscriberID)),
           valueSerializer.serialize(topic, loyaltyProgramRequest)
           ));
       keySerializer.close(); valueSerializer.close(); // to make Eclipse happy
+      
+        if (sync)
+          {
+            LoyaltyProgramRequest result = handleWaitingResponse(waitingResponse);
+            response.put("deliveryRequestID", loyaltyProgramRequestID);
+            if (!(result.getDeliveryStatus().getExternalRepresentation().equals("delivered")))
+              {
+                updateResponse(response, RESTAPIGenericReturnCodes.SYSTEM_ERROR);
+                return JSONUtilities.encodeObject(response);
+              }
+            else {
+              updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
+              return JSONUtilities.encodeObject(response);
+            }
+          }
+        else
+          {
+            response.put("deliveryRequestID", loyaltyProgramRequestID);
+            updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
+          }
 
       //
       // TODO how do we deal with the offline errors ? 
@@ -4794,8 +4993,7 @@ public class ThirdPartyManager
      *  decorate and response
      *
      *****************************************/
-    response.put("deliveryRequestID", loyaltyProgramRequestID);
-    updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
+    //response.put("deliveryRequestID", loyaltyProgramRequestID);
     return JSONUtilities.encodeObject(response);
   }
 
@@ -5007,13 +5205,19 @@ public class ThirdPartyManager
             // 2. subscriberID == null and event is an autoprovision event, so in this case, we provide in the constructor, the alternateID coming from the REST request
             if(subscriberID != null)
               {
-                eev = constructor.newInstance(new Object[]{subscriberID, SystemTime.getCurrentTime(), eventBody });
-                eev.forceDeliveryPriority(DELIVERY_REQUEST_PRIORITY);
+                if(autoProvisionEvent != null)
+                {
+                  eev = constructor.newInstance(new Object[]{subscriberID, SystemTime.getCurrentTime(), eventBody, (short) tenantID });
+                  eev.forceDeliveryPriority(DELIVERY_REQUEST_PRIORITY);
+                }else{
+                  eev = constructor.newInstance(new Object[]{subscriberID, SystemTime.getCurrentTime(), eventBody});
+                  eev.forceDeliveryPriority(DELIVERY_REQUEST_PRIORITY);
+                }
               }
             else if(autoProvisionEvent != null)
               {
                 // means this is an autoprovision event, case 2...
-                eev = constructor.newInstance(new Object[]{subscriberParameter.getSecondElement(), SystemTime.getCurrentTime(), eventBody });
+                eev = constructor.newInstance(new Object[]{subscriberParameter.getSecondElement(), SystemTime.getCurrentTime(), eventBody, (short) tenantID });
                 eev.forceDeliveryPriority(DELIVERY_REQUEST_PRIORITY);
               }
           }
@@ -5043,12 +5247,79 @@ public class ThirdPartyManager
   
   /*****************************************
   *
+  *  processTriggerEvent
+  *
+  *****************************************/
+
+  private JSONObject processDeleteCustomer(JSONObject jsonRoot, int tenantID) throws ThirdPartyManagerException
+  {
+    Map<String, Object> response = new HashMap<String, Object>();
+
+    /****************************************
+    *
+    * argument
+    *
+    ****************************************/
+
+    //
+    //  subscriberID
+    //
+
+    String subscriberID = null;
+    try
+    {
+      subscriberID = resolveSubscriberID(jsonRoot, tenantID);
+    }
+    catch(ThirdPartyManagerException e)
+    {
+      // return cusotmerNotFound
+      updateResponse(response, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND);
+      return JSONUtilities.encodeObject(response);
+    }
+
+    SubscriberAction subscriberAction = null;
+    Boolean subscriberActionBoolean = JSONUtilities.decodeBoolean(jsonRoot, "deleteImmediate");
+    if(subscriberActionBoolean == null)
+      {
+        // return cusotmerNotFound
+        updateResponse(response, RESTAPIGenericReturnCodes.MISSING_PARAMETERS);
+        response.put(GENERIC_RESPONSE_MSG, "missing boolean deleteImmediate");
+        return JSONUtilities.encodeObject(response);
+      }
+    if(subscriberActionBoolean.booleanValue())
+      {
+        // delete immediate
+        subscriberAction = SubscriberAction.DeleteImmediate;
+      }
+    else 
+      {
+        // normal delete
+        subscriberAction = SubscriberAction.Delete;
+      }
+    
+    AssignSubscriberIDs assignSubscriberID = new AssignSubscriberIDs(subscriberID, SystemTime.getCurrentTime(), subscriberAction, null, tenantID);
+    String topic = Deployment.getAssignSubscriberIDsTopic();
+    kafkaProducer.send(new ProducerRecord<byte[], byte[]>(topic, StringKey.serde().serializer().serialize(topic, new StringKey(subscriberID)), AssignSubscriberIDs.serde().serializer().serialize(topic, assignSubscriberID)));
+    updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS, "{delete triggered}");
+
+    /*****************************************
+    *
+    * return
+    *
+    *****************************************/
+
+    return JSONUtilities.encodeObject(response);
+  }
+
+  
+  /*****************************************
+  *
   *  processEnterCampaign
    * @throws ThirdPartyManagerException 
   *
   *****************************************/
   
-  private JSONObject processEnterCampaign(JSONObject jsonRoot, int tenantID) throws ThirdPartyManagerException
+  private JSONObject processEnterCampaign(JSONObject jsonRoot, boolean sync, int tenantID) throws ThirdPartyManagerException
   {
     /****************************************
     *
@@ -5129,8 +5400,23 @@ public class ThirdPartyManager
         journeyRequest.forceDeliveryPriority(DELIVERY_REQUEST_PRIORITY);
         DeliveryManagerDeclaration journeyManagerDeclaration = Deployment.getDeliveryManagers().get(journeyRequest.getDeliveryType());
         String journeyRequestTopic = journeyManagerDeclaration.getRequestTopic(journeyRequest.getDeliveryPriority());
+        
+        Future<JourneyRequest> waitingResponse=null;
+        if(sync){
+          waitingResponse = enterCampaignResponseListenerService.addWithOnValueFilter(enterCampaignResponse->!enterCampaignResponse.isPending()&&enterCampaignResponse.getJourneyRequestID().equals(uniqueKey));
+        }
+        
         kafkaProducer.send(new ProducerRecord<byte[], byte[]>(journeyRequestTopic, StringKey.serde().serializer().serialize(journeyRequestTopic, new StringKey(journeyRequest.getSubscriberID())), ((ConnectSerde<DeliveryRequest>)journeyManagerDeclaration.getRequestSerde()).serializer().serialize(journeyRequestTopic, journeyRequest)));
-        responseCode = "ok";
+        
+        if (sync) {
+          JourneyRequest result =  handleWaitingResponse(waitingResponse);
+          responseCode = result.getJourneyStatus().getExternalRepresentation();
+          
+        }
+        else
+          {
+            responseCode = "ok";
+          }
       }
     
     /*****************************************
@@ -5374,13 +5660,13 @@ public class ThirdPartyManager
                 errorException = new ThirdPartyManagerException(
                     RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED.getGenericResponseMessage(),
                     RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED.getGenericResponseCode(), additionalDetails);
-              }else if(profileVoucher.getVoucherStatus()==VoucherDelivery.VoucherStatus.Expired||profileVoucher.getVoucherExpiryDate().before(now)){
-          errorException = new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_EXPIRED);
-        }else{
-          //an OK one
-          voucherStored=profileVoucher;
-          break;
-        }
+              }else if(profileVoucher.getVoucherStatusComputed()==VoucherDelivery.VoucherStatus.Expired){
+                errorException = new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_EXPIRED);
+              }else{
+                //an OK one
+                voucherStored=profileVoucher;
+                break;
+              }
       }
     }
 
@@ -5598,7 +5884,6 @@ public class ThirdPartyManager
   *****************************************/
   
   private JSONObject processRemoveSimpleOffer(JSONObject jsonRoot) throws ThirdPartyManagerException, ParseException, IOException
-
   {
     try 
       {
@@ -5690,6 +5975,243 @@ public class ThirdPartyManager
         throw e;
       }
   }
+  
+  private JSONObject processDummyResponse(JSONObject jsonRoot) throws ThirdPartyManagerException, ParseException, IOException
+
+  {
+	  Map<String, Object> response = new HashMap<String, Object>();
+      response.put("warning", "NOT IMPLEMENTED METHOD");
+      updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
+
+  return JSONUtilities.encodeObject(response);
+
+  }
+
+  
+  private JSONObject processCheckOTP(JSONObject jsonRoot, int tenantID) throws ThirdPartyManagerException, ParseException, IOException
+  {
+    String featureID = JSONUtilities.decodeString(jsonRoot, "loginName", DEFAULT_FEATURE_ID);
+    
+	  String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
+	  
+	  Map<String,Object> otpResponse = new HashMap<>();
+	  	    
+	    //build the request to send
+	  
+	  OTPInstanceChangeEvent request = new OTPInstanceChangeEvent(
+	            SystemTime.getCurrentTime(),
+	            subscriberID,
+	            zuks.getStringKey().concat("-").concat(Module.REST_API.toString()), // eventID ??
+	            OTPInstanceChangeEvent.OTPChangeAction.Check,
+	            JSONUtilities.decodeString(jsonRoot, "otpType", true),
+	            JSONUtilities.decodeString(jsonRoot, "otpCheckValue", true),
+	            JSONUtilities.decodeBoolean(jsonRoot, "burn", Boolean.FALSE), // mandatory=false+defaultValue= FALSE
+	            0, //remainingAttempts
+	            0, //validationDuration
+	            0, //currentTypeErrors
+	            0, // globalErrorCounts
+	            RESTAPIGenericReturnCodes.UNKNOWN,
+	            featureID,
+	            Module.REST_API, // TODO
+	            tenantID);
+
+	    Future<OTPInstanceChangeEvent> waitingResponse = otpChangeResponseListenerService.addWithOnValueFilter((value)->value.getEventID().equals(request.getEventID())&&value.getReturnStatus()!=RESTAPIGenericReturnCodes.UNKNOWN);
+
+	    String requestTopic = Deployment.getOTPInstanceChangeRequestTopic();
+	    kafkaProducer.send(new ProducerRecord<byte[], byte[]>(
+	            requestTopic,
+	            StringKey.serde().serializer().serialize(requestTopic, new StringKey(subscriberID)),
+	            OTPInstanceChangeEvent.serde().serializer().serialize(requestTopic, request)
+	    ));
+
+	    
+	    OTPInstanceChangeEvent response = handleWaitingResponse(waitingResponse);
+	    if (!response.getReturnStatus().equals(RESTAPIGenericReturnCodes.SUCCESS)) otpResponse.put("numberOfRetriesLeft", response.getRemainingAttempts());
+	    return constructThirdPartyResponse(response.getReturnStatus(),otpResponse);
+  }
+
+	  
+  private JSONObject processGenerateOTP(JSONObject jsonRoot, int tenantID) throws ThirdPartyManagerException, ParseException, IOException
+  {
+
+    String featureID = JSONUtilities.decodeString(jsonRoot, "loginName", DEFAULT_FEATURE_ID);
+    /****************************************
+    *
+    * argument
+    *
+    ****************************************/
+    //
+    //  eventName
+    //
+
+    String optTypeDisplay = JSONUtilities.decodeString(jsonRoot, "otpType", true);
+    if (optTypeDisplay == null || optTypeDisplay.isEmpty())
+      {
+        Map<String, Object> response = new HashMap<String, Object>();
+        updateResponse(response, RESTAPIGenericReturnCodes.MISSING_PARAMETERS, "-{optType is missing}");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    //
+    //  subscriberID
+    //
+    String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
+
+    OTPInstanceChangeEvent request = new OTPInstanceChangeEvent(
+        SystemTime.getCurrentTime(),
+        subscriberID,
+        zuks.getStringKey().concat("-").concat(Module.REST_API.toString()), // eventID ??
+        OTPInstanceChangeEvent.OTPChangeAction.Generate,
+        optTypeDisplay,
+        (String) null, //otpCheckValue
+        Boolean.FALSE, //forceBurn=False
+        0, //remainingAttempts
+        0, //validationDuration
+        0, //currentTypeErrors
+        0, // globalErrorCounts
+        RESTAPIGenericReturnCodes.UNKNOWN,
+        featureID,
+        Module.REST_API,
+        tenantID);
+
+     //String topic = Deployment.getOTPInstanceChangeRequestTopic();
+     //kafkaProducer.send(new ProducerRecord<byte[], byte[]>(topic, StringKey.serde().serializer().serialize(topic, new StringKey(subscriberID)), OTPInstanceChangeEvent.serde().serializer().serialize(topic, request)));
+     
+     
+     Future<OTPInstanceChangeEvent> waitingResponse = otpChangeResponseListenerService.addWithOnValueFilter((value)->value.getEventID().equals(request.getEventID())&&value.getReturnStatus()!=RESTAPIGenericReturnCodes.UNKNOWN);
+
+     String requestTopic = Deployment.getOTPInstanceChangeRequestTopic();
+     kafkaProducer.send(new ProducerRecord<byte[], byte[]>(
+             requestTopic,
+             StringKey.serde().serializer().serialize(requestTopic, new StringKey(subscriberID)),
+             OTPInstanceChangeEvent.serde().serializer().serialize(requestTopic, request)
+     ));
+
+     OTPInstanceChangeEvent response = handleWaitingResponse(waitingResponse);
+     
+     Map<String,Object> otpResponse = new HashMap<>();
+     
+     /*****************************************
+     *
+     * return
+     *
+     *****************************************/
+     // TODO GFE stop returning otpCheckValue once tests have proven OK
+     otpResponse.put("otpCheckValue",response.getOTPCheckValue());
+     
+     otpResponse.put("numberOfRetriesLeft",response.getRemainingAttempts());
+     otpResponse.put("validityDuration",response.getValidityDuration());
+     
+     return constructThirdPartyResponse(response.getReturnStatus(),otpResponse); 
+  }
+
+  private JSONObject processGetCustomerVouchers(JSONObject jsonRoot, int tenantID) throws ThirdPartyManagerException
+  {
+
+    HashMap<String,Object> response = new HashMap<>();
+
+    String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
+
+    String stringStartDate = JSONUtilities.decodeString(jsonRoot, "startDate", false);
+    Date startDate = null;
+    if (stringStartDate != null)
+      {
+        try
+        {
+          String timeZone = Deployment.getDeployment(tenantID).getTimeZone();
+          startDate = GUIManager.prepareStartDate(RLMDateUtils.parseDateFromDay(stringStartDate, timeZone), timeZone);
+        }
+        catch (java.text.ParseException e1)
+        {
+          throw new ThirdPartyManagerException(e1);
+        }
+      }
+
+    try
+    {
+
+      SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
+      if (baseSubscriberProfile == null)
+        {
+          updateResponse(response, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND);
+          return JSONUtilities.encodeObject(response);
+        }
+
+      List<JSONObject> vouchersJsonArray = new ArrayList<>();
+      for(VoucherProfileStored voucherProfileStored:baseSubscriberProfile.getVouchers())
+      {
+        // filter
+        if(startDate!=null && voucherProfileStored.getVoucherDeliveryDate().compareTo(startDate)<0) continue;
+
+        // format
+		JSONObject voucherJson = new JSONObject();
+		voucherJson.put("code",voucherProfileStored.getVoucherCode());
+		voucherJson.put("deliveryDate",getDateString(voucherProfileStored.getVoucherDeliveryDate(), tenantID));
+		voucherJson.put("expiryDate",getDateString(voucherProfileStored.getVoucherExpiryDate(), tenantID));
+		voucherJson.put("status",voucherProfileStored.getVoucherStatusComputed().getExternalRepresentation());
+		String voucherID = voucherProfileStored.getVoucherID();
+        voucherJson.put("voucherID",voucherID);
+
+		String voucherName = "";
+		String supplierID = "";
+		String supplier = "";
+        GUIManagedObject voucherObject = voucherService.getStoredVoucher(voucherID);
+		if(voucherObject instanceof Voucher){
+		  Voucher voucher = (Voucher)voucherObject;
+		  voucherName = voucher.getVoucherDisplay();
+          supplierID = voucher.getSupplierID();
+          GUIManagedObject supplierObject = supplierService.getStoredSupplier(supplierID);
+          if(supplierObject!=null){
+            supplier = supplierObject.getGUIManagedObjectDisplay();
+          }
+        }
+        voucherJson.put("voucherName",voucherName);
+        voucherJson.put("supplierID",supplierID);
+        voucherJson.put("supplier",supplier);
+
+		String voucherFormat = "";
+        if(voucherObject instanceof VoucherShared){
+          voucherFormat = ((VoucherShared)voucherObject).getCodeFormatId();
+        } else if (voucherObject instanceof VoucherPersonal){
+          String fileID = voucherProfileStored.getFileID();
+          String fileName = "";
+          for(VoucherFile voucherFile:((VoucherPersonal)voucherObject).getVoucherFiles()){
+            if(voucherFile.getFileId().equals(voucherProfileStored.getFileID())) {
+              voucherFormat = voucherFile.getCodeFormatId();
+              break;
+            }
+          }
+          GUIManagedObject uploadFileObject = uploadedFileService.getStoredUploadedFile(fileID);
+          if(uploadFileObject instanceof UploadedFile){
+            fileName = ((UploadedFile) uploadFileObject).getSourceFilename();
+          }
+          voucherJson.put("fileID",fileID);
+          voucherJson.put("fileName",fileName);
+        }
+        voucherJson.put("format",voucherFormat);
+
+		String offerID = voucherProfileStored.getOfferID();
+		JSONObject offerJSON = new JSONObject();
+		GUIManagedObject offerObject = offerService.getStoredOffer(offerID);
+        offerJSON.put("offerID",offerID);
+        offerJSON.put("offerDisplay",offerObject.getGUIManagedObjectDisplay());
+        voucherJson.put("offerDetails",offerJSON);
+
+        vouchersJsonArray.add(voucherJson);
+      }
+
+      response.put("vouchers", JSONUtilities.encodeArray(vouchersJsonArray));
+      updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
+    }
+    catch (SubscriberProfileServiceException e)
+    {
+      log.error("SubscriberProfileServiceException ", e.getMessage());
+      throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
+    }
+
+    return JSONUtilities.encodeObject(response);
+  }
+
 
   private JSONObject constructThirdPartyResponse(RESTAPIGenericReturnCodes genericCode, Map<String,Object> response){
     if(response==null) response=new HashMap<>();
@@ -5963,26 +6485,57 @@ public class ThirdPartyManager
     String subscriberID = JSONUtilities.decodeString(jsonRoot, CUSTOMER_ID, false);
     String alternateSubscriberID = null;
     
-    // finds the first parameter in the input request that corresponds to an entry in alternateID[]
-    for (String id : Deployment.getAlternateIDs().keySet())
+    // support the possibility: customerIDType and customerIDValue...
+    String customerIDType = JSONUtilities.decodeString(jsonRoot, CUSTOMER_ID_TYPE, false);
+    String customerIDValue = JSONUtilities.decodeString(jsonRoot, CUSTOMER_ID_VALUE, false);
+    
+    if(customerIDType != null && customerIDValue != null) 
       {
-        String param = JSONUtilities.decodeString(jsonRoot, id, false);
-        if (param != null)
+        if(customerIDType.trim().equals(CUSTOMER_ID))
           {
-            try
+            // special case if the internal subscriber id is provided, no need to resolve
+            subscriberID = customerIDValue;
+          }
+        else {
+          try
             {
-              Pair<String, Integer> s = subscriberIDService.getSubscriberIDAndTenantID(id, param);
-              
+              Pair<String, Integer> s = subscriberIDService.getSubscriberIDAndTenantID(customerIDType, customerIDValue);
               if (s == null || s.getSecondElement().intValue() != tenantID)
                 {
                   throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND);
                 }
               alternateSubscriberID = s.getFirstElement();
-              break;
-            } catch (SubscriberIDServiceException e)
-            {
-              log.error("SubscriberIDServiceException can not resolve subscriberID for {} error is {}", id, e.getMessage());
             }
+          catch (SubscriberIDServiceException e)
+            {
+              log.error("SubscriberIDServiceException can not resolve subscriberID from type {} and value {} error is {}", customerIDType, customerIDValue, e.getMessage());
+            }
+        }
+      }
+  
+    if(alternateSubscriberID == null && subscriberID == null) 
+      {
+        // finds the first parameter in the input request that corresponds to an entry in alternateID[]
+        for (String id : Deployment.getAlternateIDs().keySet())
+          {
+            String param = JSONUtilities.decodeString(jsonRoot, id, false);
+            if (param != null)
+              {
+                try
+                {
+                  Pair<String, Integer> s = subscriberIDService.getSubscriberIDAndTenantID(id, param);
+                  
+                  if (s == null || s.getSecondElement().intValue() != tenantID)
+                    {
+                      throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND);
+                    }
+                  alternateSubscriberID = s.getFirstElement();
+                  break;
+                } catch (SubscriberIDServiceException e)
+                {
+                  log.error("SubscriberIDServiceException can not resolve subscriberID for {} error is {}", id, e.getMessage());
+                }
+              }
           }
       }
     
@@ -6010,6 +6563,17 @@ public class ThirdPartyManager
 
   private Pair<String, String> resolveSubscriberAlternateID(JSONObject jsonRoot) throws ThirdPartyManagerException
   {
+    // first check if customerIDType and customerIDValue are provided as is....
+    // support the possibility: customerIDType and customerIDValue...
+    String customerIDType = JSONUtilities.decodeString(jsonRoot, CUSTOMER_ID_TYPE, false);
+    String customerIDValue = JSONUtilities.decodeString(jsonRoot, CUSTOMER_ID_VALUE, false);
+    
+    if(customerIDType != null && customerIDValue != null) 
+      {
+        return new Pair<String,String>(customerIDType, customerIDValue);
+      }
+    
+    
     // "customerID" parameter is mapped internally to subscriberID
     String subscriberID = JSONUtilities.decodeString(jsonRoot, CUSTOMER_ID, false);
     String alternateSubscriberID = null;
@@ -6185,7 +6749,6 @@ public class ThirdPartyManager
 
             if (storedReseller.getUserIDs() != null && !((storedReseller.getUserIDs()).isEmpty()))
               {
-
                 if ((storedReseller.getUserIDs()).contains(userID))
                   {
                     if (resellerService.isActiveReseller(storedReseller, now))
@@ -6195,7 +6758,6 @@ public class ThirdPartyManager
                         parentResellerID.add(storedReseller.getParentResellerID());
                         response.put("parentResellerID", parentResellerID);
                         break;
-
                       }
                     else
                       {
@@ -6404,10 +6966,74 @@ public class ThirdPartyManager
     }
     return purchaseRequest;
   }
+  
+  /*****************************************
+  *
+  *  processGetVoucherList
+  *
+  *****************************************/
+
+ private JSONObject processGetVoucherList(JSONObject jsonRoot, int tenantID) throws ThirdPartyManagerException
+ {
+   
+   /****************************************
+   *
+   *  response
+   *
+   ****************************************/
+   
+   Map<String,Object> response = new HashMap<String,Object>();
+   
+   /*****************************************
+   *
+   *  retrieve and convert vouchers
+   *
+   *****************************************/
+
+   Date now = SystemTime.getCurrentTime();
+   List<JSONObject> vouchers = new ArrayList<JSONObject>();
+   List<String> requestedIds = new ArrayList<String>();
+   JSONArray idsJSON = JSONUtilities.decodeJSONArray(jsonRoot, "ids", new JSONArray());
+   for (int i=0; i<idsJSON.size(); i++)
+     {
+       requestedIds.add((String) idsJSON.get(i));
+     }
+   
+   //
+   //  getStoredVouchersWithCurrentStocks
+   //
+   
+   Collection<GUIManagedObject> storedVouchers = voucherService.getStoredVouchersWithCurrentStocks(false, tenantID);
+   
+   //
+   //  filter on requestedIds
+   //
+   
+   if (!requestedIds.isEmpty()) storedVouchers = storedVouchers.stream().filter(voucher -> requestedIds.contains(voucher.getGUIManagedObjectID())).collect(Collectors.toList());
+   
+   //
+   // prepareJSON
+   //
+   
+   vouchers = storedVouchers.stream().map(voucher ->  ThirdPartyJSONGenerator.generateVoucherJSON(voucherService, voucher, now)).collect(Collectors.toList());
+   
+   //
+   //  response
+   //
+   
+   response.put("vouchers", JSONUtilities.encodeArray(vouchers));
+   updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
+   
+   //
+   //  return
+   //
+   
+   return JSONUtilities.encodeObject(response);
+ }
 
   private <T> T handleWaitingResponse(Future<T> waitingResponse) throws ThirdPartyManagerException {
     try {
-      T response = waitingResponse.get(httpTimeout, TimeUnit.MILLISECONDS);
+      T response = waitingResponse.get(httpTimeout, java.util.concurrent.TimeUnit.MILLISECONDS);
       if(log.isDebugEnabled()) log.debug("response processed : "+response);
       return response;
     } catch (InterruptedException|ExecutionException e) {
@@ -6735,6 +7361,7 @@ public class ThirdPartyManager
   *  readString
   *
   *****************************************/
+  
   @Deprecated
   private static String readString(JSONObject jsonRoot, String key) throws ThirdPartyManagerException
   {
@@ -6795,16 +7422,16 @@ public class ThirdPartyManager
   }
 
   // helpers for stats
-  private void addOKStats(String apiName, long startTime){
-    addStats(apiName,startTime,StatsBuilders.STATUS.ok);
+  private void addOKStats(String apiName, long startTime, int tenantID){
+    addStats(apiName,startTime,StatsBuilders.STATUS.ok, tenantID);
   }
-  private void addKOStats(String apiName, long startTime){
-    addStats(apiName,startTime,StatsBuilders.STATUS.ko);
+  private void addKOStats(String apiName, long startTime, int tenantID){
+    addStats(apiName,startTime,StatsBuilders.STATUS.ko, tenantID);
   }
-  private void addUnknownStats(String apiName, long startTime){
-    addStats(apiName,startTime,StatsBuilders.STATUS.unknown);
+  private void addUnknownStats(String apiName, long startTime, int tenantID){
+    addStats(apiName,startTime,StatsBuilders.STATUS.unknown, tenantID);
   }
-  private void addStats(String apiName, long startTime, StatsBuilders.STATUS status){
+  private void addStats(String apiName, long startTime, StatsBuilders.STATUS status, int tenantID){
     if(statsDuration==null){
       log.warn("trying to add stats while not initialized "+apiName);
       return;
@@ -6812,6 +7439,7 @@ public class ThirdPartyManager
     // exact same for duration
     statsDuration.withLabel(StatsBuilders.LABEL.name.name(),apiName)
          .withLabel(StatsBuilders.LABEL.status.name(),status.name())
+         .withLabel(StatsBuilders.LABEL.tenant.name(), String.valueOf(tenantID))
          .getStats().add(startTime);
   }
   
@@ -6967,7 +7595,7 @@ public class ThirdPartyManager
             Set<Object> stringSetValue = new HashSet<Object>();
             for (int i=0; i<jsonArrayString.size(); i++)
               {
-                stringSetValue.add(jsonArrayString.get(i));
+                stringSetValue.add((String) jsonArrayString.get(i));
               }
             value = stringSetValue;
             break;
@@ -6989,7 +7617,7 @@ public class ThirdPartyManager
               Set<Object> doubleSetValue = new HashSet<Object>();
               for (int i=0; i<jsonArrayDouble.size(); i++)
                 {
-                  doubleSetValue.add(new Integer(((Number) jsonArrayDouble.get(i)).intValue()));
+                  doubleSetValue.add(new Double(((Number) jsonArrayDouble.get(i)).doubleValue()));
                 }
               value = doubleSetValue;
               break;

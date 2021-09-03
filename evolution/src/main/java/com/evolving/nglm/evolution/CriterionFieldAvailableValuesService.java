@@ -99,7 +99,7 @@ public class CriterionFieldAvailableValuesService extends GUIService
   public Collection<GUIManagedObject> getStoredCriterionFieldAvailableValuesList(int tenantId) { return getStoredGUIManagedObjects(tenantId); }
   public Collection<GUIManagedObject> getStoredCriterionFieldAvailableValuesList(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
   public boolean isActiveCriterionFieldAvailableValues(GUIManagedObject criterionFieldAvailableValuesUnchecked, Date date) { return isActiveGUIManagedObject(criterionFieldAvailableValuesUnchecked, date); }
-  public Journey getActiveCriterionFieldAvailableValues(String journeyID, Date date) { return (Journey) getActiveGUIManagedObject(journeyID, date); }
+  public CriterionFieldAvailableValues getActiveCriterionFieldAvailableValues(String criterionFieldAvailableValuesID, Date date) { return (CriterionFieldAvailableValues) getActiveGUIManagedObject(criterionFieldAvailableValuesID, date); }
   public Collection<CriterionFieldAvailableValues> getActiveCriterionFieldAvailableValues(Date date, int tenantID) { return (Collection<CriterionFieldAvailableValues>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************

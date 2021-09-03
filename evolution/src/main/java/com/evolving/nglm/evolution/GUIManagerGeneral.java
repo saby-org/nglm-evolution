@@ -1750,9 +1750,6 @@ public class GUIManagerGeneral extends GUIManager
 
   JSONObject processPutComplexObjectType(String userID, JSONObject jsonRoot, int tenantID)
   {
-    
-    //{ "id" : "45", "name" : "ComplexTypeA", "display" : "ComplexTypeA", "active" : true, "availableNames" : ["name1", "name2"], "fields" : { "field1" :  "string", "field2" : "integer"} , "apiVersion" : 1 }
-
     /****************************************
     *
     *  response
@@ -1772,6 +1769,12 @@ public class GUIManagerGeneral extends GUIManager
     if (jsonRoot.containsKey("dryRun")) {
       dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", false);
     }
+    
+    //
+    //  utility argument to help QA team - so that they can test the migration - can be cleaned after EVPRO-1185 migration
+    //
+    
+    boolean createOldCriteria = JSONUtilities.decodeBoolean(jsonRoot, "createOldCriteria", Boolean.FALSE);
 
     /*****************************************
     *
@@ -1843,8 +1846,14 @@ public class GUIManagerGeneral extends GUIManager
              *
              *****************************************/
 
-            dynamicCriterionFieldService.addComplexObjectTypeCriterionFields(complexObjectType, (existingComplexObjectType == null), tenantID);
-
+            if (createOldCriteria) 
+              {
+                dynamicCriterionFieldService.addComplexObjectTypeCriterionFields(complexObjectType, (existingComplexObjectType == null), tenantID);
+              }
+            else
+              {
+                dynamicCriterionFieldService.addComplexObjectTypeAdvanceCriterionFields(complexObjectType, (existingComplexObjectType == null), tenantID);
+              }
           }
 
         /*****************************************
@@ -2045,7 +2054,10 @@ public class GUIManagerGeneral extends GUIManager
         //
         if(!(complexObjectType instanceof IncompleteObject))
           {
+            // migration start EVPRO-1185
             dynamicCriterionFieldService.removeComplexObjectTypeCriterionFields(complexObjectType);
+            // migration end EVPRO-1185
+            dynamicCriterionFieldService.removeComplexObjectTypeAdvanceCriterionFields(complexObjectType);
           }
 
         //
@@ -2080,6 +2092,160 @@ public class GUIManagerGeneral extends GUIManager
      *****************************************/
     response.put("removedComplexObjectTypeIDs", JSONUtilities.encodeArray(validIDs));
 
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  *  processRefreshComplexObjectTypeCriteria
+  *
+  *****************************************/
+
+  @Deprecated // this is an utility API - will be used by support team for EVPRO-1185 migration - must be removed when all the projects are migrated
+  JSONObject processRefreshComplexObjectTypeCriteria(String userID, JSONObject jsonRoot, int tenantID)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+    
+    String singleIDresponseCode = "";
+    List<GUIManagedObject> complexObjectTypes = new ArrayList<GUIManagedObject>();
+    List<String> validIDs = new ArrayList<>();
+    JSONArray complexObjectTypeIDs = new JSONArray();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
+    
+    //
+    // refresh single complexObjectType
+    //
+    
+    if (jsonRoot.containsKey("id"))
+      {
+        String complexObjectTypeID = JSONUtilities.decodeString(jsonRoot, "id", false);
+        complexObjectTypeIDs.add(complexObjectTypeID);
+        GUIManagedObject complexObjectType = complexObjectTypeService.getStoredComplexObjectType(complexObjectTypeID);
+        if (complexObjectType != null && (force || !complexObjectType.getReadOnly()))
+          singleIDresponseCode = "ok";
+        else if (complexObjectType != null)
+          singleIDresponseCode = "failedReadOnly";
+        else
+          {
+            singleIDresponseCode = "complexObjectTypeNotFound";
+          }
+      }
+    
+    //
+    // multiple refresh
+    //
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        complexObjectTypeIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false);
+      }  
+
+    for (int i = 0; i < complexObjectTypeIDs.size(); i++)
+      {
+        String complexObjectTypeID = complexObjectTypeIDs.get(i).toString();
+        GUIManagedObject complexObjectType = complexObjectTypeService.getStoredComplexObjectType(complexObjectTypeID);
+
+        if (complexObjectType != null && (force || !complexObjectType.getReadOnly()))
+          {
+            complexObjectTypes.add(complexObjectType);
+            validIDs.add(complexObjectTypeID);
+          }
+      }
+
+    /*****************************************
+     *
+     * refresh
+     *
+     *****************************************/
+    
+    for (int i = 0; i < complexObjectTypes.size(); i++)
+      {
+        GUIManagedObject complexObjectType = complexObjectTypes.get(i);
+        try
+          {
+            ComplexObjectType toRefresh = new ComplexObjectType(complexObjectType.getJSONRepresentation(), epochServer.getKey(), complexObjectType, tenantID);
+            
+            //
+            //  remove all criteria old/new
+            //
+
+            // migration start EVPRO-1185
+            dynamicCriterionFieldService.removeComplexObjectTypeCriterionFields(toRefresh);
+            // migration end EVPRO-1185
+            dynamicCriterionFieldService.removeComplexObjectTypeAdvanceCriterionFields(toRefresh);
+            
+            //
+            //  create only new
+            //
+            
+            dynamicCriterionFieldService.addComplexObjectTypeAdvanceCriterionFields(toRefresh, true, tenantID);
+            log.info("refreshed complex object criteria of {}", toRefresh.getGUIManagedObjectName());
+          } 
+        catch (GUIManagerException e)
+          {
+            log.error("unable to refresh complex object criteria for {}", complexObjectType.getGUIManagedObjectName());
+            e.printStackTrace();
+            validIDs.remove(complexObjectType.getGUIManagedObjectID());
+          }
+        
+        //
+        // revalidate
+        //
+
+        revalidateSubscriberMessageTemplates(now, tenantID);
+        revalidateTargets(now, tenantID);
+        revalidateJourneys(now, tenantID);
+      }
+    
+    /*****************************************
+     *
+     * responseCode
+     *
+     *****************************************/
+    if (jsonRoot.containsKey("id"))
+      {
+        response.put("responseCode", singleIDresponseCode);
+        return JSONUtilities.encodeObject(response);
+      }
+    else
+      {
+        response.put("responseCode", "ok");
+      }
+
+    /*****************************************
+     *
+     * response
+     *
+     *****************************************/
+    
+    response.put("refreshedComplexObjectTypeIDs", JSONUtilities.encodeArray(validIDs));
     return JSONUtilities.encodeObject(response);
   }
 
@@ -5611,6 +5777,7 @@ public class GUIManagerGeneral extends GUIManager
       {
         response.put("responseCode", "objetTypeNotValid");
         response.put("responseMessage", "objectType " + objetType + " not found in configuration");
+        if (log.isErrorEnabled()) log.error("{} is not configured for gui dependency checking", objetType);
       }
     
     //

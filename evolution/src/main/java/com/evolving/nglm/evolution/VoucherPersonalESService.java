@@ -622,10 +622,11 @@ public class VoucherPersonalESService{
   // put the current stats for voucher from ES
   public void populateVoucherFileWithStockInformation(VoucherPersonal voucher, int tenantID){
     if(elasticsearch==null) log.error("VoucherPersonalESService.populateVoucherFileWithStockInformation : called with no elasticsearch client init");
-    if(!this.isMaster){
+    /*  EVPRO-1027
+     if(!this.isMaster){
       log.error("VoucherPersonalESService.populateVoucherFileWithStockInformation : is has not been meant to be executed in an non master service");
       return;
-    }
+    }*/
     try{
       for(int i=0;i<maxTries;i++){
         try{

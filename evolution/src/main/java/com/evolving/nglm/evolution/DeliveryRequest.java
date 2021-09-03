@@ -105,7 +105,9 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   public static final String MEANOFPAYMENT = "meanOfPayment";
   public static final String PAYMENTPROVIDERID = "paymentProviderID";
   public static final String VOUCHERCODE = "voucherCode";
-  public static final String VOUCHERPARTNERID = "voucherPartnerId";
+  public static final String VOUCHERFORMAT = "voucherFormat";
+  public static final String VOUCHEREXPIRYDATE = "voucherExpiryDate";
+  public static final String VOUCHERSUPPLIERID = "voucherSupplierId";
   public static final String RESELLERID = "resellerID";
   public static final String RESELLERDISPLAY = "resellerDisplay";
   public static final String SUPPLIERDISPLAY = "supplierDisplay";
@@ -339,6 +341,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   //  setters
   //
 
+  public void setDeliveryrequestID(String deliveryRequestID) { this.deliveryRequestID = deliveryRequestID; }
   public void setOriginatingDeliveryRequestID(String originatingDeliveryRequestID) { this.originatingDeliveryRequestID = originatingDeliveryRequestID; }
   public void setOriginatingSubscriberID(String originatingSubscriberID) { this.originatingSubscriberID = originatingSubscriberID; };
   public void setTargetedSubscriberID(String targetedSubscriberID) { this.targetedSubscriberID = targetedSubscriberID; };

@@ -65,6 +65,7 @@ public class ODRReportMonoPhase implements ReportCsvFactory
   private ResellerService resellerService;
   private VoucherService voucherService;
   private SupplierService supplierService;
+  private int tenantID = 0;
 
   private final static String moduleId = "moduleID";
   private final static String featureId = "featureID";
@@ -96,7 +97,7 @@ public class ODRReportMonoPhase implements ReportCsvFactory
   private static final String resellerID = "resellerID";
   private static final String vouchers = "vouchers";
 
-  private static List<String> headerFieldsOrder = new LinkedList<String>();
+  static List<String> headerFieldsOrder = new LinkedList<String>();
   static
   {
     headerFieldsOrder.add(moduleId);
@@ -534,6 +535,8 @@ public class ODRReportMonoPhase implements ReportCsvFactory
         reportPeriodQuantity = Integer.parseInt(args[3]);
         reportPeriodUnit = args[4];
       }
+    if (args.length > 5) tenantID = Integer.parseInt(args[5]);
+
     Date fromDate = getFromDate(reportGenerationDate, reportPeriodUnit, reportPeriodQuantity);
     Date toDate = reportGenerationDate;
     
@@ -549,7 +552,10 @@ public class ODRReportMonoPhase implements ReportCsvFactory
       }
     log.info("Reading data from ES in (" + esIndexOdrList.toString() + ")  index and writing to " + csvfile);
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
-    esIndexWithQuery.put(esIndexOdrList.toString(), QueryBuilders.rangeQuery("eventDatetime").gte(RLMDateUtils.formatDateForElasticsearchDefault(fromDate)).lte(RLMDateUtils.formatDateForElasticsearchDefault(toDate)));
+    esIndexWithQuery.put(esIndexOdrList.toString(),
+        QueryBuilders.boolQuery()
+        .filter(QueryBuilders.termQuery("tenantID", tenantID))
+        .filter(QueryBuilders.rangeQuery("eventDatetime").gte(RLMDateUtils.formatDateForElasticsearchDefault(fromDate)).lte(RLMDateUtils.formatDateForElasticsearchDefault(toDate))));
 
     String journeyTopic = Deployment.getJourneyTopic();
     String offerTopic = Deployment.getOfferTopic();

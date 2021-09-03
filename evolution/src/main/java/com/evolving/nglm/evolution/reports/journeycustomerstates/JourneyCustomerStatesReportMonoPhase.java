@@ -43,9 +43,10 @@ public class JourneyCustomerStatesReportMonoPhase implements ReportCsvFactory
   private static final Logger log = LoggerFactory.getLogger(JourneyCustomerStatesReportMonoPhase.class);
   final private static String CSV_SEPARATOR = ReportUtils.getSeparator();
   private JourneyService journeyService;
-  List<String> headerFieldsOrder = new ArrayList<String>();
   private final String subscriberID = "subscriberID";
-  private final String customerID = "customerID";
+  private final static String customerID = "customerID";
+
+  
 
   public void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders)
   {

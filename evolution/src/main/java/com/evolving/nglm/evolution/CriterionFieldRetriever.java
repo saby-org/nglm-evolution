@@ -11,12 +11,14 @@ import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.Pair;
 import com.evolving.nglm.core.RLMDateUtils;
-
+import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
 import com.evolving.nglm.evolution.LoyaltyProgramMission.MissionStep;
 import com.evolving.nglm.evolution.LoyaltyProgramMissionHistory.StepHistory;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
+import com.evolving.nglm.evolution.complexobjects.ComplexObjectException;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectInstance;
+import com.evolving.nglm.evolution.complexobjects.ComplexObjectUtils;
 import com.evolving.nglm.evolution.datamodel.DataModelFieldValue;
 
 import java.util.ArrayList;
@@ -25,12 +27,14 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -58,6 +62,223 @@ public abstract class CriterionFieldRetriever
 
   private static final Logger log = LoggerFactory.getLogger(CriterionFieldRetriever.class);
   
+  /*****************************************
+  *
+  *  adv criteria - with sub criteria
+  *
+  *****************************************/
+  
+  public static Object getNumberOfOfferPurchasedForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
+  {
+    long result = 0;
+    SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+    String offerID = (String) subcriteriaVal.get(0);
+    String period = (String) subcriteriaVal.get(1);
+    List<Date> purchaseDates = new ArrayList<Date>();
+    
+    //
+    //  offerID
+    //
+    
+    if (offerID != null)
+      {
+        if (subscriberProfile.getOfferPurchaseHistory().get(offerID) != null) purchaseDates.addAll(subscriberProfile.getOfferPurchaseHistory().get(offerID));
+        if (subscriberProfile.getOfferPurchaseSalesChannelHistory().get(offerID) != null) purchaseDates.addAll(subscriberProfile.getOfferPurchaseSalesChannelHistory().get(offerID).stream().map(pair -> pair.getSecondElement()).collect(Collectors.toList()));
+      }
+    else
+      {
+        purchaseDates = subscriberProfile.getOfferPurchaseHistory().values().stream().flatMap(vl -> vl.stream()).collect(Collectors.toList());
+        for (List<Pair<String, Date>> pairList : subscriberProfile.getOfferPurchaseSalesChannelHistory().values())
+          {
+            purchaseDates.addAll(pairList.stream().map(pair -> pair.getSecondElement()).collect(Collectors.toList()));
+          }
+      }
+    
+    //
+    //  period
+    //
+    
+    if (period != null)
+      {
+        String timeZone = Deployment.getDeployment(evaluationRequest.getTenantID()).getTimeZone();
+        Pair<Date, Date> startEndDatePair = getStartAndEndDate(period, timeZone);
+        Date startDate = startEndDatePair.getFirstElement();
+        Date endDate = startEndDatePair.getSecondElement();
+        result = purchaseDates.stream().filter(purchaseDate -> purchaseDate.after(startDate) && purchaseDate.before(endDate)).count();
+      }
+    else
+      {
+        result = purchaseDates.size();
+      }
+    return result;
+  }
+  
+  public static Object getNumberOfOfferPurchasedFromSalesChnlForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
+  {
+    long result = 0;
+    SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+    String salesChannelID = (String) subcriteriaVal.get(0);
+    String period = (String) subcriteriaVal.get(1);
+    List<Date> purchaseDates = new ArrayList<Date>();
+    
+    //
+    //  salesChannelID
+    //
+    
+    if (salesChannelID != null)
+      {
+        for (List<Pair<String, Date>> pairList : subscriberProfile.getOfferPurchaseSalesChannelHistory().values())
+          {
+            purchaseDates.addAll(pairList.stream().filter(element -> element.getFirstElement().equals(salesChannelID)).map(pair -> pair.getSecondElement()).collect(Collectors.toList()));
+          }
+      }
+    else
+      {
+        for (List<Pair<String, Date>> pairList : subscriberProfile.getOfferPurchaseSalesChannelHistory().values())
+          {
+            purchaseDates.addAll(pairList.stream().map(pair -> pair.getSecondElement()).collect(Collectors.toList()));
+          }
+      }
+    
+    //
+    //  period
+    //
+    
+    if (period != null)
+      {
+        String timeZone = Deployment.getDeployment(evaluationRequest.getTenantID()).getTimeZone();
+        Pair<Date, Date> startEndDatePair = getStartAndEndDate(period, timeZone);
+        Date startDate = startEndDatePair.getFirstElement();
+        Date endDate = startEndDatePair.getSecondElement();
+        result = purchaseDates.stream().filter(purchaseDate -> purchaseDate.after(startDate) && purchaseDate.before(endDate)).count();
+      }
+    else
+      {
+        result = purchaseDates.size();
+      }
+    return result;
+  }
+  
+  public static Object getNumberOfVoucherDeliveredForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
+  {
+    int result = 0;
+    SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+    List<VoucherProfileStored> vouchers = subscriberProfile.getVouchers();
+    
+    //
+    //  args
+    //
+    
+    String voucherID = (String) subcriteriaVal.get(0);
+    String period = (String) subcriteriaVal.get(1);
+    String timeZone = Deployment.getDeployment(evaluationRequest.getTenantID()).getTimeZone();
+    Pair<Date, Date> startEndDatePair = getStartAndEndDate(period, timeZone);
+    Date startDate = startEndDatePair.getFirstElement();
+    Date endDate = startEndDatePair.getSecondElement();
+    
+    if (vouchers != null && !vouchers.isEmpty())
+      {
+        if (voucherID != null) vouchers = vouchers.stream().filter(voucher -> voucher.getVoucherID().equals(voucherID)).collect(Collectors.toList());
+        vouchers = vouchers.stream().filter(voucher -> voucher.getVoucherDeliveryDate() != null && voucher.getVoucherDeliveryDate().after(startDate) && voucher.getVoucherDeliveryDate().before(endDate)).collect(Collectors.toList());
+        result = vouchers.size();
+      }
+    
+    return result;
+  }
+  
+  public static Object getNumberOfVoucherRedeemedForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
+  {
+    int result = 0;
+    SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+    List<VoucherProfileStored> vouchers = subscriberProfile.getVouchers();
+    
+    //
+    //  args
+    //
+    
+    String voucherID = (String) subcriteriaVal.get(0);
+    String period = (String) subcriteriaVal.get(1);
+    String timeZone = Deployment.getDeployment(evaluationRequest.getTenantID()).getTimeZone();
+    Pair<Date, Date> startEndDatePair = getStartAndEndDate(period, timeZone);
+    Date startDate = startEndDatePair.getFirstElement();
+    Date endDate = startEndDatePair.getSecondElement();
+    
+    if (vouchers != null && !vouchers.isEmpty())
+      {
+        if (voucherID != null) vouchers = vouchers.stream().filter(voucher -> voucher.getVoucherID().equals(voucherID)).collect(Collectors.toList());
+        vouchers = vouchers.stream().filter(voucher -> voucher.getVoucherRedeemDate() != null && voucher.getVoucherRedeemDate().after(startDate) && voucher.getVoucherRedeemDate().before(endDate)).collect(Collectors.toList());
+        result = vouchers.size();
+      }
+    
+    return result;
+  }
+  
+  public static Object getNumberOfVoucherExpiredForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
+  {
+    int result = 0;
+    SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+    List<VoucherProfileStored> vouchers = subscriberProfile.getVouchers();
+    
+    //
+    //  args
+    //
+    
+    String voucherID = (String) subcriteriaVal.get(0);
+    String period = (String) subcriteriaVal.get(1);
+    String timeZone = Deployment.getDeployment(evaluationRequest.getTenantID()).getTimeZone();
+    Pair<Date, Date> startEndDatePair = getStartAndEndDate(period, timeZone);
+    Date startDate = startEndDatePair.getFirstElement();
+    Date endDate = startEndDatePair.getSecondElement();
+    
+    if (vouchers != null && !vouchers.isEmpty())
+      {
+        if (voucherID != null) vouchers = vouchers.stream().filter(voucher -> voucher.getVoucherID().equals(voucherID)).collect(Collectors.toList());
+        vouchers = vouchers.stream().filter(voucher -> voucher.getVoucherExpiryDate() != null && voucher.getVoucherExpiryDate().after(startDate) && voucher.getVoucherExpiryDate().before(endDate)).collect(Collectors.toList());
+        result = vouchers.size();
+      }
+    
+    return result;
+  }
+  
+  protected static Pair<Date, Date> getStartAndEndDate(String period, String timeZone)
+  {
+    Date now = SystemTime.getCurrentTime();
+    Date startDate = now, endDate = now;
+    switch (period)
+    {
+      case "today":
+        startDate = RLMDateUtils.truncate(now, Calendar.DATE, timeZone);
+        break;
+        
+      case "yesterday":
+        startDate = RLMDateUtils.addDays(startDate, -1, timeZone);
+        endDate = RLMDateUtils.ceiling(startDate, Calendar.DATE, timeZone);
+        startDate = RLMDateUtils.truncate(startDate, Calendar.DATE, timeZone);
+        break;
+        
+      case "this.month":
+        startDate = RLMDateUtils.truncate(now, Calendar.MONTH, timeZone);
+        break;
+        
+      case "last.1.month":
+        startDate = RLMDateUtils.addMonths(startDate, -1, timeZone);
+        endDate = RLMDateUtils.ceiling(startDate, Calendar.MONTH, timeZone);
+        startDate = RLMDateUtils.truncate(startDate, Calendar.MONTH, timeZone);
+        break;
+        
+      case "last.3.month":
+        startDate = RLMDateUtils.addMonths(startDate, -1, timeZone);
+        endDate = RLMDateUtils.ceiling(startDate, Calendar.MONTH, timeZone);
+        startDate = RLMDateUtils.addMonths(startDate, -2, timeZone);
+        startDate = RLMDateUtils.truncate(startDate, Calendar.MONTH, timeZone);
+        break;
+
+      default:
+        break;
+    }
+    return new Pair<Date, Date>(startDate, endDate);
+  }
+
   /*****************************************
   *
   *  simple
@@ -502,6 +723,19 @@ public abstract class CriterionFieldRetriever
   {
     Set<String> res = evaluationRequest.getSubscriberProfile().getLoyaltyPrograms().values().stream().filter(lps -> (lps.getLoyaltyProgramExitDate() == null)).filter(lps -> (lps instanceof LoyaltyProgramMissionState)).map(lps -> (LoyaltyProgramMissionState) lps).map(lps -> ((LoyaltyProgramMissionState) lps).getStepName()).collect(Collectors.toSet());
     return res;
+  }
+  
+  // getVoucherCodes
+  //
+  
+  public static Object getVoucherCodes(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException {
+   
+   List <VoucherProfileStored> vouchers = evaluationRequest.getSubscriberProfile().getVouchers();
+   Set<String> res = new HashSet<>();
+   for (VoucherProfileStored voucher : vouchers) {
+     res.add(voucher.getVoucherCode());
+   }
+   return res;
   }
 
   //
@@ -1007,32 +1241,213 @@ public abstract class CriterionFieldRetriever
       }
      return status;
   }
-  
+  /*
+  // migration start EVPRO-1185
+  @Deprecated // should use getComplexObjectXXXX // must be removed when all the customer using adv criteria when using complex fields
   public static Object getComplexObjectFieldValue(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException
   {
     // parse the field name to retrieve the good value...
     // complexObject.<objectTypeID>.<elementID>.<subfieldName>;
     String[] split = fieldName.split("\\.");
-    if(split.length != 4 || !split[0].equals("complexObject")) {throw new CriterionException("field " + fieldName + " can't be handled"); }
+    if (split.length != 4 || !split[0].equals("complexObject"))
+      {
+        throw new CriterionException("field " + fieldName + " can't be handled");
+      }
     String objectTypeID = split[1];
     String elementID = split[2];
     String subfieldName = split[3];
     List<ComplexObjectInstance> complexObjectInstances = evaluationRequest.getSubscriberProfile().getComplexObjectInstances();
-    if(complexObjectInstances == null) { return null; }
+    if (complexObjectInstances == null)
+      {
+        return null;
+      }
     ComplexObjectInstance instance = null;
-    for(ComplexObjectInstance current : complexObjectInstances) 
-      { 
-        if(current.getComplexObjectTypeID().equals(objectTypeID) && current.getElementID().equals(elementID)) 
-          { 
-            instance = current; break; 
+    for (ComplexObjectInstance current : complexObjectInstances)
+      {
+        if (current.getComplexObjectTypeID().equals(objectTypeID) && current.getElementID().equals(elementID))
+          {
+            instance = current;
+            break;
           }
       }
-    if(instance == null) { return null; }
-    Map<String, DataModelFieldValue> values = instance.getFieldValues();
-    if(values == null) { return null; }
+    if (instance == null)
+      {
+        return null;
+      }
+    Map<String, DataModelFieldValue> values = instance.getFieldValuesReadOnly();
+    if (values == null)
+      {
+        return null;
+      }
     DataModelFieldValue elementValue = values.get(subfieldName);
-    if(elementValue == null) { return null; }
-    return elementValue.getValue();   
+    if (elementValue == null)
+      {
+        return null;
+      }
+    return elementValue.getValue();
+  }
+  // migration end EVPRO-1185
+   */
+  
+  public static Object getComplexObjectLong(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) throws CriterionException
+  {
+    Long result = null;
+    
+    //
+    //  fieldName = complex.ExampleObjName.subfieldprivateID.subfieldName.complexObjectTypeID
+    //
+    
+    String[] split = fieldName.split("\\.");
+    boolean invalidFieldName = split.length != 5 || !split[0].equals("complex");
+    if (invalidFieldName)
+      {
+        throw new CriterionException("field " + fieldName + " can't be handled");
+      }
+    else
+      {
+        String complexObjectTypeName = split[1];
+        String elementID = (String) subcriteriaVal.get(0);
+        String subfieldName = split[3];
+        SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+        try
+          {
+            result = ComplexObjectUtils.getComplexObjectLong(subscriberProfile, complexObjectTypeName, elementID, subfieldName);
+          } 
+        catch (ComplexObjectException e)
+          {
+            log.error("ComplexObjectException for {}", fieldName);
+          }
+      }
+    return result;   
+  }
+  
+  public static Object getComplexObjectString(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) throws CriterionException
+  {
+    String result = null;
+    
+    //
+    //  fieldName = complex.ExampleObjName.subfieldprivateID.subfieldName.complexObjectTypeID
+    //
+    
+    String[] split = fieldName.split("\\.");
+    boolean invalidFieldName = split.length != 5 || !split[0].equals("complex");
+    if (invalidFieldName)
+      {
+        throw new CriterionException("field " + fieldName + " can't be handled");
+      }
+    else
+      {
+        String complexObjectTypeName = split[1];
+        String elementID = (String) subcriteriaVal.get(0);
+        String subfieldName = split[3];
+        SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+        try
+          {
+            result = ComplexObjectUtils.getComplexObjectString(subscriberProfile, complexObjectTypeName, elementID, subfieldName);
+          } 
+        catch (ComplexObjectException e)
+          {
+            log.error("ComplexObjectException for {}", fieldName);
+          }
+      }
+    return result;   
+  }
+  
+  public static Object getComplexObjectBoolean(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) throws CriterionException
+  {
+    Boolean result = null;
+    
+    //
+    //  fieldName = complex.ExampleObjName.subfieldprivateID.subfieldName.complexObjectTypeID
+    //
+    
+    String[] split = fieldName.split("\\.");
+    boolean invalidFieldName = split.length != 5 || !split[0].equals("complex");
+    if (invalidFieldName)
+      {
+        throw new CriterionException("field " + fieldName + " can't be handled");
+      }
+    else
+      {
+        String complexObjectTypeName = split[1];
+        String elementID = (String) subcriteriaVal.get(0);
+        String subfieldName = split[3];
+        SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+        try
+          {
+            result = ComplexObjectUtils.getComplexObjectBoolean(subscriberProfile, complexObjectTypeName, elementID, subfieldName);
+          } 
+        catch (ComplexObjectException e)
+          {
+            log.error("ComplexObjectException for {}", fieldName);
+          }
+      }
+    return result;   
+  }
+  
+  public static Object getComplexObjectDate(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) throws CriterionException
+  {
+    Date result = null;
+    
+    //
+    //  fieldName = complex.ExampleObjName.subfieldprivateID.subfieldName.complexObjectTypeID
+    //
+    
+    String[] split = fieldName.split("\\.");
+    boolean invalidFieldName = split.length != 5 || !split[0].equals("complex");
+    if (invalidFieldName)
+      {
+        throw new CriterionException("field " + fieldName + " can't be handled");
+      }
+    else
+      {
+        String complexObjectTypeName = split[1];
+        String elementID = (String) subcriteriaVal.get(0);
+        String subfieldName = split[3];
+        SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+        try
+          {
+            result = ComplexObjectUtils.getComplexObjectDate(subscriberProfile, complexObjectTypeName, elementID, subfieldName);
+          } 
+        catch (ComplexObjectException e)
+          {
+            log.error("ComplexObjectException for {}", fieldName);
+          }
+      }
+    return result;   
+  }
+  
+  public static Object getComplexObjectStringSet(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) throws CriterionException
+  {
+    Set<String> result = new HashSet<String>();
+    
+    //
+    //  fieldName = complex.ExampleObjName.subfieldprivateID.subfieldName.complexObjectTypeID
+    //
+    
+    String[] split = fieldName.split("\\.");
+    boolean invalidFieldName = split.length != 5 || !split[0].equals("complex");
+    if (invalidFieldName)
+      {
+        throw new CriterionException("field " + fieldName + " can't be handled");
+      }
+    else
+      {
+        String complexObjectTypeName = split[1];
+        String elementID = (String) subcriteriaVal.get(0);
+        String subfieldName = split[3];
+        SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+        try
+          {
+            List<String> complexResult = ComplexObjectUtils.getComplexObjectStringSet(subscriberProfile, complexObjectTypeName, elementID, subfieldName);
+            if (complexResult != null) result.addAll(complexResult);
+          } 
+        catch (ComplexObjectException e)
+          {
+            log.error("ComplexObjectException for {}", fieldName);
+          }
+      }
+    return result;   
   }
 
   /*****************************************

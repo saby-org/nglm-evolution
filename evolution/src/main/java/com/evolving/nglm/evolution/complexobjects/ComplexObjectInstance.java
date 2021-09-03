@@ -87,24 +87,31 @@ public class ComplexObjectInstance
   private String elementID;
   private Map<String, DataModelFieldValue> fieldValues; // key is the fieldName
 
-  /*****************************************
-  *
-  * accessors
-  *
-  *****************************************/
+  // internal, to avoid un-needed deserialization/serialization
+  private boolean modified=false;
+  private byte[] byteRepresentation;
 
-  
+  // KEEP ACCESS fieldValues ONLY THROW THIS getter/setter ("on-demand" only serialization/deserialization)
+
+  // this one don't turn on the "modified" boolean, so if fieldValues accessed from it is modified, modification won't be serialized back
+  public Map<String, DataModelFieldValue> getFieldValuesReadOnly() {
+    if(fieldValues==null) fieldValues=unserializeFields();
+    return fieldValues;
+  }
+  // accessing with this one, modification of the hashmap will be serialized and well saved
+  public Map<String, DataModelFieldValue> getFieldValuesForModification() {
+    modified=true;
+    return getFieldValuesReadOnly();
+  }
+  // setter will always modify
+  public void setFieldValues(Map<String, DataModelFieldValue> fieldValues) {
+    modified=true;
+    this.fieldValues = fieldValues;
+  }
+
+  // normal getters
   public String getComplexObjectTypeID() { return complexObjectTypeID; }
   public String getElementID() { return elementID; }
-  public Map<String, DataModelFieldValue> getFieldValues() { return fieldValues; }
-
-  //
-  //  setters
-  //
-
-  public void setComplexObjectTypeID(String complexObjectTypeID) { this.complexObjectTypeID = complexObjectTypeID; }
-  public void setElementID(String elementID) { this.elementID = elementID; }
-  public void setFieldValues(Map<String, DataModelFieldValue> fieldValues) { this.fieldValues = fieldValues; }
 
   /*****************************************
   *
@@ -127,9 +134,8 @@ public class ComplexObjectInstance
 
   public ComplexObjectInstance(String complexObjectTypeID, String elementID, byte[] fieldValues)
   {
-    this.complexObjectTypeID = complexObjectTypeID;
-    this.elementID = elementID;
-    this.fieldValues = unserializeFields(fieldValues);
+    this(complexObjectTypeID,elementID);
+    this.byteRepresentation = fieldValues;// keep only byte representation, will be unpack only "on demand"
   }
 
   /*****************************************
@@ -193,14 +199,18 @@ public class ComplexObjectInstance
     // <field_private_ID 2 bytes><length 2 bytes><value>, so overhead of 4 bytes per value
     ComplexObjectType complexObjectType = complexObjectTypeService.getActiveComplexObjectType(complexObjectTypeID, SystemTime.getCurrentTime());
     if(complexObjectType == null) { /*Should not happen as the detection is done before calling Pack */ return new byte[] {}; };
-    
-    return serialize(complexObjectType.getSubfields());    
+
+    return serialize(complexObjectType.getSubfields());
   }
-  
+
   private byte[] serialize(Map<Integer, ComplexObjectTypeSubfield> complexObjectTypeFields)
   {
-    ByteBuffer resultByteBuffer = ByteBuffer.allocate(1000000);     
-    for(DataModelFieldValue fieldValue : this.getFieldValues().values())
+
+    if(!modified) return byteRepresentation;// no modification happened, just sending pack what we unpacked
+
+    List<byte[]> resultList = new ArrayList<>(fieldValues.size());
+    int finalBytesSize=0;
+    for(DataModelFieldValue fieldValue : fieldValues.values())
       {
         ComplexObjectTypeSubfield fieldType = complexObjectTypeFields.get(fieldValue.getPrivateFieldID());
         if(fieldType != null)
@@ -216,7 +226,8 @@ public class ComplexObjectInstance
                 result[2] = 0;
                 result[3] = (byte) (value != null ? 1 : 0);
                 result[4] = (byte) (value.booleanValue() ? 1 : 0);
-                resultByteBuffer.put(result, 0, result.length);
+                resultList.add(result);
+                finalBytesSize+=result.length;
                 break;
                 
               case IntegerCriterion : /*Integer and Long are considered the same, all seen as Long */
@@ -283,7 +294,8 @@ public class ComplexObjectInstance
                   resultLong[resultIndex] = tempByte[8 - size + i];
                   resultIndex++;
                 }
-                resultByteBuffer.put(resultLong, 0, resultLong.length);
+                resultList.add(resultLong);
+                finalBytesSize+=resultLong.length;
                 break;                
 
               case StringCriterion :
@@ -296,8 +308,10 @@ public class ComplexObjectInstance
                 resultString[1] = (byte) (fieldType.getPrivateID() & 0xFF);
                 resultString[2] = (byte) ((stringLength >> 8) & 0xFF);
                 resultString[3] = (byte) (stringLength & 0xFF);
-                resultByteBuffer.put(resultString, 0, resultString.length);
-                resultByteBuffer.put(stringBytes, 0, stringBytes.length);
+                resultList.add(resultString);
+                finalBytesSize+=resultString.length;
+                resultList.add(stringBytes);
+                finalBytesSize+=stringBytes.length;
                 break;
               case StringSetCriterion :
                 List<String> valueStringSet = (List<String>)fieldValue.getValue();
@@ -326,10 +340,12 @@ public class ComplexObjectInstance
                 header[2] = (byte) ((totalTLVLength >> 8) & 0xFF);
                 header[3] = (byte) (totalTLVLength & 0xFF);
                 
-                resultByteBuffer.put(header, 0, header.length);
+                resultList.add(header);
+                finalBytesSize+=header.length;
                 for(byte[] current : allStrings)
                   {
-                    resultByteBuffer.put(current, 0, current.length);
+                    resultList.add(current);
+                    finalBytesSize+=current.length;
                   }          
                 break;
               default:
@@ -342,9 +358,9 @@ public class ComplexObjectInstance
             // nothing to do
           }
       }
-    byte[] result = new byte[resultByteBuffer.position()];
-    resultByteBuffer.position(0);
-    resultByteBuffer.get(result);
+    byte[] result = new byte[finalBytesSize];
+    ByteBuffer buffer = ByteBuffer.wrap(result);
+    for(byte[] toAdd:resultList) buffer.put(toAdd);
     return result;
   }
   
@@ -354,13 +370,13 @@ public class ComplexObjectInstance
   *
   *****************************************/
 
-  private Map<String, DataModelFieldValue> unserializeFields(byte[] fieldValues)
+  private Map<String, DataModelFieldValue> unserializeFields()
   {
-    
+
     ComplexObjectType complexObjectType = complexObjectTypeService.getActiveComplexObjectType(complexObjectTypeID, SystemTime.getCurrentTime());
-    if(complexObjectType == null) { return null; };
-    
-    return deserialize(fieldValues, complexObjectType.getSubfields(), this.complexObjectTypeID);
+    if(complexObjectType == null) { return null; }
+    if(byteRepresentation == null) { return new HashMap<String, DataModelFieldValue>();}
+    return deserialize(byteRepresentation, complexObjectType.getSubfields(), this.complexObjectTypeID);
   }
 
   private static HashMap<String, DataModelFieldValue> deserialize(byte[] fieldValues, Map<Integer, ComplexObjectTypeSubfield> complexObjectTypeFields, String complexObjectTypeID)
@@ -515,7 +531,8 @@ public class ComplexObjectInstance
 
     instance.setFieldValues(values);
     byte[] ser = instance.serialize(fieldTypes);
-    
+
+    instance.getFieldValuesForModification();//for real deserialize after
     HashMap<String, DataModelFieldValue> unserValues = deserialize(ser, fieldTypes, "AComplexObjectName");
     
     System.out.println("Integer " + (unserValues.get(fieldTypeInteger.getPrivateID()).equals(values.get(fieldTypeInteger.getPrivateID()))));

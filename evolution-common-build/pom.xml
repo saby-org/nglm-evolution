@@ -3,7 +3,7 @@
   <groupId>com.evolving.nglm</groupId>
   <artifactId>nglm-evolution-common-build</artifactId>
   <packaging>pom</packaging>
-  <version>2.0.0_1-EVPRO-1079-SNAPSHOT</version>
+  <version>2.0.0_5-EVPRO-1079-SNAPSHOT</version>
   <name>evolution-common-build</name>
 
   <repositories> 
@@ -37,7 +37,7 @@
 
     <!-- dependencies -->
     <flyway.version>qaveon-dnbo-2.5.0.10.4.6</flyway.version>
-    <flyway.gui.version>1.0.66</flyway.gui.version>
+    <flyway.gui.version>1.0.70</flyway.gui.version>
     
     <!-- evolution-common-build -->
     <common.build.phase.generate-evolution-scripts>none</common.build.phase.generate-evolution-scripts>
@@ -114,6 +114,7 @@
     <topic.guiaudit>guiaudit</topic.guiaudit>
     <topic.deliverable>deliverable</topic.deliverable>
     <topic.tokentype>tokentype</topic.tokentype>
+    <topic.otptype>otptype</topic.otptype>
     <topic.vouchertype>vouchertype</topic.vouchertype>
     <topic.voucher>voucher</topic.voucher>
     <topic.template.subscribermessage>template-subscribermessage</topic.template.subscribermessage>
@@ -156,9 +157,14 @@
     <topic.sourceaddress>sourceaddress</topic.sourceaddress>
     <topic.voucherchange.request>voucherchange-request</topic.voucherchange.request>
     <topic.voucherchange.response>voucherchange-response</topic.voucherchange.response>
+    <topic.otpinstancechange.request>otpinstancechange-request</topic.otpinstancechange.request>
+    <topic.otpinstancechange.response>otpinstancechange-response</topic.otpinstancechange.response>
+    
     <topic.tenant>tenant</topic.tenant>
     <topic.edrdetails>edrdetails</topic.edrdetails>
     <topic.workflowEvent>workflowEvent</topic.workflowEvent>
+    <topic.subscriberProfileForceUpdateResponse>subscriberProfileForceUpdateResponse</topic.subscriberProfileForceUpdateResponse>
+    <topic.notificationEvent>notificationEvent</topic.notificationEvent>
 
     <!-- evolutionengine -->
     <changelog.evolutionengine.subscriberstate>subscriberstate</changelog.evolutionengine.subscriberstate>

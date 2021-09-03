@@ -9,19 +9,11 @@ package com.evolving.nglm.evolution;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.ReferenceDataValue;
 import com.evolving.nglm.core.SchemaUtilities;
-import com.evolving.nglm.core.SubscriberStreamEvent;
 
-import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.evolution.UCGRule.UCGRuleCalculationType;
 
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.kafka.common.errors.SerializationException;
-import org.apache.kafka.common.serialization.Serde;
-import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
@@ -64,10 +56,12 @@ public class UCGState implements ReferenceDataValue<String>
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("ucg_state");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
     schemaBuilder.field("ucgRule", UCGRule.schema());
     schemaBuilder.field("ucgGroups", SchemaBuilder.array(UCGGroup.schema()).schema());
     schemaBuilder.field("evaluationDate", Timestamp.SCHEMA);
+    //this is added to not calculate this targetRatio at each subscriber evaluation
+    schemaBuilder.field("targetRatio",Schema.OPTIONAL_FLOAT64_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -94,6 +88,8 @@ public class UCGState implements ReferenceDataValue<String>
   private Set<UCGGroup> ucgGroups;
   private Date evaluationDate;
 
+  private Double targetRatio;
+
   /****************************************
   *
   *  accessors
@@ -103,6 +99,7 @@ public class UCGState implements ReferenceDataValue<String>
   public UCGRule getUCGRule() { return ucgRule; }
   public Set<UCGGroup> getUCGGroups() { return ucgGroups; }
   public Date getEvaluationDate() { return evaluationDate; }
+  public Double getTargetRatio() { return targetRatio; }
 
   //
   //  convenience accessors
@@ -154,49 +151,7 @@ public class UCGState implements ReferenceDataValue<String>
       // Retrieve the target ratio of customers that should be in the Universal Control Group (it is the same for each stratum).
       //
 
-      Double targetRatio = null;
-      if(ucgRule.getCalculationType() == UCGRuleCalculationType.Percent) 
-        {
-          targetRatio = ucgRule.getSize() / 100.0d;
-          if(targetRatio < 0 || targetRatio > 1) 
-            {
-              log.error("Unallowed UCG target percentage.");
-              targetRatio = null;
-            }
-        } 
-      else if (ucgRule.getCalculationType() == UCGRuleCalculationType.Numeric) 
-        {
-          int totalCustomers = 0;
-          for (UCGGroup ucgGroup : ucgGroups)
-            {
-              totalCustomers += ucgGroup.getTotalSubscribers();
-            }
-
-          int targetSize = ucgRule.getSize();
-          if (targetSize < 0) 
-            {
-              log.error("NUMERIC number of customers wanted in UCG must not be a negative number.");
-              targetRatio = null;
-            } 
-          else if(targetSize >= totalCustomers) 
-            {
-              targetRatio = 1.0d;
-            } 
-          else  
-            {
-              targetRatio = targetSize / (double) totalCustomers;
-            }
-        } 
-      else if (ucgRule.getCalculationType() == UCGRuleCalculationType.File) 
-        {
-          log.warn("UCG engine will not have any impact in UCGRuleCalculationType.File mode.");
-          targetRatio = null;
-        } 
-      else 
-        {
-          log.error("Unable to retrieve UCG target ratio for this UCG calculation type.");
-          targetRatio = null;
-        }
+      this.targetRatio = calculateTargetRatio();
 
       //
       // Compute the shift probability for each stratum
@@ -211,36 +166,96 @@ public class UCGState implements ReferenceDataValue<String>
 
       for (UCGGroup ucgGroup : this.ucgGroups)
         {
-          if(ucgGroup.getShiftProbability() != null) 
-            {
-              continue;
-            }
-          
-          double shiftProbability = 0.0d;
-          if(targetRatio != null) 
-            {
-              int userDelta = 0;
-              int suitableCustomersNbr = 0;
-
-              userDelta = (int) (ucgGroup.getTotalSubscribers() * targetRatio) - ucgGroup.getUCGSubscribers();
-              if(userDelta >= 0) 
-                {
-                  suitableCustomersNbr = ucgGroup.getTotalSubscribers() - ucgGroup.getUCGSubscribers();
-                } 
-              else 
-                {
-                  suitableCustomersNbr = ucgGroup.getUCGSubscribers();
-                }
-              
-
-              if(suitableCustomersNbr != 0) 
-                {
-                  shiftProbability = userDelta / (double) suitableCustomersNbr;
-                }
-            }
-          ucgGroup.setShiftProbability(shiftProbability);
+          if(ucgGroup.getShiftProbability() != null)
+          {
+            continue;
+          }
+          calculateAndApplyShiftProbabilityForUCGGroup(ucgGroup);
         }
     }
+  }
+
+  public UCGState(UCGRule ucgRule, Set<UCGGroup> ucgGroups, Date evaluationDate,Double targetRatio)
+  {
+    this(ucgRule,ucgGroups,evaluationDate);
+    this.targetRatio = targetRatio;
+  }
+
+  private double calculateTargetRatio()
+  {
+    Double targetRatio = null;
+    if(ucgRule.getCalculationType() == UCGRuleCalculationType.Percent)
+    {
+      targetRatio = ucgRule.getSize() / 100.0d;
+      if(targetRatio < 0 || targetRatio > 1)
+      {
+        log.error("Unallowed UCG target percentage.");
+        targetRatio = null;
+      }
+    }
+    else if (ucgRule.getCalculationType() == UCGRuleCalculationType.Numeric)
+    {
+      int totalCustomers = 0;
+      for (UCGGroup ucgGroup : ucgGroups)
+      {
+        //Stefan comment: should be a better way to get total subscribers.
+        // Normally yes summing all ucg groups total subs should obtain total subscribers no but we have to find something more simple and sure
+        totalCustomers += ucgGroup.getTotalSubscribers();
+      }
+
+      int targetSize = ucgRule.getSize();
+      if (targetSize < 0)
+      {
+        log.error("NUMERIC number of customers wanted in UCG must not be a negative number.");
+        targetRatio = null;
+      }
+      else if(targetSize >= totalCustomers)
+      {
+        targetRatio = 1.0d;
+      }
+      else
+      {
+        targetRatio = targetSize / (double) totalCustomers;
+      }
+    }
+    else if (ucgRule.getCalculationType() == UCGRuleCalculationType.File)
+    {
+      log.warn("UCG engine will not have any impact in UCGRuleCalculationType.File mode.");
+      targetRatio = null;
+    }
+    else
+    {
+      log.error("Unable to retrieve UCG target ratio for this UCG calculation type.");
+      targetRatio = null;
+    }
+    return targetRatio;
+  }
+
+  public void calculateAndApplyShiftProbabilityForUCGGroup(UCGGroup ucgGroup)
+  {
+    double shiftProbability = 0.0d;
+    if(targetRatio != null)
+    {
+      int userDelta = 0;
+      int suitableCustomersNbr = 0;
+
+      userDelta = (int) (ucgGroup.getTotalSubscribers() * targetRatio) - ucgGroup.getUCGSubscribers();
+      if(userDelta >= 0)
+      {
+        suitableCustomersNbr = ucgGroup.getTotalSubscribers() - ucgGroup.getUCGSubscribers();
+      }
+      else
+      {
+        suitableCustomersNbr = ucgGroup.getUCGSubscribers();
+      }
+
+
+      if(suitableCustomersNbr != 0)
+      {
+        shiftProbability = userDelta / (double) suitableCustomersNbr;
+      }
+    }
+    ucgGroup.setShiftProbability(shiftProbability);
   }
 
   /*****************************************
@@ -256,6 +271,7 @@ public class UCGState implements ReferenceDataValue<String>
     struct.put("ucgRule", UCGRule.pack(ucgState.getUCGRule()));
     struct.put("ucgGroups", packUCGGroups(ucgState.getUCGGroups()));
     struct.put("evaluationDate", ucgState.getEvaluationDate());
+    struct.put("targetRatio", ucgState.getTargetRatio());
     return struct;
   }
 
@@ -299,12 +315,13 @@ public class UCGState implements ReferenceDataValue<String>
     UCGRule ucgRule = UCGRule.unpack(new SchemaAndValue(schema.field("ucgRule").schema(), valueStruct.get("ucgRule")));
     Set<UCGGroup> ucgGroups = unpackUCGGroups(schema.field("ucgGroups").schema(), valueStruct.get("ucgGroups"));
     Date evaluationDate = (Date) valueStruct.get("evaluationDate");
+    Double targetRatio = (schemaVersion >= 2) ? valueStruct.getFloat64("targetRatio") : 0;
     
     //
     //  return
     //
 
-    return new UCGState(ucgRule, ucgGroups, evaluationDate);
+    return new UCGState(ucgRule, ucgGroups, evaluationDate,targetRatio);
   }
 
   /*****************************************
@@ -411,6 +428,12 @@ public class UCGState implements ReferenceDataValue<String>
     //
     
     public void setShiftProbability(Double p) { this.shiftProbability = p; }
+    public void setUCGSubscribers(int ucgSubscribers) { this.ucgSubscribers = ucgSubscribers; }
+    //methods for increment and decrement ucg subscribers size
+    //normally one method can suppli both operations but for a better code readability 2 methods were created
+    public void incrementUCGSubscribers(int numberOfSubscribers) { this.ucgSubscribers += numberOfSubscribers; }
+    public void decrementUCGSubscribers(int numberOfSubscribers) { this.ucgSubscribers = this.ucgSubscribers - numberOfSubscribers; }
+
 
     /*****************************************
     *

@@ -118,7 +118,7 @@ public class ThirdPartyJSONGenerator
     offerMap.put("offerEndDate", getDateString(offer.getEffectiveEndDate(), offer.getTenantID()));
     offerMap.put("offerDescription", offer.getDescription());
     offerMap.put("offerExternalID", offer.getJSONRepresentation().get("externalID")!=null?offer.getJSONRepresentation().get("externalID"):"");
-    offerMap.put("offerAvailableStock", offer.getJSONRepresentation().get("presentationStock")!=null?offer.getJSONRepresentation().get("presentationStock"):"");
+    offerMap.put("offerAvailableStock", offer.getApproximateRemainingStock());
     offerMap.put("offerAvailableStockAlertThreshold", offer.getJSONRepresentation().get("presentationStockAlertThreshold")!=null?offer.getJSONRepresentation().get("presentationStockAlertThreshold"):"");
     offerMap.put("offerImageURL", offer.getJSONRepresentation().get("imageURL")!=null?offer.getJSONRepresentation().get("imageURL"):"");
     offerMap.put("offerObjectives", getOfferObjectivesJson(offer, offerObjectiveService, catalogCharacteristicService));
@@ -339,6 +339,37 @@ public class ThirdPartyJSONGenerator
     }
     voucherMap.put("quantity", offerVoucher.getQuantity());
     return JSONUtilities.encodeObject(voucherMap);
+  }
+  
+  /*****************************************
+  *
+  *  generateVoucherJSONForThirdParty
+  *
+  *****************************************/
+  
+  public static JSONObject generateVoucherJSON(VoucherService voucherService, GUIManagedObject voucher, Date now)
+  {
+    JSONObject voucherJSON = voucherService.generateResponseJSON(voucher, true, now);
+    
+    //
+    //  remove internal fields
+    //
+    
+    voucherJSON.remove("simpleOffer");
+    voucherJSON.remove("userID");
+    voucherJSON.remove("valid");
+    voucherJSON.remove("groupID");
+    voucherJSON.remove("readOnly");
+    voucherJSON.remove("userName");
+    voucherJSON.remove("name");
+    voucherJSON.remove("processing");
+    voucherJSON.remove("deleted");
+    
+    //
+    //  return
+    //
+    
+    return voucherJSON;
   }
   
   /*****************************************

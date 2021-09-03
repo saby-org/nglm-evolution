@@ -12,6 +12,7 @@ import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.ReportDriver.ReportTypeDef;
 import com.evolving.nglm.evolution.reports.subscriber.SubscriberReportMonoPhase;
+import com.evolving.nglm.evolution.reports.tokenOffer.TokenOfferReportMonoPhase;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +42,7 @@ public class VoucherCustomerReportDriver extends ReportDriver{
       int defaultReportPeriodQuantity = report.getDefaultReportPeriodQuantity();
 
       VoucherCustomerReportMonoPhase.main(new String[]{
-          elasticSearch, esIndexSubscriber, csvFilename
+          elasticSearch, esIndexSubscriber, csvFilename, tenantID+""
       }, reportGenerationDate);        
   
 	  log.debug("Finished with voucherCustomer Report");
@@ -57,7 +58,7 @@ public class VoucherCustomerReportDriver extends ReportDriver{
   @Override
   public List<String> reportHeader()
   {
-    // TODO Auto-generated method stub
-    return null;
+    List<String> result = VoucherCustomerReportMonoPhase.headerFieldsOrder;
+    return result;
   }
 }

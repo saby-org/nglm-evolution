@@ -1,5 +1,6 @@
 package com.evolving.nglm.evolution.reports.vdr;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -12,6 +13,7 @@ import com.evolving.nglm.evolution.reports.FilterObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.ReportDriver.ReportTypeDef;
+import com.evolving.nglm.evolution.reports.bdr.BDRReportMonoPhase;
 
 @ReportTypeDef(reportType = "detailedrecords")
 public class VDRReportDriver extends ReportDriver
@@ -24,7 +26,7 @@ public class VDRReportDriver extends ReportDriver
     String esIndexVDR = "detailedrecords_vouchers-";
     String defaultReportPeriodUnit = report.getDefaultReportPeriodUnit();
     int defaultReportPeriodQuantity = report.getDefaultReportPeriodQuantity();
-    VDRReportMonoPhase.main(new String[] { elasticSearch, esIndexVDR, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit }, reportGenerationDate);
+    VDRReportMonoPhase.main(new String[] { elasticSearch, esIndexVDR, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit, tenantID+"" }, reportGenerationDate);
     log.debug("Finished with VDR Report");
   }
 
@@ -38,7 +40,7 @@ public class VDRReportDriver extends ReportDriver
   @Override
   public List<String> reportHeader()
   {
-    // TODO Auto-generated method stub
-    return null;
+    List<String> result = VDRReportMonoPhase.headerFieldsOrder;
+    return result;
   }
 }

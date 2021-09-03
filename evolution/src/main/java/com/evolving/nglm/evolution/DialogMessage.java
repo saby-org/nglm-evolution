@@ -540,11 +540,29 @@ public class DialogMessage
         //
         
         subscriberEvaluationRequest.getMiscData().put("tagJourneyNodeParameterName", (String)tag.getJSONRepresentation().get("tagJourneyNodeParameterName"));
-        Object tagValue = tag.retrieve(subscriberEvaluationRequest);
+        Object tagValue = null;
+        try {
+          tagValue = tag.retrieve(subscriberEvaluationRequest);
+        }
+        catch(Exception e)
+        {
+          // may be normal so just DEBUG log
+          log.debug("Exception " + e.getClass().getName() + " while getting value of tag " + tag, e);
+          tagValue = subscriberEvaluationRequest.getMiscData().get(tag.getID().toLowerCase());
+        }
         Integer tagMaxLength = null;
         if (parameterTags.contains(tag))
           {
-            tagMaxLength = getTagMaxLength(subscriberEvaluationRequest, tag.getID());
+            tagMaxLength = null;
+            try 
+            {
+              getTagMaxLength(subscriberEvaluationRequest, tag.getID());
+            }
+            catch(Exception e)
+            {
+              // may happen in case of message sent out from Journey (by example voucher code reminder from Customer Care
+              log.debug("Exception " + e.getClass().getName() + " while getting length of tag " + tag, e);
+            }
           }
 
         //
@@ -575,34 +593,10 @@ public class DialogMessage
         String formattedTag = formatter.format(tagValues);
         
         //
-        //  truncate (if necessary)
-        //
-
-        int maxLength = tagMaxLength != null ? tagMaxLength.intValue() : tag.resolveTagMaxLength(formatDataType);
-        String resolvedTag = formattedTag;
-        if (log.isDebugEnabled()) log.debug("resolveMessageTags maxLength for {} is {}", tag.getID(), maxLength);
-        if (formattedTag.length() > maxLength)
-          {
-            switch (formatDataType)
-              {
-                case StringCriterion:
-                case StringSetCriterion:
-                  resolvedTag = formattedTag.substring(0, maxLength);
-                  break;
-
-                default:
-                  StringBuilder invalidTag = new StringBuilder();
-                  for (int j=0; j<maxLength; j++) invalidTag.append("X");
-                  resolvedTag = invalidTag.toString();
-                  break;
-              }
-          }
-        
-        //
         //  resolved tag
         //
 
-        messageTags.add(resolvedTag);
+        messageTags.add(formattedTag);
       }
 
     /*****************************************

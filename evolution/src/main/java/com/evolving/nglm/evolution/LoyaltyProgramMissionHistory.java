@@ -244,6 +244,38 @@ public class LoyaltyProgramMissionHistory
     return (this.stepHistory!=null && !this.stepHistory.isEmpty()) ? Collections.max(this.stepHistory, cmp) : null;
   }
   
+  /*****************************************
+  *
+  *  getStepHistoryByFromName
+  *
+  *****************************************/
+  
+  public StepHistory getStepHistoryByFromName(String fromStepName)
+  {
+    StepHistory result = null;
+    if (this.stepHistory !=null && !this.stepHistory.isEmpty())
+      {
+        result = stepHistory.stream().filter(step -> fromStepName.equals(step.getFromStep())).findFirst().orElse(null);
+      }
+    return result;
+  }
+  
+  /*****************************************
+  *
+  *  getStepHistoryByToName
+  *
+  *****************************************/
+  
+  public StepHistory getStepHistoryByToName(String toStepName)
+  {
+    StepHistory result = null;
+    if (this.stepHistory !=null && !this.stepHistory.isEmpty())
+      {
+        result = stepHistory.stream().filter(step -> toStepName.equals(step.getToStep())).findFirst().orElse(null);
+      }
+    return result;
+  }
+  
   public static class StepHistory
   {
    

@@ -126,7 +126,7 @@ public class BDRRewardManagerSinkConnector extends SimpleESSinkConnector
       documentMap.put("providerID", commodityRequest.getProviderID());
       documentMap.put("deliverableID", commodityRequest.getDeliverableID());
       documentMap.put("deliverableQty", commodityRequest.getAmount());
-      documentMap.put("operation", commodityRequest.getBonusDeliveryOperation().toUpperCase());
+      documentMap.put("operation", commodityRequest.getBonusDeliveryOperation().toUpperCase());//ACCEPT ME IF YOU GOT A CONFLICT ON THAT LINE MERGING UP 1.5.1_4 WITH 2.0.0
       documentMap.put("moduleID", commodityRequest.getModuleID());
       documentMap.put("featureID", commodityRequest.getFeatureID());
       documentMap.put("origin", commodityRequest.getBonusDeliveryOrigin());

@@ -14,7 +14,9 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -35,6 +37,7 @@ import org.elasticsearch.client.core.CountResponse;
 import org.elasticsearch.index.query.*;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,6 +55,7 @@ import com.evolving.nglm.evolution.Expression.ExpressionEvaluationException;
 import com.evolving.nglm.evolution.Expression.ExpressionParseException;
 import com.evolving.nglm.evolution.Expression.ExpressionReader;
 import com.evolving.nglm.evolution.Expression.ExpressionTypeCheckException;
+import com.evolving.nglm.evolution.Expression.ReferenceExpression;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
@@ -240,7 +244,7 @@ public class EvaluationCriterion
     
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("criterion");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(3));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(4));
     schemaBuilder.field("criterionContext", CriterionContext.schema());
     schemaBuilder.field("criterionField", Schema.STRING_SCHEMA);
     schemaBuilder.field("criterionOperator", Schema.STRING_SCHEMA);
@@ -250,6 +254,7 @@ public class EvaluationCriterion
     schemaBuilder.field("criterionDefault", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
     schemaBuilder.field("useESQueryNoPainless",Schema.OPTIONAL_BOOLEAN_SCHEMA);
+    schemaBuilder.field("subcriteriaArguments", SchemaBuilder.map(Schema.STRING_SCHEMA, SubcriteriaArgument.serde().schema()).name("criterion_subcriteria_argument").schema());
     schema = schemaBuilder.build();
   };
 
@@ -277,6 +282,7 @@ public class EvaluationCriterion
   private String storyReference;
   private boolean criterionDefault;
   private int tenantID;
+  private Map<String, SubcriteriaArgument> subcriteriaArgumentMap;
 
   //
   //  derived
@@ -284,7 +290,7 @@ public class EvaluationCriterion
 
   private Expression argument;
   private boolean referencesEvaluationDate;
-
+  private Map<String, Expression> subcriteriaExpressions;
   private Boolean useESQueryNoPainless;
 
   /*****************************************
@@ -293,7 +299,7 @@ public class EvaluationCriterion
   *
   *****************************************/
 
-  private EvaluationCriterion(CriterionContext criterionContext, CriterionField criterionField, CriterionOperator criterionOperator, String argumentExpression, TimeUnit argumentBaseTimeUnit, String storyReference, boolean criterionDefault, int tenantID,Boolean useESQueryNoPainless)
+  private EvaluationCriterion(CriterionContext criterionContext, CriterionField criterionField, CriterionOperator criterionOperator, String argumentExpression, TimeUnit argumentBaseTimeUnit, String storyReference, boolean criterionDefault, int tenantID,Boolean useESQueryNoPainless, Map<String, SubcriteriaArgument> subcriteriaArgumentMap)
   {
     this.criterionContext = criterionContext;
     this.criterionField = criterionField;
@@ -306,6 +312,7 @@ public class EvaluationCriterion
     this.referencesEvaluationDate = criterionField.getID().equals(CriterionField.EvaluationDateField);
     this.tenantID = tenantID;
     this.useESQueryNoPainless = useESQueryNoPainless;
+    this.subcriteriaArgumentMap = subcriteriaArgumentMap;
   }
 
   /*****************************************
@@ -334,6 +341,24 @@ public class EvaluationCriterion
     
     if (this.criterionField == null) throw new GUIManagerException("unsupported " + criterionContext.getCriterionContextType().getExternalRepresentation() + " criterion field", JSONUtilities.decodeString(jsonRoot, "criterionField", true));
     if (this.criterionOperator == CriterionOperator.Unknown) throw new GUIManagerException("unknown operator", JSONUtilities.decodeString(jsonRoot, "criterionOperator", true));
+    
+    //
+    //  adv criteria
+    //
+    this.subcriteriaArgumentMap = new LinkedHashMap<String, SubcriteriaArgument>();
+    if (criterionField.hasSubcriterias())
+      {
+        JSONArray subcriteriaJSONArray = JSONUtilities.decodeJSONArray(jsonRoot, "subcriteria", new JSONArray());
+        for (int i = 0; i < subcriteriaJSONArray.size(); i++)
+          {
+            JSONObject subcriteriaJSON = (JSONObject)subcriteriaJSONArray.get(i);
+            String field = JSONUtilities.decodeString(subcriteriaJSON, "field", true);
+            JSONObject argumentJSON = JSONUtilities.decodeJSONObject(subcriteriaJSON, "argument", false);
+            SubcriteriaArgument subcriteriaArgument = new SubcriteriaArgument(argumentJSON);
+            this.subcriteriaArgumentMap.put(field, subcriteriaArgument);
+          }
+        parseSubcriteriaArgument(tenantID);
+      }
 
     //
     // argument
@@ -368,6 +393,22 @@ public class EvaluationCriterion
         e.printStackTrace(new PrintWriter(stackTraceWriter, true));
         log.info(stackTraceWriter.toString());
         throw new GUIManagerException(e);
+      }
+  }
+
+  private void parseSubcriteriaArgument(int tenantID)
+  {
+    if (this.subcriteriaArgumentMap != null)
+      {
+        this.subcriteriaExpressions = new LinkedHashMap<String, Expression>();
+        for (String field : subcriteriaArgumentMap.keySet())
+          {
+            SubcriteriaArgument subArgument = subcriteriaArgumentMap.get(field);
+            String subArgumentExpression = subArgument.getArgumentExpression();
+            TimeUnit subArgumentBaseTimeUnit = subArgument.getArgumentBaseTimeUnit();
+            ExpressionReader expressionReader = new ExpressionReader(criterionContext, subArgumentExpression, subArgumentBaseTimeUnit, tenantID);
+            subcriteriaExpressions.put(field, expressionReader.parse(ExpressionContext.Criterion, tenantID));
+          }
       }
   }
 
@@ -642,6 +683,17 @@ public class EvaluationCriterion
           break;
       }
     if (!validCombination) throw new CriterionException("bad operator/dataType/argument combination " + this.criterionOperator + "/" + criterionField.getFieldDataType() + "/" + argumentExpression);
+    
+    //
+    //  validSubcriteriaAndExpresion
+    //
+    
+    if (getCriterionField().hasSubcriterias())
+      {
+        boolean validSubcriteriaAndExpresion = getCriterionField().getSubcriterias().size() == getSubcriteriaExpressions().size();
+        if (!validSubcriteriaAndExpresion) throw new CriterionException("bad sub Expresion, " + criterionField.getDisplay() + " does not have same no. of sub criteria and expressions");
+      }
+    
   }
 
   /*****************************************
@@ -660,6 +712,8 @@ public class EvaluationCriterion
   public boolean getCriterionDefault() { return criterionDefault; }
   public int getTenantID() { return tenantID; }
   public Boolean getUseESQueryNoPainless(){return  useESQueryNoPainless;}
+  public Map<String, Expression> getSubcriteriaExpressions() { return subcriteriaExpressions; }
+  public Map<String, SubcriteriaArgument> getSubcriteriaArgumentMap() { return subcriteriaArgumentMap; }
 
   /*****************************************
   *
@@ -691,7 +745,24 @@ public class EvaluationCriterion
     struct.put("criterionDefault", criterion.getCriterionDefault());
     struct.put("tenantID", (short)criterion.getTenantID());
     struct.put("useESQueryNoPainless",criterion.getUseESQueryNoPainless());
+    struct.put("subcriteriaArguments", packSubcriteriaArguments(criterion.getSubcriteriaArgumentMap()));
     return struct;
+  }
+  
+  /****************************************
+  *
+  *  packRelations
+  *
+  ****************************************/
+
+  private static Object packSubcriteriaArguments(Map<String, SubcriteriaArgument> arguments)
+  {
+    Map<String, Object> result = new HashMap<String, Object>();
+    for (String field : arguments.keySet())
+      {
+        result.put(field, SubcriteriaArgument.pack(arguments.get(field)));
+      }
+    return result;
   }
 
   /*****************************************
@@ -724,6 +795,7 @@ public class EvaluationCriterion
     boolean criterionDefault = valueStruct.getBoolean("criterionDefault");
     int tenantID = schema.field("tenantID") != null ? valueStruct.getInt16("tenantID") : 1;
     Boolean useESQueryNoPainless = schemaVersion >= 3 ? valueStruct.getBoolean("useESQueryNoPainless"):null;
+    Map<String, SubcriteriaArgument> subcriteriaArgumentMap = (schemaVersion >= 4) ? unpackSubcriteriaArgument(schema.field("subcriteriaArguments").schema(), valueStruct.get("subcriteriaArguments")) : new HashMap<String, SubcriteriaArgument>();
 
     //
     //  validate
@@ -735,7 +807,7 @@ public class EvaluationCriterion
     //  construct
     //
 
-    EvaluationCriterion result = new EvaluationCriterion(criterionContext, criterionField, criterionOperator, argumentExpression, argumentBaseTimeUnit, storyReference, criterionDefault, tenantID, useESQueryNoPainless);
+    EvaluationCriterion result = new EvaluationCriterion(criterionContext, criterionField, criterionOperator, argumentExpression, argumentBaseTimeUnit, storyReference, criterionDefault, tenantID, useESQueryNoPainless, subcriteriaArgumentMap);
 
     //
     //  parse argument
@@ -743,6 +815,7 @@ public class EvaluationCriterion
 
      try
       {
+        result.parseSubcriteriaArgument(tenantID);
         result.parseArgument(tenantID);
       }
     catch (ExpressionParseException|ExpressionTypeCheckException e)
@@ -770,6 +843,24 @@ public class EvaluationCriterion
     return result;
   }
   
+  /*****************************************
+  *
+  *  unpackSubcriteriaArgument
+  *
+  *****************************************/
+  
+  private static LinkedHashMap<String, SubcriteriaArgument> unpackSubcriteriaArgument(Schema schema, Object value)
+  {
+    Schema mapSchema = schema.valueSchema();
+    LinkedHashMap<String, SubcriteriaArgument> result = new LinkedHashMap<String, SubcriteriaArgument>();
+    Map<String, Object> valueMap = (Map<String, Object>) value;
+    for (String field : valueMap.keySet())
+      {
+        result.put(field, SubcriteriaArgument.serde().unpack(new SchemaAndValue(mapSchema, valueMap.get(field))));
+      }
+    return result;
+  }
+
   /*****************************************
   *
   *  parseArgument
@@ -807,8 +898,14 @@ public class EvaluationCriterion
     Object evaluatedArgument = null;
     ExpressionDataType argumentType = null;
     try
-      {        
-        criterionFieldValue = criterionField.retrieveNormalized(evaluationRequest);
+      { 
+        //
+        //  subcriterion values
+        //
+        
+        LinkedHashMap<String, Object> subcriteriaArgumentValues = getSubcriteriaArgumentValues(criterionField, evaluationRequest);
+        
+        criterionFieldValue = criterionField.retrieveNormalized(evaluationRequest, subcriteriaArgumentValues);
     
         /****************************************
         *
@@ -1206,6 +1303,27 @@ public class EvaluationCriterion
   }
   
   //
+  // getSubcriteriaArgumentValues
+  //
+  
+  private LinkedHashMap<String, Object> getSubcriteriaArgumentValues(CriterionField criterionField, SubscriberEvaluationRequest evaluationRequest)
+  {
+    LinkedHashMap<String, Object> result = new LinkedHashMap<String, Object>();
+    if (criterionField.hasSubcriterias())
+      {
+        for (String field : getSubcriteriaExpressions().keySet())
+          {
+            Expression subArgument = getSubcriteriaExpressions().get(field);
+            TimeUnit subArgumentBaseTimeUnit = getSubcriteriaArgumentMap().get(field).getArgumentBaseTimeUnit();
+            Object evaluatedArgument = (subArgument != null) ? subArgument.evaluateExpression(evaluationRequest, subArgumentBaseTimeUnit) : null;
+            result.put(field, evaluatedArgument);
+          }
+        if (criterionField.getSubcriterias().size() != result.size()) throw new RuntimeException(criterionField.getDisplay() + " has " + criterionField.getSubcriterias().size() + " sub criterias but found " + result.size() + " evaluation expressions");
+      }
+    return result;
+  }
+
+  //
   // getCurrentDateFromTime
   //
   
@@ -1441,14 +1559,19 @@ public class EvaluationCriterion
 
     if (esField == null)
     {
+      if (criterionField.hasSubcriterias())
+        {
+          if (log.isDebugEnabled()) log.debug("a dummy query will be executed for criterion {}, which will return true - will impact the count", criterionField.getDisplay());
+          return alwaysTrueESQuery();
+        }
       throw new CriterionException("invalid criterionField " + criterionField);
     }
 
     //
-    // Handle criterion "loyaltyprogram.name"
+    // Handle criterion "loyaltyprograms.name"
     //
 
-    if ("loyaltyprogram.name".equals(esField))
+    if ("loyaltyprograms.name".equals(esField))
     {
       QueryBuilder query = null;
       // ES special case for isNull : (must_not -> exists) does not work when inside a nested query : must_not must be on the toplevel query !
@@ -1474,7 +1597,7 @@ public class EvaluationCriterion
     // Handle dynamic criterion "loyaltyprogram.LP1.xxxxx"
     //
 
-    if (esField.startsWith("loyaltyprogram."))
+    if (esField.startsWith("loyaltyprograms."))
     {
       QueryBuilder query = handleLoyaltyProgramDynamicCriterion(esField);
       return query;
@@ -1484,7 +1607,7 @@ public class EvaluationCriterion
     // Handle dynamic criterion "point.POINT001.balance"
     //
 
-    if (esField.startsWith("point."))
+    if (esField.startsWith("pointBalances."))
     {
       QueryBuilder query = handlePointDynamicCriterion(esField);
       return query;
@@ -1570,14 +1693,14 @@ public class EvaluationCriterion
     switch (evaluationDataType)
       {
         case StringCriterion:
-          script.append("def left = (doc." + esField + ".size() != 0) ? doc." + esField + ".value?.toLowerCase() : null; ");
+          script.append("def left = (doc['" + esField + "'].size() != 0) ? doc['" + esField + "']value?.toLowerCase() : null; ");
           break;
           
         case DateCriterion:
           script.append("def left; ");
-          script.append("if (doc." + esField + ".size() != 0) { ");
+          script.append("if (doc['" + esField + "'].size() != 0) { ");
           script.append("def leftSF = new SimpleDateFormat(\"yyyy-MM-dd'T'HH:mm:ss.SSSX\"); ");   // TODO EVPRO-99
-          script.append("def leftMillis = doc." + esField + ".value.getMillis(); ");
+          script.append("def leftMillis = doc['" + esField + "'].value.getMillis(); ");
           script.append("def leftCalendar = leftSF.getCalendar(); ");
           script.append("leftCalendar.setTimeInMillis(leftMillis); ");
           script.append("def leftInstant = leftCalendar.toInstant(); ");
@@ -1587,11 +1710,11 @@ public class EvaluationCriterion
           break;
 
         case StringSetCriterion:
-          script.append("def left = new ArrayList(); for (int i=0;i<doc." + esField + ".size();i++) left.add(doc." + esField + ".get(i)?.toLowerCase()); ");
+          script.append("def left = new ArrayList(); for (int i=0;i<doc['" + esField + "'].size();i++) left.add(doc['" + esField + "'].get(i)?.toLowerCase()); ");
           break;
 
         case IntegerSetCriterion:
-          script.append("def left = new ArrayList(); left.addAll(doc." + esField + "); ");
+          script.append("def left = new ArrayList(); left.addAll(doc['" + esField + "']); ");
           break;
           
         case AniversaryCriterion:
@@ -1601,7 +1724,7 @@ public class EvaluationCriterion
           throw new UnsupportedOperationException("timeCriterion is not supported");
           
         default:
-          script.append("def left = (doc." + esField + ".size() != 0) ? doc." + esField + "?.value : null; ");
+          script.append("def left = (doc['" + esField + "'].size() != 0) ? doc['" + esField + "']?.value : null; ");
           break;
       }
 
@@ -1900,7 +2023,24 @@ public class EvaluationCriterion
         default:
           if (criterionDefault)
             query = QueryBuilders.boolQuery().should(QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery(esField))).should(baseQuery);
-          else
+          else if (argument != null && argument instanceof Expression.FunctionCallExpression) { // redpoint.earliestexpirydate + 1 month
+            Expression.FunctionCallExpression fce = (Expression.FunctionCallExpression) argument;
+            // check if fce.arguments[0] is a ReferenceExpression, then add an exist clause with fce.arguments[0].reference.esField
+            List<String> esFieldsList = fce.getESFields(); // get list of esFields used by arguments
+            BoolQueryBuilder subQuery = QueryBuilders.boolQuery().must(QueryBuilders.existsQuery(esField)).must(baseQuery);
+            for (String esFieldArgument : esFieldsList) {
+              subQuery = subQuery.must(QueryBuilders.existsQuery(esFieldArgument));
+            }
+            query = subQuery;
+          } else if (argument != null && argument instanceof Expression.ReferenceExpression) { // redpoint.earliestexpirydate (instant)
+            Expression.ReferenceExpression re = (ReferenceExpression) argument;
+            BoolQueryBuilder subQuery = QueryBuilders.boolQuery().must(QueryBuilders.existsQuery(esField)).must(baseQuery);
+            String esFieldArg = re.getESField();
+            if (esFieldArg != null) {
+              subQuery = subQuery.must(QueryBuilders.existsQuery(esFieldArg));
+            }
+            query = subQuery;
+          } else
             query = QueryBuilders.boolQuery().must(QueryBuilders.existsQuery(esField)).must(baseQuery);
           break;
       }
@@ -2193,6 +2333,17 @@ public class EvaluationCriterion
 
     return queryBuilder;
   }
+  
+  /*****************************************
+  *
+  *  alwaysTrueESQuery
+  *
+  *****************************************/
+
+ private QueryBuilder alwaysTrueESQuery() throws CriterionException
+ {
+   return QueryBuilders.existsQuery("_id"); // TO DO : this is a hack to return true always - must be handled in future as said in "EVPRO-1066"
+ }
 
   static String journeyName = "";
   static String campaignName = "";
@@ -2404,7 +2555,7 @@ public class EvaluationCriterion
   
   public QueryBuilder handlePointDynamicCriterion(String esField) throws CriterionException
   {
-    Pattern fieldNamePattern = Pattern.compile("^point\\.([^.]+)\\.(.+)$");
+    Pattern fieldNamePattern = Pattern.compile("^pointBalances\\.([^.]+)\\.(.+)$");
     Matcher fieldNameMatcher = fieldNamePattern.matcher(esField);
     if (! fieldNameMatcher.find()) throw new CriterionException("invalid point field " + esField);
     String pointID = fieldNameMatcher.group(1);
@@ -2426,15 +2577,16 @@ public class EvaluationCriterion
         queryInternal = buildCompareQuery("pointBalances." + SubscriberProfile.EARLIEST_EXPIRATION_QUANTITY, ExpressionDataType.IntegerExpression);
         break;
         
-      default:  // point.POINT_ID.expired.last7days
+      default:  // point.POINT_ID.expired.last7days  // HERE no nested necessary because pointFluctuations is a dictionary
         String searchStringForPointFluctuations = "pointFluctuations." + pointID + ".";
         fieldNamePattern = Pattern.compile("^([^.]+)\\.([^.]+)$");
         fieldNameMatcher = fieldNamePattern.matcher(criterionFieldBaseName);
         if (! fieldNameMatcher.find()) throw new CriterionException("invalid criterionFieldBaseName field " + criterionFieldBaseName);
         String nature = fieldNameMatcher.group(1); // earned, consumed, expired
-        String interval = fieldNameMatcher.group(2); // yesterday, last7days, last30days
+        String interval = fieldNameMatcher.group(2); // today, yesterday, last7days, last30days
         switch (interval)
         {
+          case "today":
           case "yesterday":
           case "last7days":
           case "last30days":
@@ -2472,7 +2624,7 @@ public class EvaluationCriterion
 
   public QueryBuilder handleLoyaltyProgramDynamicCriterion(String esField) throws CriterionException
   {
-    Pattern fieldNamePattern = Pattern.compile("^loyaltyprogram\\.([^.]+)\\.(.+)$");
+    Pattern fieldNamePattern = Pattern.compile("^loyaltyprograms\\.([^.]+)\\.(.+)$");
     Matcher fieldNameMatcher = fieldNamePattern.matcher(esField);
     if (! fieldNameMatcher.find()) throw new CriterionException("invalid loyaltyprogram field " + esField);
     String loyaltyProgramID = fieldNameMatcher.group(1);
@@ -2482,15 +2634,15 @@ public class EvaluationCriterion
     switch (criterionSuffix)
     {
       case "tier":
-        query = handleLoyaltyProgramField("loyaltyPrograms.tierName", esField, queryLPID, ExpressionDataType.StringExpression);
+        query = handleLoyaltyProgramField("loyaltyPrograms.tierName", esField, queryLPID, ExpressionDataType.StringSetExpression);
         break;
         
       case "level":
-        query = handleLoyaltyProgramField("loyaltyPrograms.level", esField, queryLPID, ExpressionDataType.StringExpression);
+        query = handleLoyaltyProgramField("loyaltyPrograms.level", esField, queryLPID, ExpressionDataType.StringSetExpression);
         break;
         
       case "step":
-        query = handleLoyaltyProgramField("loyaltyPrograms.step", esField, queryLPID, ExpressionDataType.StringExpression);
+        query = handleLoyaltyProgramField("loyaltyPrograms.step", esField, queryLPID, ExpressionDataType.StringSetExpression);
         break;
 
       case "statuspoint.balance":
@@ -2522,7 +2674,7 @@ public class EvaluationCriterion
         break;
 
       case "tierupdatetype":
-        query = handleLoyaltyProgramField("loyaltyPrograms.tierChangeType", esField, queryLPID, ExpressionDataType.StringExpression);
+        query = handleLoyaltyProgramField("loyaltyPrograms.tierChangeType", esField, queryLPID, ExpressionDataType.StringSetExpression);
         break;
 
       default:
@@ -2630,7 +2782,11 @@ public class EvaluationCriterion
         break;
 
       case IsInSetOperator:
+        queryCompare = QueryBuilders.termsQuery(field, (Set<String>) value);
+        break;
       case NotInSetOperator:
+        queryCompare = QueryBuilders.boolQuery().mustNot(new TermsQueryBuilder(field, (Set<String>) value));
+        break;
       case EmptyIntersectionOperator:
       case NonEmptyIntersectionOperator:
         /*
@@ -2759,7 +2915,7 @@ public class EvaluationCriterion
           throw new CriterionException("datatype not yet implemented : " + expectedType);
       }
     }
-    catch (ExpressionParseException|ExpressionTypeCheckException e)
+    catch (Exception e)
     {
       throw new CriterionException("argument " + argument + " must be a constant " + expectedType);
     }

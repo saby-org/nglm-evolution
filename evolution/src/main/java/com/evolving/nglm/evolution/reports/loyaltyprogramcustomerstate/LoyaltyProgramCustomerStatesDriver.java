@@ -9,7 +9,9 @@ import com.evolving.nglm.evolution.Report;
 import com.evolving.nglm.evolution.reports.FilterObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportDriver.ReportTypeDef;
+import com.evolving.nglm.evolution.reports.bdr.BDRReportMonoPhase;
 
+import java.util.ArrayList;
 import java.util.Date;
 
 @ReportTypeDef(reportType = "subscriberprofile")
@@ -24,7 +26,7 @@ public class LoyaltyProgramCustomerStatesDriver extends ReportDriver
     int defaultReportPeriodQuantity = report.getDefaultReportPeriodQuantity();
     final String SUBSCRIBER_ES_INDEX = getSubscriberProfileIndex(reportGenerationDate);
     log.debug("PHASE 1 : read ElasticSearch");
-    LoyaltyProgramCustomerStatesMonoPhase.main(new String[]{elasticSearch, SUBSCRIBER_ES_INDEX, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit}, reportGenerationDate);         
+    LoyaltyProgramCustomerStatesMonoPhase.main(new String[]{elasticSearch, SUBSCRIBER_ES_INDEX, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit, tenantID+""}, reportGenerationDate);         
     log.debug("Finished with LoyaltyProgramCustomerStates Report");
   }
 
@@ -35,7 +37,7 @@ public class LoyaltyProgramCustomerStatesDriver extends ReportDriver
 
   @Override
   public List<String> reportHeader() {
-	  // TODO Auto-generated method stub
-	  return null;
+    List<String> result = LoyaltyProgramCustomerStatesMonoPhase.headerFieldsOrder;
+    return result;
   }
 }

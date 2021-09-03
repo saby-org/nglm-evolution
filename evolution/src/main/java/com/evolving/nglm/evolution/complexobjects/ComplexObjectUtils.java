@@ -7,6 +7,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.SubscriberProfile;
@@ -15,6 +18,13 @@ import com.evolving.nglm.evolution.datamodel.DataModelFieldValue;
 
 public class ComplexObjectUtils
 {  
+  
+  //
+  //  logger
+  //
+
+  private static final Logger log = LoggerFactory.getLogger(ComplexObjectUtils.class);
+  
   private static ComplexObjectTypeService complexObjectTypeService;
   
   static
@@ -82,7 +92,7 @@ public class ComplexObjectUtils
         instances.add(instance);        
       }
     
-    Map<String, DataModelFieldValue> valueSubFields = instance.getFieldValues();
+    Map<String, DataModelFieldValue> valueSubFields = instance.getFieldValuesForModification();
     if(value == null)
       {
         valueSubFields.remove(subfieldType.getSubfieldName());
@@ -148,7 +158,14 @@ public class ComplexObjectUtils
   {
     Collection<ComplexObjectType> types = complexObjectTypeService.getActiveComplexObjectTypes(SystemTime.getCurrentTime(), profile.getTenantID());
     ComplexObjectType type = null;
-    for(ComplexObjectType current : types) { if(current.getComplexObjectTypeName().equals(complexTypeName)) { type = current; break; } }
+    for (ComplexObjectType current : types)
+      {
+        if (current.getComplexObjectTypeName().equals(complexTypeName))
+          {
+            type = current;
+            break;
+          }
+      }
     if(type == null) { throw new ComplexObjectException(ComplexObjectUtilsReturnCodes.UNKNOWN_COMPLEX_TYPE, "Unknown " + complexTypeName); }
 
     // retrieve the subfield declaration
@@ -163,9 +180,9 @@ public class ComplexObjectUtils
     List<ComplexObjectInstance> instances = profile.getComplexObjectInstances();
     if(instances == null) { return null;}
     ComplexObjectInstance instance = null;
-    for(ComplexObjectInstance current : instances) { if(current.getElementID().equals(elementID)) { instance = current; break; }}
+    for(ComplexObjectInstance current : instances) { if(current.getElementID().equals(elementID) && current.getComplexObjectTypeID().equals(type.getGUIManagedObjectID())) { instance = current; break; }}
     if(instance == null) { return null; }
-    Map<String, DataModelFieldValue> values = instance.getFieldValues();
+    Map<String, DataModelFieldValue> values = instance.getFieldValuesReadOnly();
     if(values == null) { return null; }
     DataModelFieldValue value = values.get(subfieldName);
     if(value == null) { return null; }    

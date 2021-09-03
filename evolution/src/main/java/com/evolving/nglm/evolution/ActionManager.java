@@ -39,8 +39,8 @@ public abstract class ActionManager
     TokenChange,
     TriggerEvent,
     UpdateProfile,
-    VoucherChange;
-
+    VoucherChange,
+    deleteSubscriber;
   }
 
   /*****************************************

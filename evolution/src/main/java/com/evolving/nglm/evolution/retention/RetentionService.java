@@ -58,20 +58,26 @@ public class RetentionService {
 			}
 		}
 		
-		//EVPRO-574
+		//
+		//  clean targets
+		//
+		
 		iterator = subscriberProfile.getTargets().keySet().iterator();
-		while(iterator.hasNext()){
-			String targetId = iterator.next();
-			if(targetId!=null) {
-			Target target=(Target)targetService.getStoredTarget(targetId);
-			if(target==null || isRetentionPeriodOverForTarget(target,RetentionType.KAFKA_DELETION)) {
-			   log.info("retention period is over for target {} and removing for subscriber {}",targetId,subscriberProfile.getSubscriberID());
-			   subscriberUpdated=true;
-			   iterator.remove();
-			   subscriberProfile.getTargets().remove(targetId);	
-			}
-			}
-		}
+        while (iterator.hasNext())
+          {
+            String targetId = iterator.next();
+            if (targetId != null)
+              {
+                GUIManagedObject targetUnchecked = targetService.getStoredTarget(targetId);
+                if (targetUnchecked == null || isRetentionPeriodOverForTarget(targetUnchecked, RetentionType.KAFKA_DELETION))
+                  {
+                    log.info("retention period is over for target {} and removing for subscriber {}", targetId, subscriberProfile.getSubscriberID());
+                    subscriberUpdated = true;
+                    iterator.remove();
+                    subscriberProfile.getTargets().remove(targetId);
+                  }
+              }
+          }
 
 		//TODO tokens (yet there are cleaned as soon as "burned", and logic rely on that, so more complicated to apply EVPRO-325 retention)
 
@@ -105,13 +111,15 @@ public class RetentionService {
 		return cleanable.getExpirationDate(this).before(cleanBeforeThisDate);
 	}
 	
-	private boolean isRetentionPeriodOverForTarget(Target target, RetentionType retentionType){
-		if(target==null||target.getEffectiveEndDate()==null||retentionType==null|| getTargetRetention(retentionType,target.getTargetID())==null) {
-			return false;
-					}
-		Date cleanBeforeThisDate = EvolutionUtilities.removeTime(SystemTime.getCurrentTime(),getTargetRetention(retentionType,target.getTargetID()));
-		return target.getEffectiveEndDate().before(cleanBeforeThisDate);
-	}
+    private boolean isRetentionPeriodOverForTarget(GUIManagedObject target, RetentionType retentionType)
+    {
+      if (target == null || target.getEffectiveEndDate() == null || retentionType == null || getTargetRetention(retentionType, target.getGUIManagedObjectID()) == null)
+        {
+          return false;
+        }
+      Date cleanBeforeThisDate = EvolutionUtilities.removeTime(SystemTime.getCurrentTime(), getTargetRetention(retentionType, target.getGUIManagedObjectID()));
+      return target.getEffectiveEndDate().before(cleanBeforeThisDate);
+    }
 
 	public boolean isExpired(Expirable expirable){
 		if(expirable==null||expirable.getExpirationDate(this)==null) return false;

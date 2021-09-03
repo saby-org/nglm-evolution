@@ -45,6 +45,7 @@ import com.evolving.nglm.evolution.SupportedCurrency;
 import com.evolving.nglm.evolution.reports.FilterObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportDriver.ReportTypeDef;
+import com.evolving.nglm.evolution.reports.journeys.JourneysReportDriver;
 import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
 
@@ -58,6 +59,38 @@ public class OfferReportDriver extends ReportDriver
   private ProductService productService;
   private PaymentMeanService paymentmeanservice;
   private CatalogCharacteristicService catalogCharacteristicService;
+  
+  private static final String offerID = "offerID";
+  private static final String offerName = "offerName";
+  private static final String offerContent = "offerContent";
+  private static final String offerDescription = "offerDescription";
+  private static final String offerCharacteristics = "offerCharacteristics";
+  private static final String offerObjectives = "offerObjectives";
+  private static final String startDate = "startDate";
+  private static final String endDate = "endDate";
+  private static final String availableStock = "availableStock";
+  private static final String availableStockThreshold = "availableStockThreshold";
+  private static final String salesChannelAndPrices = "salesChannelAndPrices";
+  private static final String active = "active";
+  
+  
+  
+  static List<String> headerFieldsOrder = new ArrayList<String>();
+  static
+  {
+    headerFieldsOrder.add(offerID);
+    headerFieldsOrder.add(offerName);
+    headerFieldsOrder.add(offerContent);
+    headerFieldsOrder.add(offerDescription);
+    headerFieldsOrder.add(offerCharacteristics);
+    headerFieldsOrder.add(offerObjectives);
+    headerFieldsOrder.add(startDate);
+    headerFieldsOrder.add(endDate);
+    headerFieldsOrder.add(availableStock);
+    headerFieldsOrder.add(availableStockThreshold);
+    headerFieldsOrder.add(salesChannelAndPrices);
+    headerFieldsOrder.add(active);
+  }
 
   /****************************************
    * 
@@ -185,8 +218,8 @@ public class OfferReportDriver extends ReportDriver
     Map<String, Object> offerFields = new LinkedHashMap<>();
 
     try {
-        offerFields.put("offerID", recordJson.get("id"));
-        offerFields.put("offerName", recordJson.get("display"));
+        offerFields.put(offerID, recordJson.get("id"));
+        offerFields.put(offerName, recordJson.get("display"));
           {
             List<Map<String, Object>> offerContentJSON = new ArrayList<>();
             JSONArray elements = (JSONArray) recordJson.get("products");
@@ -206,10 +239,10 @@ public class OfferReportDriver extends ReportDriver
                     offerContentJSON.add(outputJSON);
                   }
               }
-            offerFields.put("offerContent", ReportUtils.formatJSON(offerContentJSON));
+            offerFields.put(offerContent, ReportUtils.formatJSON(offerContentJSON));
           }
 
-        offerFields.put("offerDescription", recordJson.get("description"));
+        offerFields.put(offerDescription, recordJson.get("description"));
 
           {
             List<Map<String, Object>> outputJSON = new ArrayList<>();
@@ -231,8 +264,14 @@ public class OfferReportDriver extends ReportDriver
                                 JSONObject offer2 = (JSONObject) obj3.get(i);
                                 if (offer2 != null)
                                   {
-                                    String name = "" + offer2.get("catalogCharacteristicName");                                
-                                    caracteristicsJSON.put(name, offer2.get("value"));
+                                    Object catalogCharacteristicIDObj = offer2.get("catalogCharacteristicID");
+                                    if (catalogCharacteristicIDObj != null && catalogCharacteristicIDObj instanceof String) {
+                                      GUIManagedObject catalogCharacteristicObj = catalogCharacteristicService.getStoredCatalogCharacteristic((String) catalogCharacteristicIDObj);
+                                      if (catalogCharacteristicObj != null && catalogCharacteristicObj instanceof CatalogCharacteristic) {
+                                        String name = ((CatalogCharacteristic) catalogCharacteristicObj).getGUIManagedObjectDisplay();
+                                        caracteristicsJSON.put(name, offer2.get("value"));
+                                      }
+                                    }
                                   }
                               }
                             outputJSON.add(caracteristicsJSON);
@@ -240,7 +279,7 @@ public class OfferReportDriver extends ReportDriver
                       }
                   }
               }
-            offerFields.put("offerCharacteristics", ReportUtils.formatJSON(outputJSON));
+            offerFields.put(offerCharacteristics, ReportUtils.formatJSON(outputJSON));
           }
 
           {
@@ -287,13 +326,13 @@ public class OfferReportDriver extends ReportDriver
                       }
                   }
               }
-            offerFields.put("offerObjectives", ReportUtils.formatJSON(outputJSON));
+            offerFields.put(offerObjectives, ReportUtils.formatJSON(outputJSON));
           }
       
-      offerFields.put("startDate", ReportsCommonCode.parseDate((String) recordJson.get("effectiveStartDate")));
-      offerFields.put("endDate", ReportsCommonCode.parseDate((String) recordJson.get("effectiveEndDate")));      
-      offerFields.put("availableStock", recordJson.get("presentationStock"));
-      offerFields.put("availableStockThreshold", recordJson.get("presentationStockAlertThreshold"));
+      offerFields.put(startDate, ReportsCommonCode.parseDate((String) recordJson.get("effectiveStartDate")));
+      offerFields.put(endDate, ReportsCommonCode.parseDate((String) recordJson.get("effectiveEndDate")));      
+      offerFields.put(availableStock, recordJson.get("presentationStock"));
+      offerFields.put(availableStockThreshold, recordJson.get("presentationStockAlertThreshold"));
 
           {
             List<Map<String, Object>> outputJSON = new ArrayList<>();
@@ -358,13 +397,13 @@ public class OfferReportDriver extends ReportDriver
                       }
                   }
               }
-            offerFields.put("salesChannelAndPrices", ReportUtils.formatJSON(outputJSON));
+            offerFields.put(salesChannelAndPrices, ReportUtils.formatJSON(outputJSON));
           }
 
             // Arrays.sort(allFields);
 
 
-      offerFields.put("active", recordJson.get("active"));      
+      offerFields.put(active, recordJson.get("active"));      
      
       if (offerFields != null)
         {
@@ -422,7 +461,7 @@ public class OfferReportDriver extends ReportDriver
 
   @Override
   public List<String> reportHeader() {
-	  // TODO Auto-generated method stub
-	  return null;
+    List<String> result = OfferReportDriver.headerFieldsOrder;
+    return result;
   }
 }

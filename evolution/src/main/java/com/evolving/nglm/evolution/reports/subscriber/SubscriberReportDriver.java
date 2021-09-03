@@ -16,6 +16,7 @@ import com.evolving.nglm.evolution.Report;
 import com.evolving.nglm.evolution.reports.FilterObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportDriver.ReportTypeDef;
+import com.evolving.nglm.evolution.reports.journeys.JourneysReportDriver;
 
 @ReportTypeDef(reportType = "subscriberprofile")
 public class SubscriberReportDriver extends ReportDriver
@@ -26,7 +27,7 @@ public class SubscriberReportDriver extends ReportDriver
   {
     log.debug("Processing Subscriber Report with " + report.getName());
     String esIndexSubscriber = getSubscriberProfileIndex(reportGenerationDate);
-    SubscriberReportMonoPhase.main(new String[] { kafka, elasticSearch, esIndexSubscriber, csvFilename }, reportGenerationDate);
+    SubscriberReportMonoPhase.main(new String[] { kafka, elasticSearch, esIndexSubscriber, csvFilename, tenantID+"" }, reportGenerationDate);
     log.debug("Finished with Subscriber Report");
   }
 
@@ -37,7 +38,7 @@ public class SubscriberReportDriver extends ReportDriver
 
 	@Override
 	public List<String> reportHeader() {
-		// TODO Auto-generated method stub
-		return null;
+	  List<String> result = SubscriberReportMonoPhase.headerFieldsOrder;
+	  return result;
 	}
 }

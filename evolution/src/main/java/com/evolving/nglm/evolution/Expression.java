@@ -168,7 +168,12 @@ public abstract class Expression
     private String functionName;
     private ExpressionFunction(String functionName) { this.functionName = functionName; }
     public String getFunctionName() { return functionName; }
-    public static ExpressionFunction fromFunctionName(String functionName) { for (ExpressionFunction enumeratedValue : ExpressionFunction.values()) { if (enumeratedValue.getFunctionName().equalsIgnoreCase(functionName)) return enumeratedValue; } return UnknownFunction; }
+    public static ExpressionFunction fromFunctionName(String functionName) { 
+      for (ExpressionFunction enumeratedValue : ExpressionFunction.values()) 
+        { 
+          if (enumeratedValue.getFunctionName().equalsIgnoreCase(functionName)) return enumeratedValue; 
+        } return UnknownFunction; 
+    }
   }
   
   /*****************************************
@@ -657,19 +662,19 @@ public abstract class Expression
           case IntegerExpression:
           case DoubleExpression:
           case BooleanExpression:
-  	    script.append("def right_" + getNodeID() + " = (doc." + esField + ".size() != 0) ? doc." + esField + "?.value : null; ");
+  	    script.append("def right_" + getNodeID() + " = (doc['" + esField + "'].size() != 0) ? doc['" + esField + "']?.value : null; ");
             break;
             
           case StringSetExpression:
           case IntegerSetExpression:
-  	    script.append("def right_" + getNodeID() + " = new ArrayList(); right_" + getNodeID() + ".addAll(doc." + esField + "); ");
+  	    script.append("def right_" + getNodeID() + " = new ArrayList(); right_" + getNodeID() + ".addAll(doc['" + esField + "']); ");
             break;
             
           case DateExpression:
             script.append("def right_" + getNodeID() + "; ");
-            script.append("if (doc." + esField + ".size() != 0) { ");
+            script.append("if (doc['" + esField + "'].size() != 0) { ");
             script.append("def rightSF_" + getNodeID() + " = new SimpleDateFormat(\"yyyy-MM-dd'T'HH:mm:ss.SSSX\"); ");   // TODO EVPRO-99
-            script.append("def rightMillis_" + getNodeID() + " = doc." + esField + ".value.getMillis(); ");
+            script.append("def rightMillis_" + getNodeID() + " = doc['" + esField + "'].value.getMillis(); ");
             script.append("def rightCalendar_" + getNodeID() +" = rightSF_" + getNodeID() + ".getCalendar(); ");
             script.append("rightCalendar_" + getNodeID() + ".setTimeInMillis(rightMillis_" + getNodeID() + "); ");
             script.append("def rightInstant_" + getNodeID() + " = rightCalendar_" + getNodeID() + ".toInstant(); ");
@@ -705,6 +710,11 @@ public abstract class Expression
     {
       super(tenantID);
       this.reference = reference;
+    }
+
+    public String getESField()
+    {
+      return (reference != null && reference.getESField() != null) ? reference.getESField() : null;
     }
   }
 
@@ -3062,6 +3072,25 @@ public abstract class Expression
       return res;
     }
 
+    
+    public List<String> getESFields() {
+      List<String> res = new ArrayList<>();
+      // check if each argument is a ReferenceExpression, then add its esField
+      if (arguments != null) {
+        for (Expression exp : arguments) {
+          if (exp != null && exp instanceof ReferenceExpression) {
+            ReferenceExpression refExp = (ReferenceExpression) exp;
+            if (refExp.reference != null && refExp.reference.getESField() != null) {
+              res.add(refExp.reference.getESField());
+            }
+          }
+        }
+      }
+      return res;
+    }
+    
+    
+    
     /*****************************************
     *
     *  esQuery
@@ -3394,7 +3423,7 @@ public abstract class Expression
     private boolean printable(char c) { return (c != CR && c != LF && c != FF && c != EOF); }
     private boolean letter(char c) { return in_range('A',c,'Z') || in_range('a',c,'z'); }
     private boolean digit(char c) { return in_range('0',c,'9'); }
-    private boolean id_char(char c) { return (letter(c) || digit(c) || c == '.'); }
+    private boolean id_char(char c) { return (letter(c) || digit(c) || c == '.' || c == '_'); }
     private boolean unary_char(char c) { return (c == '+' || c == '-'); }
 
     /*****************************************

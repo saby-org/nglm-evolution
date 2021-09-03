@@ -1048,6 +1048,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
             .withLabel(StatsBuilders.LABEL.channel.name(),Deployment.getCommunicationChannels().get(notificationManagerRequest.getChannelID()).getDisplay())
             .withLabel(StatsBuilders.LABEL.module.name(), notificationManagerRequest.getModule().name())
             .withLabel(StatsBuilders.LABEL.priority.name(), notificationManagerRequest.getDeliveryPriority().getExternalRepresentation())
+            .withLabel(StatsBuilders.LABEL.tenant.name(), String.valueOf(notificationManagerRequest.getTenantID()))
             .getStats().increment();
   }
 
@@ -1120,8 +1121,9 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
 
     if (listOfChannels != null){
       // specified plugin only
-      for (String channel : listOfChannels.split("\\.")){
-        String[] split2 = channel.split(",");
+      for (String channelArg : listOfChannels.split("\\.")){
+        String[] split2 = channelArg.split(",");
+        String channel = split2.length==2 ? split2[0] : channelArg;
         int threadNumber = split2.length==2 ? Integer.parseInt(split2[1]) : defaultThreadNumber;
         for(CommunicationChannel cc:Deployment.getCommunicationChannels().values()){
           if(cc.getName().equals(channel)){
