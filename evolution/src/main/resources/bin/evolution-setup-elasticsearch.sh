@@ -368,7 +368,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/token -u $
       "returnCode"    : { "type" : "keyword" },
       "origin"        : { "type" : "keyword" },
       "acceptedOfferID"  : { "type" : "keyword" },
-      "presentedOffersIds" : { "type" : "keyword" }
+      "presentedOffersIDs" : { "type" : "keyword" }
     }
   }
 }'

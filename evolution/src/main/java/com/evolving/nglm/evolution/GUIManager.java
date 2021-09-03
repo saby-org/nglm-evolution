@@ -28998,6 +28998,21 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     }
   } 
   
+   private void generateTokenChange(String subscriberID, Date now, String tokenCode, String userID, String action, String str, int tenantID,String offerID,List<String> presentedOfferIDs)
+  {
+    if (tokenCode != null) {
+      String topic = Deployment.getTokenChangeTopic();
+      Serializer<StringKey> keySerializer = StringKey.serde().serializer();
+      Serializer<TokenChange> valueSerializer = TokenChange.serde().serializer();
+      TokenChange tokenChange = new TokenChange(subscriberID, now, "event from ".concat(Module.Customer_Care.toString()), tokenCode, action, str, "CC", Module.Customer_Care, userID, tenantID,offerID,presentedOfferIDs);
+      kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
+          topic,
+          keySerializer.serialize(topic, new StringKey(subscriberID)),
+          valueSerializer.serialize(topic, tokenChange)
+          ));
+    }
+  } 
+  
  /************************************************************************
  *
  *  separate product and voucher  from offer json and 
