@@ -189,6 +189,10 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
                 Object alternateId = notifFields.get(alternateID.getID());
                 notifRecs.put(alternateID.getName(), alternateId);
               }
+            else
+            {
+              notifRecs.put(alternateID.getName(), "");
+            }
           }
 
         // Compute featureName and ModuleName from ID

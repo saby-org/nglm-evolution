@@ -138,6 +138,9 @@ public class VDRReportMonoPhase implements ReportCsvFactory
                 Object alternateId = VDRFields.get(alternateID.getID());
                 vdrRecs.put(alternateID.getName(), alternateId);
               }
+            {
+              vdrRecs.put(alternateID.getName(), "");
+            }
           }
         if (VDRFields.containsKey(eventID) && VDRFields.get(eventID) != null)
           {

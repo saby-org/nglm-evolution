@@ -180,6 +180,10 @@ public class BDRReportMonoPhase implements ReportCsvFactory
                 Object alternateId = bdrFields.get(alternateID.getID());
                 bdrRecs.put(alternateID.getName(), alternateId);
               }
+            else
+            {
+              bdrRecs.put(alternateID.getName(), "");
+            }
           } 
         if (bdrFields.containsKey(eventID)) {
           bdrRecs.put(eventID, bdrFields.get(eventID));

@@ -58,8 +58,7 @@ public class VoucherCustomerReportMonoPhase implements ReportCsvFactory
     headerFieldsOrder.add(customerID);
     for (AlternateID alternateID : Deployment.getAlternateIDs().values())
     {
-      if(alternateID.getName().equals("msisdn")) {
-      headerFieldsOrder.add(alternateID.getName());}
+      headerFieldsOrder.add(alternateID.getName());
     }
     headerFieldsOrder.add(voucherCode);
     headerFieldsOrder.add(supplier);
@@ -108,6 +107,9 @@ public class VoucherCustomerReportMonoPhase implements ReportCsvFactory
                             Object alternateId = subscriberFields.get(alternateID.getESField());
                             commonFields.put(alternateID.getName(), alternateId);
                           }
+                        {
+                          commonFields.put(alternateID.getName(), "");
+                        }
                       }
 
                     for (int i = 0; i < vouchersArray.size(); i++)
