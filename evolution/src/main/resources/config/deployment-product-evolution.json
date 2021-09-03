@@ -953,6 +953,11 @@
       "id"           : "getCustomerVouchers",
       "methodName"   : "getCustomerVouchers",
       "permissions"  : ["API-GET-CUSTOMER-VOUCHERS"]
+    },
+    {
+      "id"           : "getOfferDetails",
+      "methodName"   : "getOfferDetails",
+      "permissions"  : ["API-GET-OFFER-DETAILS"]
     }
   ],
 

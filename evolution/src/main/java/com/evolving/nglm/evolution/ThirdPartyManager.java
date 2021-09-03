@@ -284,7 +284,8 @@ public class ThirdPartyManager
     checkOTP(38),
     getVoucherList(39),
     deleteCustomer(40),
-    getCustomerVouchers(41);
+    getCustomerVouchers(41),
+    getOfferDetails(42);
     private int methodIndex;
     private API(int methodIndex) { this.methodIndex = methodIndex; }
     public int getMethodIndex() { return methodIndex; }
@@ -620,6 +621,7 @@ public class ThirdPartyManager
       restServer.createContext("/nglm-thirdpartymanager/getVoucherList", new APIHandler(API.getVoucherList));
       restServer.createContext("/nglm-thirdpartymanager/deleteCustomer", new APIHandler(API.deleteCustomer));
       restServer.createContext("/nglm-thirdpartymanager/getCustomerVouchers", new APIHandler(API.getCustomerVouchers));
+      restServer.createContext("/nglm-thirdpartymanager/getOfferDetails", new APIHandler(API.getOfferDetails));
       restServer.setExecutor(Executors.newFixedThreadPool(threadPoolSize));
       restServer.start();
 
@@ -990,6 +992,9 @@ public class ThirdPartyManager
             case getCustomerVouchers:
               jsonResponse = processGetCustomerVouchers(jsonRoot, tenantID);
               break;
+            case getOfferDetails:
+                jsonResponse = processGetOfferDetails(jsonRoot, tenantID);
+                break;
           }
         }
       else
@@ -6212,6 +6217,87 @@ public class ThirdPartyManager
     return JSONUtilities.encodeObject(response);
   }
 
+  /*****************************************
+  *
+  *  processGetOfferDetails
+  *
+  *****************************************/
+  private JSONObject processGetOfferDetails(JSONObject jsonRoot, int tenantID) throws ThirdPartyManagerException
+  {
+    /****************************************
+     *
+     *  response
+     *
+     ****************************************/
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    /****************************************
+     *
+     *  argument
+     *
+     ****************************************/
+    String offerID = JSONUtilities.decodeString(jsonRoot, "offerID", false);
+    if (offerID == null) // this is mandatory, but we want to control the return code
+      {
+        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseCode());
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.MISSING_PARAMETERS.getGenericResponseMessage());
+        return JSONUtilities.encodeObject(response);          
+      }
+    
+    // _inbound_channel_ indicates which information to be returned for each presented offer
+    String callingChannelDisplay = JSONUtilities.decodeString(jsonRoot, "inboundChannel", false);
+    
+    /*****************************************
+     *
+     *  retrieve offer
+     *
+     *****************************************/
+    Offer offer = offerService.getActiveOffer(offerID,SystemTime.getCurrentTime());
+    /*****************************************
+     *
+     *  decorate and response
+     *
+     *****************************************/
+    if (offer == null)
+      {
+        updateResponse(response, RESTAPIGenericReturnCodes.OFFER_NOT_FOUND);
+        return JSONUtilities.encodeObject(response);
+      }
+    else 
+      {
+    	
+    	CallingChannel callingChannel = null;
+        if (callingChannelDisplay != null)
+          {
+            String callingChannelID = null;
+            for (CallingChannel callingChannelLoop : callingChannelService.getActiveCallingChannels(SystemTime.getCurrentTime(), tenantID))
+              {
+                if (callingChannelLoop.getGUIManagedObjectDisplay().equals(callingChannelDisplay))
+                  {
+                    callingChannelID = callingChannelLoop.getGUIManagedObjectID();
+                    break;
+                  }
+              }
+            if (callingChannelID == null)
+              {
+                response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CHANNEL_NOT_FOUND.getGenericResponseCode());
+                response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.CHANNEL_NOT_FOUND.getGenericResponseMessage());
+                return JSONUtilities.encodeObject(response);          
+              }
+            callingChannel = callingChannelService.getActiveCallingChannel(callingChannelID, SystemTime.getCurrentTime());
+            if (callingChannel == null)
+              {
+                log.error(RESTAPIGenericReturnCodes.CHANNEL_NOT_FOUND.getGenericDescription()+" unknown id : "+callingChannelID);
+                response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CHANNEL_NOT_FOUND.getGenericResponseCode());
+                response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.CHANNEL_NOT_FOUND.getGenericResponseMessage());
+                return JSONUtilities.encodeObject(response);          
+              }
+          }
+    	
+        response.put("offerDetails", JSONUtilities.encodeObject(JSONUtilities.encodeObject(ThirdPartyJSONGenerator.buildOfferElement(offerID, offerService, offerObjectiveService, SystemTime.getCurrentTime(), callingChannel, null, null, paymentMeanService, tenantID))));
+        updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
 
   private JSONObject constructThirdPartyResponse(RESTAPIGenericReturnCodes genericCode, Map<String,Object> response){
     if(response==null) response=new HashMap<>();

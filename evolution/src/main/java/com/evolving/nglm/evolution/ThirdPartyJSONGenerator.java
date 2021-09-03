@@ -519,7 +519,7 @@ public class ThirdPartyJSONGenerator
     return scoringStrategyMap;
   }
   
-  private static HashMap<String, Object> buildOfferElement(String offerID, OfferService offerService, OfferObjectiveService offerObjectiveService, Date now, CallingChannel callingChannel, Collection<ProposedOfferDetails> presentedOffers, DNBOToken dnboToken, PaymentMeanService paymentMeanService, int tenantID) {
+  public static HashMap<String, Object> buildOfferElement(String offerID, OfferService offerService, OfferObjectiveService offerObjectiveService, Date now, CallingChannel callingChannel, Collection<ProposedOfferDetails> presentedOffers, DNBOToken dnboToken, PaymentMeanService paymentMeanService, int tenantID) {
     HashMap<String, Object> offerMap = new HashMap<String, Object>();
     offerMap.put("id", offerID);
     if (offerID == null)
@@ -583,10 +583,10 @@ public class ThirdPartyJSONGenerator
                                           }
                                         else if ("price".equals(offerPropertyName))
                                           {
-                                            String salesChannel = dnboToken.getPresentedOffersSalesChannel();
+                                        	String salesChannel = dnboToken!=null?dnboToken.getPresentedOffersSalesChannel():"";
                                             for (OfferSalesChannelsAndPrice sc : offer.getOfferSalesChannelsAndPrices())
                                               {
-                                                if (sc.getSalesChannelIDs() != null && sc.getSalesChannelIDs().contains(salesChannel))
+                                            	if (sc.getSalesChannelIDs() != null && (salesChannel.isEmpty()?true:sc.getSalesChannelIDs().contains(salesChannel)))
                                                   {
                                                     Map<String, Object> salesChannelJSON = new LinkedHashMap<>(); // to preserve order when displaying
                                                     String paymentMean = "";
