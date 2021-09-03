@@ -1372,6 +1372,10 @@ public class ThirdPartyManager
               Map<String, Object> esFields = hit.getSourceAsMap();
               CommodityDeliveryRequest commodityDeliveryRequest = new CommodityDeliveryRequest(esFields);
               Map<String, Object> esbdrMap = commodityDeliveryRequest.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, tenantID);
+              // EVPRO-1249 do not return a pseudo-expiration date (now+1 year) if not set
+              if (esFields.get("deliverableExpirationDate") == null) {
+                esbdrMap.put(DeliveryRequest.DELIVERABLEEXPIRATIONDATE, null);
+              }
               BDRsJson.add(JSONUtilities.encodeObject(esbdrMap));
             }
           response.put("BDRs", JSONUtilities.encodeArray(BDRsJson));

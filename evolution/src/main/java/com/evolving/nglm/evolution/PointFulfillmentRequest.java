@@ -21,6 +21,7 @@ import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
+import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 
@@ -132,7 +133,7 @@ public class PointFulfillmentRequest extends BonusDelivery
   *
   *****************************************/
 
-  public PointFulfillmentRequest(DeliveryRequest originatingRequest, JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager, int tenantID)
+  public PointFulfillmentRequest(CommodityDeliveryRequest originatingRequest, JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager, int tenantID)
   {
     super(originatingRequest,jsonRoot, tenantID);
     this.pointID = JSONUtilities.decodeString(jsonRoot, "pointID", true);
@@ -140,7 +141,7 @@ public class PointFulfillmentRequest extends BonusDelivery
     this.amount = JSONUtilities.decodeInteger(jsonRoot, "amount", true);
     this.validityPeriodType = TimeUnit.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "validityPeriodType", false));
     this.validityPeriodQuantity = JSONUtilities.decodeInteger(jsonRoot, "validityPeriodQuantity", false);
-    this.deliverableExpirationDate = null;
+    this.deliverableExpirationDate = originatingRequest.getDeliverableExpirationDate();
   }
 
   /*****************************************
