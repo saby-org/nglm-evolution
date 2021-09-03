@@ -87,6 +87,7 @@ import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.ServerException;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.StringKey;
+import com.evolving.nglm.core.StringValue;
 import com.evolving.nglm.core.SubscriberStreamEvent;
 import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.core.SubscriberTrace;
@@ -734,6 +735,7 @@ public class EvolutionEngine
 
     final Serde<byte[]> byteArraySerde = new Serdes.ByteArraySerde();
     final ConnectSerde<StringKey> stringKeySerde = StringKey.serde();
+    final ConnectSerde<StringValue> stringValueSerde = StringValue.serde();
     final ConnectSerde<TimedEvaluation> timedEvaluationSerde = TimedEvaluation.serde();
     final ConnectSerde<CleanupSubscriber> cleanupSubscriberSerde = CleanupSubscriber.serde();
     final ConnectSerde<AssignSubscriberIDs> assignSubscriberIDsSerde = AssignSubscriberIDs.serde();
@@ -754,7 +756,6 @@ public class EvolutionEngine
     final ConnectSerde<SubscriberTraceControl> subscriberTraceControlSerde = SubscriberTraceControl.serde();
     final ConnectSerde<SubscriberProfile> subscriberProfileSerde = SubscriberProfile.getSubscriberProfileSerde();
     final Serde<SubscriberTrace> subscriberTraceSerde = SubscriberTrace.serde();
-    final ConnectSerde<ExternalAPIOutput> externalAPISerde = ExternalAPIOutput.serde();
     final ConnectSerde<TokenChange> tokenChangeSerde = TokenChange.serde();
     final ConnectSerde<VoucherChange> voucherChangeSerde = VoucherChange.serde();
     final ConnectSerde<VoucherAction> voucherActionSerde = VoucherAction.serde();
@@ -1152,10 +1153,10 @@ public class EvolutionEngine
         ExternalAPIOutputPredicate[] externalAPIOutputPredicates = new ExternalAPIOutputPredicate[externalAPITopics.values().size()];
         String[] externalAPIOutputTopics = new String[externalAPITopics.values().size()];
         int j = 0;
-        for (String topicID : externalAPITopics.keySet())
+        for (Map.Entry<String, ExternalAPITopic> topicConfig : externalAPITopics.entrySet())
           {
-            externalAPIOutputPredicates[j] = new ExternalAPIOutputPredicate(topicID);
-            externalAPIOutputTopics[j] = externalAPITopics.get(topicID).getName();
+            externalAPIOutputPredicates[j] = new ExternalAPIOutputPredicate(topicConfig.getKey(), topicConfig.getValue().getKeyFieldFromJson(), topicConfig.getValue().getEncoding());
+            externalAPIOutputTopics[j] = externalAPITopics.get(topicConfig.getKey()).getName();
             j += 1;
           }
 
@@ -1172,10 +1173,20 @@ public class EvolutionEngine
         for (int k = 0; k < externalAPIOutputPredicates.length; k++)
           {
             KStream<StringKey, ExternalAPIOutput> rekeyedExternalAPIStream = branchedExternalAPIStreamsByTopic[k].map(EvolutionEngine::rekeyExternalAPIOutputStream);
+            boolean avroEncoding = externalAPIOutputPredicates[k].getEncoding() != null && externalAPIOutputPredicates[k].getEncoding().trim().toLowerCase().equals("avro");
             // Only send the json part to the output topic 
-            KStream<String, String> externalAPIStreamString = rekeyedExternalAPIStream.map(
-                (key,value) -> new KeyValue<String, String>(value.getTopicID(), value.getJsonString()));
-            externalAPIStreamString.to(externalAPIOutputTopics[k], Produced.with(new Serdes.StringSerde(), new Serdes.StringSerde()));
+            if(avroEncoding)
+              {
+                KStream<StringKey, StringValue> externalAPIStreamString = rekeyedExternalAPIStream.map(
+                    (key,value) -> new KeyValue<StringKey, StringValue>(new StringKey(value.getTopicID()), new StringValue(value.getJson().toJSONString())));
+                externalAPIStreamString.to(externalAPIOutputTopics[k], Produced.with(stringKeySerde, stringValueSerde));
+              }
+            else
+              {
+                KStream<String, String> externalAPIStreamString = rekeyedExternalAPIStream.map(
+                    (key,value) -> new KeyValue<String, String>(value.getTopicID(), value.getJson().toJSONString()));
+                externalAPIStreamString.to(externalAPIOutputTopics[k], Produced.with(new Serdes.StringSerde(), new Serdes.StringSerde()));
+              }
           }
       }
     
@@ -1594,16 +1605,24 @@ public class EvolutionEngine
     //  data
     //
 
-    String topicId;
+    private String topicId;
+    private String keyFieldFromJson = null;
+    private String encoding = null;
 
     //
     //  constructor
     //
 
-    private ExternalAPIOutputPredicate(String topicId)
+    private ExternalAPIOutputPredicate(String topicId, String keyFieldFromJson, String encoding)
     {
       this.topicId = topicId;
+      this.keyFieldFromJson = keyFieldFromJson;
+      this.encoding = encoding;
     }
+    
+    public String getTopicID() { return topicId; }
+    public String getKeyFieldFromJson() { return keyFieldFromJson; }
+    public String getEncoding() { return encoding; }
 
     //
     //  test (predicate interface)
@@ -2208,8 +2227,13 @@ public class EvolutionEngine
     JSONObject jsonObject = resExternalAPI.getSecondElement();
     if (jsonObject != null)
       {
-        subscriberState.setExternalAPIOutput(new ExternalAPIOutput(resExternalAPI.getFirstElement(), jsonObject.toJSONString()));
-        subscriberStateUpdated = true;
+        // ensure the given topic ID exists
+        if(resExternalAPI.getFirstElement() != null && Deployment.getExternalAPITopics().get(resExternalAPI.getFirstElement()) != null)
+            {
+              ExternalAPITopic externalTopicConfig = Deployment.getExternalAPITopics().get(resExternalAPI.getFirstElement());
+              subscriberState.setExternalAPIOutput(new ExternalAPIOutput(resExternalAPI.getFirstElement(), jsonObject, externalTopicConfig.getKeyFieldFromJson(), externalTopicConfig.getEncoding()));
+              subscriberStateUpdated = true;
+            }
       }
 
     /*****************************************
@@ -7459,6 +7483,15 @@ public class EvolutionEngine
 
   private static KeyValue<StringKey, ExternalAPIOutput> rekeyExternalAPIOutputStream(StringKey key, ExternalAPIOutput value)
   {
+    if(value.getKeyFieldFromJson() != null)
+      {
+        String keyInJson = (String) value.getJson().get(value.getKeyFieldFromJson());
+        if(keyInJson != null) 
+          {
+            return new KeyValue<StringKey, ExternalAPIOutput>(new StringKey(keyInJson), value);
+          }
+      }
+    // default
     return new KeyValue<StringKey, ExternalAPIOutput>(new StringKey(value.getTopicID()), value);
   }
 
