@@ -803,7 +803,7 @@ public class ReportUtils {
                               + fieldSurrounder + "]*\\" + fieldSurrounder + ")*[^\\" + fieldSurrounder + "]*$)";
                           String[] cols = line.split(regex, -1);
 
-                          for (int cpt = 0; cpt < indexOfColsToExtract.length -1; cpt++) 
+                          for (int cpt = 0; cpt < indexOfColsToExtract.length; cpt++) 
                             {
                               if (indexOfColsToExtract[cpt] != -1) 
                                 {
