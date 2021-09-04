@@ -1177,8 +1177,9 @@ public class EvolutionEngine
             // Only send the json part to the output topic 
             if(avroEncoding)
               {
+                
                 KStream<StringKey, StringValue> externalAPIStreamString = rekeyedExternalAPIStream.map(
-                    (key,value) -> new KeyValue<StringKey, StringValue>(new StringKey(value.getTopicID()), new StringValue(value.getJson().toJSONString())));
+                    (key,value) -> new KeyValue<StringKey, StringValue>(key, new StringValue(value.getJson().toJSONString())));
                 externalAPIStreamString.to(externalAPIOutputTopics[k], Produced.with(stringKeySerde, stringValueSerde));
               }
             else
