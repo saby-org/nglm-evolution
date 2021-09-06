@@ -620,20 +620,24 @@ public class ThirdPartyJSONGenerator
                                                     salesChannelJSON.put("amount", amount);
                                                     salesChannelJSON.put("currency", currency);
                                                     offerMap.put("price", salesChannelJSON);
-                                                    break;
+                                                   
                                                   }
                                               }
-                                          }
-                                        else
-                                          {
-                                            Object offerProperty = offerJSON.get(offerPropertyName);
-                                            if (offerProperty != null)
-                                              {
-                                                log.debug("Adding property " + offerPropertyName + " : " + offerProperty);
-                                                offerMap.put(offerPropertyName, offerProperty);
-                                              }
-                                          }
-                                      }
+	                                        }
+	                                        else if ("offerDescription".equals(offerPropertyName))
+	                                        {
+	                                        	offerMap.put("description", offer.getDescription());
+	                                        }
+	                                        else
+	                                          {
+	                                            Object offerProperty = offerJSON.get(offerPropertyName);
+	                                            if (offerProperty != null)
+	                                              {
+	                                                log.debug("Adding property " + offerPropertyName + " : " + offerProperty);
+	                                                offerMap.put(offerPropertyName, offerProperty);
+	                                              }
+	                                          }
+	                                      }
                                   }
                               }
                           }
