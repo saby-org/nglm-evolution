@@ -26295,7 +26295,14 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                 Matcher matcher = enumeratedValuesPattern.matcher(availableValue);
                 if (matcher.matches())
                   {
-                    result.addAll(evaluateEnumeratedValues(matcher.group(1), now, includeDynamic, tenantID));
+                    String enumID = matcher.group(1);
+                    // EVPRO-1114 if this is a reference to a criterionFieldAvailableValue, return it directly
+                    CriterionFieldAvailableValues cfav = criterionFieldAvailableValuesService.getActiveCriterionFieldAvailableValues(enumID, now);
+                    if (cfav == null) {
+                      result.addAll(evaluateEnumeratedValues(enumID, now, includeDynamic, tenantID));
+                    } else {
+                      result.
+                    }
                   }
                 else
                   {
