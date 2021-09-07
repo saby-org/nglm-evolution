@@ -186,7 +186,8 @@ public class GrafanaUtils
                         s = s.replace("replaceWithTenantID", "" + tenantID );
                         scanner.close();
 
-                        log.info("GrafanaUtils.prepareGrafanaForTenants ===parsing a Dashboard==== " + currentFileName + "\n" + s);
+                        log.info("GrafanaUtils.prepareGrafanaForTenants: =parsing a Dashboard= " + currentFileName);
+                        log.debug("GrafanaUtils.prepareGrafanaForTenants: =parsing a Dashboard= " + currentFileName + "\n" + s);
                         JSONObject fullDashbaordDef = (JSONObject) (new JSONParser()).parse(s);
                         JSONObject dashbaordDef = (JSONObject) fullDashbaordDef.get("dashboard");
                         String expectedTitle = (String) dashbaordDef.get("title");
