@@ -631,8 +631,6 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
       SMSTemplate template = (baseTemplate != null) ? (SMSTemplate) baseTemplate.getReadOnlyCopy(evolutionEventContext) : null;
       DialogMessage messageText = (template != null) ? template.getMessageText() : null;
       List<String> messageTags = (messageText != null) ? messageText.resolveMessageTags(subscriberEvaluationRequest, language) : new ArrayList<String>();
-
-
       
       /*****************************************
       *
