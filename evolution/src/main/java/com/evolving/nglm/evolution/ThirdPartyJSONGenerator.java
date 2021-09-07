@@ -551,8 +551,8 @@ public class ThirdPartyJSONGenerator
                             JSONObject offerPropertyJSON = (JSONObject) offerProperties.get(i);
                             if (offerPropertyJSON != null)
                               {
-                                boolean presentOffers = JSONUtilities.decodeBoolean(offerPropertyJSON, "presentOffers", Boolean.TRUE);
-                                if (presentOffers)
+                                boolean presentOfferDetails = JSONUtilities.decodeBoolean(offerPropertyJSON, "presentOfferDetails", Boolean.TRUE);
+                                if (presentOfferDetails)
                                   {
                                     String offerPropertyName = JSONUtilities.decodeString(offerPropertyJSON, "offerPropertyName", false);
                                     if (offerPropertyName != null) 
