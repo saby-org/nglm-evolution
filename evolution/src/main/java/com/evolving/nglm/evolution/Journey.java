@@ -4084,7 +4084,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
           result.put("mailtemplate", mailtemplateIDs);
           result.put("dialogtemplate", dialogIDs);
           result.put("voucher", voucherIDs);
-          result.put("loyaltyProgramPoints", loyaltyProgramPointsIDs);
+          result.put("loyaltyprogrampoints", loyaltyProgramPointsIDs);
           result.put("loyaltyprogramchallenge", loyaltyprogramchallengeIDs);
           result.put("loyaltyprogrammission", loyaltyprogrammissionIDs);
           result.put("sourceaddress", sourceaddressIDs);
@@ -4174,7 +4174,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
           result.put("mailtemplate", mailtemplateIDs);
           result.put("dialogtemplate", dialogIDs);
           result.put("voucher", voucherIDs);
-          result.put("loyaltyProgramPoints", loyaltyProgramPointsIDs);
+          result.put("loyaltyprogrampoints", loyaltyProgramPointsIDs);
           result.put("loyaltyprogramchallenge", loyaltyprogramchallengeIDs);
           result.put("loyaltyprogrammission", loyaltyprogrammissionIDs);
           result.put("saleschannel", saleschannelIDs);
@@ -4275,7 +4275,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
             result.put("mailtemplate", mailtemplateIDs);
             result.put("dialogtemplate", dialogIDs);
             result.put("voucher", voucherIDs);
-            result.put("loyaltyProgramPoints", loyaltyProgramPointsIDs);
+            result.put("loyaltyprogrampoints", loyaltyProgramPointsIDs);
             result.put("loyaltyprogramchallenge", loyaltyprogramchallengeIDs);
             result.put("loyaltyprogrammission", loyaltyprogrammissionIDs);
             result.put("saleschannel", saleschannelIDs);
