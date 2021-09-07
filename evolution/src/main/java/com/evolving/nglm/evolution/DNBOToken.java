@@ -295,7 +295,8 @@ public class DNBOToken extends Token
   @Override
   public String toString()
   {
-    return "DNBOToken [" + (presentationStrategyID != null ? "presentationStrategyID=" + presentationStrategyID + ", " : "")
+    return "DNBOToken [ " + super.toString() + " "
+        + (presentationStrategyID != null ? "presentationStrategyID=" + presentationStrategyID + ", " : "")
         + (scoringStrategyIDs != null ? "scoringStrategyIDs=" + scoringStrategyIDs + ", " : "")
         + "isAutoBound=" + isAutoBound + ", isAutoRedeemed=" + isAutoRedeemed + ", "
         + (presentedOfferIDs != null ? "presentedOfferIDs=" + presentedOfferIDs + ", " : "")

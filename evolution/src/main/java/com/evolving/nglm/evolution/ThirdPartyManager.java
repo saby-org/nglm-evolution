@@ -4122,7 +4122,16 @@ public class ThirdPartyManager
           generateTokenChange(subscriberID, now, tokenCode, TokenChange.ALLOCATE, str, API.getCustomerNBOs, jsonRoot, tenantID);
           return JSONUtilities.encodeObject(response);
         }
- 
+      
+      if (subscriberToken.getTokenExpirationDate().before(now)) {
+        log.error(RESTAPIGenericReturnCodes.EXPIRED.getGenericDescription());
+        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.EXPIRED.getGenericResponseCode());
+        String str = RESTAPIGenericReturnCodes.EXPIRED.getGenericResponseMessage();
+        response.put(GENERIC_RESPONSE_MSG, str);
+        generateTokenChange(subscriberID, now, tokenCode, TokenChange.REFUSE, str, API.getCustomerNBOs, jsonRoot, tenantID);
+        return JSONUtilities.encodeObject(response);          
+      }
+
       if (!(subscriberToken instanceof DNBOToken))
         {
           // TODO can this really happen ?

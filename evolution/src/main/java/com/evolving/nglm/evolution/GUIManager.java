@@ -23853,6 +23853,14 @@ public class GUIManager
               return JSONUtilities.encodeObject(response);
             }
 
+          if (subscriberToken.getTokenExpirationDate().before(now)) {
+            String str = "Token expired";
+            log.error(str);
+            response.put("responseCode", str);
+            generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.REFUSE, str, tenantID);
+            return JSONUtilities.encodeObject(response);
+          }
+
           if (!(subscriberToken instanceof DNBOToken))
             {
               // TODO can this really happen ?

@@ -5474,24 +5474,15 @@ public class EvolutionEngine
     // Subscriber token list cleaning.
     // We will delete all already expired tokens before doing anything.
 
-    List<Token> cleanedList = new ArrayList<Token>();
     Date now = SystemTime.getCurrentTime();
     for (Token token : subscriberTokens)
       {
-        if (token.getTokenExpirationDate().before(now))
+        if ((token.getTokenStatus() != TokenStatus.Expired) && token.getTokenExpirationDate().before(now))
           {
-            if(log.isTraceEnabled()) log.trace("removing token "+token.getTokenCode()+" expired on "+token.getTokenExpirationDate()+" for "+subscriberProfile.getSubscriberID());
+            if(log.isTraceEnabled()) log.trace("Token "+token.getTokenCode()+" expired on "+token.getTokenExpirationDate()+" for "+subscriberProfile.getSubscriberID());
+            token.setTokenStatus(TokenStatus.Expired);
             subscriberStateUpdated=true;
           }
-        else
-          {
-            cleanedList.add(token);
-          }
-      }
-
-    if (subscriberStateUpdated)
-      {
-        subscriberProfile.setTokens(cleanedList);
       }
 
     /*****************************************

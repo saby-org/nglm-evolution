@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -17,11 +18,15 @@ import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
 
 import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.ActionManager.ActionType;
+import com.evolving.nglm.evolution.retention.RetentionService;
+import com.evolving.nglm.evolution.retention.Cleanable;
+import com.evolving.nglm.evolution.retention.Cleanable.RetentionType;
 
-public class Token implements Action
+public class Token implements Action, Cleanable
 {
   /*****************************************
   *
@@ -245,6 +250,16 @@ public class Token implements Action
     this.subscriberID = subscriberID;
   }
 
+  @Override public Date getExpirationDate(RetentionService retentionService) { return getTokenExpirationDate(); }
+  @Override public Duration getRetention(RetentionType type, RetentionService retentionService) {
+    switch (type){
+      case KAFKA_DELETION:
+        return Duration.ofDays(Deployment.getKafkaRetentionDaysExpiredTokens());
+    }
+    return null;
+  }
+
+  
   /*****************************************
   *
   *  toString
@@ -257,13 +272,15 @@ public class Token implements Action
         "Token [" + (tokenCode != null ? "tokenCode=" + tokenCode + ", " : "")
         + (tokenStatus != null ? "tokenStatus=" + tokenStatus + ", " : "")
         + (creationDate != null ? "creationDate=" + creationDate + ", " : "")
-        + (boundDate != null ? "boundDate=" + boundDate + ", " : "")
-        + (redeemedDate != null ? "redeemedDate=" + redeemedDate + ", " : "")
         + (tokenExpirationDate != null ? "tokenExpirationDate=" + tokenExpirationDate + ", " : "")
+        + (boundDate != null ? "boundDate=" + boundDate + ", " : "")
         + "boundCount=" + boundCount + ", "
+        + (redeemedDate != null ? "redeemedDate=" + redeemedDate + ", " : "")
         + (eventID != null ? "eventID=" + eventID + ", " : "")
         + (subscriberID != null ? "subscriberID=" + subscriberID + ", " : "")
-        + (tokenTypeID != null ? "tokenTypeID=" + tokenTypeID + ", " : "") + "moduleID=" + moduleID
-        + ", featureID=" + featureID + "]";
+        + (tokenTypeID != null ? "tokenTypeID=" + tokenTypeID + ", " : "")
+        + (moduleID != null ? "moduleID=" + moduleID + ", " : "")
+        + (featureID != null ? "featureID=" + featureID : "")
+        + "]";
   }
 }
