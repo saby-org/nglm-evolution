@@ -279,6 +279,7 @@ public class Deliverable extends GUIManagedObject implements GUIManagedObject.El
       {
         pointIDs.add(externalAccountID);
       }
+    result.put("point", pointIDs);
     return result;
   }
 }

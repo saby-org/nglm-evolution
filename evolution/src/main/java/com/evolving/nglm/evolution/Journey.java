@@ -64,7 +64,7 @@ import com.evolving.nglm.evolution.StockMonitor.StockableItem;
 import com.evolving.nglm.evolution.notification.NotificationTemplateParameters;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
-@GUIDependencyDef(objectType = "journey", serviceClass = JourneyService.class, dependencies = { "journey", "campaign", "journeyobjective" , "target" , "workflow" , "mailtemplate" , "pushtemplate" , "dialogtemplate", "voucher", "loyaltyprogram", "loyaltyprogramchallenge", "sourceaddress"})
+@GUIDependencyDef(objectType = "journey", serviceClass = JourneyService.class, dependencies = { "journey", "campaign", "journeyobjective" , "target" , "workflow" , "mailtemplate" , "pushtemplate" , "dialogtemplate", "voucher", "loyaltyProgramPoints", "loyaltyprogramchallenge", "loyaltyprogrammission", "sourceaddress"})
 public class Journey extends GUIManagedObject implements StockableItem, GUIManagedObject.ElasticSearchMapping
 {
   /*****************************************
@@ -3998,7 +3998,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     List<String> mailtemplateIDs = new ArrayList<String>();
     List<String> dialogIDs = new ArrayList<String>();
     List<String> voucherIDs = new ArrayList<String>();
-    List<String> loyaltyprogramIDs = new ArrayList<String>();
+    List<String> loyaltyProgramPointsIDs = new ArrayList<String>();
     List<String> loyaltyprogramchallengeIDs = new ArrayList<String>();
     List<String> loyaltyprogrammissionIDs = new ArrayList<String>();
     List<String> saleschannelIDs = new ArrayList<String>();
@@ -4026,7 +4026,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
                   String mailId = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode, tenantID).get("mailtemplate");
                   String dialogID = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode, tenantID).get("dialogtemplate");
                   String voucherID = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode, tenantID).get("voucher");
-                  String loyaltyprogramID = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode, tenantID).get("loyaltyprogram");
+                  String loyaltyProgramPointsID = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode, tenantID).get("loyaltyprogram");
                   String loyaltyprogramchallengeID = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode, tenantID).get("loyaltyprogramchallenge");
                   String loyaltyprogrammissionID = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode, tenantID).get("loyaltyprogrammission");
                   String sourceaddressID = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode, tenantID).get("sourceaddress");
@@ -4037,7 +4037,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
                   if (mailId != null) mailtemplateIDs.add(mailId);
                   if (dialogID != null) dialogIDs.add(dialogID);
                   if (voucherID != null) voucherIDs.add(dialogID);
-                  if (loyaltyprogramID != null) loyaltyprogramIDs.add(loyaltyprogramID);
+                  if (loyaltyProgramPointsID != null) loyaltyProgramPointsIDs.add(loyaltyProgramPointsID);
                   if (loyaltyprogramchallengeID != null) loyaltyprogramchallengeIDs.add(loyaltyprogramchallengeID);
                   if (loyaltyprogrammissionID != null) loyaltyprogrammissionIDs.add(loyaltyprogrammissionID);
                   if (sourceaddressID != null) sourceaddressIDs.add(sourceaddressID);
@@ -4084,7 +4084,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
           result.put("mailtemplate", mailtemplateIDs);
           result.put("dialogtemplate", dialogIDs);
           result.put("voucher", voucherIDs);
-          result.put("loyaltyprogram", loyaltyprogramIDs);
+          result.put("loyaltyProgramPoints", loyaltyProgramPointsIDs);
           result.put("loyaltyprogramchallenge", loyaltyprogramchallengeIDs);
           result.put("loyaltyprogrammission", loyaltyprogrammissionIDs);
           result.put("sourceaddress", sourceaddressIDs);
@@ -4110,7 +4110,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
                   String mailId = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("mailtemplate"); 
                   String dialogID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("dialogtemplate"); 
                   String voucherID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("voucher"); 
-                  String loyaltyprogramID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("loyaltyprogram");
+                  String loyaltyProgramPointsID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("loyaltyprogram");
                   String loyaltyprogramchallengeID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("loyaltyprogramchallenge");
                   String loyaltyprogrammissionID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("loyaltyprogrammission");
                   String saleschannelID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("saleschannel");
@@ -4123,7 +4123,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
                   if (mailId != null) mailtemplateIDs.add(mailId);
                   if (dialogID != null) dialogIDs.add(dialogID);
                   if (voucherID != null) voucherIDs.add(dialogID);
-                  if (loyaltyprogramID != null) loyaltyprogramIDs.add(loyaltyprogramID);
+                  if (loyaltyProgramPointsID != null) loyaltyProgramPointsIDs.add(loyaltyProgramPointsID);
                   if (loyaltyprogramchallengeID != null) loyaltyprogramchallengeIDs.add(loyaltyprogramchallengeID);
                   if (loyaltyprogrammissionID != null) loyaltyprogrammissionIDs.add(loyaltyprogrammissionID);
                   if (saleschannelID != null) saleschannelIDs.add(saleschannelID);
@@ -4174,7 +4174,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
           result.put("mailtemplate", mailtemplateIDs);
           result.put("dialogtemplate", dialogIDs);
           result.put("voucher", voucherIDs);
-          result.put("loyaltyprogram", loyaltyprogramIDs);
+          result.put("loyaltyProgramPoints", loyaltyProgramPointsIDs);
           result.put("loyaltyprogramchallenge", loyaltyprogramchallengeIDs);
           result.put("loyaltyprogrammission", loyaltyprogrammissionIDs);
           result.put("saleschannel", saleschannelIDs);
@@ -4230,14 +4230,14 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
                     if (dialogID != null) dialogIDs.add(dialogID);
                     String voucherID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("voucher"); 
                     if (voucherID != null) voucherIDs.add(dialogID);
-                    String loyaltyprogramID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("loyaltyprogram");
+                    String loyaltyProgramPointsID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("loyaltyprogram");
                     String loyaltyprogramchallengeID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("loyaltyprogramchallenge");
                     String loyaltyprogrammissionID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("loyaltyprogrammission");
                     String saleschannelID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("saleschannel");
                     String pointID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("point"); 
                     String sourceaddressID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("sourceaddress");
                     
-                    if (loyaltyprogramID != null) loyaltyprogramIDs.add(loyaltyprogramID);
+                    if (loyaltyProgramPointsID != null) loyaltyProgramPointsIDs.add(loyaltyProgramPointsID);
                     if (loyaltyprogramchallengeID != null) loyaltyprogramchallengeIDs.add(loyaltyprogramchallengeID);
                     if (loyaltyprogrammissionID != null) loyaltyprogrammissionIDs.add(loyaltyprogrammissionID);
                     if (saleschannelID != null) saleschannelIDs.add(saleschannelID);
@@ -4275,7 +4275,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
             result.put("mailtemplate", mailtemplateIDs);
             result.put("dialogtemplate", dialogIDs);
             result.put("voucher", voucherIDs);
-            result.put("loyaltyprogram", loyaltyprogramIDs);
+            result.put("loyaltyProgramPoints", loyaltyProgramPointsIDs);
             result.put("loyaltyprogramchallenge", loyaltyprogramchallengeIDs);
             result.put("loyaltyprogrammission", loyaltyprogrammissionIDs);
             result.put("saleschannel", saleschannelIDs);
