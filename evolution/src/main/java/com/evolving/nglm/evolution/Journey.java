@@ -4004,6 +4004,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     List<String> saleschannelIDs = new ArrayList<String>();
     List<String> pointIDs = new ArrayList<String>();
     List<String> sourceaddressIDs = new ArrayList<String>();
+    List<String> tokentypeIDs = new ArrayList<String>();
     
     switch (getGUIManagedObjectType())
       {
@@ -4115,6 +4116,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
                   String loyaltyprogrammissionID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("loyaltyprogrammission");
                   String saleschannelID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("saleschannel");
                   String sourceaddressID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("sourceaddress");
+                  String tokentypeID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("tokentype");
                   
                   if (offerID != null)  offerIDs.add(offerID);
                   if (pointID != null) pointIDs.add(pointID);
@@ -4128,6 +4130,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
                   if (loyaltyprogrammissionID != null) loyaltyprogrammissionIDs.add(loyaltyprogrammissionID);
                   if (saleschannelID != null) saleschannelIDs.add(saleschannelID);
                   if (sourceaddressID != null) sourceaddressIDs.add(sourceaddressID);
+                  if (tokentypeID != null) tokentypeIDs.add(tokentypeID);
                 }
               
 				if (offerNode.getNodeName().equals("Profile Selection")
@@ -4179,6 +4182,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
           result.put("loyaltyprogrammission", loyaltyprogrammissionIDs);
           result.put("saleschannel", saleschannelIDs);
           result.put("sourceaddress", sourceaddressIDs);
+          result.put("tokentype", tokentypeIDs);
           break;
 
         case BulkCampaign:
@@ -4236,6 +4240,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
                     String saleschannelID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("saleschannel");
                     String pointID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("point"); 
                     String sourceaddressID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("sourceaddress");
+                    String tokentypeID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("tokentype");
                     
                     if (loyaltyProgramPointsID != null) loyaltyProgramPointsIDs.add(loyaltyProgramPointsID);
                     if (loyaltyprogramchallengeID != null) loyaltyprogramchallengeIDs.add(loyaltyprogramchallengeID);
@@ -4243,6 +4248,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
                     if (saleschannelID != null) saleschannelIDs.add(saleschannelID);
                     if (pointID != null) pointIDs.add(pointID);
                     if (sourceaddressID != null) sourceaddressIDs.add(sourceaddressID);
+                    if (tokentypeID != null) tokentypeIDs.add(tokentypeID);
                   }
                
                 if(offerNode.getNodeName().equals("Profile Selection") || offerNode.getNodeName().equals("Event Multi-Selection") || offerNode.getNodeName().equals("Event Selection")) {
@@ -4281,6 +4287,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
             result.put("saleschannel", saleschannelIDs);
             result.put("point", pointIDs);
             result.put("sourceaddress", sourceaddressIDs);
+            result.put("tokentype", tokentypeIDs);
             break;
         default:
           break;

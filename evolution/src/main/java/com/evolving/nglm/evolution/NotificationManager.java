@@ -939,11 +939,11 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
     @Override public Map<String, String> getGUIDependencies(List<GUIService> guiServiceList, JourneyNode journeyNode, int tenantID)
     {
       Map<String, String> result = new HashMap<String, String>();
-      NotificationTemplateParameters templateParameters = (NotificationTemplateParameters) CriterionFieldRetriever.getJourneyNodeParameter(new SubscriberEvaluationRequest(null, null, null, null, journeyNode, null, null, SystemTime.getCurrentTime(), tenantID)
-      , "node.parameter.dialog_template");
+      NotificationTemplateParameters templateParameters = (NotificationTemplateParameters) CriterionFieldRetriever.getJourneyNodeParameter(new SubscriberEvaluationRequest(null, null, null, null, journeyNode, null, null, SystemTime.getCurrentTime(), tenantID), "node.parameter.dialog_template");
       String dialogueTemplateID = (String) templateParameters.getSubscriberMessageTemplateID();
-      if (dialogueTemplateID != null) {
-    	  result.put("dialogtemplate", dialogueTemplateID);}
+      String fromAddressID = (String) journeyNode.getNodeParameters().get("node.parameter.fromaddress");
+      if (dialogueTemplateID != null) result.put("dialogtemplate", dialogueTemplateID);
+      if (fromAddressID != null) result.put("sourceaddress", fromAddressID);
       return result;
     }
   }

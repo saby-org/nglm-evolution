@@ -11,8 +11,11 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import org.apache.http.nio.protocol.UriHttpAsyncRequestHandlerMapper;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -388,6 +391,14 @@ public class DNBOUtils
       *****************************************/
       return result;
     }
+    
+    @Override public Map<String, String> getGUIDependencies(List<GUIService> guiServiceList, JourneyNode journeyNode, int tenantID)
+    {
+      Map<String, String> result = new HashMap<String, String>();
+      String tokentypeID = (String) journeyNode.getNodeParameters().get("node.parameter.tokentype");
+      if (tokentypeID != null) result.put("tokentype", tokentypeID);
+      return result;
+    }
   }
   
   /*****************************************
@@ -453,6 +464,15 @@ public class DNBOUtils
       *****************************************/
       return result;
     }
+    
+    @Override public Map<String, String> getGUIDependencies(List<GUIService> guiServiceList, JourneyNode journeyNode, int tenantID)
+    {
+      Map<String, String> result = new HashMap<String, String>();
+      String tokentypeID = (String) journeyNode.getNodeParameters().get("node.parameter.tokentype");
+      if (tokentypeID != null) result.put("tokentype", tokentypeID);
+      return result;
+    }
+    
   }
 
   
@@ -556,6 +576,14 @@ public class DNBOUtils
       *  return
       *
       *****************************************/
+      return result;
+    }
+    
+    @Override public Map<String, String> getGUIDependencies(List<GUIService> guiServiceList, JourneyNode journeyNode, int tenantID)
+    {
+      Map<String, String> result = new HashMap<String, String>();
+      String tokentypeID = (String) journeyNode.getNodeParameters().get("node.parameter.tokentype");
+      if (tokentypeID != null) result.put("tokentype", tokentypeID);
       return result;
     }
   }
