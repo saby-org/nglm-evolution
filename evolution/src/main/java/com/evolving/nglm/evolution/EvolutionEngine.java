@@ -1850,6 +1850,7 @@ public class EvolutionEngine
 					subscriberState.getSubscriberProfile().getSubscriberID(), SystemTime.getCurrentTime(),
 					SubscriberAction.CleanupImmediate);
 			subscriberState.getImmediateCleanupActions().add(assignSubscriberIDs);
+			subscriberState.getSubscriberProfile().setEvolutionSubscriberStatus(EvolutionSubscriberStatus.Terminated);
 		}
 
 		SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(),
