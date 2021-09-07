@@ -42,7 +42,7 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.JSONUtilities;
 
-@GUIDependencyDef(objectType = "offer", serviceClass = OfferService.class, dependencies = { "product" , "voucher", "saleschannel" , "offerobjective", "target"})
+@GUIDependencyDef(objectType = "offer", serviceClass = OfferService.class, dependencies = { "product" , "voucher", "saleschannel" , "offerobjective", "target", "catalogcharacteristic"})
 public class Offer extends GUIManagedObject implements StockableItem
 {  
   //
@@ -934,36 +934,47 @@ public class Offer extends GUIManagedObject implements StockableItem
     List<String> saleschannelIDs = new ArrayList<String>();
     List<String> offerObjectiveIDs = getOfferObjectives().stream().map(offerObjective -> offerObjective.getOfferObjectiveID()).collect(Collectors.toList());
     List<String> targetIDs = new ArrayList<String>();
-     
+    List<String> offerCharacteristicsLanguagePropertyIDs = new ArrayList<String>();
+
     for (OfferSalesChannelsAndPrice offerSalesChannelsAndPrice : getOfferSalesChannelsAndPrices())
       {
         saleschannelIDs.addAll(offerSalesChannelsAndPrice.getSalesChannelIDs());
       }
-  
-	 List<EvaluationCriterion> internalTargets=getProfileCriteria();
-		for (EvaluationCriterion internalTarget : internalTargets) {
-			if (internalTarget != null && internalTarget.getCriterionField() != null
-					&& internalTarget.getCriterionField().getESField() != null
-					&& internalTarget.getCriterionField().getESField().equals("internal.targets")) {
-				if (internalTarget.getCriterionOperator() == CriterionOperator.ContainsOperator
-						|| internalTarget.getCriterionOperator() == CriterionOperator.DoesNotContainOperator)
-					targetIDs.add(internalTarget.getArgumentExpression().replace("'", ""));
-				else if (internalTarget.getCriterionOperator() == CriterionOperator.NonEmptyIntersectionOperator
-						|| internalTarget.getCriterionOperator() == CriterionOperator.EmptyIntersectionOperator)
-					targetIDs.addAll(Arrays.asList(internalTarget.getArgumentExpression().replace("[", "")
-							.replace("]", "").replace("'", "").split(",")));
 
-			}
-		}
+    List<EvaluationCriterion> internalTargets = getProfileCriteria();
+    for (EvaluationCriterion internalTarget : internalTargets)
+      {
+        if (internalTarget != null && internalTarget.getCriterionField() != null && internalTarget.getCriterionField().getESField() != null && internalTarget.getCriterionField().getESField().equals("internal.targets"))
+          {
+            if (internalTarget.getCriterionOperator() == CriterionOperator.ContainsOperator || internalTarget.getCriterionOperator() == CriterionOperator.DoesNotContainOperator)
+              targetIDs.add(internalTarget.getArgumentExpression().replace("'", ""));
+            else if (internalTarget.getCriterionOperator() == CriterionOperator.NonEmptyIntersectionOperator || internalTarget.getCriterionOperator() == CriterionOperator.EmptyIntersectionOperator)
+              targetIDs.addAll(Arrays.asList(internalTarget.getArgumentExpression().replace("[", "").replace("]", "").replace("'", "").split(",")));
+
+          }
+      }
     
-	result.put("target", targetIDs);
+    if (getOfferCharacteristics() != null && getOfferCharacteristics().getOfferCharacteristicProperties() != null && !getOfferCharacteristics().getOfferCharacteristicProperties().isEmpty())
+      {
+        for (OfferCharacteristicsLanguageProperty offerCharacteristicsLanguageProperty : getOfferCharacteristics().getOfferCharacteristicProperties())
+          {
+            if (offerCharacteristicsLanguageProperty.getProperties() != null && !offerCharacteristicsLanguageProperty.getProperties().isEmpty())
+              {
+                for (OfferCharacteristicsProperty characteristicsProperty : offerCharacteristicsLanguageProperty.getProperties())
+                  {
+                    offerCharacteristicsLanguagePropertyIDs.add(characteristicsProperty.getCatalogCharacteristicID());
+                  }
+              }
+          }
+      }
+
+    result.put("target", targetIDs);
     result.put("product", productIDs);
     result.put("voucher", voucherIDs);
     result.put("saleschannel", saleschannelIDs);
     result.put("offerobjective", offerObjectiveIDs);
-   // result.put("CatalogCharacteristic", getCatalogCharacteristics());
-    
-    
+    result.put("catalogcharacteristic", offerCharacteristicsLanguagePropertyIDs);
+
     return result;
   }
   
