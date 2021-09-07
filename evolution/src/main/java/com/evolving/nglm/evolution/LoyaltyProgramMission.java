@@ -33,7 +33,7 @@ import com.evolving.nglm.core.SubscriberStreamEvent;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
-@GUIDependencyDef(objectType = "loyaltyProgramMission", serviceClass = LoyaltyProgramService.class, dependencies = { "catalogcharacteristic", "workflow"})
+@GUIDependencyDef(objectType = "loyaltyprogrammission", serviceClass = LoyaltyProgramService.class, dependencies = { "catalogcharacteristic", "workflow"})
 public class LoyaltyProgramMission extends LoyaltyProgram
 {
   

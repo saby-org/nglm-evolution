@@ -3,7 +3,7 @@ package com.evolving.nglm.evolution;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 
-@GUIDependencyDef(objectType = "bulkCampaign", serviceClass = JourneyService.class, dependencies = {"point" , "target" , "journeyobjective" , "mailtemplate" , "pushtemplate" , "dialogtemplate"})
+@GUIDependencyDef(objectType = "bulkCampaign", serviceClass = JourneyService.class, dependencies = {"point" , "target" , "journeyobjective" , "mailtemplate" , "pushtemplate" , "dialogtemplate", "sourceaddress"})
 public class BulkCampaign extends GUIManagedObject
 {
 

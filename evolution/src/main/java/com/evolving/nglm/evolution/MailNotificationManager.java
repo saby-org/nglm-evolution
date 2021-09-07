@@ -721,7 +721,10 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
     {
       Map<String, String> result = new HashMap<String, String>();
       EmailMessage emailMessage = (EmailMessage) journeyNode.getNodeParameters().get("node.parameter.message");
+      String sourceID = (String) journeyNode.getNodeParameters().get("node.parameter.fromaddress");
+      
       if (emailMessage != null) result.put("mailtemplate", emailMessage.getSubscriberMessageTemplateID());
+      if (sourceID != null) result.put("sourceaddress", sourceID);
       return result;
     }
   }

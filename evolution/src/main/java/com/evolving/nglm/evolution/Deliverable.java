@@ -6,7 +6,9 @@
 
 package com.evolving.nglm.evolution;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -18,12 +20,13 @@ import org.apache.kafka.connect.data.Struct;
 import org.json.simple.JSONObject;
 
 import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-import com.evolving.nglm.evolution.GUIService.GUIManagedObjectListener;
-import com.evolving.nglm.evolution.Target.TargetingType;
 
+@GUIDependencyDef(objectType = "deliverable", serviceClass = DeliverableService.class, dependencies = { "point" })
 public class Deliverable extends GUIManagedObject implements GUIManagedObject.ElasticSearchMapping
 {
   /*****************************************
@@ -259,9 +262,23 @@ public class Deliverable extends GUIManagedObject implements GUIManagedObject.El
     
     return documentMap;
   }
-  @Override
-  public String getESIndexName()
+  
+  @Override public String getESIndexName()
   {
     return "mapping_deliverables";
+  }
+  
+  @Override public Map<String, List<String>> getGUIDependencies(int tenantID)
+  {
+    Map<String, List<String>> result = new HashMap<String, List<String>>();
+    List<String> pointIDs = new ArrayList<String>();
+    DeliveryManagerDeclaration deliveryManager = Deployment.getDeliveryManagers().get("pointFulfillment");
+    JSONObject deliveryManagerJSON = (deliveryManager != null) ? deliveryManager.getJSONRepresentation() : null;
+    String pointProviderID = (deliveryManagerJSON != null) ? (String) deliveryManagerJSON.get("providerID") : null;
+    if (fulfillmentProviderID.equals(pointProviderID))
+      {
+        pointIDs.add(externalAccountID);
+      }
+    return result;
   }
 }

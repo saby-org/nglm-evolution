@@ -22,8 +22,10 @@ import org.json.simple.JSONObject;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
+@GUIDependencyDef(objectType = "exclusioninclusion", serviceClass = ExclusionInclusionTargetService.class, dependencies = { })
 public class ExclusionInclusionTarget extends GUIManagedObject
 {
 

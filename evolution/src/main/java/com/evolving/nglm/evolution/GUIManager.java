@@ -716,9 +716,9 @@ public class GUIManager
   protected PresentationStrategyService presentationStrategyService;
   protected DNBOMatrixService dnboMatrixService;
   protected CallingChannelService callingChannelService;
-  protected SalesChannelService salesChannelService;
+  protected static SalesChannelService salesChannelService;
   protected SourceAddressService sourceAddressService;
-  protected SupplierService supplierService;
+  protected static SupplierService supplierService;
   protected ProductService productService;
   protected CatalogCharacteristicService catalogCharacteristicService;
   protected ContactPolicyService contactPolicyService;
@@ -740,7 +740,7 @@ public class GUIManager
   protected TargetService targetService;
   protected CommunicationChannelBlackoutService communicationChannelBlackoutService;
   protected CommunicationChannelTimeWindowService communicationChannelTimeWindowService;
-  protected LoyaltyProgramService loyaltyProgramService;
+  protected static LoyaltyProgramService loyaltyProgramService;
   protected ExclusionInclusionTargetService exclusionInclusionTargetService;
   protected ResellerService resellerService;
   protected SegmentContactPolicyService segmentContactPolicyService;
@@ -30841,5 +30841,42 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
         response.put("responseMessage", RESTAPIGenericReturnCodes.NO_MESSAGE_TEMPLATE_FOR_AREA_AVAILABILITY.getGenericDescription());
       }
     return JSONUtilities.encodeObject(response);
+  }
+  
+  //
+  //  used for dependencies only
+  //
+  
+  /*****************************************
+  *
+  *  getStoredSuppliers
+  *
+  *****************************************/
+  
+  public static Collection<GUIManagedObject> getStoredSuppliers(int tenantID)
+  {
+    return supplierService.getStoredSuppliers(false, tenantID);
+  }
+  
+  /*****************************************
+  *
+  *  getStoredLoyaltyPrograms
+  *
+  *****************************************/
+  
+  public static Collection<GUIManagedObject> getStoredLoyaltyPrograms(int tenantID)
+  {
+    return loyaltyProgramService.getStoredLoyaltyPrograms(false, tenantID);
+  }
+  
+  /*****************************************
+  *
+  *  getStoredSalesChannels
+  *
+  *****************************************/
+  
+  public static Collection<GUIManagedObject> getStoredSalesChannels(int tenantID)
+  {
+    return salesChannelService.getStoredSalesChannels(false, tenantID);
   }
 }
