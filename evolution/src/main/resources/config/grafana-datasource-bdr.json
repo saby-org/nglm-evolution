@@ -6,7 +6,7 @@
       "org_id": null,
       "type": "elasticsearch",
       "access": "proxy",
-      "database": "t*-datacube_bdr",
+      "database": "t*_datacube_bdr",
       "url": "http://<_MASTER_ESROUTER_HOST_>:<_MASTER_ESROUTER_PORT_>",
       "basicAuth": true,
       "withCredentials": true,
