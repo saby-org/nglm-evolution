@@ -710,7 +710,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
       return Collections.<Action>singletonList(request);
     }
     
-    @Override public Map<String, String> getGUIDependencies(JourneyNode journeyNode, int tenantID)
+    @Override public Map<String, String> getGUIDependencies(List<GUIService> guiServiceList, JourneyNode journeyNode, int tenantID)
     {
       Map<String, String> result = new HashMap<String, String>();
       String pushTemplateID = (String) journeyNode.getNodeParameters().get("node.parameter.message");

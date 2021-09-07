@@ -670,7 +670,7 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
       return (request != null) ? Collections.<Action>singletonList(request) : Collections.<Action>emptyList();
     }
     
-    @Override public Map<String, String> getGUIDependencies(JourneyNode journeyNode, int tenantID)
+    @Override public Map<String, String> getGUIDependencies(List<GUIService> guiServiceList, JourneyNode journeyNode, int tenantID)
     {
       Map<String, String> result = new HashMap<String, String>();
       String sourceID = (String) journeyNode.getNodeParameters().get("node.parameter.source");

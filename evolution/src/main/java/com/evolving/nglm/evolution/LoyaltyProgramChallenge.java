@@ -707,7 +707,7 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
    *******************************/
 
   @Override
-  public Map<String, List<String>> getGUIDependencies(int tenantID)
+  public Map<String, List<String>> getGUIDependencies(List<GUIService> guiServiceList, int tenantID)
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
     List<String> catalogcharacteristicIDs = new ArrayList<String>();

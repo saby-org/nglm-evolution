@@ -3988,7 +3988,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
    * 
    *******************************/
   
-  @Override public Map<String, List<String>> getGUIDependencies(int tenantID)
+  @Override public Map<String, List<String>> getGUIDependencies(List<GUIService> guiServiceList, int tenantID)
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
     List<String> targetIDs = new ArrayList<String>();
@@ -4020,16 +4020,16 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
             {
               if (journeyNode.getNodeType().getActionManager() != null)
                 {
-                  String campaignID = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode, tenantID).get("journey");
-                  String workflowID = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode, tenantID).get("workflow");
-                  String pushId = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode, tenantID).get("pushtemplate");
-                  String mailId = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode, tenantID).get("mailtemplate");
-                  String dialogID = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode, tenantID).get("dialogtemplate");
-                  String voucherID = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode, tenantID).get("voucher");
-                  String loyaltyProgramPointsID = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode, tenantID).get("loyaltyprogram");
-                  String loyaltyprogramchallengeID = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode, tenantID).get("loyaltyprogramchallenge");
-                  String loyaltyprogrammissionID = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode, tenantID).get("loyaltyprogrammission");
-                  String sourceaddressID = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode, tenantID).get("sourceaddress");
+                  String campaignID = journeyNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, journeyNode, tenantID).get("journey");
+                  String workflowID = journeyNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, journeyNode, tenantID).get("workflow");
+                  String pushId = journeyNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, journeyNode, tenantID).get("pushtemplate");
+                  String mailId = journeyNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, journeyNode, tenantID).get("mailtemplate");
+                  String dialogID = journeyNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, journeyNode, tenantID).get("dialogtemplate");
+                  String voucherID = journeyNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, journeyNode, tenantID).get("voucher");
+                  String loyaltyProgramPointsID = journeyNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, journeyNode, tenantID).get("loyaltyprogram");
+                  String loyaltyprogramchallengeID = journeyNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, journeyNode, tenantID).get("loyaltyprogramchallenge");
+                  String loyaltyprogrammissionID = journeyNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, journeyNode, tenantID).get("loyaltyprogrammission");
+                  String sourceaddressID = journeyNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, journeyNode, tenantID).get("sourceaddress");
                   
                   if (campaignID != null)campaignIDs.add(campaignID);
                   if (workflowID != null) wrkflowIDs.add(workflowID);
@@ -4103,18 +4103,18 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
             {
               if (offerNode.getNodeType().getActionManager() != null)
                 {
-                  String offerID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("offer"); 
-                  String pointID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("point"); 
-                  String workflowID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("workflow"); 
-                  String pushId = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("pushtemplate"); 
-                  String mailId = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("mailtemplate"); 
-                  String dialogID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("dialogtemplate"); 
-                  String voucherID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("voucher"); 
-                  String loyaltyProgramPointsID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("loyaltyprogram");
-                  String loyaltyprogramchallengeID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("loyaltyprogramchallenge");
-                  String loyaltyprogrammissionID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("loyaltyprogrammission");
-                  String saleschannelID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("saleschannel");
-                  String sourceaddressID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("sourceaddress");
+                  String offerID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("offer"); 
+                  String pointID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("point"); 
+                  String workflowID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("workflow"); 
+                  String pushId = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("pushtemplate"); 
+                  String mailId = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("mailtemplate"); 
+                  String dialogID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("dialogtemplate"); 
+                  String voucherID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("voucher"); 
+                  String loyaltyProgramPointsID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("loyaltyprogram");
+                  String loyaltyprogramchallengeID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("loyaltyprogramchallenge");
+                  String loyaltyprogrammissionID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("loyaltyprogrammission");
+                  String saleschannelID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("saleschannel");
+                  String sourceaddressID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("sourceaddress");
                   
                   if (offerID != null)  offerIDs.add(offerID);
                   if (pointID != null) pointIDs.add(pointID);
@@ -4222,20 +4222,20 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
                 if (offerNode.getNodeType().getActionManager() != null)
                   {
                            
-                    String pushId = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("pushtemplate");
+                    String pushId = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("pushtemplate");
                     if (pushId != null) pushTemplateIDs.add(pushId);
-                    String mailId = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("mailtemplate");
+                    String mailId = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("mailtemplate");
                     if (mailId != null) mailtemplateIDs.add(mailId);
-                    String dialogID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("dialogtemplate");
+                    String dialogID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("dialogtemplate");
                     if (dialogID != null) dialogIDs.add(dialogID);
-                    String voucherID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("voucher"); 
+                    String voucherID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("voucher"); 
                     if (voucherID != null) voucherIDs.add(dialogID);
-                    String loyaltyProgramPointsID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("loyaltyprogram");
-                    String loyaltyprogramchallengeID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("loyaltyprogramchallenge");
-                    String loyaltyprogrammissionID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("loyaltyprogrammission");
-                    String saleschannelID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("saleschannel");
-                    String pointID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("point"); 
-                    String sourceaddressID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("sourceaddress");
+                    String loyaltyProgramPointsID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("loyaltyprogram");
+                    String loyaltyprogramchallengeID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("loyaltyprogramchallenge");
+                    String loyaltyprogrammissionID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("loyaltyprogrammission");
+                    String saleschannelID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("saleschannel");
+                    String pointID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("point"); 
+                    String sourceaddressID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("sourceaddress");
                     
                     if (loyaltyProgramPointsID != null) loyaltyProgramPointsIDs.add(loyaltyProgramPointsID);
                     if (loyaltyprogramchallengeID != null) loyaltyprogramchallengeIDs.add(loyaltyprogramchallengeID);

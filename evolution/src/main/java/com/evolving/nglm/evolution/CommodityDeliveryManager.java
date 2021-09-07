@@ -733,7 +733,7 @@ public class CommodityDeliveryManager
       }
     }
 
-    @Override public Map<String, String> getGUIDependencies(JourneyNode journeyNode, int tenantID)
+    @Override public Map<String, String> getGUIDependencies(List<GUIService> guiServiceList, JourneyNode journeyNode, int tenantID)
     {
       Map<String, String> result = new HashMap<String, String>();
       String pointID = (String) journeyNode.getNodeParameters().get("node.parameter.commodityid");

@@ -717,7 +717,7 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
       return (request != null) ? Collections.<Action>singletonList(request) : Collections.<Action>emptyList();
     }
     
-    @Override public Map<String, String> getGUIDependencies(JourneyNode journeyNode, int tenantID)
+    @Override public Map<String, String> getGUIDependencies(List<GUIService> guiServiceList, JourneyNode journeyNode, int tenantID)
     {
       Map<String, String> result = new HashMap<String, String>();
       EmailMessage emailMessage = (EmailMessage) journeyNode.getNodeParameters().get("node.parameter.message");

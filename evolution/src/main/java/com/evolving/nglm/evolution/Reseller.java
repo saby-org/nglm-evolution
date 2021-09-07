@@ -397,7 +397,7 @@ public class Reseller extends GUIManagedObject
    * 
    *******************************/
   
-  @Override public Map<String, List<String>> getGUIDependencies(int tenantID)
+  @Override public Map<String, List<String>> getGUIDependencies(List<GUIService> guiServiceList, int tenantID)
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
     List<String> resellerIDs = new ArrayList<>();

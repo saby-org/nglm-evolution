@@ -8762,7 +8762,7 @@ public class EvolutionEngine
       return Collections.<Action>singletonList(request);
     }
 
-    @Override public Map<String, String> getGUIDependencies(JourneyNode journeyNode, int tenantID)
+    @Override public Map<String, String> getGUIDependencies(List<GUIService> guiServiceList, JourneyNode journeyNode, int tenantID)
     {
       Map<String, String> result = new HashMap<String, String>();
       String journeyID = (String) journeyNode.getNodeParameters().get("node.parameter.journey");
@@ -8871,7 +8871,7 @@ public class EvolutionEngine
       return (request != null) ? Collections.<Action>singletonList(request) : Collections.<Action>emptyList();
     }
 
-    @Override public Map<String, String> getGUIDependencies(JourneyNode journeyNode, int tenantID)
+    @Override public Map<String, String> getGUIDependencies(List<GUIService> guiServiceList, JourneyNode journeyNode, int tenantID)
     {
       Map<String, String> result = new HashMap<String, String>();
       WorkflowParameter workflowparam= (WorkflowParameter) journeyNode.getNodeParameters().get("node.parameter.workflow");
@@ -8950,31 +8950,39 @@ public class EvolutionEngine
       return Collections.<Action>singletonList(request);
     }
     
-    @Override public Map<String, String> getGUIDependencies(JourneyNode journeyNode, int tenantID)
+    @Override public Map<String, String> getGUIDependencies(List<GUIService> guiServiceList, JourneyNode journeyNode, int tenantID)
     {
       Map<String, String> result = new HashMap<String, String>();
       String loyaltyProgramId = (String) journeyNode.getNodeParameters().get("node.parameter.loyaltyProgramId");
-      GUIManagedObject loyaltyUnchecked = GUIManager.getStoredLoyaltyPrograms(tenantID).stream().filter(obj -> obj.getGUIManagedObjectID().equals(loyaltyProgramId)).findFirst().orElse(null);
-      if (loyaltyUnchecked != null && loyaltyUnchecked.getAccepted())
+      LoyaltyProgramService loyaltyProgramService = (LoyaltyProgramService) guiServiceList.stream().filter(srvc -> srvc.getClass() == LoyaltyProgramService.class).findFirst().orElse(null);
+      if (loyaltyProgramService == null)
         {
-          LoyaltyProgram loyaltyProgram = (LoyaltyProgram) loyaltyUnchecked;
-          switch (loyaltyProgram.getLoyaltyProgramType())
-          {
-            case POINTS:
-              if (loyaltyProgramId != null) result.put("loyaltyprogram", loyaltyProgramId);
-              break;
-              
-            case MISSION:
-              if (loyaltyProgramId != null) result.put("loyaltyprogrammission", loyaltyProgramId);
-              break;
-              
-            case CHALLENGE:
-              if (loyaltyProgramId != null) result.put("loyaltyprogramchallenge", loyaltyProgramId);
-              break;
+          log.error("loyaltyProgramService not found in guiServiceList - getGUIDependencies will be effected");
+        }
+      else
+        {
+          GUIManagedObject loyaltyUnchecked = loyaltyProgramService.getStoredLoyaltyPrograms(tenantID).stream().filter(obj -> obj.getGUIManagedObjectID().equals(loyaltyProgramId)).findFirst().orElse(null);
+          if (loyaltyUnchecked != null && loyaltyUnchecked.getAccepted())
+            {
+              LoyaltyProgram loyaltyProgram = (LoyaltyProgram) loyaltyUnchecked;
+              switch (loyaltyProgram.getLoyaltyProgramType())
+              {
+                case POINTS:
+                  if (loyaltyProgramId != null) result.put("loyaltyprogram", loyaltyProgramId);
+                  break;
+                  
+                case MISSION:
+                  if (loyaltyProgramId != null) result.put("loyaltyprogrammission", loyaltyProgramId);
+                  break;
+                  
+                case CHALLENGE:
+                  if (loyaltyProgramId != null) result.put("loyaltyprogramchallenge", loyaltyProgramId);
+                  break;
 
-            default:
-              break;
-          }
+                default:
+                  break;
+              }
+            }
         }
       return result;
     }
@@ -9312,7 +9320,7 @@ public class EvolutionEngine
       return actions;
     }
     
-    @Override public Map<String, String> getGUIDependencies(JourneyNode journeyNode, int tenantID)
+    @Override public Map<String, String> getGUIDependencies(List<GUIService> guiServiceList, JourneyNode journeyNode, int tenantID)
     {
       Map<String, String> result = new HashMap<String, String>();
       String voucherID = (String) journeyNode.getNodeParameters().get("node.parameter.voucher.code");
