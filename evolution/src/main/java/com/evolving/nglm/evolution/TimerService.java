@@ -707,7 +707,7 @@ public class TimerService
                 if(subscriberState==null) continue;//not sure of that, but seems we can have fresh "deleted" records back
                 if (subscriberState.getLastEvaluationDate() == null || subscriberState.getLastEvaluationDate().before(nextPeriodicEvaluation))
                   {
-                    TimedEvaluation scheduledEvaluation = new TimedEvaluation(subscriberState.getSubscriberID(), nextPeriodicEvaluation, true, false);
+                    TimedEvaluation scheduledEvaluation = new TimedEvaluation(subscriberState.getSubscriberID(), nextPeriodicEvaluation, true, false, "periodicEvaluation-" + nbSubs);
                     sendTimedEvaluation(scheduledEvaluation);
                   }
               }
@@ -1091,11 +1091,13 @@ public class TimerService
                     //
 
                     boolean match = false;
+                    String matchedTargetID = null;
                     for (String targetID : evaluateTargetsJob.getTargetIDs())
                       {
                         if (subscriberTargets.contains(targetID))
                           {
                             match = true;
+                            matchedTargetID = targetID;
                             break;
                           }
                       }
@@ -1105,6 +1107,7 @@ public class TimerService
                     if(inclusionList)
                       {
                         match = true;
+                        matchedTargetID = "InclusionList";
                       }
 
                     //
@@ -1114,7 +1117,7 @@ public class TimerService
                     if (match)
                       {
                         if(log.isTraceEnabled()) log.trace("evaluateTargets match for subscriber "+subscriberState.getSubscriberID()+", generating an event");
-                        TimedEvaluation scheduledEvaluation = new TimedEvaluation(subscriberState.getSubscriberID(), now, false, true);
+                        TimedEvaluation scheduledEvaluation = new TimedEvaluation(subscriberState.getSubscriberID(), now, false, true, matchedTargetID);
                         sendTimedEvaluation(scheduledEvaluation);
                       }
                     else
