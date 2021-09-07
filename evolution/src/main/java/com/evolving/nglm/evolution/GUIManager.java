@@ -26301,7 +26301,11 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                     if (cfav == null) {
                       result.addAll(evaluateEnumeratedValues(enumID, now, includeDynamic, tenantID));
                     } else {
-                      result.
+                      // EVPRO-1114 put a special object when the values can be found in the criterionFieldAvailableValuesService
+                      HashMap<String,Object> av = new HashMap<String,Object>();
+                      av.put("id", "criterionFieldAvailableValuesID");
+                      av.put("display", enumID);
+                      result.add(JSONUtilities.encodeObject(av));
                     }
                   }
                 else

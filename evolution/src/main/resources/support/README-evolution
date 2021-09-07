@@ -599,6 +599,12 @@ $DEPLOY_ROOT/bin/update-subscribergroup.sh delete segmentationDimension churnRis
 $DEPLOY_ROOT/bin/configlog.sh
 
 --
+-- create criterionFieldAvailableValues
+--
+curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1,"tenantID":1,"id":"ratePlans","availableValues":[{ "id" : "tariff001", "display" : "tariff001" }, { "id" : "tariff002", "display" : "tariff002" }, { "id" : "tariff003", "display" : "tariff003" }]}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putCriterionFieldAvailableValues | jq .
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id":"ratePlans"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCriterionFieldAvailableValues; echo
+
+--
 --  storeconfiguration
 --
 
