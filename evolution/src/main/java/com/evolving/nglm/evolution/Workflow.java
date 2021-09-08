@@ -3,7 +3,7 @@ package com.evolving.nglm.evolution;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 
-@GUIDependencyDef(objectType = "workflow", serviceClass = JourneyService.class, dependencies = {"mailtemplate" , "pushtemplate" , "dialogtemplate", "target", "voucher", "loyaltyProgramPoints", "loyaltyprogramchallenge", "loyaltyprogrammission", "saleschannel", "point", "sourceaddress", "tokentype"})
+@GUIDependencyDef(objectType = "workflow", serviceClass = JourneyService.class, dependencies = {"mailtemplate" , "pushtemplate" , "dialogtemplate", "target", "voucher", "loyaltyProgramPoints", "loyaltyprogramchallenge", "loyaltyprogrammission", "saleschannel", "point", "sourceaddress", "tokentype", "presentationstrategy"})
 public class Workflow extends GUIManagedObject
 {
 
