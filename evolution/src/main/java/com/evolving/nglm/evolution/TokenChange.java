@@ -166,11 +166,6 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
 
 
 
-  public TokenChange(String subscriberID, Date eventDateTime, String eventID, String tokenCode, String action, String returnStatus, String origin, Module module, String featureID, int tenantID,String acceptedOfferID)
-  {
-    this(subscriberID, eventDateTime, eventID, tokenCode, action, returnStatus, origin, module.getExternalRepresentation(), featureID, null, tenantID,acceptedOfferID);
-  }
-
   /*****************************************
   *
   * constructor (simple)
@@ -223,38 +218,6 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
     this.presentedOfferIDs = presentedOfferIDs;
   }
   
-/* public TokenChange(String subscriberID, Date eventDateTime, String eventID, String tokenCode, String action, String returnStatus, String origin, String moduleID, String featureID, String callUniqueIdentifier, int tenantID,String acceptedOfferID,List<String> presentedOfferIDs)
-  {
-    this.subscriberID = subscriberID;
-    this.eventDateTime = eventDateTime;
-    this.eventID = eventID;
-    this.tokenCode = tokenCode;
-    this.action = action;
-    this.returnStatus = returnStatus;
-    this.origin = origin;
-    this.moduleID = moduleID;
-    this.featureID = featureID;
-    this.callUniqueIdentifier = callUniqueIdentifier;
-    this.tenantID = tenantID;
-    this.acceptedOfferID = acceptedOfferID;
-    this.presentedOfferIDs = presentedOfferIDs;
-  }*/
-
-  public TokenChange(String subscriberID, Date eventDateTime, String eventID, String tokenCode, String action, String returnStatus, String origin, String moduleID, String featureID, String callUniqueIdentifier, int tenantID,String acceptedOfferID)
-  {
-    this.subscriberID = subscriberID;
-    this.eventDateTime = eventDateTime;
-    this.eventID = eventID;
-    this.tokenCode = tokenCode;
-    this.action = action;
-    this.returnStatus = returnStatus;
-    this.origin = origin;
-    this.moduleID = moduleID;
-    this.featureID = featureID;
-    this.callUniqueIdentifier = callUniqueIdentifier;
-    this.tenantID = tenantID;
-    this.acceptedOfferID = acceptedOfferID;
-  }
 
   /*****************************************
    *
@@ -277,24 +240,6 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
     this.callUniqueIdentifier = callUniqueIdentifier;
   }
 
-  public TokenChange(SchemaAndValue schemaAndValue, String subscriberID, Date eventDateTime, String eventID, String tokenCode, String action, String returnStatus, String origin, String moduleID, String featureID, String callUniqueIdentifier, int tenantID, String acceptedOfferID)
-  {
-    super(schemaAndValue);
-    this.subscriberID = subscriberID;
-    this.eventDateTime = eventDateTime;
-    this.eventID = eventID;
-    this.tokenCode = tokenCode;
-    this.action = action;
-    this.returnStatus = returnStatus;
-    this.origin = origin;
-    this.moduleID = moduleID;
-    this.featureID = featureID;
-    this.tenantID = tenantID;
-    this.callUniqueIdentifier = callUniqueIdentifier;
-    this.acceptedOfferID = acceptedOfferID;
-  }
-
-  
   public TokenChange(SchemaAndValue schemaAndValue, String subscriberID, Date eventDateTime, String eventID, String tokenCode, String action, String returnStatus, String origin, String moduleID, String featureID, String callUniqueIdentifier, int tenantID, String acceptedOfferID,List<String> presentedOfferIDs)
   {
     super(schemaAndValue);

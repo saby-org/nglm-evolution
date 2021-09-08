@@ -5372,7 +5372,7 @@ public class EvolutionEngine
                     subscriberStoredToken.setPurchaseStatus(purchaseFulfillmentRequest.getStatus());
                   }
                 // trigger output log
-                subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), acceptanceLog.getEventDate(), context.getEventID(), eventTokenCode, TokenChange.REDEEM, TokenChange.OK, "AcceptanceLog", moduleID, featureID, callUniqueIdentifier, tenantID,acceptanceLog.getOfferID()));
+                subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), acceptanceLog.getEventDate(), context.getEventID(), eventTokenCode, TokenChange.REDEEM, TokenChange.OK, "AcceptanceLog", moduleID, featureID, callUniqueIdentifier, tenantID,acceptanceLog.getOfferID(), subscriberStoredToken.getPresentedOfferIDs()));
                 // trigger tokenRedeemed event (does it make sense ? should we just map token redeem event to AcceptanceLog ?
                 if(!external) subscriberState.getTokenRedeemeds().add(new TokenRedeemed(subscriberState.getSubscriberID(), acceptanceLog.getEventDate(), subscriberStoredToken.getTokenTypeID(), subscriberStoredToken.getAcceptedOfferID()));
               }
