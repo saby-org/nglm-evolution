@@ -12,7 +12,7 @@ set -e
 set -o pipefail
 
 ZOOKEEPER_SHELL="/usr/bin/zookeeper-shell"
-$ZOOKEEPER_SHELL $ZOOKEEPER_SERVERS delete ${zookeeper.root}/upgraded
+$ZOOKEEPER_SHELL $ZOOKEEPER_SERVERS delete ${zookeeper.root}/upgraded || echo "delete ${zookeeper.root}/upgraded"
 
 export PATH="/flyway-5.2.1":$PATH
 

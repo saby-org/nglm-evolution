@@ -104,20 +104,6 @@ public class EvolutionSetup
     System.out.println("JAR Converters 1 " + location);
     
     try {
-      
-//      Option<String> zkClientInstanceName = Option.apply("zkInstance"); 
-//      Option<ZKClientConfig> zkClientConfig = Option.apply(new ZKClientConfig());
-//      KafkaZkClient zkClient = KafkaZkClient.apply(System.getProperty("zookeeper.connect"), false, 10000, 100000, 30, Time.SYSTEM, "foo", "bar", zkClientInstanceName, zkClientConfig);
-//      AdminZkClient adminZkClient = new AdminZkClient(zkClient);
-//
-//      //
-//      // handle properties from Zookeeper: cleanup.policy segment.bytes
-//      // min.compaction.lag.ms delete.retention.ms retention.ms
-//      //
-//
-//      Map<String, Properties> kafkaZKTopics = scala.collection.JavaConverters.mapAsJavaMapConverter(adminZkClient.getAllTopicConfigs()).asJava();
-
-      
       //
       // extracts files from args
       //
@@ -695,8 +681,6 @@ public class EvolutionSetup
     // kafka topics setup
     //
 
-    System.out.println("zookeeper.connect" + System.getProperty("zookeeper.connect"));
-    
     Option<String> zkClientInstanceName = Option.apply("zkInstance"); 
     Option<ZKClientConfig> zkClientConfig = Option.apply(new ZKClientConfig());
     KafkaZkClient zkClient = KafkaZkClient.apply(System.getProperty("zookeeper.connect"), false, 10000, 100000, 30, Time.SYSTEM, "foo", "bar", zkClientInstanceName, zkClientConfig);
@@ -707,10 +691,6 @@ public class EvolutionSetup
     // min.compaction.lag.ms delete.retention.ms retention.ms
     //
 
-    Class klass = scala.collection.JavaConverters.class;
-    URL location = klass.getResource('/' + klass.getName().replace('.', '/') + ".class");
-    System.out.println("JAR Converters " + location);
-    
     Map<String, Properties> kafkaZKTopics = scala.collection.JavaConverters.mapAsJavaMapConverter(adminZkClient.getAllTopicConfigs()).asJava();
     for (Map.Entry<String, Properties> kafkaZKTopic : kafkaZKTopics.entrySet())
       {
