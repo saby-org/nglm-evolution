@@ -1556,6 +1556,110 @@ public class GUIManagerLoyaltyReporting extends GUIManager
  
  /*****************************************
  *
+ * processSetStatusBadge
+ *
+ *****************************************/
+
+protected JSONObject processSetStatusBadge(String userID, JSONObject jsonRoot, int tenantID)
+{
+  /****************************************
+   *
+   * response
+   *
+   ****************************************/
+  
+  Date now = SystemTime.getCurrentTime();
+  HashMap<String, Object> response = new HashMap<String, Object>();
+  JSONArray badgeIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+  List<String> statusSetIDs = new ArrayList<>();
+  Boolean status = JSONUtilities.decodeBoolean(jsonRoot, "active");
+  long epoch = epochServer.getKey();
+
+  for (int i = 0; i < badgeIDs.size(); i++)
+    {
+      String badgeID = badgeIDs.get(i).toString();
+      GUIManagedObject existingElement = badgeService.getStoredBadge(badgeID);
+      if (existingElement != null && !(existingElement.getReadOnly()))
+        {
+          statusSetIDs.add(badgeID);
+          JSONObject elementRoot = (JSONObject) existingElement.getJSONRepresentation().clone();
+          elementRoot.put("active", status);
+          try
+            {
+              /****************************************
+               *
+               * instantiate badge
+               *
+               ****************************************/
+
+              Badge badge = new Badge(jsonRoot, epoch, existingElement, catalogCharacteristicService, tenantID);
+
+              /*****************************************
+               *
+               * store
+               *
+               *****************************************/
+              
+              badgeService.putBadge(badge, (existingElement == null), userID);
+
+              /*****************************************
+               *
+               * revalidate
+               *
+               *****************************************/
+
+              revalidateSubscriberMessageTemplates(now, tenantID);
+              revalidateOffers(now, tenantID);
+              revalidateTargets(now, tenantID);
+              revalidateJourneys(now, tenantID);
+
+            }
+          catch (JSONUtilitiesException | GUIManagerException e)
+            {
+              //
+              // incompleteObject
+              //
+
+              IncompleteObject incompleteObject = new IncompleteObject(elementRoot, epoch, tenantID);
+
+              //
+              // store
+              //
+
+              badgeService.putBadge(incompleteObject, (existingElement == null), userID);
+
+              /*****************************************
+               *
+               * revalidate
+               *
+               *****************************************/
+
+              revalidateSubscriberMessageTemplates(now, tenantID);
+              revalidateOffers(now, tenantID);
+              revalidateTargets(now, tenantID);
+              revalidateJourneys(now, tenantID);
+
+              //
+              // log
+              //
+
+              StringWriter stackTraceWriter = new StringWriter();
+              e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+              if (log.isWarnEnabled())
+                {
+                  log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+                }
+
+            }
+        }
+    }
+  response.put("responseCode", "ok");
+  response.put("statusSetIds", statusSetIDs);
+  return JSONUtilities.encodeObject(response);
+}
+ 
+ /*****************************************
+ *
  *  processPutBadge
  *
  *****************************************/
@@ -1646,6 +1750,17 @@ public class GUIManagerLoyaltyReporting extends GUIManager
        if (!dryRun)
          {
            badgeService.putBadge(badge, (existingBadge == null), userID);
+
+           /*****************************************
+            *
+            * revalidate
+            *
+            *****************************************/
+
+           revalidateSubscriberMessageTemplates(now, tenantID);
+           revalidateOffers(now, tenantID);
+           revalidateTargets(now, tenantID);
+           revalidateJourneys(now, tenantID);
          }
 
        /*****************************************
@@ -1675,6 +1790,17 @@ public class GUIManagerLoyaltyReporting extends GUIManager
        if (!dryRun)
          {
            badgeService.putBadge(incompleteObject, (existingBadge == null), userID);
+
+           /*****************************************
+            *
+            * revalidate
+            *
+            *****************************************/
+
+           revalidateSubscriberMessageTemplates(now, tenantID);
+           revalidateOffers(now, tenantID);
+           revalidateTargets(now, tenantID);
+           revalidateJourneys(now, tenantID);
          }
 
        //

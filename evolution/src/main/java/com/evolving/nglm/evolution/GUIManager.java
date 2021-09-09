@@ -557,6 +557,7 @@ public class GUIManager
     getBadgeSummaryList("getBadgeSummaryList"),
     getBadgeList("getBadgeList"),
     removeBadge("removeBadge"),
+    setStatusBadge("setStatusBadge"),
     loyaltyAwardBadge("loyaltyAwardBadge"),
     loyaltyRemoveBadge("loyaltyRemoveBadge"),
     getResellerList("getResellerList"),
@@ -2332,6 +2333,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getBadgeSummaryList", new APISimpleHandler(API.getBadgeSummaryList));
         restServer.createContext("/nglm-guimanager/getBadgeList", new APISimpleHandler(API.getBadgeList));
         restServer.createContext("/nglm-guimanager/removeBadge", new APISimpleHandler(API.removeBadge));
+        restServer.createContext("/nglm-guimanager/setStatusBadge", new APISimpleHandler(API.setStatusBadge));
         restServer.createContext("/nglm-guimanager/loyaltyAwardBadge", new APISimpleHandler(API.loyaltyAwardBadge));
         restServer.createContext("/nglm-guimanager/loyaltyRemoveBadge", new APISimpleHandler(API.loyaltyRemoveBadge));
         restServer.createContext("/nglm-guimanager/getResellerList", new APISimpleHandler(API.getResellerList));
@@ -4107,6 +4109,10 @@ public class GUIManager
                   
                 case removeBadge:
                   jsonResponse = guiManagerLoyaltyReporting.processRemoveBadge(userID, jsonRoot, tenantID);
+                  break;
+                  
+                case setStatusBadge:
+                  jsonResponse = guiManagerLoyaltyReporting.processSetStatusBadge(userID, jsonRoot, tenantID);
                   break;
                   
                 case loyaltyAwardBadge:
