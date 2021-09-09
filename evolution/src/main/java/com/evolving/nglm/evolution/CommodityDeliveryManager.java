@@ -736,8 +736,30 @@ public class CommodityDeliveryManager
     @Override public Map<String, String> getGUIDependencies(List<GUIService> guiServiceList, JourneyNode journeyNode, int tenantID)
     {
       Map<String, String> result = new HashMap<String, String>();
-      String pointID = (String) journeyNode.getNodeParameters().get("node.parameter.commodityid");
-      if (pointID != null) result.put("point", pointID.startsWith(POINT_PREFIX)?pointID.replace(POINT_PREFIX, ""):"");
+      String commodityidID = (String) journeyNode.getNodeParameters().get("node.parameter.commodityid");
+      if (commodityidID != null)
+        {
+          if (commodityidID.startsWith(POINT_PREFIX))
+            {
+              result.put("point", commodityidID.replace(POINT_PREFIX, ""));
+            }
+          else
+            {
+              DeliverableService deliverableService = (DeliverableService) guiServiceList.stream().filter(srvc -> srvc.getClass() == DeliverableService.class).findFirst().orElse(null);
+              if (deliverableService != null)
+                {
+                  GUIManagedObject uncheckedDeliverable = deliverableService.getStoredDeliverable(commodityidID);
+                  if (uncheckedDeliverable != null && uncheckedDeliverable.getAccepted())
+                    {
+                      result.put("deliverable", commodityidID);
+                    }
+                }
+              else
+                {
+                  throw new ServerRuntimeException("deliverableService not found in guiServiceList");
+                }
+            }
+        }
       return result;
     }
 

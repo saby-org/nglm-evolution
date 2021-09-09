@@ -75,7 +75,7 @@ public class VoucherShared extends Voucher implements StockableItem {
 
   public VoucherShared(JSONObject jsonRoot, long epoch, GUIManagedObject existingVoucherUnchecked, int tenantID) throws GUIManagerException {
 
-    super(jsonRoot, epoch, existingVoucherUnchecked, tenantID);
+    super(jsonRoot, GUIManagedObjectType.Vouchershared, epoch, existingVoucherUnchecked, tenantID);
 
     // not allow this type change
     if(existingVoucherUnchecked instanceof VoucherPersonal) throw new GUIManagerException("can not modify Personal to Shared Voucher type",existingVoucherUnchecked.getGUIManagedObjectDisplay());
@@ -128,6 +128,11 @@ public class VoucherShared extends Voucher implements StockableItem {
     result.put("supplier", supplierIDs);
     result.put("vouchertype", vouchertypeIDs);
     return result;
+  }
+  
+  @Override public GUIManagedObjectType getGUIManagedObjectType()
+  {
+    return GUIManagedObjectType.Vouchershared;
   }
 
 }

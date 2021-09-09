@@ -68,7 +68,7 @@ import com.evolving.nglm.evolution.StockMonitor.StockableItem;
 import com.evolving.nglm.evolution.notification.NotificationTemplateParameters;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
-@GUIDependencyDef(objectType = "journey", serviceClass = JourneyService.class, dependencies = { "offer", "journey", "campaign", "journeyobjective" , "target" , "workflow" , "mailtemplate" , "pushtemplate" , "dialogtemplate", "voucher", "loyaltyProgramPoints", "loyaltyprogramchallenge", "loyaltyprogrammission", "sourceaddress", "presentationstrategy"})
+@GUIDependencyDef(objectType = "journey", serviceClass = JourneyService.class, dependencies = { "deliverable", "offer", "journey", "campaign", "journeyobjective" , "target" , "workflow" , "mailtemplate" , "pushtemplate" , "dialogtemplate", "voucher", "loyaltyProgramPoints", "loyaltyprogramchallenge", "loyaltyprogrammission", "sourceaddress", "presentationstrategy"})
 public class Journey extends GUIManagedObject implements StockableItem, GUIManagedObject.ElasticSearchMapping
 {
   /*****************************************
@@ -4011,6 +4011,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     List<String> tokentypeIDs = new ArrayList<String>();
     List<String> presentationstrategiesIDs = new ArrayList<String>();
     List<String> offerIDs = new ArrayList<String>();
+    List<String> deliverableIDs = new ArrayList<String>();
     
     switch (getGUIManagedObjectType())
       {
@@ -4038,6 +4039,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
                   String loyaltyprogrammissionID = journeyNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, journeyNode, tenantID).get("loyaltyprogrammission");
                   String sourceaddressID = journeyNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, journeyNode, tenantID).get("sourceaddress");
                   String presentationstrategyID = journeyNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, journeyNode, tenantID).get("presentationstrategy");
+                  String deliverableID = journeyNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, journeyNode, tenantID).get("deliverable");
 
                   if (campaignID != null) campaignIDs.add(campaignID);
                   if (workflowID != null) wrkflowIDs.add(workflowID);
@@ -4050,6 +4052,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
                   if (loyaltyprogrammissionID != null) loyaltyprogrammissionIDs.add(loyaltyprogrammissionID);
                   if (sourceaddressID != null) sourceaddressIDs.add(sourceaddressID);
                   if (presentationstrategyID != null) presentationstrategiesIDs.add(presentationstrategyID);
+                  if (deliverableID != null) deliverableIDs.add(deliverableID);
                 }
               if (journeyNode.getNodeName().equals("Profile Selection") || journeyNode.getNodeName().equals("Event Multi-Selection") || journeyNode.getNodeName().equals("Event Selection"))
                 {
@@ -4126,6 +4129,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
           result.put("loyaltyprogrammission", loyaltyprogrammissionIDs);
           result.put("sourceaddress", sourceaddressIDs);
           result.put("presentationstrategy", presentationstrategiesIDs);
+          result.put("deliverable", deliverableIDs);
           break;
           
         case Campaign:
@@ -4154,6 +4158,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
                   String sourceaddressID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("sourceaddress");
                   String tokentypeID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("tokentype");
                   String presentationstrategyID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("presentationstrategy");
+                  String deliverableID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("deliverable");
                   
                   if (offerID != null)  offerIDs.add(offerID);
                   if (pointID != null) pointIDs.add(pointID);
@@ -4169,6 +4174,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
                   if (sourceaddressID != null) sourceaddressIDs.add(sourceaddressID);
                   if (tokentypeID != null) tokentypeIDs.add(tokentypeID);
                   if (presentationstrategyID != null) presentationstrategiesIDs.add(presentationstrategyID);
+                  if (deliverableID != null) deliverableIDs.add(deliverableID);
                 }
               
               if (offerNode.getNodeName().equals("Profile Selection") || offerNode.getNodeName().equals("Event Multi-Selection") || offerNode.getNodeName().equals("Event Selection"))
@@ -4254,6 +4260,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
           result.put("sourceaddress", sourceaddressIDs);
           result.put("tokentype", tokentypeIDs);
           result.put("presentationstrategy", presentationstrategiesIDs);
+          result.put("deliverable", deliverableIDs);
           break;
 
         case BulkCampaign:
@@ -4313,6 +4320,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
                     String sourceaddressID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("sourceaddress");
                     String tokentypeID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("tokentype");
                     String presentationstrategyID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("presentationstrategy");
+                    String deliverableID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("deliverable");
                     
                     if (loyaltyProgramPointsID != null) loyaltyProgramPointsIDs.add(loyaltyProgramPointsID);
                     if (loyaltyprogramchallengeID != null) loyaltyprogramchallengeIDs.add(loyaltyprogramchallengeID);
@@ -4322,6 +4330,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
                     if (sourceaddressID != null) sourceaddressIDs.add(sourceaddressID);
                     if (tokentypeID != null) tokentypeIDs.add(tokentypeID);
                     if (presentationstrategyID != null) presentationstrategiesIDs.add(presentationstrategyID);
+                    if (deliverableID != null) deliverableIDs.add(deliverableID);
                   }
                
                 if (offerNode.getNodeName().equals("Profile Selection") || offerNode.getNodeName().equals("Event Multi-Selection") || offerNode.getNodeName().equals("Event Selection"))
@@ -4394,6 +4403,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
             result.put("sourceaddress", sourceaddressIDs);
             result.put("tokentype", tokentypeIDs);
             result.put("presentationstrategy", presentationstrategiesIDs);
+            result.put("deliverable", deliverableIDs);
             break;
         default:
           break;
@@ -4535,7 +4545,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
             if (loyaltyProgramService != null)
               {
                 GUIManagedObject uncheckedLoyalty = loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID);
-                if (uncheckedLoyalty.getAccepted() && ((LoyaltyProgram) uncheckedLoyalty).getLoyaltyProgramType() == LoyaltyProgramType.POINTS) result = uncheckedLoyalty.getGUIManagedObjectID();
+                if (uncheckedLoyalty !=  null && uncheckedLoyalty.getAccepted() && ((LoyaltyProgram) uncheckedLoyalty).getLoyaltyProgramType() == LoyaltyProgramType.POINTS) result = uncheckedLoyalty.getGUIManagedObjectID();
               }
           }
         break;
@@ -4550,7 +4560,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
             if (loyaltyProgramService != null)
               {
                 GUIManagedObject uncheckedLoyalty = loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID);
-                if (uncheckedLoyalty.getAccepted() && ((LoyaltyProgram) uncheckedLoyalty).getLoyaltyProgramType() == LoyaltyProgramType.CHALLENGE) result = uncheckedLoyalty.getGUIManagedObjectID();
+                if (uncheckedLoyalty !=  null && uncheckedLoyalty.getAccepted() && ((LoyaltyProgram) uncheckedLoyalty).getLoyaltyProgramType() == LoyaltyProgramType.CHALLENGE) result = uncheckedLoyalty.getGUIManagedObjectID();
               }
           }
         break;
@@ -4565,7 +4575,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
             if (loyaltyProgramService != null)
               {
                 GUIManagedObject uncheckedLoyalty = loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID);
-                if (uncheckedLoyalty.getAccepted() && ((LoyaltyProgram) uncheckedLoyalty).getLoyaltyProgramType() == LoyaltyProgramType.MISSION) result = uncheckedLoyalty.getGUIManagedObjectID();
+                if (uncheckedLoyalty !=  null && uncheckedLoyalty.getAccepted() && ((LoyaltyProgram) uncheckedLoyalty).getLoyaltyProgramType() == LoyaltyProgramType.MISSION) result = uncheckedLoyalty.getGUIManagedObjectID();
               }
           }
         break;

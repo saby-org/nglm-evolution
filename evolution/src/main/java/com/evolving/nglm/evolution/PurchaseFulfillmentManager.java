@@ -3326,7 +3326,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
                   else
                     {
                       GUIManagedObject salesChannel = salesChannelService.getStoredSalesChannels(tenantID).stream().filter(guiObj -> salesChannelDisplay.equals(guiObj.getGUIManagedObjectDisplay())).findFirst().orElse(null);
-                      if (salesChannel != null)result.put("saleschannel", salesChannel.getGUIManagedObjectID());
+                      if (salesChannel != null && salesChannel.getAccepted()) result.put("saleschannel", salesChannel.getGUIManagedObjectID());
                     }
                 }
             }

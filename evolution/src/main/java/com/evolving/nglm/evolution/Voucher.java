@@ -16,6 +16,7 @@ import org.json.simple.JSONObject;
 
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 public abstract class Voucher extends GUIManagedObject {
@@ -81,9 +82,9 @@ public abstract class Voucher extends GUIManagedObject {
     this.workflowID = (schema.field("workflowID") != null) ? valueStruct.getString("workflowID") : null;
   }
 
-  public Voucher(JSONObject jsonRoot, long epoch, GUIManagedObject existingVoucherUnchecked, int tenantID) throws GUIManagerException {
+  public Voucher(JSONObject jsonRoot, GUIManagedObjectType objectType, long epoch, GUIManagedObject existingVoucherUnchecked, int tenantID) throws GUIManagerException {
 
-    super(jsonRoot, (existingVoucherUnchecked != null) ? existingVoucherUnchecked.getEpoch() : epoch, tenantID);
+    super(jsonRoot, objectType, (existingVoucherUnchecked != null) ? existingVoucherUnchecked.getEpoch() : epoch, tenantID);
 
     Voucher existingVoucher = (existingVoucherUnchecked != null && existingVoucherUnchecked instanceof Voucher) ? (Voucher) existingVoucherUnchecked : null;
 

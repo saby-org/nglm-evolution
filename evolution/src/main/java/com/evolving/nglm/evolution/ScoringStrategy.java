@@ -36,7 +36,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-@GUIDependencyDef(objectType = "scoringStrategy", serviceClass = ScoringStrategyService.class, dependencies = { "segmentationdimension", "offerobjective"})
+@GUIDependencyDef(objectType = "scoringStrategy", serviceClass = ScoringStrategyService.class, dependencies = { "segmentationdimension", "offerobjective", "dnbomatrix"})
 public class ScoringStrategy extends GUIManagedObject
 {
   /*****************************************
@@ -371,14 +371,18 @@ public class ScoringStrategy extends GUIManagedObject
     Map<String, List<String>> result = new HashMap<String, List<String>>();
     List<String> segmentationDimensionIDs = new ArrayList<>();
     List<String> allOfferObjectivesID = new ArrayList<>();
+    List<String> dnbomatrixIDs = new ArrayList<>();
+
     segmentationDimensionIDs.add(getDimensionID());
-    for (ScoringSegment scoringSegments : scoringSegments)
-    {     
-      allOfferObjectivesID.addAll(scoringSegments.getOfferObjectiveIDs());
-    }
-      result.put("segmentationdimension", segmentationDimensionIDs);
-      result.put("offerobjective", allOfferObjectivesID);
-    
+    for (ScoringSegment scoringSegment : scoringSegments)
+      {
+        allOfferObjectivesID.addAll(scoringSegment.getOfferObjectiveIDs());
+        dnbomatrixIDs.add(scoringSegment.getOfferOptimizationAlgorithm().getID());
+      }
+    result.put("segmentationdimension", segmentationDimensionIDs);
+    result.put("offerobjective", allOfferObjectivesID);
+    result.put("dnbomatrix", dnbomatrixIDs);
+
     return result;
   }
 }
