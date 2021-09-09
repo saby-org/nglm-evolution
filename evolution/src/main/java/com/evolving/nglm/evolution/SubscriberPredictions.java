@@ -141,7 +141,7 @@ public class SubscriberPredictions
       schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
       schemaBuilder.field("subscriberID",  Schema.STRING_SCHEMA);
       schemaBuilder.field("eventDate",     Schema.INT64_SCHEMA);
-      schemaBuilder.field("predictions",   SchemaBuilder.array(Prediction.schema));
+      schemaBuilder.field("predictions",   SchemaBuilder.array(Prediction.schema)); // TODO retirer array - pas plus d'une prediction par push ?
       return schemaBuilder.build();
     };  
     

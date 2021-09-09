@@ -26888,6 +26888,24 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
             }
           }
           break;
+          
+
+        case "predictionorders":
+          if (includeDynamic)
+          {
+            for (GUIManagedObject predictionOrderUnchecked : predictionOrderService.getStoredPredictionOrders(tenantID) )
+            {
+              if (predictionOrderUnchecked.getAccepted())
+              {
+                PredictionOrder predictionOrder = (PredictionOrder) predictionOrderUnchecked;
+                HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                availableValue.put("id", predictionOrder.getGUIManagedObjectID());
+                availableValue.put("display", predictionOrder.getGUIManagedObjectDisplay());
+                result.add(JSONUtilities.encodeObject(availableValue));
+              }
+            }
+          }
+          break;
 
 
         case "providerIds":

@@ -16,6 +16,7 @@ import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
 import com.evolving.nglm.evolution.LoyaltyProgramMission.MissionStep;
 import com.evolving.nglm.evolution.LoyaltyProgramMissionHistory.StepHistory;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
+import com.evolving.nglm.evolution.SubscriberPredictions.Prediction;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectException;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectInstance;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectUtils;
@@ -279,6 +280,50 @@ public abstract class CriterionFieldRetriever
     return new Pair<Date, Date>(startDate, endDate);
   }
 
+  /**
+   * getPredictionCurrentScore
+   * 
+   * @param evaluationRequest
+   * @param fieldName           UNUSED - filled with null in deployment-product-evolution settings (see: evolutionProfileCriterionFields).
+   * @param subcriteriaVal      Here we are expecting a singleton list with predictionID value (String)
+   * @return
+   */
+  public static Object getPredictionCurrentScore(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
+  {
+    SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+    String predictionID = (String) subcriteriaVal.get(0);
+    
+    Prediction prediction = subscriberProfile.getPredictions().getCurrent().get(predictionID);
+    if(prediction != null) {
+      return prediction.score;
+    }
+    else {
+      return null;
+    }
+  }
+
+  /**
+   * getPredictionPreviousScore
+   * 
+   * @param evaluationRequest
+   * @param fieldName           UNUSED - filled with null in deployment-product-evolution settings (see: evolutionProfileCriterionFields).
+   * @param subcriteriaVal      Here we are expecting a singleton list with predictionID value (String)
+   * @return
+   */
+  public static Object getPredictionPreviousScore(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
+  {
+    SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+    String predictionID = (String) subcriteriaVal.get(0);
+    
+    Prediction prediction = subscriberProfile.getPredictions().getCurrent().get(predictionID);
+    if(prediction != null) {
+      return prediction.score;
+    }
+    else {
+      return null;
+    }
+  }
+  
   /*****************************************
   *
   *  simple
