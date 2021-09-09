@@ -59,7 +59,8 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
     headerFieldsOrder.add(customerID);
     for (AlternateID alternateID : Deployment.getAlternateIDs().values())
     {
-      headerFieldsOrder.add(alternateID.getName());
+      if(alternateID.getName().equals("msisdn")) {
+      headerFieldsOrder.add(alternateID.getName());}
     }
     headerFieldsOrder.add(dateTime);
     headerFieldsOrder.add(programName);
@@ -74,6 +75,7 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
   }
   
   private LoyaltyProgramService loyaltyProgramService;
+  private int tenantID = 0;
 
   @Override
   public boolean dumpElementToCsvMono(Map<String, Object> map, ZipOutputStream writer, boolean addHeaders) throws IOException
@@ -289,11 +291,12 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
     String esNode            = args[0];
     String esIndexSubscriber = args[1];
     String csvfile           = args[2];
+    if (args.length > 5) tenantID = Integer.parseInt(args[5]);
 
     log.info("Reading data from ES in "+esIndexSubscriber+" index and writing to "+csvfile);
     
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
-    esIndexWithQuery.put(esIndexSubscriber, QueryBuilders.matchAllQuery());
+    esIndexWithQuery.put(esIndexSubscriber, QueryBuilders.boolQuery().filter(QueryBuilders.termQuery("tenantID", tenantID)));
     
     List<String> subscriberFields = new ArrayList<>();
     subscriberFields.add("subscriberID");

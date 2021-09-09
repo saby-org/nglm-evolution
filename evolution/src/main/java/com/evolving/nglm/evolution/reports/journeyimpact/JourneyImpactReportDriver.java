@@ -26,6 +26,7 @@ import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIManagedObject;
 import com.evolving.nglm.evolution.Journey;
+import com.evolving.nglm.evolution.JourneyMetricDeclaration;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.Report;
@@ -65,6 +66,12 @@ public class JourneyImpactReportDriver extends ReportDriver
     headerFieldsOrder.add(startDate);
     headerFieldsOrder.add(endDate);
     headerFieldsOrder.add(rewards);
+    for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricConfiguration().getMetrics().values())
+    {
+      headerFieldsOrder.add(journeyMetricDeclaration.getESFieldPrior());
+      headerFieldsOrder.add(journeyMetricDeclaration.getESFieldDuring());
+      headerFieldsOrder.add(journeyMetricDeclaration.getESFieldPost());
+    }
   }
   
   /****************************************

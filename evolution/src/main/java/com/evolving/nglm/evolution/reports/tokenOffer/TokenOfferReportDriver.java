@@ -42,7 +42,7 @@ public class TokenOfferReportDriver extends ReportDriver{
       int defaultReportPeriodQuantity = report.getDefaultReportPeriodQuantity();
 
       TokenOfferReportMonoPhase.main(new String[]{
-          elasticSearch, esIndexSubscriber, csvFilename
+          elasticSearch, esIndexSubscriber, csvFilename, tenantID+""
       }, reportGenerationDate);     
   
 	  log.debug("Finished with Token Report");

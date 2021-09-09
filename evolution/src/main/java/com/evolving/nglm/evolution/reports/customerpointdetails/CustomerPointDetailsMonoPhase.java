@@ -49,7 +49,8 @@ public class CustomerPointDetailsMonoPhase implements ReportCsvFactory
     headerFieldsOrder.add(customerID);
     for (AlternateID alternateID : Deployment.getAlternateIDs().values())
     {
-      headerFieldsOrder.add(alternateID.getName());
+      if(alternateID.getName().equals("msisdn")) {
+      headerFieldsOrder.add(alternateID.getName());}
     }
     headerFieldsOrder.add(dateTime);
     headerFieldsOrder.add(pointName);
@@ -58,6 +59,7 @@ public class CustomerPointDetailsMonoPhase implements ReportCsvFactory
   }
   
   private PointService pointService;
+  private int tenantID = 0;
 
   @Override
   public boolean dumpElementToCsvMono(Map<String,Object> map, ZipOutputStream writer, boolean addHeaders) throws IOException
@@ -195,6 +197,8 @@ public class CustomerPointDetailsMonoPhase implements ReportCsvFactory
     String esNode             = args[0];
     String esIndexSubscriber  = args[1];
     String csvfile            = args[2];
+    if (args.length > 5) tenantID = Integer.parseInt(args[5]);
+
     // Other arguments are ignored in original report
 
     log.info("Reading data from "+esIndexSubscriber + " producing "+csvfile+" with '"+CSV_SEPARATOR+"' separator");

@@ -149,6 +149,7 @@ public class DNBOProxy
 
   private HttpServer restServer;
   private OfferService offerService;
+  private SupplierService supplierService;
   private ProductService productService;
   private ProductTypeService productTypeService;
   private VoucherService voucherService;
@@ -195,7 +196,7 @@ public class DNBOProxy
   //  authCache
   //
 
-  TimebasedCache<ThirdPartyCredential, AuthenticatedResponse> authCache = null;
+  TimebasedCache<ThirdPartyCredential, AuthenticatedResponse> authCache;
 
 
   /*****************************************
@@ -238,6 +239,7 @@ public class DNBOProxy
     
     methodPermissionsMapper = Deployment.getThirdPartyMethodPermissionsMap();
     authResponseCacheLifetimeInMinutes = Deployment.getAuthResponseCacheLifetimeInMinutes() == null ? new Integer(0) : Deployment.getAuthResponseCacheLifetimeInMinutes();
+    authCache = TimebasedCache.getInstance(60000*authResponseCacheLifetimeInMinutes);
 
 
     /*****************************************
@@ -251,6 +253,7 @@ public class DNBOProxy
     CriterionContext.initialize(dynamicCriterionFieldService);  
 
     offerService = new OfferService(Deployment.getBrokerServers(), "dnboproxy-offerservice-" + apiProcessKey, Deployment.getOfferTopic(), false);
+    supplierService = new SupplierService(Deployment.getBrokerServers(), "dnboproxy-supplierservice-" + apiProcessKey, Deployment.getSupplierTopic(), false);
     productService = new ProductService(Deployment.getBrokerServers(), "dnboproxy-productservice-" + apiProcessKey, Deployment.getProductTopic(), false);
     productTypeService = new ProductTypeService(Deployment.getBrokerServers(), "dnboproxy-producttypeservice-" + apiProcessKey, Deployment.getProductTypeTopic(), false);
     voucherService = new VoucherService(Deployment.getBrokerServers(), "dnboproxy-voucherservice-" + apiProcessKey, Deployment.getVoucherTopic());
@@ -271,6 +274,7 @@ public class DNBOProxy
     *****************************************/
 
     offerService.start();
+    supplierService.start();
     productService.start();
     productTypeService.start();
     voucherService.start();
@@ -348,7 +352,7 @@ public class DNBOProxy
     *
     *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(this, restServer, offerService, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, scoringStrategyService, salesChannelService, subscriberProfileService, segmentationDimensionService, dnboMatrixService, subscriberIDService, kafkaProducer, kafkaConsumer, subscriberManagerTopicReaderThread));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(this, restServer, offerService, supplierService, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, scoringStrategyService, salesChannelService, subscriberProfileService, segmentationDimensionService, dnboMatrixService, subscriberIDService, kafkaProducer, kafkaConsumer, subscriberManagerTopicReaderThread));
 
     /*****************************************
     *
@@ -374,6 +378,7 @@ public class DNBOProxy
     private DNBOProxy dnboProxy;
     private HttpServer restServer;
     private OfferService offerService;
+    private SupplierService supplierService;
     private ProductService productService;   
     private ProductTypeService productTypeService;
     private VoucherService voucherService;
@@ -393,11 +398,12 @@ public class DNBOProxy
     //  constructor
     //
 
-    private ShutdownHook(DNBOProxy dnboProxy, HttpServer restServer, OfferService offerService, ProductService productService, ProductTypeService productTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService, CatalogCharacteristicService catalogCharacteristicService, ScoringStrategyService scoringStrategyService, SalesChannelService salesChannelService, SubscriberProfileService subscriberProfileService, SegmentationDimensionService segmentationDimensionService, DNBOMatrixService dnboMatrixService, SubscriberIDService subscriberIDService, KafkaProducer<byte[], byte[]> kafkaProducer, KafkaConsumer<byte[], byte[]> kafkaConsumer, Thread subscriberManagerTopicReaderThread)
+    private ShutdownHook(DNBOProxy dnboProxy, HttpServer restServer, OfferService offerService, SupplierService supplierService, ProductService productService, ProductTypeService productTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService, CatalogCharacteristicService catalogCharacteristicService, ScoringStrategyService scoringStrategyService, SalesChannelService salesChannelService, SubscriberProfileService subscriberProfileService, SegmentationDimensionService segmentationDimensionService, DNBOMatrixService dnboMatrixService, SubscriberIDService subscriberIDService, KafkaProducer<byte[], byte[]> kafkaProducer, KafkaConsumer<byte[], byte[]> kafkaConsumer, Thread subscriberManagerTopicReaderThread)
     {
       this.dnboProxy = dnboProxy;
       this.restServer = restServer;
       this.offerService = offerService;
+      this.supplierService = supplierService;
       this.productService = productService;
       this.productTypeService = productTypeService;
       this.voucherService = voucherService;
@@ -437,6 +443,7 @@ public class DNBOProxy
       //
 
       if (offerService != null) offerService.stop();
+      if (supplierService != null) supplierService.stop();
       if (productService != null) productService.stop();
       if (productTypeService != null) productTypeService.stop();
       if (voucherService != null) voucherService.stop();
@@ -539,17 +546,6 @@ public class DNBOProxy
            }
        }
    }
-
-
-
-   //
-   //  hasAccess
-   //
-
-   if (! hasAccess(authResponse, methodAccessLevel, api))
-     {
-       throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.INSUFFICIENT_USER_RIGHTS);
-     }
    
    return authResponse.getTenantID();
 
@@ -643,40 +639,6 @@ public class DNBOProxy
      log.error("IOException: {}", e.getMessage());
      throw e;
    }
- }
-
- /*****************************************
-  *
-  *  hasAccess
-  *
-  *****************************************/
-
- private boolean hasAccess(AuthenticatedResponse authResponse, ThirdPartyMethodAccessLevel methodAccessLevel, String api)
- {
-
-   //
-   // check method access
-   //
-
-   if (methodAccessLevel == null || (methodAccessLevel.getPermissions().isEmpty()))
-     {
-       log.warn("No permission/workgroup is configured for method {} ", api);
-       return false;
-     }
-
-   //
-   // check permissions
-   //
-   for (String userPermission : authResponse.getPermissions())
-     {
-       if (methodAccessLevel.getPermissions().contains(userPermission))
-         {
-           return true;
-         }
-
-     }
-   return false;
-
  }
 
 
@@ -899,7 +861,7 @@ public class DNBOProxy
               jsonResponse = processGetSubscriberOffers(userID, jsonRoot,
                   productService, productTypeService, voucherService, voucherTypeService,
                   catalogCharacteristicService, subscriberGroupEpochReader,
-                  segmentationDimensionService, offerService, tenantID);
+                  segmentationDimensionService, offerService, supplierService, tenantID);
               break;
               
             case provisionSubscriber:
@@ -983,7 +945,7 @@ public class DNBOProxy
       ProductService productService, ProductTypeService productTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService,
       CatalogCharacteristicService catalogCharacteristicService,
       ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader,
-      SegmentationDimensionService segmentationDimensionService, OfferService offerService, int tenantID) throws DNBOProxyException, SubscriberProfileServiceException
+      SegmentationDimensionService segmentationDimensionService, OfferService offerService, SupplierService supplierService, int tenantID) throws DNBOProxyException, SubscriberProfileServiceException
   {
     /*****************************************
     *
@@ -1072,7 +1034,7 @@ public class DNBOProxy
           JSONObject valueRes = getOffers(now, subscriberID, scoringStrategyID, salesChannelID, subscriberProfile, scoringStrategy,
               productService, productTypeService, voucherService, voucherTypeService,
               catalogCharacteristicService, subscriberGroupEpochReader,
-              segmentationDimensionService, offerService,rangeValue.doubleValue(), tenantID);
+              segmentationDimensionService, offerService, supplierService, rangeValue.doubleValue(), tenantID);
           resArray.add(valueRes);
           allScoringStrategiesBad = false;
         }
@@ -1148,7 +1110,7 @@ public class DNBOProxy
       VoucherService voucherService, VoucherTypeService voucherTypeService,
       CatalogCharacteristicService catalogCharacteristicService,
       ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader,
-      SegmentationDimensionService segmentationDimensionService, OfferService offerService, double rangeValue, int tenantID)
+      SegmentationDimensionService segmentationDimensionService, OfferService offerService, SupplierService supplierService, double rangeValue, int tenantID)
       throws DNBOProxyException
   {
 
@@ -1175,7 +1137,7 @@ public class DNBOProxy
           now, salesChannelID, subscriberProfile, scoringStrategy,
           productService, productTypeService, voucherService, voucherTypeService,
           catalogCharacteristicService, subscriberGroupEpochReader, segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService,
-          returnedLog, msisdn, null, tenantID);
+          supplierService, returnedLog, msisdn, null, tenantID);
       if (offerAvailabilityFromPropensityAlgo == null)
         {
           log.warn("DNBOProxy.getOffers Exception "+returnedLog);
@@ -1195,7 +1157,7 @@ public class DNBOProxy
       List<JSONObject> scoredOffersJSON = new ArrayList<JSONObject>();
       for (ProposedOfferDetails proposedOffer : offerAvailabilityFromPropensityAlgo)
       {
-        scoredOffersJSON.add(proposedOffer.getJSONRepresentation());
+        scoredOffersJSON.add(proposedOffer.getJSONRepresentation(offerService));
       }
 
       //

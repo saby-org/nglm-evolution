@@ -35,9 +35,35 @@ public class LoyaltyMissionCustomerStatesMonoPhase implements ReportCsvFactory
   private static final Logger log = LoggerFactory.getLogger(LoyaltyMissionCustomerStatesMonoPhase.class);
   
   private static final String CSV_SEPARATOR = ReportUtils.getSeparator();
-  List<String> headerFieldsOrder = new ArrayList<String>();
-  private final static String customerID = "customerID";
   
+  private final static String customerID = "customerID";
+  private final static String dateTime = "dateTime";
+  private final static String programName = "programName";
+  private final static String programEnrolmentDate = "programEnrolmentDate";
+  private final static String programExitDate = "programExitDate";
+  private final static String stepName = "stepName";
+  private final static String stepUpdateDate = "stepUpdateDate";
+  private final static String currentProgression = "currentProgression";
+  private final static String completedSteps = "completedSteps";
+  
+  static List<String> headerFieldsOrder = new ArrayList<String>();
+  static
+  {
+    headerFieldsOrder.add(customerID);
+    for (AlternateID alternateID : Deployment.getAlternateIDs().values())
+    {
+      if(alternateID.getName().equals("msisdn")) {
+      headerFieldsOrder.add(alternateID.getName());}
+    }
+    headerFieldsOrder.add(dateTime);
+    headerFieldsOrder.add(programName);
+    headerFieldsOrder.add(programEnrolmentDate);
+    headerFieldsOrder.add(programExitDate);
+    headerFieldsOrder.add(stepName);
+    headerFieldsOrder.add(stepUpdateDate);
+    headerFieldsOrder.add(currentProgression);
+    headerFieldsOrder.add(completedSteps);
+  }
   /****************************************************************
    * 
    * main

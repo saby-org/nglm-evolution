@@ -102,12 +102,12 @@
   
   "elasticsearchTemplatesVersion" : {
     "root":                             2,
-    "subscriberprofile":                2,
-    "detailedrecords_bonuses":          2,
-    "detailedrecords_tokens":           2,
-    "detailedrecords_offers":           2,
-    "detailedrecords_vouchers":         2,
-    "detailedrecords_messages":         2,
+    "subscriberprofile":                3,
+    "detailedrecords_bonuses":          4,
+    "detailedrecords_tokens":           3,
+    "detailedrecords_offers":           4,
+    "detailedrecords_vouchers":         4,
+    "detailedrecords_messages":         3,
     "detailedrecords_events":           2,
     "journeystatistic":                 2,
     "datacube_subscriberprofile":       2,
@@ -124,8 +124,8 @@
     "mapping_journeys":                 2,
     "mapping_journeyrewards":           2,
     "mapping_deliverables":             2,
-    "mapping_partners":             	2,
-    "mapping_basemanagment":            2,
+    "mapping_partners":                 2,
+    "mapping_basemanagement":           2,
     "mapping_journeyobjective":         2
   },
   "elasticsearchIndexByPassVersion.comment" : "WARNING. DEBUG VARIABLE. DO NOT MODIFY IT IF YOU DO NOT KNOW WHAT YOU ARE DOING.",
@@ -953,7 +953,12 @@
       "id"           : "deleteCustomer",
       "methodName"   : "deleteCustomer",
       "permissions"  : ["API-DELETE-CUSTOMER"]
-    }    
+    },
+    {
+      "id"           : "getCustomerVouchers",
+      "methodName"   : "getCustomerVouchers",
+      "permissions"  : ["API-GET-CUSTOMER-VOUCHERS"]
+    }
   ],
 
   "uploadedFileSeparator" : ";",

@@ -13,6 +13,7 @@ import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.ReferenceDataReader;
 
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.complexobjects.ComplexObjectTypeService;
 import com.evolving.nglm.evolution.datacubes.DatacubeGenerator;
 
 import org.apache.kafka.connect.data.Schema;
@@ -42,9 +43,9 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
 
     protected ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
     private LoyaltyProgramService loyaltyProgramService;
+    private ComplexObjectTypeService complexObjectTypeService;
     private PointService pointService;
     private DynamicCriterionFieldService dynamicCriterionFieldService; // For criterion init purpose only
-    private SegmentationDimensionService segmentationDimensionService;
 
     /*****************************************
     *
@@ -65,12 +66,11 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
       loyaltyProgramService = new LoyaltyProgramService(Deployment.getBrokerServers(), "sinkconnector-loyaltyprogramservice" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getLoyaltyProgramTopic(), false);
       loyaltyProgramService.start();
       
+      complexObjectTypeService = new ComplexObjectTypeService(Deployment.getBrokerServers(), "sinkconnector-complexObjectTypeService" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getComplexObjectTypeTopic(), false);
+      complexObjectTypeService.start();
+      
       pointService = new PointService(Deployment.getBrokerServers(), "sinkconnector-pointservice" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getPointTopic(), false);
       pointService.start();
-      
-      segmentationDimensionService = new SegmentationDimensionService(Deployment.getBrokerServers(), "sinkconnector-segmentationDimensionService" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getSegmentationDimensionTopic(), false);
-      segmentationDimensionService.start();
-      
     }
 
     /*****************************************
@@ -162,7 +162,6 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
       documentMap.put("language", subscriberProfile.getLanguage());
       documentMap.put("segments", subscriberProfile.getSegments(subscriberGroupEpochReader));
       documentMap.put("stratum", subscriberProfile.getSegmentsMap(subscriberGroupEpochReader));
-      documentMap.put("statisticsStratum", subscriberProfile.getStatisticsSegmentsMap(subscriberGroupEpochReader, segmentationDimensionService));
       documentMap.put("targets", subscriberProfile.getTargets(subscriberGroupEpochReader));
       documentMap.put("loyaltyPrograms", subscriberProfile.getLoyaltyProgramsJSON(loyaltyProgramService, pointService));
       documentMap.put("pointFluctuations", subscriberProfile.getPointFluctuationsJSON());
@@ -173,6 +172,9 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
       documentMap.put("lastUpdateDate", RLMDateUtils.formatDateForElasticsearchDefault(now));
       documentMap.put("relationships", subscriberProfile.getSubscriberRelationsJSON());
       documentMap.put("exclusionInclusionList", subscriberProfile.getExclusionInclusionTargets(subscriberGroupEpochReader));
+      documentMap.put("complexFields", subscriberProfile.getComplexFieldsJSON(complexObjectTypeService));
+      documentMap.put("universalControlGroupPrevious",subscriberProfile.getUniversalControlGroupPrevious());
+      documentMap.put("universalControlGroupChangeDate",RLMDateUtils.formatDateForElasticsearchDefault(subscriberProfile.getUniversalControlGroupChangeDate()));
       addToDocumentMap(documentMap, subscriberProfile, now);
       
       //

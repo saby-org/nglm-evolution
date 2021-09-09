@@ -26,7 +26,7 @@ public class VDRReportDriver extends ReportDriver
     String esIndexVDR = "detailedrecords_vouchers-";
     String defaultReportPeriodUnit = report.getDefaultReportPeriodUnit();
     int defaultReportPeriodQuantity = report.getDefaultReportPeriodQuantity();
-    VDRReportMonoPhase.main(new String[] { elasticSearch, esIndexVDR, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit }, reportGenerationDate);
+    VDRReportMonoPhase.main(new String[] { elasticSearch, esIndexVDR, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit, tenantID+"" }, reportGenerationDate);
     log.debug("Finished with VDR Report");
   }
 

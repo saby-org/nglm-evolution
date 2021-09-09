@@ -58,7 +58,8 @@ public class VoucherCustomerReportMonoPhase implements ReportCsvFactory
     headerFieldsOrder.add(customerID);
     for (AlternateID alternateID : Deployment.getAlternateIDs().values())
     {
-      headerFieldsOrder.add(alternateID.getName());
+      if(alternateID.getName().equals("msisdn")) {
+      headerFieldsOrder.add(alternateID.getName());}
     }
     headerFieldsOrder.add(voucherCode);
     headerFieldsOrder.add(supplier);
@@ -71,6 +72,7 @@ public class VoucherCustomerReportMonoPhase implements ReportCsvFactory
   private VoucherService voucherService = null;
   private SupplierService supplierService = null;
   private VoucherTypeService voucherTypeService = null;
+  private int tenantID = 0;
 
 
   /****************************************
@@ -156,7 +158,18 @@ public class VoucherCustomerReportMonoPhase implements ReportCsvFactory
                           }
                         if (voucher.containsKey("voucherDeliveryDate") && voucher.get("voucherDeliveryDate") != null)
                           {
-                            result.put(deliveryDate, dateOrEmptyString(voucher.get("voucherDeliveryDate")));
+                            Object voucherDeliveryDateObj = voucher.get("voucherDeliveryDate");
+                            if (voucherDeliveryDateObj instanceof String)
+                              {
+                                // TEMP fix for BLK : reformat date with correct template.
+                                result.put(deliveryDate, ReportsCommonCode.parseDate((String) voucherDeliveryDateObj));
+                                // END TEMP fix for BLK
+                              }
+                            else
+                              {
+                                log.info("voucherDeliveryDate" + " is of wrong type : " + voucherDeliveryDateObj.getClass().getName());
+                                result.put(deliveryDate, "");
+                              }
                           }
                         else
                           {
@@ -164,7 +177,18 @@ public class VoucherCustomerReportMonoPhase implements ReportCsvFactory
                           }
                         if (voucher.containsKey("voucherExpiryDate") && voucher.get("voucherExpiryDate") != null)
                           {
-                            result.put(expiryDate, dateOrEmptyString(voucher.get("voucherExpiryDate")));
+                            Object voucherExpiryDateObj = voucher.get("voucherExpiryDate");
+                            if (voucherExpiryDateObj instanceof String)
+                              {
+                                // TEMP fix for BLK : reformat date with correct template.
+                                result.put(expiryDate, ReportsCommonCode.parseDate((String) voucherExpiryDateObj));
+                                // END TEMP fix for BLK
+                              }
+                            else
+                              {
+                                log.info("voucherExpiryDate" + " is of wrong type : " + voucherExpiryDateObj.getClass().getName());
+                                result.put(expiryDate, "");
+                              }
                           }
                         else
                           {
@@ -274,12 +298,14 @@ public class VoucherCustomerReportMonoPhase implements ReportCsvFactory
     String esNode          = args[0];
     String esIndexCustomer = args[1];
     String csvfile         = args[2];
+    if (args.length > 3) tenantID = Integer.parseInt(args[3]);
+
     if(log.isInfoEnabled())
     log.info("Reading data from ES in "+esIndexCustomer+"  index and writing to "+csvfile+" file.");  
     ReportCsvFactory reportFactory = new VoucherCustomerReportMonoPhase();
 
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
-    esIndexWithQuery.put(esIndexCustomer, QueryBuilders.matchAllQuery());
+    esIndexWithQuery.put(esIndexCustomer, QueryBuilders.boolQuery().filter(QueryBuilders.termQuery("tenantID", tenantID)));
       
     ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
         esNode,

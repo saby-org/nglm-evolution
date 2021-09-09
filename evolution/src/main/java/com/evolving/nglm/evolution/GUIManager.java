@@ -588,6 +588,7 @@ public class GUIManager
     getComplexObjectType("getComplexObjectType"),
     putComplexObjectType("putComplexObjectType"),
     removeComplexObjectType("removeComplexObjectType"),
+    refreshComplexObjectTypeCriteria("refreshComplexObjectTypeCriteria"),
     
     getOTPTypeList("getOTPTypeList"),
     getOTPTypeSummaryList("getOTPTypeSummaryList"),
@@ -1090,7 +1091,7 @@ public class GUIManager
     subscriberIDService = new SubscriberIDService(redisServer, "guimanager-" + apiProcessKey);
     subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("guimanager-subscribergroupepoch", bootstrapServers, subscriberGroupEpochTopic, SubscriberGroupEpoch::unpack);
     renamedProfileCriterionFieldReader = ReferenceDataReader.<String,RenamedProfileCriterionField>startReader("guimanager-renamedprofilecriterionfield", bootstrapServers, renamedProfileCriterionFieldTopic, RenamedProfileCriterionField::unpack);
-    uploadedFileService = new UploadedFileService(bootstrapServers, "guimanager-uploadfileservice-" + apiProcessKey, uploadedFileTopic, true);
+    uploadedFileService = new UploadedFileService(bootstrapServers, uploadedFileTopic, true);
     targetService = new TargetService(bootstrapServers, "guimanager-targetservice-" + apiProcessKey, targetTopic, true);
     voucherService = new VoucherService(bootstrapServers, "guimanager-voucherservice-" + apiProcessKey, voucherTopic, true,elasticsearch,uploadedFileService);
     communicationChannelBlackoutService = new CommunicationChannelBlackoutService(bootstrapServers, "guimanager-blackoutservice-" + apiProcessKey, communicationChannelBlackoutTopic, true);
@@ -1440,8 +1441,10 @@ public class GUIManager
           JSONArray initialReportsJSONArray = Deployment.getDeployment(tenantID).getInitialReportsJSONArray();
           for (int i=0; i<initialReportsJSONArray.size(); i++)
             {
-              JSONObject reportJSON = (JSONObject) initialReportsJSONArray.get(i);
-              reportJSON.remove("id"); // might have been added by processPutReport for another tenant, but need to use differentIDs for every tenant
+              JSONObject reportJSONorig = (JSONObject) initialReportsJSONArray.get(i);
+              // duplicate object so that it is not modified
+              JSONObject reportJSON = new JSONObject();
+              reportJSON.putAll(reportJSONorig);
               String name = JSONUtilities.decodeString(reportJSON, "display", false);
               boolean create = true;
               if (name != null)
@@ -1460,6 +1463,7 @@ public class GUIManager
               if (create)
               {
                 log.info("processPutReport in tenant " + tenantID + " for " + JSONUtilities.decodeString(reportJSON, "id", false) + " " + JSONUtilities.decodeString(reportJSON, "display", false));
+                reportJSON.put("tenantID", tenantID); // this info is missing in deployment.json
                 guiManagerLoyaltyReporting.processPutReport("0", reportJSON, tenantID);
               }
             }
@@ -1722,6 +1726,7 @@ public class GUIManager
     //
     //  complexObject
     //
+    
     for(Tenant tenant : Deployment.getTenants())
       {
         int tenantID = tenant.getTenantID();
@@ -1733,7 +1738,8 @@ public class GUIManager
                 for (int i=0; i<initialComplexObjectJSONArray.size(); i++)
                   {
                     JSONObject initialComplexObjectJSON = (JSONObject) initialComplexObjectJSONArray.get(i);
-                    guiManagerGeneral.processPutComplexObjectType("0", initialComplexObjectJSON, tenantID);
+                    JSONObject initialComplexObjectJSONCopy = (JSONObject) initialComplexObjectJSON.clone();
+                    guiManagerGeneral.processPutComplexObjectType("0", initialComplexObjectJSONCopy, tenantID);
                   }
               }
             catch (JSONUtilitiesException e)
@@ -2062,6 +2068,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getComplexObjectType", new APISimpleHandler(API.getComplexObjectType));
         restServer.createContext("/nglm-guimanager/putComplexObjectType", new APISimpleHandler(API.putComplexObjectType));
         restServer.createContext("/nglm-guimanager/removeComplexObjectType", new APISimpleHandler(API.removeComplexObjectType));
+        restServer.createContext("/nglm-guimanager/refreshComplexObjectTypeCriteria", new APISimpleHandler(API.refreshComplexObjectTypeCriteria));
         restServer.createContext("/nglm-guimanager/getOfferList", new APISimpleHandler(API.getOfferList));
         restServer.createContext("/nglm-guimanager/getOfferSummaryList", new APISimpleHandler(API.getOfferSummaryList));
         restServer.createContext("/nglm-guimanager/getOffer", new APISimpleHandler(API.getOffer));
@@ -3140,6 +3147,10 @@ public class GUIManager
 
                 case removeComplexObjectType:
                   jsonResponse = guiManagerGeneral.processRemoveComplexObjectType(userID, jsonRoot, tenantID);
+                  break;
+                  
+                case refreshComplexObjectTypeCriteria:
+                  jsonResponse = guiManagerGeneral.processRefreshComplexObjectTypeCriteria(userID, jsonRoot, tenantID);
                   break;
 
                 case getOfferList:
@@ -8856,7 +8867,7 @@ public class GUIManager
 
         // if stock update, and no more stock, need to warn it
         String responseMessage = null;
-        if(existingOffer instanceof Offer && !Objects.equals(((Offer) existingOffer).getStock(),offer.getStock()) && StockMonitor.getRemainingStock(offer)==0) responseMessage = "no remaining stock";
+        if(existingOffer instanceof Offer && !Objects.equals(((Offer) existingOffer).getStock(),offer.getStock()) && offer.getApproximateRemainingStock()!=null && offer.getApproximateRemainingStock()==0) responseMessage = "no remaining stock";
 
         /*****************************************
         *
@@ -12844,7 +12855,7 @@ public class GUIManager
 
 		// if stock update, and no more stock, need to warn it
 		String responseMessage = null;
-		if(existingProduct instanceof Product && !Objects.equals(((Product) existingProduct).getStock(),product.getStock()) && StockMonitor.getRemainingStock(product)==0) responseMessage = "no remaining stock";
+		if(existingProduct instanceof Product && !Objects.equals(((Product) existingProduct).getStock(),product.getStock()) && product.getApproximateRemainingStock()!=null && product.getApproximateRemainingStock()==0) responseMessage = "no remaining stock";
 
 
         /*****************************************
@@ -16039,7 +16050,7 @@ public class GUIManager
         if(voucherType.getCodeType()==VoucherType.CodeType.Shared){
           voucher = new VoucherShared(jsonRoot, epoch, existingVoucher, tenantID);
           if(log.isDebugEnabled()) log.debug("will put shared voucher "+voucher);
-		  if(existingVoucher instanceof VoucherShared && !Objects.equals(((VoucherShared) existingVoucher).getStock(),((VoucherShared)voucher).getStock()) && StockMonitor.getRemainingStock((VoucherShared)voucher)==0) responseMessage = "no remaining stock";
+		  if(existingVoucher instanceof VoucherShared && !Objects.equals(((VoucherShared) existingVoucher).getStock(),((VoucherShared)voucher).getStock()) && ((VoucherShared)voucher).getApproximateRemainingStock()!=null && ((VoucherShared)voucher).getApproximateRemainingStock()==0) responseMessage = "no remaining stock";
         }
         if(voucher==null && voucherType.getCodeType()==VoucherType.CodeType.Personal){
           voucher = new VoucherPersonal(jsonRoot, epoch, existingVoucher,voucherType, tenantID);
@@ -19396,7 +19407,7 @@ public class GUIManager
                         nodeHistoriesJson.add(JSONUtilities.encodeObject(nodeHistoriesMap));
                       }
 
-                    journeyResponseMap.put("customerStatus", customerStatusInJourney.getExternalRepresentation());
+                    journeyResponseMap.put("customerStatus", customerStatusInJourney.getDisplay());
                     journeyResponseMap.put("journeyComplete", journeyComplete);
                     journeyResponseMap.put("nodeHistories", JSONUtilities.encodeArray(nodeHistoriesJson));
                     journeyResponseMap.put("currentState", currentStateJson);
@@ -19685,7 +19696,7 @@ public class GUIManager
                         nodeHistoriesMap.put("deliveryRequestID", journeyHistories.getDeliveryRequestID());
                         nodeHistoriesJson.add(JSONUtilities.encodeObject(nodeHistoriesMap));
                       }
-                    campaignResponseMap.put("customerStatus", customerStatusInJourney.getExternalRepresentation());
+                    campaignResponseMap.put("customerStatus", customerStatusInJourney.getDisplay());
                     campaignResponseMap.put("journeyComplete", campaignComplete);
                     campaignResponseMap.put("nodeHistories", JSONUtilities.encodeArray(nodeHistoriesJson));
                     campaignResponseMap.put("currentState", currentStateJson);
@@ -28924,7 +28935,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
   *
   *****************************************/
   @Deprecated // TODO EVPRO-99 TO BE REMOVED
-  private String getDateString(Date date, int tenantID)
+  public String getDateString(Date date, int tenantID)
   {
     String result = null;
     if (date == null) return result;
@@ -29473,7 +29484,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           journeyJSON.put("id", journeyID);
           journeyJSON.put("occurrenceNumber", ++occurrenceNumber);
           journeyJSON.put("name", recurrentJourney.getGUIManagedObjectName() + "_" + occurrenceNumber);
-          journeyJSON.put("display", recurrentJourney.getGUIManagedObjectDisplay());
+          journeyJSON.put("display", recurrentJourney.getGUIManagedObjectDisplay() + " - " + occurrenceNumber);
           journeyJSON.put("effectiveStartDate", RLMDateUtils.formatDateForREST(startDate, timeZone));
           journeyJSON.put("effectiveEndDate", RLMDateUtils.formatDateForREST(endDate, timeZone));
           journeyJSON.put("effectiveEntryPeriodEndDate", RLMDateUtils.formatDateForREST(recRawEffectiveEntryPeriodEndDate, timeZone));

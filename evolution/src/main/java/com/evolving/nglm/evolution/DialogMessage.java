@@ -593,34 +593,10 @@ public class DialogMessage
         String formattedTag = formatter.format(tagValues);
         
         //
-        //  truncate (if necessary)
-        //
-
-        int maxLength = tagMaxLength != null ? tagMaxLength.intValue() : tag.resolveTagMaxLength(formatDataType);
-        String resolvedTag = formattedTag;
-        if (log.isDebugEnabled()) log.debug("resolveMessageTags maxLength for {} is {}", tag.getID(), maxLength);
-        if (formattedTag.length() > maxLength)
-          {
-            switch (formatDataType)
-              {
-                case StringCriterion:
-                case StringSetCriterion:
-                  resolvedTag = formattedTag.substring(0, maxLength);
-                  break;
-
-                default:
-                  StringBuilder invalidTag = new StringBuilder();
-                  for (int j=0; j<maxLength; j++) invalidTag.append("X");
-                  resolvedTag = invalidTag.toString();
-                  break;
-              }
-          }
-        
-        //
         //  resolved tag
         //
 
-        messageTags.add(resolvedTag);
+        messageTags.add(formattedTag);
       }
 
     /*****************************************
