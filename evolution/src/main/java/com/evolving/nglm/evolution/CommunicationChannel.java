@@ -96,9 +96,6 @@ public class CommunicationChannel extends GUIManagedObject
     *
     *****************************************/
 
-    String id;
-    String name;
-    String display;
     String profileAddressField;
     String deliveryType;
 
@@ -130,9 +127,9 @@ public class CommunicationChannel extends GUIManagedObject
     *
     *****************************************/
 
-    public String getID() { return id; }
-    public String getName() { return name; }
-    public String getDisplay() { return display; }
+    public String getID() { return getGUIManagedObjectID(); }
+    public String getName() { return getGUIManagedObjectName(); }
+    public String getDisplay() { return getGUIManagedObjectDisplay(); }
     public String getProfileAddressField() { return profileAddressField; }
     public String getDeliveryType () { return deliveryType; } 
 //    public CommunicationChannelTimeWindows getNotificationDailyWindows() { return notificationDailyWindows; }
@@ -153,6 +150,8 @@ public class CommunicationChannel extends GUIManagedObject
     public String getToolboxTimeoutUnit() { return toolboxTimeoutUnit; }
     public int getDeliveryRatePerMinute() { return deliveryRatePerMinute; }
     public DeliveryManagerDeclaration getDeliveryManagerDeclaration() { return deliveryManagerDeclaration; }
+
+    public void setDeliveryManagerDeclaration(DeliveryManagerDeclaration value) { deliveryManagerDeclaration = value; }
     
     /*****************************************
     *
@@ -385,9 +384,6 @@ public class CommunicationChannel extends GUIManagedObject
       *  attributes
       *
       *****************************************/
-      this.id = JSONUtilities.decodeString(jsonRoot, "id", false);
-      this.name = JSONUtilities.decodeString(jsonRoot, "name", false);
-      this.display = JSONUtilities.decodeString(jsonRoot, "display", false);
       this.profileAddressField = JSONUtilities.decodeString(jsonRoot, "profileAddressField", false);
       this.deliveryType = JSONUtilities.decodeString(jsonRoot, "deliveryType", false);
       
