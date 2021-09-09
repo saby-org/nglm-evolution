@@ -122,19 +122,8 @@ public abstract class Voucher extends GUIManagedObject {
     VoucherType voucherType = voucherTypeService.getActiveVoucherType(getVoucherTypeId(), date);
     if(voucherType==null || voucherType.getCodeType().equals(VoucherType.CodeType.Unknown)) throw new GUIManagerException("unknown voucherType", getVoucherTypeId());
   }
-  @Override public Map<String, List<String>> getGUIDependencies(List<GUIService> guiServiceList, int tenantID)
-  {
-    Map<String, List<String>> result = new HashMap<String, List<String>>();
-    ArrayList<String> supplierIDs=new ArrayList<>();
-    ArrayList<String> voucherTypeIDs=new ArrayList<>();
-    
-    voucherTypeIDs.add(getVoucherTypeId());
-    supplierIDs.add(getSupplierID());
-    
-    result.put("supplier",supplierIDs ) ;
-    result.put("vouchertype",voucherTypeIDs ) ;
-    return result;
-  }
+  
+  
   @Override
   public String toString() {
     return "supplierID:"+getSupplierID()+", voucherTypeId:"+getVoucherTypeId()+", unitaryCost:"+getUnitaryCost()+", recommendedPrice:"+getRecommendedPrice();
