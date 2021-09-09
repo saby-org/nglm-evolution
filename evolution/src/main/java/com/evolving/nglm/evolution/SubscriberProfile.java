@@ -1116,24 +1116,33 @@ public abstract class SubscriberProfile
       {
         for (ComplexObjectInstance instance : getComplexObjectInstances())
           {
-            if (!json.containsKey(instance.getComplexObjectTypeID()))
+            ComplexObjectType complexObjectType = complexObjectTypeService.getActiveComplexObjectType(instance.getComplexObjectTypeID(), now);
+            if (complexObjectType != null)
               {
-                json.put(instance.getComplexObjectTypeID(), new HashMap<String, HashMap<String, Object>>());
-              }
-            HashMap<String, HashMap<String, Object>> elements = (HashMap<String, HashMap<String, Object>>) json.get(instance.getComplexObjectTypeID());
-            if (!elements.containsKey(instance.getElementID()))
-              {
-                elements.put(instance.getElementID(), new HashMap<String, Object>());
-              }
-            HashMap<String, Object> elementVal = elements.get(instance.getElementID());
-            if (instance.getFieldValuesReadOnly() != null)
-              {
-                for (Map.Entry<String, DataModelFieldValue> entry : instance.getFieldValuesReadOnly().entrySet())
+                if (!json.containsKey(complexObjectType.getGUIManagedObjectName()))
                   {
-                    Object currVal = entry.getValue().getValue();
-                    if (currVal instanceof Date) currVal = getDateString((Date) currVal);
-                    elementVal.put(entry.getKey(), currVal);
+                    json.put(complexObjectType.getGUIManagedObjectName(), new HashMap<String, HashMap<String, Object>>());
                   }
+                HashMap<String, HashMap<String, Object>> elements = (HashMap<String, HashMap<String, Object>>) json.get(complexObjectType.getGUIManagedObjectName());
+                if (!elements.containsKey(instance.getElementID()))
+                  {
+                    elements.put(instance.getElementID(), new HashMap<String, Object>());
+                  }
+                HashMap<String, Object> elementVal = elements.get(instance.getElementID());
+                if (instance.getFieldValuesReadOnly() != null)
+                  {
+                    for (Map.Entry<String, DataModelFieldValue> entry : instance.getFieldValuesReadOnly().entrySet())
+                      {
+                        Object currVal = entry.getValue().getValue();
+                        if (currVal instanceof Date) currVal = getDateString((Date) currVal);
+                        elementVal.put(entry.getKey(), currVal);
+                      }
+                  }
+
+              }
+            else
+              {
+                // may be we need to clear subscriber profile
               }
           }
         complexObjectInstancesjson.add(JSONUtilities.encodeObject(json));

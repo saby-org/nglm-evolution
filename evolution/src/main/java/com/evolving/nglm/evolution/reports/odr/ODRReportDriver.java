@@ -26,7 +26,7 @@ public class ODRReportDriver extends ReportDriver
     log.debug("Processing " + report.getName());
     String defaultReportPeriodUnit = report.getDefaultReportPeriodUnit();
     int defaultReportPeriodQuantity = report.getDefaultReportPeriodQuantity();
-    ODRReportMonoPhase.main(new String[] { elasticSearch, ES_INDEX_ODR_INITIAL, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit }, reportGenerationDate);
+    ODRReportMonoPhase.main(new String[] { elasticSearch, ES_INDEX_ODR_INITIAL, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit, tenantID+"" }, reportGenerationDate);
     log.debug("Finished with ODR Report");
   }
 

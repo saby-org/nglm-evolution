@@ -34,7 +34,7 @@ public class TokenReportDriver extends ReportDriver
     String defaultReportPeriodUnit = report.getDefaultReportPeriodUnit();
     int defaultReportPeriodQuantity = report.getDefaultReportPeriodQuantity();
 
-    TokenReportMonoPhase.main(new String[] { elasticSearch, esIndexSubscriber, csvFilename }, reportGenerationDate);
+    TokenReportMonoPhase.main(new String[] { elasticSearch, esIndexSubscriber, csvFilename, tenantID+"" }, reportGenerationDate);
 
     log.debug("Finished with Token Report");
   }

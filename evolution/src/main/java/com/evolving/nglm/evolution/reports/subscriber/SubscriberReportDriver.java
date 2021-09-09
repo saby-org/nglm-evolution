@@ -27,7 +27,7 @@ public class SubscriberReportDriver extends ReportDriver
   {
     log.debug("Processing Subscriber Report with " + report.getName());
     String esIndexSubscriber = getSubscriberProfileIndex(reportGenerationDate);
-    SubscriberReportMonoPhase.main(new String[] { kafka, elasticSearch, esIndexSubscriber, csvFilename }, reportGenerationDate);
+    SubscriberReportMonoPhase.main(new String[] { kafka, elasticSearch, esIndexSubscriber, csvFilename, tenantID+"" }, reportGenerationDate);
     log.debug("Finished with Subscriber Report");
   }
 

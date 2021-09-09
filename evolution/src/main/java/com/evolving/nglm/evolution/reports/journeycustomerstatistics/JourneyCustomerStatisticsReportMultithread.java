@@ -207,7 +207,8 @@ public class JourneyCustomerStatisticsReportMultithread implements ReportCsvFact
     String esNode = args[0];
     String esIndexJourney = args[1];
     String csvfile = args[2];
-    
+    if (args.length > 5) tenantID = Integer.parseInt(args[5]);
+
     journeyService = new JourneyService(DeploymentCommon.getBrokerServers(), "JourneyCustomerStatisticsReportMultithread-journeyservice-JourneyCustomerStatisticsReportMultithread", DeploymentCommon.getJourneyTopic(), false);
     journeyService.start();
 

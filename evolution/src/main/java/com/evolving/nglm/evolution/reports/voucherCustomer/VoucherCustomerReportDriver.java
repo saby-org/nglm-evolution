@@ -42,7 +42,7 @@ public class VoucherCustomerReportDriver extends ReportDriver{
       int defaultReportPeriodQuantity = report.getDefaultReportPeriodQuantity();
 
       VoucherCustomerReportMonoPhase.main(new String[]{
-          elasticSearch, esIndexSubscriber, csvFilename
+          elasticSearch, esIndexSubscriber, csvFilename, tenantID+""
       }, reportGenerationDate);        
   
 	  log.debug("Finished with voucherCustomer Report");

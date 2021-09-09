@@ -26,7 +26,7 @@ public class VoucherUploadedReportDriver extends ReportDriver
     int defaultReportPeriodQuantity = report.getDefaultReportPeriodQuantity();
     String Voucher_ES_INDEX = "voucher_live_";    
     log.debug("PHASE 1 : read ElasticSearch");
-    VoucherUploadedReportMonoPhase.main(new String[] { elasticSearch, Voucher_ES_INDEX, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit }, reportGenerationDate);
+    VoucherUploadedReportMonoPhase.main(new String[] { elasticSearch, Voucher_ES_INDEX, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit, tenantID+"" }, reportGenerationDate);
    
     log.debug("Finished with Journey Customer States Report");
 
