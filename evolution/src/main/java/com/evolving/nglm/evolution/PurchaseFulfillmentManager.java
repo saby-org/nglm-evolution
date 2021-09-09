@@ -42,6 +42,9 @@ import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOpe
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
+import com.evolving.nglm.evolution.Expression.ConstantExpression;
+import com.evolving.nglm.evolution.Expression.ExpressionContext;
+import com.evolving.nglm.evolution.Expression.ExpressionReader;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
@@ -3297,11 +3300,37 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       return Collections.<Action>singletonList(request);
     }
     
-    @Override public Map<String, String> getGUIDependencies(JourneyNode journeyNode, int tenantID)
+    @Override public Map<String, String> getGUIDependencies(List<GUIService> guiServiceList, JourneyNode journeyNode, int tenantID)
     {
       Map<String, String> result = new HashMap<String, String>();
       String offerID = (String) journeyNode.getNodeParameters().get("node.parameter.offerid");
       if (offerID != null) result.put("offer", offerID);
+      
+      Object salesChannelObj = journeyNode.getNodeParameters().get("node.parameter.saleschannel");
+      if (salesChannelObj != null && salesChannelObj instanceof ParameterExpression)
+        {
+          ParameterExpression supplierDisplayExp = (ParameterExpression) salesChannelObj;
+          ExpressionReader expressionReader = new ExpressionReader(supplierDisplayExp.getCriterionContext(), supplierDisplayExp.getExpressionString(), supplierDisplayExp.getBaseTimeUnit(), supplierDisplayExp.getTenantID());
+          Expression expression = expressionReader.parse(ExpressionContext.Parameter, tenantID);
+          if (expression != null && expression instanceof ConstantExpression)
+            {
+              ConstantExpression consExpression = (ConstantExpression) expression;
+              String salesChannelDisplay  = (String) consExpression.evaluateConstant();
+              if (salesChannelDisplay != null)
+                {
+                  SalesChannelService salesChannelService = (SalesChannelService) guiServiceList.stream().filter(srvc -> srvc.getClass() == SalesChannelService.class).findFirst().orElse(null);
+                  if (salesChannelService == null)
+                    {
+                      log.error("salesChannelService not found in guiServiceList - getGUIDependencies will be effected");
+                    }
+                  else
+                    {
+                      GUIManagedObject salesChannel = salesChannelService.getStoredSalesChannels(tenantID).stream().filter(guiObj -> salesChannelDisplay.equals(guiObj.getGUIManagedObjectDisplay())).findFirst().orElse(null);
+                      if (salesChannel != null && salesChannel.getAccepted()) result.put("saleschannel", salesChannel.getGUIManagedObjectID());
+                    }
+                }
+            }
+        }
       return result;
     }
   }
