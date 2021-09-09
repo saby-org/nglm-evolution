@@ -21,7 +21,7 @@ import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
-@GUIDependencyDef(objectType = "badgeObjective", serviceClass = BadgeObjectiveService.class, dependencies = {"catalogcharacteristic"})
+@GUIDependencyDef(objectType = "badgeobjective", serviceClass = BadgeObjectiveService.class, dependencies = {"catalogcharacteristic"})
 public class BadgeObjective extends GUIManagedObject
 {
   /*****************************************

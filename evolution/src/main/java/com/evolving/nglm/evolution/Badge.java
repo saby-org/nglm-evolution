@@ -28,7 +28,7 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
-@GUIDependencyDef(objectType = "badge", serviceClass = BadgeService.class, dependencies = { "badgeObjective" })
+@GUIDependencyDef(objectType = "badge", serviceClass = BadgeService.class, dependencies = { "badgeobjective" })
 public class Badge extends GUIManagedObject implements GUIManagedObject.ElasticSearchMapping
 {
   
@@ -592,7 +592,7 @@ public class Badge extends GUIManagedObject implements GUIManagedObject.ElasticS
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
     List<String> badgeObjectivesIDs = getBadgeObjectives().stream().map(badgeObjective -> badgeObjective.getBadgeObjectiveID()).collect(Collectors.toList());
-    result.put("badgeObjective", badgeObjectivesIDs);
+    result.put("badgeobjective", badgeObjectivesIDs);
     return result;
   }
   
