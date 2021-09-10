@@ -153,7 +153,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
     {
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("service_pushnotification_request");
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(), 9));
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(), 10));
       for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
       schemaBuilder.field("destination", Schema.STRING_SCHEMA);
       schemaBuilder.field("language", Schema.STRING_SCHEMA);
@@ -164,6 +164,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
       schemaBuilder.field("returnCode", Schema.INT32_SCHEMA);
       schemaBuilder.field("returnCodeDetails", Schema.OPTIONAL_STRING_SCHEMA);
       schemaBuilder.field("contactType", SchemaBuilder.string().defaultValue("unknown").schema());
+      schemaBuilder.field("origin", Schema.OPTIONAL_STRING_SCHEMA);
       schema = schemaBuilder.build();
     };
 
@@ -197,6 +198,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
     private int returnCode;
     private String returnCodeDetails;
     private String contactType;
+    private String origin;
 
     //
     //  accessors
@@ -212,6 +214,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
     public int getReturnCode() { return returnCode; }
     public String getReturnCodeDetails() { return returnCodeDetails; }
     public String getContactType() { return contactType; }
+    public String getOrigin() { return origin; }
 
     
     /*****************************************
@@ -258,7 +261,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
 
     public int getMessageDeliveryReturnCode() { return getReturnCode(); }
     public String getMessageDeliveryReturnCodeDetails() { return getReturnCodeDetails(); }
-    public String getMessageDeliveryOrigin() { return ""; }
+    public String getMessageDeliveryOrigin() { return getOrigin(); }
     public String getMessageDeliveryMessageId() { return getEventID(); }
 
 
@@ -269,7 +272,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
     *
     *****************************************/
 
-    public PushNotificationManagerRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String destination, String language, String templateID, Map<String, List<String>> tags, String contactType, int tenantID)
+    public PushNotificationManagerRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String destination, String language, String templateID, Map<String, List<String>> tags, String contactType, String origin, int tenantID)
     {
       super(context, deliveryType, deliveryRequestSource, tenantID);
       this.destination = destination;
@@ -280,6 +283,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
       this.returnCode = status.getReturnCode();
       this.returnCodeDetails = null;
       this.contactType = contactType;
+      this.origin = origin;
     }
 
     /*****************************************
@@ -312,7 +316,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
     *
     *****************************************/
 
-    private PushNotificationManagerRequest(SchemaAndValue schemaAndValue, String destination, String language, String templateID, Map<String, List<String>> tags, boolean confirmationExpected, boolean restricted, MessageStatus status, String returnCodeDetails, String contactType)
+    private PushNotificationManagerRequest(SchemaAndValue schemaAndValue, String destination, String language, String templateID, Map<String, List<String>> tags, boolean confirmationExpected, boolean restricted, MessageStatus status, String returnCodeDetails, String contactType, String origin)
     {
       super(schemaAndValue);
       this.destination = destination;
@@ -325,6 +329,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
       this.returnCode = status.getReturnCode();
       this.returnCodeDetails = returnCodeDetails;
       this.contactType = contactType;
+      this.origin = origin;
     }
 
     /*****************************************
@@ -346,6 +351,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
       this.returnCode = pushNotificationManagerRequest.getReturnCode();
       this.returnCodeDetails = pushNotificationManagerRequest.getReturnCodeDetails();
       this.contactType = pushNotificationManagerRequest.getContactType();
+      this.origin = pushNotificationManagerRequest.getOrigin();
     }
 
     /*****************************************
@@ -408,6 +414,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
       struct.put("returnCode", notificationRequest.getReturnCode());
       struct.put("returnCodeDetails", notificationRequest.getReturnCodeDetails());
       struct.put("contactType", notificationRequest.getContactType());
+      struct.put("origin", notificationRequest.getOrigin());
       return struct;
     }
     
@@ -448,12 +455,13 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
       String returnCodeDetails = valueStruct.getString("returnCodeDetails");
       MessageStatus status = MessageStatus.fromReturnCode(returnCode);
       String contactType = schemaVersion >= 9 ? valueStruct.getString("contactType") : "unknown";
+      String origin = schemaVersion >= 10 ? valueStruct.getString("origin") : "unknown";
       
       //
       //  return
       //
 
-      return new PushNotificationManagerRequest(schemaAndValue, destination, language, templateID, tags, confirmationExpected, restricted, status, returnCodeDetails, contactType);
+      return new PushNotificationManagerRequest(schemaAndValue, destination, language, templateID, tags, confirmationExpected, restricted, status, returnCodeDetails, contactType, origin);
     }
     
 //    /*****************************************
@@ -515,6 +523,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
       guiPresentationMap.put(NOTIFICATION_CHANNEL, Deployment.getCommunicationChannels().get(template.getCommunicationChannelID()).getDisplay());
       guiPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
       guiPresentationMap.put("contactType", getContactType());
+      guiPresentationMap.put("origin", getOrigin());
       Map<String, String> resolvedParameters = getResolvedParameters(subscriberMessageTemplateService, tenantID);
       guiPresentationMap.putAll(resolvedParameters);
     }
@@ -541,6 +550,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
       thirdPartyPresentationMap.put(NOTIFICATION_CHANNEL, Deployment.getCommunicationChannels().get(template.getCommunicationChannelID()).getDisplay());
       thirdPartyPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
       thirdPartyPresentationMap.put("contactType", getContactType());
+      thirdPartyPresentationMap.put("origin", getOrigin());
       Map<String, String> resolvedParameters = getResolvedParameters(subscriberMessageTemplateService, tenantID);
       thirdPartyPresentationMap.putAll(resolvedParameters);
     }
@@ -606,6 +616,9 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
       *  parameters
       *
       *****************************************/
+      
+      String origin = subscriberEvaluationRequest.getJourneyNode().getNodeName() != null ? subscriberEvaluationRequest.getJourneyNode().getNodeName() : "unknown";
+      log.info("RAJ K push origin {}", origin);
 
       String pushTemplateID = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.message");
       ContactType contactType = ContactType.Unknown;
@@ -692,7 +705,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
       PushNotificationManagerRequest request = null;
       if (destAddress != null)
         {
-          request = new PushNotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, destAddress, language, template.getPushTemplateID(), tags, contactType.getExternalRepresentation(), subscriberEvaluationRequest.getTenantID());
+          request = new PushNotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, destAddress, language, template.getPushTemplateID(), tags, contactType.getExternalRepresentation(), origin, subscriberEvaluationRequest.getTenantID());
           request.setModuleID(moduleID);
           request.setFeatureID(deliveryRequestSource);
         }

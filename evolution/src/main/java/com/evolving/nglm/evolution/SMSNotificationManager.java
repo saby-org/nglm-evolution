@@ -147,7 +147,7 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
     {
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("service_smsnotification_request");
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(), 9));
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(), 10));
       for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
       schemaBuilder.field("destination", Schema.STRING_SCHEMA);
       schemaBuilder.field("source", Schema.STRING_SCHEMA);
@@ -160,6 +160,7 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
       schemaBuilder.field("returnCode", Schema.INT32_SCHEMA);
       schemaBuilder.field("returnCodeDetails", Schema.OPTIONAL_STRING_SCHEMA);
       schemaBuilder.field("contactType", SchemaBuilder.string().defaultValue("unknown").schema());
+      schemaBuilder.field("origin", Schema.OPTIONAL_STRING_SCHEMA);
       schema = schemaBuilder.build();
     };
 
@@ -195,6 +196,7 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
     private int returnCode;
     private String returnCodeDetails;
     private String contactType;
+    private String origin;
 
     //
     //  accessors
@@ -212,6 +214,7 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
     public int getReturnCode() { return returnCode; }
     public String getReturnCodeDetails() { return returnCodeDetails; }
     public String getContactType() { return contactType; }
+    public String getOrigin() { return origin; }
 
     //
     //  abstract
@@ -236,7 +239,7 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
 
     public int getMessageDeliveryReturnCode() { return getReturnCode(); }
     public String getMessageDeliveryReturnCodeDetails() { return getReturnCodeDetails(); }
-    public String getMessageDeliveryOrigin() { return ""; }
+    public String getMessageDeliveryOrigin() { return getOrigin(); }
     public String getMessageDeliveryMessageId() { return getEventID(); }
 
     /*****************************************
@@ -259,7 +262,7 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
     *
     *****************************************/
 
-    public SMSNotificationManagerRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String destination, String source, String language, String templateID, List<String> messageTags, String contactType, int tenantID)
+    public SMSNotificationManagerRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String destination, String source, String language, String templateID, List<String> messageTags, String contactType, String origin, int tenantID)
     {
       super(context, deliveryType, deliveryRequestSource, tenantID);
       this.destination = destination;
@@ -271,6 +274,7 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
       this.returnCode = status.getReturnCode();
       this.returnCodeDetails = null;
       this.contactType = contactType;
+      this.origin = origin;
     }
 
     /*****************************************
@@ -309,7 +313,7 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
     *
     *****************************************/
 
-    private SMSNotificationManagerRequest(SchemaAndValue schemaAndValue, String destination, String source, String language, String templateID, List<String> messageTags, boolean confirmationExpected, boolean restricted, boolean flashSMS, MessageStatus status, String returnCodeDetails, String contactType)
+    private SMSNotificationManagerRequest(SchemaAndValue schemaAndValue, String destination, String source, String language, String templateID, List<String> messageTags, boolean confirmationExpected, boolean restricted, boolean flashSMS, MessageStatus status, String returnCodeDetails, String contactType, String origin)
     {
       super(schemaAndValue);
       this.destination = destination;
@@ -324,6 +328,7 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
       this.returnCode = status.getReturnCode();
       this.returnCodeDetails = returnCodeDetails;
       this.contactType = contactType;
+      this.origin = origin;
     }
     
     /*****************************************
@@ -347,6 +352,7 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
       this.returnCode = smsNotificationManagerRequest.getReturnCode();
       this.returnCodeDetails = smsNotificationManagerRequest.getReturnCodeDetails();
       this.contactType = smsNotificationManagerRequest.getContactType();
+      this.origin = smsNotificationManagerRequest.getOrigin();
     }
 
     /*****************************************
@@ -412,6 +418,7 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
       struct.put("returnCode", notificationRequest.getReturnCode());
       struct.put("returnCodeDetails", notificationRequest.getReturnCodeDetails());
       struct.put("contactType", notificationRequest.getContactType());
+      struct.put("origin", notificationRequest.getOrigin());
       return struct;
     }
     
@@ -454,12 +461,13 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
       String returnCodeDetails = valueStruct.getString("returnCodeDetails");
       MessageStatus status = MessageStatus.fromReturnCode(returnCode);
       String contactType = schemaVersion >= 9 ? valueStruct.getString("contactType") : "unknown";
+      String origin = schemaVersion >= 10 ? valueStruct.getString("origin") : "unknown";
       
       //
       //  return
       //
 
-      return new SMSNotificationManagerRequest(schemaAndValue, destination, source, language, templateID, messageTags, confirmationExpected, restricted, flashSMS, status, returnCodeDetails, contactType);
+      return new SMSNotificationManagerRequest(schemaAndValue, destination, source, language, templateID, messageTags, confirmationExpected, restricted, flashSMS, status, returnCodeDetails, contactType, origin);
     }
     
     /****************************************
@@ -488,6 +496,7 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
       guiPresentationMap.put(NOTIFICATION_CHANNEL, "SMS");
       guiPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
       guiPresentationMap.put("contactType", getContactType());
+      guiPresentationMap.put("origin", getOrigin());
     }
     
     //
@@ -511,6 +520,7 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
       thirdPartyPresentationMap.put(NOTIFICATION_CHANNEL, "SMS");
       thirdPartyPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
       thirdPartyPresentationMap.put("contactType", getContactType());
+      thirdPartyPresentationMap.put("origin", getOrigin());
     }
     
     @Override
@@ -571,6 +581,8 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
       *
       *****************************************/
 
+      String origin = subscriberEvaluationRequest.getJourneyNode().getNodeName() != null ? subscriberEvaluationRequest.getJourneyNode().getNodeName() : "unknown";
+      log.info("RAJ K SMS notification origin {}", origin);
       SMSMessage smsMessage = (SMSMessage) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.message");
       ContactType contactType = ContactType.fromExternalRepresentation((String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.contacttype"));
       String source = (CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.source") != null) ? (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.source") : "TBD";
@@ -643,7 +655,7 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
       SMSNotificationManagerRequest request = null;
       if (template != null && msisdn != null)
         {
-          request = new SMSNotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, msisdn, source, language, template.getSMSTemplateID(), messageTags, contactType.getExternalRepresentation(), subscriberEvaluationRequest.getTenantID());
+          request = new SMSNotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, msisdn, source, language, template.getSMSTemplateID(), messageTags, contactType.getExternalRepresentation(), origin, subscriberEvaluationRequest.getTenantID());
           
           request.setModuleID(newModuleID);
           request.setFeatureID(deliveryRequestSource);
