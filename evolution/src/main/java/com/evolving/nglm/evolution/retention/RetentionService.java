@@ -79,7 +79,8 @@ public class RetentionService {
               }
           }
 
-		//TODO tokens (yet there are cleaned as soon as "burned", and logic rely on that, so more complicated to apply EVPRO-325 retention)
+		// tokens
+    subscriberUpdated = !filterOutRetentionOver(subscriberProfile.getTokens().iterator(), Cleanable.RetentionType.KAFKA_DELETION).isEmpty() || subscriberUpdated;
 
 		// loyalties
 		subscriberUpdated = !filterOutRetentionOver(subscriberProfile.getLoyaltyPrograms().values().iterator(), Cleanable.RetentionType.KAFKA_DELETION).isEmpty() || subscriberUpdated;
