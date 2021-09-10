@@ -33,7 +33,7 @@ import com.evolving.nglm.core.SubscriberStreamEvent;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
-@GUIDependencyDef(objectType = "loyaltyProgramMission", serviceClass = LoyaltyProgramService.class, dependencies = { "catalogcharacteristic", "workflow"})
+@GUIDependencyDef(objectType = "loyaltyprogrammission", serviceClass = LoyaltyProgramService.class, dependencies = { "catalogcharacteristic", "workflow"})
 public class LoyaltyProgramMission extends LoyaltyProgram
 {
   
@@ -785,7 +785,7 @@ public class LoyaltyProgramMission extends LoyaltyProgram
    *******************************/
 
   @Override
-  public Map<String, List<String>> getGUIDependencies(int tenantID)
+  public Map<String, List<String>> getGUIDependencies(List<GUIService> guiServiceList, int tenantID)
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
     List<String> catalogcharacteristicIDs = new ArrayList<String>();
