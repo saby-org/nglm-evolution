@@ -1453,9 +1453,18 @@ public class GUIManager
                     {
                       if (name.equals(report.getGUIManagedObjectDisplay()))
                         {
-                          // this report already exists (same name), do not create it
-                          create = false;
-                          log.info("Report " + name + " (id " + report.getReportID() + " ) already exists in tenant " + tenantID + " do not create");
+                          // this report already exists (same name), do not create it, just check that the classname is correct (EVPRO-1265)
+                          String existingReportClass = report.getReportClass();
+                          String newReportClass = JSONUtilities.decodeString(reportJSON, "class", false);
+                          if (!Objects.equals(existingReportClass, newReportClass)) {
+                            // class has changed, must update the existing report, preserving all fields except "class" (like "effectiveScheduling")
+                            reportJSON = reportService.generateResponseJSON(report, true, now);
+                            reportJSON.put("class", newReportClass); // just patch this attribute
+                            log.info("Report " + name + " already exists in tenant " + tenantID + " but with a different class ( " + existingReportClass + " != " + newReportClass + " ) let's update it : " + report);
+                          } else {
+                            create = false;
+                            log.info("Report " + name + " (id " + report.getReportID() + " ) already exists in tenant " + tenantID + " do not create");
+                          }
                           break;
                         }
                     }
