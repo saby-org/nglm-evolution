@@ -113,7 +113,7 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
     headerFieldsOrder.add(source);
     headerFieldsOrder.add(messageContent);
     headerFieldsOrder.add(communicationChannel);
-    headerFieldsOrder.add(origin); //RAJ K
+    headerFieldsOrder.add(origin);
   }
 
   /****************************************
@@ -408,7 +408,7 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
           {
             notifRecs.put("communicationChannel", "");
           }
-        notifRecs.put("origin", notifFields.get(origin)); // RAJ K
+        notifRecs.put("origin", notifFields.get(origin));
         
 
         //
