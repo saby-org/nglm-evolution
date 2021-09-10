@@ -31,7 +31,9 @@ import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.ContactPolicyCommunicationChannels.ContactType;
+import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
 public class PushNotificationManager extends DeliveryManagerForNotifications implements Runnable
@@ -620,8 +622,6 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
       *****************************************/
       
       String origin = subscriberEvaluationRequest.getJourneyNode().getNodeName() != null ? subscriberEvaluationRequest.getJourneyNode().getNodeName() : "unknown";
-      log.info("RAJ K push origin {}", origin);
-
       String pushTemplateID = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.message");
       ContactType contactType = ContactType.Unknown;
 
@@ -633,12 +633,28 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
 
       String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
       deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, deliveryRequestSource);
-      
       String language = subscriberEvaluationRequest.getLanguage();
       SubscriberMessageTemplateService subscriberMessageTemplateService = evolutionEventContext.getSubscriberMessageTemplateService();
       PushTemplate baseTemplate = (PushTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(pushTemplateID, now);
       PushTemplate template = (baseTemplate != null) ? ((PushTemplate) baseTemplate.getReadOnlyCopy(evolutionEventContext)) : null;
+      String journeyID = subscriberEvaluationRequest.getJourneyState().getJourneyID();
+      Journey journey = evolutionEventContext.getJourneyService().getActiveJourney(journeyID, evolutionEventContext.now());
+      if (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.Workflow && journey.getJSONRepresentation().get("areaAvailability") != null )
+        {
+          JSONArray areaAvailability = (JSONArray) journey.getJSONRepresentation().get("areaAvailability");
+          if (areaAvailability != null && !(areaAvailability.isEmpty())) {
+          for (int i = 0; i < areaAvailability.size(); i++)
+            {
+              if (!(areaAvailability.get(i).equals("realtime")) && !(areaAvailability.get(i).equals("journeymanager")))
+                {
+                  if (subscriberEvaluationRequest.getJourneyState() != null && subscriberEvaluationRequest.getJourneyState().getsourceOrigin() != null) origin = subscriberEvaluationRequest.getJourneyState().getsourceOrigin();
+                  break;
+                }
+            }
+          }
+        }
 
+      log.info("RAJ K push origin {}", origin);
       String destAddress = null;
 
       //

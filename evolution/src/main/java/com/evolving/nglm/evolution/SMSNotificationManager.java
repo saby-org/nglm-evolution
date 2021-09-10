@@ -585,7 +585,6 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
       *****************************************/
 
       String origin = subscriberEvaluationRequest.getJourneyNode().getNodeName() != null ? subscriberEvaluationRequest.getJourneyNode().getNodeName() : "unknown";
-      log.info("RAJ K SMS notification origin {}", origin);
       SMSMessage smsMessage = (SMSMessage) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.message");
       ContactType contactType = ContactType.fromExternalRepresentation((String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.contacttype"));
       String source = (CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.source") != null) ? (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.source") : "TBD";
@@ -617,6 +616,7 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
               if (!(areaAvailability.get(i).equals("realtime")) && !(areaAvailability.get(i).equals("journeymanager")))
                 {
                   newModuleID = Module.Loyalty_Program.getExternalRepresentation();
+                  if (subscriberEvaluationRequest.getJourneyState() != null && subscriberEvaluationRequest.getJourneyState().getsourceOrigin() != null) origin = subscriberEvaluationRequest.getJourneyState().getsourceOrigin();
                   break;
                 }
             }
@@ -638,8 +638,9 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
             }
 
         }
-      String deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, journeyID);
       
+      log.info("RAJ K SMS notification origin {}", origin);
+      String deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, journeyID);
       String msisdn = ((SubscriberProfile) subscriberEvaluationRequest.getSubscriberProfile()).getMSISDN();
       String language = subscriberEvaluationRequest.getLanguage();
       SMSTemplate baseTemplate = (SMSTemplate) smsMessage.resolveTemplate(evolutionEventContext);

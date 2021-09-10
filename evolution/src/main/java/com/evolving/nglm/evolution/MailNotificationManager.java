@@ -642,7 +642,6 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
       *****************************************/
 
       String origin = subscriberEvaluationRequest.getJourneyNode().getNodeName() != null ? subscriberEvaluationRequest.getJourneyNode().getNodeName() : "unknown";
-      log.info("RAJ K Mail notification origin {}", origin);
       String journeyID = subscriberEvaluationRequest.getJourneyState().getJourneyID();
       Journey journey = evolutionEventContext.getJourneyService().getActiveJourney(journeyID, evolutionEventContext.now());
       String newModuleID = moduleID;
@@ -655,6 +654,7 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
               if (!(areaAvailability.get(i).equals("realtime")) && !(areaAvailability.get(i).equals("journeymanager")))
                 {
                   newModuleID = Module.Loyalty_Program.getExternalRepresentation();
+                  if (subscriberEvaluationRequest.getJourneyState() != null && subscriberEvaluationRequest.getJourneyState().getsourceOrigin() != null) origin = subscriberEvaluationRequest.getJourneyState().getsourceOrigin();
                   break;
                 }
             }
@@ -674,8 +674,8 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
             }
           }
         }
+      log.info("RAJ K Mail notification origin {}", origin);
       String deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, journeyID);
-      
       String email = ((SubscriberProfile) subscriberEvaluationRequest.getSubscriberProfile()).getEmail();
       String language = subscriberEvaluationRequest.getLanguage();
       MailTemplate baseTemplate = (MailTemplate) emailMessage.resolveTemplate(evolutionEventContext);

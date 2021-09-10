@@ -803,7 +803,6 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
        *****************************************/
       
       String origin = subscriberEvaluationRequest.getJourneyNode().getNodeName() != null ? subscriberEvaluationRequest.getJourneyNode().getNodeName() : "unknown";
-      log.info("RAJ K notification origin {}", origin);
       String journeyID = subscriberEvaluationRequest.getJourneyState().getJourneyID();
       Journey journey = evolutionEventContext.getJourneyService().getActiveJourney(journeyID, evolutionEventContext.now());
       String newModuleID = moduleID;
@@ -817,6 +816,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
               if (!(areaAvailability.get(i).equals("realtime")) && !(areaAvailability.get(i).equals("journeymanager")))
                 {
                   newModuleID = Module.Loyalty_Program.getExternalRepresentation();
+                  if (subscriberEvaluationRequest.getJourneyState() != null && subscriberEvaluationRequest.getJourneyState().getsourceOrigin() != null) origin = subscriberEvaluationRequest.getJourneyState().getsourceOrigin();
                   break;
                 }
             }
@@ -837,8 +837,8 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
           }
         }
       
+      log.info("RAJ K notification origin {}", origin);
       String deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, journeyID);
-      
       String language = subscriberEvaluationRequest.getLanguage();
       SubscriberMessageTemplateService subscriberMessageTemplateService = evolutionEventContext.getSubscriberMessageTemplateService();
       DialogTemplate baseTemplate = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateParameters.getSubscriberMessageTemplateID(), now);
