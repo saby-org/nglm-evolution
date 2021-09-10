@@ -113,9 +113,9 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "kafka_burrow_total_lag{group=~\"fileconnector-($connector)_file_connector.*\"}",
+          "expr": "sum(kafka_burrow_partition_lag{topic=~\"($connector)-fileconnector\"}) by (topic)",
           "hide": false,
-          "legendFormat": "{{ group }}",
+          "legendFormat": "{{ topic }}",
           "refId": "A"
         }
       ],
