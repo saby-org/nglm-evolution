@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.ServerRuntimeException;
@@ -83,6 +84,24 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       statsCounter = StatsBuilders.getEvolutionCounterStatisticsBuilder("notificationdelivery","notificationmanager-"+deliveryManagerKey);
 
     }
+
+  private static Map<String,CommunicationChannel> GetCommunicationChannels()
+  {
+    Map<String,CommunicationChannel> channels = Deployment.getCommunicationChannels();
+    for (CommunicationChannel staticCommunicationChannel : channels.values())
+      {
+        CommunicationChannel dynamicCommunicationChannel = getCommunicationChannelService().getActiveCommunicationChannel(staticCommunicationChannel.getID(), SystemTime.getCurrentTime());
+        if(dynamicCommunicationChannel != null)
+          {
+            //set DeliveryManagerDeclaration from the static channel - because it is missing from the comm channel schema
+            dynamicCommunicationChannel.setDeliveryManagerDeclaration(staticCommunicationChannel.getDeliveryManagerDeclaration());
+
+            // replace the static communicationChannel
+            channels.replace(staticCommunicationChannel.getID(), dynamicCommunicationChannel);
+          }
+      }
+    return channels;
+  }
 
   /*****************************************
    *
@@ -655,7 +674,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       guiPresentationMap.put(RETURNCODE, getReturnCode());
       guiPresentationMap.put(RETURNCODEDETAILS, MessageStatus.fromReturnCode(getReturnCode()).toString());
       //todo check NOTIFICATION_CHANNEL is ID or display: getChannelID() or...
-      guiPresentationMap.put(NOTIFICATION_CHANNEL, Deployment.getCommunicationChannels().get(getChannelID()).getDisplay());
+      guiPresentationMap.put(NOTIFICATION_CHANNEL, GetCommunicationChannels().get(getChannelID()).getDisplay());
       guiPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
       guiPresentationMap.put("messageContent", gatherChannelParameters(subscriberMessageTemplateService));
       guiPresentationMap.put("contactType", getContactType());
@@ -681,7 +700,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       thirdPartyPresentationMap.put(RETURNCODEDESCRIPTION, RESTAPIGenericReturnCodes.fromGenericResponseCode(getReturnCode()).getGenericResponseMessage());
       thirdPartyPresentationMap.put(RETURNCODEDETAILS, getReturnCodeDetails());
       //todo check NOTIFICATION_CHANNEL is ID or display: getChannelID() or...
-      thirdPartyPresentationMap.put(NOTIFICATION_CHANNEL, Deployment.getCommunicationChannels().get(getChannelID()).getDisplay());
+      thirdPartyPresentationMap.put(NOTIFICATION_CHANNEL, GetCommunicationChannels().get(getChannelID()).getDisplay());
       thirdPartyPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
       thirdPartyPresentationMap.put("messageContent", gatherChannelParameters(subscriberMessageTemplateService));
       thirdPartyPresentationMap.put("contactType", getContactType());
@@ -691,14 +710,14 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
     {
       Map<String, Object> messageContent = new HashMap<>();
       Map<String, String> resolvedParameters = getResolvedParameters(subscriberMessageTemplateService);
-      Map<String, CriterionField> comChannelParams = Deployment.getCommunicationChannels().get(getChannelID()).getParameters();
+      Map<String, CriterionField> comChannelParams = GetCommunicationChannels().get(getChannelID()).getParameters();
       for (Entry<String, String> entry : resolvedParameters.entrySet())
         {
           String paramName = entry.getKey();
           CriterionField param = comChannelParams.get(paramName);
           if (param == null)
             {
-              log.debug("unexpected : null param in configuration of " + Deployment.getCommunicationChannels().get(getChannelID()).getDisplay() + " : " + paramName);
+              log.debug("unexpected : null param in configuration of " + GetCommunicationChannels().get(getChannelID()).getDisplay() + " : " + paramName);
             }
           else
             {
@@ -842,7 +861,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
           // get communicationChannel
           //
 
-          CommunicationChannel communicationChannel = Deployment.getCommunicationChannels().get(template.getCommunicationChannelID());
+          CommunicationChannel communicationChannel = GetCommunicationChannels().get(template.getCommunicationChannelID());
 
           //
           // get dest address
@@ -981,7 +1000,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
               {
 
                 Date effectiveDeliveryTime = now;
-                CommunicationChannel channel = Deployment.getCommunicationChannels().get(dialogRequest.getChannelID());
+                CommunicationChannel channel = GetCommunicationChannels().get(dialogRequest.getChannelID());
                 if(channel != null) 
                   {
                     effectiveDeliveryTime = channel.getEffectiveDeliveryTime(getBlackoutService(), getTimeWindowService(), now, dialogRequest.getTenantID());
@@ -1045,7 +1064,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
   private void incrementStats(NotificationManagerRequest notificationManagerRequest)
   {
     statsCounter.withLabel(StatsBuilders.LABEL.status.name(),notificationManagerRequest.getDeliveryStatus().getExternalRepresentation())
-            .withLabel(StatsBuilders.LABEL.channel.name(),Deployment.getCommunicationChannels().get(notificationManagerRequest.getChannelID()).getDisplay())
+            .withLabel(StatsBuilders.LABEL.channel.name(),GetCommunicationChannels().get(notificationManagerRequest.getChannelID()).getDisplay())
             .withLabel(StatsBuilders.LABEL.module.name(), notificationManagerRequest.getModule().name())
             .withLabel(StatsBuilders.LABEL.priority.name(), notificationManagerRequest.getDeliveryPriority().getExternalRepresentation())
             .withLabel(StatsBuilders.LABEL.tenant.name(), String.valueOf(notificationManagerRequest.getTenantID()))
@@ -1104,6 +1123,8 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
 
   public static void main(String[] args)
   {
+    //trigger static initializations
+    NGLMRuntime.initialize(true);
     new LoggerInitialization().initLogger();
 
     log.info("NotificationManager: recieved " + args.length + " args");
@@ -1125,7 +1146,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
         String[] split2 = channelArg.split(",");
         String channel = split2.length==2 ? split2[0] : channelArg;
         int threadNumber = split2.length==2 ? Integer.parseInt(split2[1]) : defaultThreadNumber;
-        for(CommunicationChannel cc:Deployment.getCommunicationChannels().values()){
+        for(CommunicationChannel cc:GetCommunicationChannels().values()){
           if(cc.getName().equals(channel)){
             int nbInstances = JSONUtilities.decodeInteger(cc.getDeliveryManagerDeclaration().getJSONRepresentation(), "nbInstancePerProcess", 1);
             log.warn("Number of instances for channel " + channel + " is " + nbInstances);
@@ -1139,7 +1160,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       }
     } else{
       // otherwise all ones
-      for(CommunicationChannel cc:Deployment.getCommunicationChannels().values()){
+      for(CommunicationChannel cc:GetCommunicationChannels().values()){
         int nbInstances = JSONUtilities.decodeInteger(cc.getDeliveryManagerDeclaration().getJSONRepresentation(), "nbInstancePerProcess", 1);
         log.warn("Number of instances for channel " + cc.getName() + " is " + nbInstances);
         for(int i=0; i<nbInstances; i++)
@@ -1217,6 +1238,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
 //     },
 
     ArrayList<String> result = new ArrayList<>();
+    //TODO here use Deployment.getCommunicationChannels(), not GetCommunicationChannels(), because of static trigger calls in DeploymentCommon
     for (CommunicationChannel current : Deployment.getCommunicationChannels().values())
       {
         if(!current.isGeneric()) {

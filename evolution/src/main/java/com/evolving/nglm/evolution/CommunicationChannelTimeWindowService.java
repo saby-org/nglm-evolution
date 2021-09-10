@@ -55,9 +55,9 @@ public class CommunicationChannelTimeWindowService extends GUIService
   //
 
   @Deprecated // groupID not used
-  public CommunicationChannelTimeWindowService(String bootstrapServers, String groupID, String communicationChannelTopic, boolean masterService, CommunicationChannelTimeWindowListener communicationChannelListener)
+  public CommunicationChannelTimeWindowService(String bootstrapServers, String groupID, String communicationChannelTimeWindowTopic, boolean masterService, CommunicationChannelTimeWindowListener communicationChannelListener)
   {
-    this(bootstrapServers, groupID, communicationChannelTopic, masterService, communicationChannelListener, true);
+    this(bootstrapServers, groupID, communicationChannelTimeWindowTopic, masterService, communicationChannelListener, true);
   }
 
   //
@@ -65,9 +65,9 @@ public class CommunicationChannelTimeWindowService extends GUIService
   //
 
   @Deprecated // groupID not used
-  public CommunicationChannelTimeWindowService(String bootstrapServers, String groupID, String communicationChannelTopic, boolean masterService)
+  public CommunicationChannelTimeWindowService(String bootstrapServers, String groupID, String communicationChannelTimeWindowTopic, boolean masterService)
   {
-    this(bootstrapServers, groupID, communicationChannelTopic, masterService, (CommunicationChannelTimeWindowListener) null, true);
+    this(bootstrapServers, groupID, communicationChannelTimeWindowTopic, masterService, (CommunicationChannelTimeWindowListener) null, true);
   }
 
   //
