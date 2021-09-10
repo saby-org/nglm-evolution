@@ -1859,40 +1859,43 @@ public class EvolutionEngine
 	switch (evolutionEvent.getSubscriberAction()) {
 	case Cleanup:
 	case CleanupImmediate:
-	  // check if the cleanup has already been set before
+	  // check if the cleanup date has already been set before
 	  // - if no, the current cleanup / cleanupImmediate is the first one so 
 	  //    * compute the end date (in the future for cleanup and now for cleanupimmediate) and schedule a timeout
 	  //    * set the Terminated status 
-	  //    * Trig a second cleanupImmediate that will effectively clean the subscriber
-	  // - if yes, then this is time to effectively clean the subscriber. All should be ok for status Terminated
+	  //    * Trig a schedule for the good date...
+	  // 
 	  
 	  if(subscriberState.getCleanupDate() == null)
 	    {
+	      Date nowDate = SystemTime.getCurrentTime();
 	      if(evolutionEvent.getSubscriberAction() == SubscriberAction.Cleanup)
 	        {
-	          subscriberState.setCleanupDate(EvolutionUtilities.addTime(SystemTime.getCurrentTime(),
+	          subscriberState.setCleanupDate(EvolutionUtilities.addTime(nowDate,
 	              Deployment.getDeployment(tenantID).getSubscriberDeletionTimeUnitNumber(),
 	              Deployment.getDeployment(tenantID).getSubscriberDeletionTimeUnit(),
 	              Deployment.getDeployment(tenantID).getTimeZone(), EvolutionUtilities.RoundingSelection.NoRound));
-	          subscriberState.getScheduledEvaluations().add(new TimedEvaluation(subscriberState.getSubscriberID(), subscriberState.getCleanupDate()));
+	          
 	        }
 	      else // cleanupImmediate
 	        {
-	          subscriberState.setCleanupDate(SystemTime.getCurrentTime());
+	          subscriberState.setCleanupDate(nowDate);	          
 	        }
+	      TimedEvaluation timed = new TimedEvaluation(
+	          subscriberState.getSubscriberID(), 
+            subscriberState.getCleanupDate());
+	      subscriberState.getScheduledEvaluations().add(timed);
+	      updateScheduledEvaluations(scheduledEvaluationsBefore, subscriberState.getScheduledEvaluations());
 	      subscriberState.getSubscriberProfile().setEvolutionSubscriberStatus(EvolutionSubscriberStatus.Terminated);
-	      CleanupSubscriber assignSubscriberIDs = new CleanupSubscriber(
-	          subscriberState.getSubscriberProfile().getSubscriberID(), SystemTime.getCurrentTime(),
-	          SubscriberAction.CleanupImmediate);
-	      subscriberState.getImmediateCleanupActions().add(assignSubscriberIDs);        
 	    }
-    else // cleanDate already exists
-      {
-        // cleanup the subscriber now... just return null...
-        updateScheduledEvaluations(scheduledEvaluationsBefore, Collections.<TimedEvaluation>emptySet());
-        return null;
-      }
-	  
+	  else if(subscriberState.getCleanupDate().before(SystemTime.getCurrentTime()))
+	    {
+	      // reschedule
+	      TimedEvaluation timed = new TimedEvaluation(
+            subscriberState.getSubscriberID(), 
+            subscriberState.getCleanupDate());
+	      updateScheduledEvaluations(scheduledEvaluationsBefore, subscriberState.getScheduledEvaluations());     
+	    }
 	  SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(),
         subscriberState);
     return subscriberState;
@@ -1900,20 +1903,16 @@ public class EvolutionEngine
 	case Delete: // Delete is useful for SubscriberManager, not really for Evolution Engine
 	case DeleteImmediate: // DeleteImmediate is useful for SubscriberManager, not really for Evolution
 							// Engine
-		if (previousSubscriberState == null)
-			return null;
+		if (previousSubscriberState == null) { return null; }
 		SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(),
 				subscriberState);
 		return subscriberState;
 	}
-	// make effective clean if needed...
-	if (subscriberState.getCleanupDate() != null
-			&& subscriberState.getCleanupDate().before(SystemTime.getCurrentTime())) {
-		// time to trig an immediate cleanup event
-		CleanupSubscriber cleanupSubscriber = new CleanupSubscriber(
-				subscriberState.getSubscriberProfile().getSubscriberID(), SystemTime.getCurrentTime(),
-				SubscriberAction.CleanupImmediate);
-		subscriberState.getImmediateCleanupActions().add(cleanupSubscriber);
+	// on any event make effective clean if needed...
+	if (subscriberState.getCleanupDate() != null && subscriberState.getCleanupDate().before(SystemTime.getCurrentTime())) {
+	  // cleanup the subscriber now... just return null...
+    updateScheduledEvaluations(scheduledEvaluationsBefore, Collections.<TimedEvaluation>emptySet());
+    return null;
 	}
 
 	SubscriberEvaluationRequest subscriberEvaluationRequest = new SubscriberEvaluationRequest(subscriberProfile,
