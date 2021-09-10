@@ -1883,7 +1883,7 @@ public class EvolutionEngine
 	        }
 	      TimedEvaluation timed = new TimedEvaluation(
 	          subscriberState.getSubscriberID(), 
-            subscriberState.getCleanupDate());
+            subscriberState.getCleanupDate(), "cleanup-1-" + subscriberProfile.getSubscriberID());
 	      subscriberState.getScheduledEvaluations().add(timed);
 	      updateScheduledEvaluations(scheduledEvaluationsBefore, subscriberState.getScheduledEvaluations());
 	      subscriberState.getSubscriberProfile().setEvolutionSubscriberStatus(EvolutionSubscriberStatus.Terminated);
@@ -1893,7 +1893,8 @@ public class EvolutionEngine
 	      // reschedule
 	      TimedEvaluation timed = new TimedEvaluation(
             subscriberState.getSubscriberID(), 
-            subscriberState.getCleanupDate());
+            subscriberState.getCleanupDate(), "cleanup-2-" + subscriberProfile.getSubscriberID());
+	      subscriberState.getScheduledEvaluations().add(timed);
 	      updateScheduledEvaluations(scheduledEvaluationsBefore, subscriberState.getScheduledEvaluations());     
 	    }
 	  SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(),
