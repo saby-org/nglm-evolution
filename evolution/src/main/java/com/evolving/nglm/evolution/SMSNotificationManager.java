@@ -639,7 +639,6 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
 
         }
       
-      log.info("RAJ K SMS notification origin {}", origin);
       String deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, journeyID);
       String msisdn = ((SubscriberProfile) subscriberEvaluationRequest.getSubscriberProfile()).getMSISDN();
       String language = subscriberEvaluationRequest.getLanguage();

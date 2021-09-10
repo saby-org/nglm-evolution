@@ -408,8 +408,7 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
           {
             notifRecs.put("communicationChannel", "");
           }
-        notifRecs.put("origin", notifFields.get(origin));
-        
+        notifRecs.put(origin, notifFields.get(origin));
 
         //
         // result

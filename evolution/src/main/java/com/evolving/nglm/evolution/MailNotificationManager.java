@@ -674,7 +674,6 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
             }
           }
         }
-      log.info("RAJ K Mail notification origin {}", origin);
       String deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, journeyID);
       String email = ((SubscriberProfile) subscriberEvaluationRequest.getSubscriberProfile()).getEmail();
       String language = subscriberEvaluationRequest.getLanguage();

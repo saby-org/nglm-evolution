@@ -654,7 +654,6 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
           }
         }
 
-      log.info("RAJ K push origin {}", origin);
       String destAddress = null;
 
       //

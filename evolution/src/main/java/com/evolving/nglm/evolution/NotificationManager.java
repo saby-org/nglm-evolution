@@ -837,7 +837,6 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
           }
         }
       
-      log.info("RAJ K notification origin {}", origin);
       String deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, journeyID);
       String language = subscriberEvaluationRequest.getLanguage();
       SubscriberMessageTemplateService subscriberMessageTemplateService = evolutionEventContext.getSubscriberMessageTemplateService();
