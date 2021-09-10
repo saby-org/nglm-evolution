@@ -487,13 +487,15 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
     public NotificationManagerRequest(Map<String, Object> esFields)
     {
       super(esFields);
-      try {
-        setCreationDate(RLMDateUtils.parseDateFromElasticsearch((String) esFields.get("creationDate")));
-        setDeliveryDate(RLMDateUtils.parseDateFromElasticsearch((String) esFields.get("deliveryDate")));
-      }
-      catch(java.text.ParseException e) {
-        throw new ServerRuntimeException(e);
-      }
+      try
+        {
+          setCreationDate(RLMDateUtils.parseDateFromElasticsearch((String) esFields.get("creationDate")));
+          setDeliveryDate(RLMDateUtils.parseDateFromElasticsearch((String) esFields.get("deliveryDate")));
+        } 
+      catch (java.text.ParseException e)
+        {
+          throw new ServerRuntimeException(e);
+        }
       
       this.destination = (String) esFields.get("destination");
       setSourceAddressParam((String) esFields.get("source"));
@@ -508,6 +510,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       this.returnCode = (Integer) esFields.get("returnCode");
       this.returnCodeDetails = (String) esFields.get("returnCodeDetails");
       this.channelID = (String) esFields.get("channelID");
+      this.origin = (String) esFields.get("origin");
     //NOT in ES this.notificationParameters = esFields.get("");
     }
 

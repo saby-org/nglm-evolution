@@ -363,14 +363,15 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
     public PushNotificationManagerRequest(Map<String, Object> esFields)
     {
       super(esFields);
-      try {
-        setCreationDate(RLMDateUtils.parseDateFromElasticsearch((String) esFields.get("creationDate")));
-        setDeliveryDate(RLMDateUtils.parseDateFromElasticsearch((String) esFields.get("deliveryDate")));
-      }
-      catch(java.text.ParseException e) {
-        throw new ServerRuntimeException(e);
-      }
-      
+      try
+        {
+          setCreationDate(RLMDateUtils.parseDateFromElasticsearch((String) esFields.get("creationDate")));
+          setDeliveryDate(RLMDateUtils.parseDateFromElasticsearch((String) esFields.get("deliveryDate")));
+        } 
+      catch (java.text.ParseException e)
+        {
+          throw new ServerRuntimeException(e);
+        }
       this.destination = (String) esFields.get("destination");
       this.language = (String) esFields.get("language");
       this.templateID = (String) esFields.get("templateID");
@@ -381,6 +382,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
         }
       this.returnCode = (Integer) esFields.get("returnCode");
       this.returnCodeDetails = (String) esFields.get("returnCodeDetails");
+      this.origin = (String) esFields.get("origin");
     }
     
     /*****************************************

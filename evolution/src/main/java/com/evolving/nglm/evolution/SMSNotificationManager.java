@@ -364,13 +364,15 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
     public SMSNotificationManagerRequest(Map<String, Object> esFields)
     {
       super(esFields);
-      try {
-        setCreationDate(RLMDateUtils.parseDateFromElasticsearch((String) esFields.get("creationDate")));
-        setDeliveryDate(RLMDateUtils.parseDateFromElasticsearch((String) esFields.get("deliveryDate")));
-      }
-      catch(java.text.ParseException e) {
-        throw new ServerRuntimeException(e);
-      }
+      try
+        {
+          setCreationDate(RLMDateUtils.parseDateFromElasticsearch((String) esFields.get("creationDate")));
+          setDeliveryDate(RLMDateUtils.parseDateFromElasticsearch((String) esFields.get("deliveryDate")));
+        } 
+      catch (java.text.ParseException e)
+        {
+          throw new ServerRuntimeException(e);
+        }
       
       this.destination = (String) esFields.get("destination");
       this.source = (String) esFields.get("source");
@@ -383,6 +385,7 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
         }
       this.returnCode = (Integer) esFields.get("returnCode");
       this.returnCodeDetails = (String) esFields.get("returnCodeDetails");
+      this.origin = (String) esFields.get("origin");
     }
     
     /*****************************************

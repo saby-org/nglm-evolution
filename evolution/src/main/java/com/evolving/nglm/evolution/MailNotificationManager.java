@@ -408,13 +408,15 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
     public MailNotificationManagerRequest(Map<String, Object> esFields)
     {
       super(esFields);
-      try {
-        setCreationDate(RLMDateUtils.parseDateFromElasticsearch((String) esFields.get("creationDate")));
-        setDeliveryDate(RLMDateUtils.parseDateFromElasticsearch((String) esFields.get("deliveryDate")));
-      }
-      catch(java.text.ParseException e) {
-        throw new ServerRuntimeException(e);
-      }
+      try
+        {
+          setCreationDate(RLMDateUtils.parseDateFromElasticsearch((String) esFields.get("creationDate")));
+          setDeliveryDate(RLMDateUtils.parseDateFromElasticsearch((String) esFields.get("deliveryDate")));
+        } 
+      catch (java.text.ParseException e)
+        {
+          throw new ServerRuntimeException(e);
+        }
         
       this.destination = (String) esFields.get("destination");
       this.fromAddress = (String) esFields.get("source");
@@ -429,8 +431,7 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
         }
       this.returnCode = (Integer) esFields.get("returnCode");
       this.returnCodeDetails = (String) esFields.get("returnCodeDetails");
-      
-      // RAJ K - should I send origin to ES and re construct
+      this.origin = (String) esFields.get("origin");
     }
     
     /*****************************************
