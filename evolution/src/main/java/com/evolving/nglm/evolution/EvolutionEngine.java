@@ -4155,6 +4155,7 @@ public class EvolutionEngine
 
   private static boolean updatePointBalance(EvolutionEventContext context, PointFulfillmentRequest pointFulfillmentResponse, String eventID, String moduleID, String featureID, SubscriberProfile subscriberProfile, Point point, CommodityDeliveryOperation operation, int amount, Date now, boolean generateBDR, String tier, int tenantID)
   {
+
     //
     //  get (or create) balance
     //
