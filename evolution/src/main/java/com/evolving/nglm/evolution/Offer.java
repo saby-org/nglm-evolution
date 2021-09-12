@@ -1065,18 +1065,21 @@ public class Offer extends GUIManagedObject implements StockableItem
     List<String> result = new ArrayList<String>();
     if (allCriterions != null && !allCriterions.isEmpty())
       {
-        for (EvaluationCriterion criterion :allCriterions)
+        for (EvaluationCriterion criterion : allCriterions)
           {
-            for (String field : criterion.getSubcriteriaExpressions().keySet())
+            if (criterion.getSubcriteriaExpressions() != null && !criterion.getSubcriteriaExpressions().isEmpty())
               {
-                if (field.equals(fieldID))
+                for (String field : criterion.getSubcriteriaExpressions().keySet())
                   {
-                    Expression expression = criterion.getSubcriteriaExpressions().get(field);
-                    if (expression != null && expression instanceof ConstantExpression)
+                    if (field.equals(fieldID))
                       {
-                        ConstantExpression consExpression = (ConstantExpression) expression;
-                        String fieldIDArgVal  = (String) consExpression.evaluateConstant();
-                        result.add(fieldIDArgVal);
+                        Expression expression = criterion.getSubcriteriaExpressions().get(field);
+                        if (expression != null && expression instanceof ConstantExpression)
+                          {
+                            ConstantExpression consExpression = (ConstantExpression) expression;
+                            String fieldIDArgVal  = (String) consExpression.evaluateConstant();
+                            result.add(fieldIDArgVal);
+                          }
                       }
                   }
               }
