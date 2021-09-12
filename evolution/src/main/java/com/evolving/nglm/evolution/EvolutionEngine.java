@@ -2271,6 +2271,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
+    log.info("RAJ K subscriberStateUpdated {}", subscriberStateUpdated);
     if (subscriberStateUpdated)
       {
         SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(), subscriberState);//build the new
