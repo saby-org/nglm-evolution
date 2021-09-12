@@ -2353,6 +2353,7 @@ public class EvolutionEngine
   
   private static void updatePointBalances(EvolutionEventContext context, SubscriberState subscriberState, Date now, int tenantID)
   {
+    log.info("RAJ K updatePointBalances ");
     Map<String, PointBalance> pointBalances = subscriberState.getSubscriberProfile().getPointBalances() != null ? subscriberState.getSubscriberProfile().getPointBalances() : Collections.<String,PointBalance>emptyMap();
     for(String pointID: pointBalances.keySet())
       {
@@ -2361,8 +2362,10 @@ public class EvolutionEngine
           {
             //TODO : what module is best here ?
             boolean updated = updatePointBalance(context, null, "checkBonusExpiration", Module.Unknown.getExternalRepresentation(), "checkBonusExpiration", subscriberState.getSubscriberProfile(), point, CommodityDeliveryOperation.Expire, 0, now, true, "", tenantID);
+            log.info("RAJ K updatePointBalance {}", updated);
             if (updated && subscriberState.getSubscriberProfile().getLoyaltyPrograms() != null)
               {
+                log.info("RAJ K subscriberState.getSubscriberProfile().getLoyaltyPrograms().size() {}", subscriberState.getSubscriberProfile().getLoyaltyPrograms().size());
                 //
                 //  immediately change Loyalty Tier
                 //
@@ -2370,14 +2373,17 @@ public class EvolutionEngine
                 SubscriberProfile subscriberProfile = subscriberState.getSubscriberProfile();
                 for (LoyaltyProgramState loyaltyState : subscriberProfile.getLoyaltyPrograms().values())
                   {
+                    log.info("RAJ K loyaltyState != null {}", loyaltyState != null);
                     if (loyaltyState instanceof LoyaltyProgramPointsState)
                       {
+                        log.info("RAJ K loyaltyState instanceof LoyaltyProgramPointsState {}", true);
                         LoyaltyProgramPointsState loyaltyProgramPointsState = (LoyaltyProgramPointsState) loyaltyState;
                         LoyaltyProgramPoints loyaltyProgramPoints = (LoyaltyProgramPoints) loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramPointsState.getLoyaltyProgramID(), now);
                         String oldTier = loyaltyProgramPointsState.getTierName();
                         if (loyaltyProgramPoints != null)
                           {
                             String newTier = determineLoyaltyProgramPointsTier(subscriberState.getSubscriberProfile(), loyaltyProgramPoints, now);
+                            log.info("RAJ K oldTier {}, newTier {}", oldTier, newTier);
                             if (oldTier != null && !oldTier.equals(newTier))
                               {
                                 LoyaltyProgramTierChange tierChangeType = loyaltyProgramPointsState.update(loyaltyProgramPoints.getEpoch(), LoyaltyProgramOperation.Optin, loyaltyProgramPoints.getLoyaltyProgramName(), newTier, now, "checkBonusExpiration", loyaltyProgramService);
