@@ -3354,6 +3354,7 @@ public class EvolutionEngine
             // update balance 
             //
             
+            log.info("RAJ K updatePointBalance from PointFulfillmentRequest {}", pointFulfillmentRequest);
             boolean success = updatePointBalance(context, pointFulfillmentResponse, pointFulfillmentRequest.getEventID(), pointFulfillmentRequest.getModuleID(), pointFulfillmentRequest.getFeatureID(), subscriberProfile, newPoint, pointFulfillmentRequest.getOperation(), pointFulfillmentRequest.getAmount(), now, false, "", tenantID);
             
             //
