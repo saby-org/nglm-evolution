@@ -2271,7 +2271,6 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    log.info("RAJ K subscriberStateUpdated {}", subscriberStateUpdated);
     if (subscriberStateUpdated)
       {
         SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(), subscriberState);//build the new
@@ -2362,7 +2361,7 @@ public class EvolutionEngine
           {
             //TODO : what module is best here ?
             boolean updated = updatePointBalance(context, null, "checkBonusExpiration", Module.Unknown.getExternalRepresentation(), "checkBonusExpiration", subscriberState.getSubscriberProfile(), point, CommodityDeliveryOperation.Expire, 0, now, true, "", tenantID);
-            checkForLoyaltyProgramStateChanges(subscriberState, "checkBonusExpiration", now, null, false);
+            if (updated) checkForLoyaltyProgramStateChanges(subscriberState, "checkBonusExpiration", now, null, false);
           }
       }
   }
@@ -3354,7 +3353,6 @@ public class EvolutionEngine
             // update balance 
             //
             
-            log.info("RAJ K updatePointBalance from PointFulfillmentRequest {}", pointFulfillmentRequest);
             boolean success = updatePointBalance(context, pointFulfillmentResponse, pointFulfillmentRequest.getEventID(), pointFulfillmentRequest.getModuleID(), pointFulfillmentRequest.getFeatureID(), subscriberProfile, newPoint, pointFulfillmentRequest.getOperation(), pointFulfillmentRequest.getAmount(), now, false, "", tenantID);
             
             //
@@ -3954,7 +3952,6 @@ public class EvolutionEngine
 
   private static void checkForLoyaltyProgramStateChanges(SubscriberState subscriberState, String deliveryRequestID, Date now, Integer oldScore, boolean periodChange)
   {
-    log.info("RAJ K checkForLoyaltyProgramStateChanges {}", deliveryRequestID);
     SubscriberProfile subscriberProfile = subscriberState.getSubscriberProfile();
     for(Entry<String, LoyaltyProgramState> entry : subscriberProfile.getLoyaltyPrograms().entrySet())
       {
@@ -4158,13 +4155,6 @@ public class EvolutionEngine
 
   private static boolean updatePointBalance(EvolutionEventContext context, PointFulfillmentRequest pointFulfillmentResponse, String eventID, String moduleID, String featureID, SubscriberProfile subscriberProfile, Point point, CommodityDeliveryOperation operation, int amount, Date now, boolean generateBDR, String tier, int tenantID)
   {
-    log.info("RAJ K Printing stack trace:");
-    StackTraceElement[] elements = Thread.currentThread().getStackTrace();
-    for (int i = 1; i < elements.length; i++) {
-         StackTraceElement s = elements[i];
-         log.info("RAJ K \tat " + s.getClassName() + "." + s.getMethodName() + "(" + s.getFileName() + ":" + s.getLineNumber() + ")");
-    }
-
     //
     //  get (or create) balance
     //
