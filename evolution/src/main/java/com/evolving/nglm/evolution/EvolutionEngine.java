@@ -4157,6 +4157,12 @@ public class EvolutionEngine
 
   private static boolean updatePointBalance(EvolutionEventContext context, PointFulfillmentRequest pointFulfillmentResponse, String eventID, String moduleID, String featureID, SubscriberProfile subscriberProfile, Point point, CommodityDeliveryOperation operation, int amount, Date now, boolean generateBDR, String tier, int tenantID)
   {
+    log.info("RAJ K Printing stack trace:");
+    StackTraceElement[] elements = Thread.currentThread().getStackTrace();
+    for (int i = 1; i < elements.length; i++) {
+         StackTraceElement s = elements[i];
+         log.info("RAJ K \tat " + s.getClassName() + "." + s.getMethodName() + "(" + s.getFileName() + ":" + s.getLineNumber() + ")");
+    }
 
     //
     //  get (or create) balance
