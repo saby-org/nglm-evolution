@@ -202,7 +202,7 @@ public class ReferenceDataReader<K, V extends ReferenceDataValue<K>>
           consumedOffsets.put(new TopicPartition(record.topic(), record.partition()), record.offset());
         }
 
-        if(log.isDebugEnabled()) log.debug("will process "+toLoad.size()+" records, after reading "+sizeConsumed+" bytes for "+records.count()+" total records");
+        if(log.isTraceEnabled()) log.trace("will process "+toLoad.size()+" records, after reading "+sizeConsumed+" bytes for "+records.count()+" total records");
 
         Iterator<Map.Entry<Bytes,byte[]>> groupedRecordIterator = toLoad.entrySet().iterator();
         while(groupedRecordIterator.hasNext()){
