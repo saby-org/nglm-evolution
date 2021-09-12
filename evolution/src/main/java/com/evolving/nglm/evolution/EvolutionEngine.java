@@ -2393,6 +2393,8 @@ public class EvolutionEngine
                                 ProfileLoyaltyProgramChangeEvent profileLoyaltyProgramChangeEvent = new ProfileLoyaltyProgramChangeEvent(subscriberProfile.getSubscriberID(), now, loyaltyProgramPoints.getLoyaltyProgramID(), loyaltyProgramPoints.getLoyaltyProgramType(), info);
                                 subscriberState.getProfileLoyaltyProgramChangeEvents().add(profileLoyaltyProgramChangeEvent);
                                 launchChangeTierWorkflows(profileLoyaltyProgramChangeEvent, subscriberState, loyaltyProgramPoints, oldTier, newTier, loyaltyProgramPointsState.getLoyaltyProgramID());
+                                if (log.isDebugEnabled()) log.debug("loyalty tier changed due to point expiration for program {}, subscriberID {} from tier {} to new tier {}", loyaltyProgramPoints.getLoyaltyProgramDisplay(), subscriberProfile.getSubscriberID(), oldTier, newTier);
+                                log.info("RAJ K loyalty tier changed due to point expiration for program {}, subscriberID {} from tier {} to new tier {}", loyaltyProgramPoints.getLoyaltyProgramDisplay(), subscriberProfile.getSubscriberID(), oldTier, newTier);
                               }
                           }
                       }
