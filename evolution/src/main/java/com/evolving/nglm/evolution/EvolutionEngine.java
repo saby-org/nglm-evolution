@@ -2360,7 +2360,45 @@ public class EvolutionEngine
         if(point != null)
           {
             //TODO : what module is best here ?
-            updatePointBalance(context, null, "checkBonusExpiration", Module.Unknown.getExternalRepresentation(), "checkBonusExpiration", subscriberState.getSubscriberProfile(), point, CommodityDeliveryOperation.Expire, 0, now, true, "", tenantID);
+            boolean updated = updatePointBalance(context, null, "checkBonusExpiration", Module.Unknown.getExternalRepresentation(), "checkBonusExpiration", subscriberState.getSubscriberProfile(), point, CommodityDeliveryOperation.Expire, 0, now, true, "", tenantID);
+            if (updated && subscriberState.getSubscriberProfile().getLoyaltyPrograms() != null)
+              {
+                //
+                //  immediately change Loyalty Tier
+                //
+                
+                SubscriberProfile subscriberProfile = subscriberState.getSubscriberProfile();
+                for (LoyaltyProgramState loyaltyState : subscriberProfile.getLoyaltyPrograms().values())
+                  {
+                    if (loyaltyState instanceof LoyaltyProgramPointsState)
+                      {
+                        LoyaltyProgramPointsState loyaltyProgramPointsState = (LoyaltyProgramPointsState) loyaltyState;
+                        LoyaltyProgramPoints loyaltyProgramPoints = (LoyaltyProgramPoints) loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramPointsState.getLoyaltyProgramID(), now);
+                        String oldTier = loyaltyProgramPointsState.getTierName();
+                        if (loyaltyProgramPoints != null)
+                          {
+                            String newTier = determineLoyaltyProgramPointsTier(subscriberState.getSubscriberProfile(), loyaltyProgramPoints, now);
+                            if (oldTier != null && !oldTier.equals(newTier))
+                              {
+                                LoyaltyProgramTierChange tierChangeType = loyaltyProgramPointsState.update(loyaltyProgramPoints.getEpoch(), LoyaltyProgramOperation.Optin, loyaltyProgramPoints.getLoyaltyProgramName(), newTier, now, "checkBonusExpiration", loyaltyProgramService);
+
+                                //
+                                // generate new event (tier changed)
+                                //
+
+                                ParameterMap info = new ParameterMap();
+                                info.put(LoyaltyProgramPointsEventInfos.OLD_TIER.getExternalRepresentation(), oldTier);
+                                info.put(LoyaltyProgramPointsEventInfos.NEW_TIER.getExternalRepresentation(), newTier);
+                                info.put(LoyaltyProgramPointsEventInfos.TIER_UPDATE_TYPE.getExternalRepresentation(), tierChangeType.getExternalRepresentation());
+                                ProfileLoyaltyProgramChangeEvent profileLoyaltyProgramChangeEvent = new ProfileLoyaltyProgramChangeEvent(subscriberProfile.getSubscriberID(), now, loyaltyProgramPoints.getLoyaltyProgramID(), loyaltyProgramPoints.getLoyaltyProgramType(), info);
+                                subscriberState.getProfileLoyaltyProgramChangeEvents().add(profileLoyaltyProgramChangeEvent);
+                                launchChangeTierWorkflows(profileLoyaltyProgramChangeEvent, subscriberState, loyaltyProgramPoints, oldTier, newTier, loyaltyProgramPointsState.getLoyaltyProgramID());
+                              }
+                          }
+                      }
+                    
+                  }
+              }
           }
       }
   }
