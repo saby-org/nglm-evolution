@@ -40,7 +40,8 @@ public abstract class ActionManager
     TriggerEvent,
     UpdateProfile,
     VoucherChange,
-    deleteSubscriber;
+    deleteSubscriber,
+    BadgeChange;
   }
 
   /*****************************************
