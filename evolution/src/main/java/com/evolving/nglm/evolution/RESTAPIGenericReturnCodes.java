@@ -33,6 +33,7 @@ public enum RESTAPIGenericReturnCodes
 //  BREACHED_PASSWORD(64,"BREACHED_PASSWORD","Breached password"),
 //  PASSWORD_ALREADY_USED(65,"PASSWORD_ALREADY_USED","Password already used"),
   INVALID_OTP(66,"INVALID_OTP","Value does not match"),
+  OTP_BURNT(67,"OTP_BURNT","OTP was no longer active"),
   ELEMENT_NOT_FOUND(80, "ELEMENT_NOT_FOUND", "Element not found"),
   ALREADY_APPROVED(81, "ALREADY_APPROVED", "Request already approved"),
   APPROBATION_EXPIRED(82, "APPROBATION_EXPIRED", "Approbation request expired"),

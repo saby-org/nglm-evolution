@@ -120,14 +120,14 @@ public class OfferService extends GUIService
   public Offer getActiveOffer(String offerID, Date date) { return (Offer) getActiveGUIManagedObject(offerID, date); }
   public Collection<Offer> getActiveOffers(Date date, int tenantID) { return (Collection<Offer>) getActiveGUIManagedObjects(date, tenantID); }
 
-  //this call trigger stock count, this for stock information for GUI, so DO NOT USE it for traffic calls
+  //this call trigger stock count, this for stock information for GUI
   public GUIManagedObject getStoredOfferWithCurrentStocks(String offerID, boolean includeArchived){
     GUIManagedObject uncheckedOffer = getStoredOffer(offerID,includeArchived);
     if(!(uncheckedOffer instanceof Offer)) return uncheckedOffer;//cant do more than normal one
-    uncheckedOffer.getJSONRepresentation().put("remainingStock",StockMonitor.getRemainingStock((Offer)uncheckedOffer));
+    uncheckedOffer.getJSONRepresentation().put("remainingStock",((Offer)uncheckedOffer).getApproximateRemainingStock());
     return uncheckedOffer;
   }
-  //this call trigger stock count, this for stock information for GUI, so DO NOT USE it for traffic calls
+  //this call trigger stock count, this for stock information for GUI
   public Collection<GUIManagedObject> getStoredOffersWithCurrentStocks(boolean includeArchived, int tenantID) {
     Collection<GUIManagedObject> toRet = getStoredGUIManagedObjects(includeArchived, tenantID);
     // populate all with stocks info

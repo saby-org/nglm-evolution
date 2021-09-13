@@ -27,7 +27,7 @@ import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
-@GUIDependencyDef(objectType = "dnboMatrix", serviceClass = DNBOMatrixService.class, dependencies = {  "segmentationdimension"})
+@GUIDependencyDef(objectType = "dnbomatrix", serviceClass = DNBOMatrixService.class, dependencies = {  "segmentationdimension"})
 public class DNBOMatrix extends GUIManagedObject
 {
   /*****************************************
@@ -336,7 +336,7 @@ public class DNBOMatrix extends GUIManagedObject
   {
   }
   
-  @Override public Map<String, List<String>> getGUIDependencies(int tenantID)
+  @Override public Map<String, List<String>> getGUIDependencies(List<GUIService> guiServiceList, int tenantID)
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
     List<String> segmentationDimensionIDs = new ArrayList<>();

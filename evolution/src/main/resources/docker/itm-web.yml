@@ -1,9 +1,17 @@
 itm-web-<_KEY_>:
   image: ${env.DOCKER_REGISTRY}itm.web:${gui-itm.version}
   environment:
-    itm_api_server_path: "http://<_GUI_ITM_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_ITM_API_SERVER_PORT_>/api/"
-    itm_fwk_api_server_path: "http://<_GUI_FWK_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_FWK_API_SERVER_PORT_>/api/"
-    itm_fwk_api_server_path_for_upload_files: "http://<_GUI_ITM_API_SERVER_HOST_EXTERNAL_IP_>:<_GUI_ITM_API_SERVER_PORT_>/api/file/flowupload"
+    itm_api_server_path: "<_GUI_HTTP_PROCOTOL_>://<_GUI_ITM_API_FULL_PATH_>"
+    itm_fwk_api_server_path: "<_GUI_HTTP_PROCOTOL_>://<_GUI_FWK_API_FULL_PATH_>"
+    itm_fwk_api_server_path_for_upload_files: "<_GUI_HTTP_PROCOTOL_>://<_GUI_ITM_API_FULL_PATH_>/file/flowupload"
+    APPROVAL_MODE_ENABLED: '<_APPROVAL_MODE_ENABLED_>'
+    DATE_TIME_FORMAT: "<_DATE_TIME_FORMAT_>"
+    DATE_TIME_Z_FORMAT: "<_DATE_TIME_Z_FORMAT_>"
+    DATE_FORMAT: "<_DATE_FORMAT_>"
+    TIME_FORMAT: "<_TIME_FORMAT_>"
+    DISPLAY_DATE_TIME_FORMATS: "<_DISPLAY_DATE_TIME_FORMATS_>"
+    DISPLAY_DATE_FORMATS: "<_DISPLAY_DATE_FORMATS_>"
+    DISPLAY_TIME_FORMATS: "<_DISPLAY_TIME_FORMATS_>"
     TZ: <_DEPLOYMENT_TIMEZONE_>
     ITM_WEB_PORT: <_PORT_>
   deploy:

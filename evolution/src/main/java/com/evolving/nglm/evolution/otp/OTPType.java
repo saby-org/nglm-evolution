@@ -84,17 +84,34 @@ public class OTPType extends GUIManagedObject
   ****************************************/
 
   // security attributes
+  
+  // Max number of time we can check this OTP with a wrong code before being considered as Expired...  (For One OTP Instance) 
   private Integer maxWrongCheckAttemptsByInstance;
+  
+  // 
   private Integer maxWrongCheckAttemptsByTimeWindow;
+  
+  // Max number of instances for which (creation date + time window) > now: Still valid in TimeWindow's perpective
   private Integer maxConcurrentWithinTimeWindow;
+  
+  // Duration during which an instance 
   private Integer timeWindow;
+  
   private Integer banPeriod;  // int32 seconds allows >60years
+ 
   // affects instance values generation :
   private Integer instanceExpirationDelay;
+  
   // only one of the two :
   private Integer valueGenerationDigits; // for simple non-0-leading number
   private String valueGenerationRegex; // for more complex type
   
+  
+  
+  // possible future developments :
+  // - add a flag so indicate if maxWrongCheckAttemptsByInstance raises a ban (currently yes) or just leave the instance maxed without additionnal error count (originally but dismissed)
+  // - add a second timer or a flag to extend/reset the calculated expirationDate of the instance after a successfull check
+  // ...
   
   /****************************************
   *
@@ -279,12 +296,12 @@ public class OTPType extends GUIManagedObject
     *****************************************/
     
     // {
-    //    "maxWrongCheckAttemptsByInstance" : 1,
+    //    "maxWrongCheckAttemptsByInstance" : 3,
     //    "maxWrongCheckAttemptsByTimeWindow" : 10,
-    //    "maxConcurrentWithinTimeWindow" : 1,
-    //    "timeWindow" : 600,
-    //    "banPeriod" : 10800,
-    //    "instanceExpirationDelay" : 600,
+    //    "maxConcurrentWithinTimeWindow" : 5,
+    //    "timeWindowInSeconds" : 6000,
+    //    "banPeriodInSeconds" : 10800,
+    //    "instanceExpirationDelayInSeconds" : 600,
     //    "valueGenerationDigits" : 6,
     //    "valueGenerationRegex" : "[123456789][0123456789]{5}"
     //  }
@@ -293,9 +310,9 @@ public class OTPType extends GUIManagedObject
     this.maxWrongCheckAttemptsByInstance  = JSONUtilities.decodeInteger(jsonRoot, "maxWrongCheckAttemptsByInstance", false); 
     this.maxWrongCheckAttemptsByTimeWindow  = JSONUtilities.decodeInteger(jsonRoot, "maxWrongCheckAttemptsByTimeWindow", false); 
     this.maxConcurrentWithinTimeWindow  = JSONUtilities.decodeInteger(jsonRoot, "maxConcurrentWithinTimeWindow", false); 
-    this.timeWindow  = JSONUtilities.decodeInteger(jsonRoot, "timeWindow", false); 
-    this.banPeriod  = JSONUtilities.decodeInteger(jsonRoot, "banPeriod", false); 
-    this.instanceExpirationDelay  = JSONUtilities.decodeInteger(jsonRoot, "instanceExpirationDelay", true); 
+    this.timeWindow  = JSONUtilities.decodeInteger(jsonRoot, "timeWindowInSeconds", false); 
+    this.banPeriod  = JSONUtilities.decodeInteger(jsonRoot, "banPeriodInSeconds", false); 
+    this.instanceExpirationDelay  = JSONUtilities.decodeInteger(jsonRoot, "instanceExpirationDelayInSeconds", true); 
     this.valueGenerationDigits = JSONUtilities.decodeInteger(jsonRoot, "valueGenerationDigits", false);
     this.valueGenerationRegex = JSONUtilities.decodeString(jsonRoot, "valueGenerationRegex", false);
 

@@ -22,12 +22,12 @@ public class DatacubeUtils
 
   public static void embelishReturnCode(Map<String, Object> filters)
   {
-    String returnCode = (String) filters.remove("returnCode");
     Integer returnCodeInt = -1; // will translate to UNKNOWN(-1, "UNKNOWN", "UNKNOWN")
+    Object returnCode = filters.remove("returnCode");
     try {
-      returnCodeInt = Integer.parseInt(returnCode);
+      returnCodeInt = (Integer) returnCode; // ! It should already be an integer
     } catch (NumberFormatException e) {
-      log.info("Invalid value found for return code : " + returnCode);
+      log.info("Invalid value found for return code : " + returnCode.toString() );
     }
     filters.put("returnCode", RESTAPIGenericReturnCodes.fromGenericResponseCode(returnCodeInt).getGenericResponseMessage());
   }

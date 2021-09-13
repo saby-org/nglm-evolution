@@ -147,7 +147,7 @@ public class VoucherService extends GUIService {
       uncheckedVoucher.getJSONRepresentation().put("remainingStock",totalRemaining);
       return voucher;
     }else if(uncheckedVoucher instanceof VoucherShared){
-      uncheckedVoucher.getJSONRepresentation().put("remainingStock",StockMonitor.getRemainingStock((VoucherShared)uncheckedVoucher));
+      uncheckedVoucher.getJSONRepresentation().put("remainingStock",((VoucherShared)uncheckedVoucher).getApproximateRemainingStock());
     }
 
     return uncheckedVoucher;

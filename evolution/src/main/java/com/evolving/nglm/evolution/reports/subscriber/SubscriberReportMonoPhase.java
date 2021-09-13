@@ -53,13 +53,11 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
   private static SimpleDateFormat parseSDF1 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");   // TODO EVPRO-99
   private static SimpleDateFormat parseSDF2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX");   // TODO EVPRO-99
   private Map<Integer, Map<String, String>> dimNameDisplayMappingPerTenant = new HashMap<>();
+  private int tenantID = 0;
 
   private static final String customerID = "customerID";
   private static final String activationDate = "activationDate";
   private static final String relationships = "relationships";
-  private static final String dimDisplay = "dimDisplay";
-  
-  
   
   static List<String> headerFieldsOrder = new ArrayList<String>();
   static
@@ -71,7 +69,6 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
     }
     headerFieldsOrder.add(activationDate);
     headerFieldsOrder.add(relationships);
-    headerFieldsOrder.add(dimDisplay);
     headerFieldsOrder.add(evolutionSubscriberStatusChangeDate);
   }
   
@@ -86,128 +83,125 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
     LinkedHashMap<String, Object> result = new LinkedHashMap<>();
     Map<String, Object> elasticFields = map;
     if (elasticFields != null)
+    {
+      if (elasticFields.get("tenantID") != null)
+        tenantID = (Integer) elasticFields.get("tenantID");
+      else
+        tenantID = 0;
+      if (elasticFields.get(subscriberID) != null)
       {
-        if (elasticFields.get("tenantID") != null)
-          tenantID = (Integer) elasticFields.get("tenantID");
+        result.put(customerID, elasticFields.get(subscriberID));
+        for (AlternateID alternateID : Deployment.getAlternateIDs().values())
+        {
+          Object alternateId = elasticFields.get(alternateID.getESField());
+          result.put(alternateID.getName(), alternateId);
+        }
+      } 
+      if (elasticFields.containsKey("activationDate") && elasticFields.get("activationDate") != null)
+      {
+        Object activationDateObj = elasticFields.get("activationDate");
+        if (activationDateObj instanceof String)
+        {
+          String activationDateStr = (String) activationDateObj;
+          // TEMP fix for BLK : reformat date with correct template.
+          // current format comes from ES and is : 2020-04-20T09:51:38.953Z
+          try
+          {
+            Date date = parseSDF1.parse(activationDateStr);
+            // replace with new value
+            result.put(activationDate, ReportsCommonCode.getDateString(date)); 
+          }
+          catch (ParseException e1)
+          {
+            // Could also be 2019-11-27 15:39:30.276+0100
+            try
+            {
+              Date date = parseSDF2.parse(activationDateStr);
+              // replace with new value
+              result.put(activationDate, ReportsCommonCode.getDateString(date));
+            }
+            catch (ParseException e2)
+            {
+              log.info("Unable to parse " + activationDateStr);
+            }
+          }
+        }
         else
-          tenantID = 0;
-        
-        if (elasticFields.get(subscriberID) != null)
-          {
-            result.put(customerID, elasticFields.get(subscriberID));
-            for (AlternateID alternateID : Deployment.getAlternateIDs().values())
-              {
-                Object alternateId = elasticFields.get(alternateID.getESField());
-                result.put(alternateID.getName(), alternateId);
-              }
-          } 
-        if (elasticFields.containsKey("activationDate") && elasticFields.get("activationDate") != null)
-              {
-                Object activationDateObj = elasticFields.get("activationDate");
-                if (activationDateObj instanceof String)
-                  {
-                    String activationDateStr = (String) activationDateObj;
-                    // TEMP fix for BLK : reformat date with correct template.
-                    // current format comes from ES and is : 2020-04-20T09:51:38.953Z
-                    try
-                      {
-                        Date date = parseSDF1.parse(activationDateStr);
-                        // replace with new value
-                        result.put(activationDate, ReportsCommonCode.getDateString(date)); 
-                      }
-                    catch (ParseException e1)
-                      {
-                        // Could also be 2019-11-27 15:39:30.276+0100
-                        try
-                          {
-                            Date date = parseSDF2.parse(activationDateStr);
-                            // replace with new value
-                            result.put(activationDate, ReportsCommonCode.getDateString(date));
-                          }
-                        catch (ParseException e2)
-                          {
-                            log.info("Unable to parse " + activationDateStr);
-                          }
-                      }
-                  }
-                else
-                  {
-                    log.info("activationDate is of wrong type : " + activationDateObj.getClass().getName());
-                  }
-              }
-            else
-              {
-                result.put(activationDate, "");
-              }
-        
-        if (elasticFields.containsKey("relationships"))
-          {
-            if (elasticFields.get("relationships") != null)
-              {
-                Object relationshipObject = elasticFields.get("relationships");
-                result.put(relationships, relationshipObject);
-              }
-            else
-              {
-                result.put(relationships, "");
-              }
-          }
-        else
-          {
-            result.put(relationships, "");
-          }
-
-        result.putAll(allDimensionsMapPerTenant.get(tenantID)); // all dimensions have empty segments
-        for (String field : allProfileFields)
-          {
-            if (field.equals(segments))
-              {
-                if (elasticFields.containsKey(segments))
-                  {
-                    String s = "" + elasticFields.get(segments);
-                    String removeBrackets = s.substring(1, s.length() - 1); // "[ seg1, seg2, ...]"
-                    String segmentIDs[] = removeBrackets.split(",");
-                    Arrays.stream(segmentIDs).forEach(
-                        segmentID -> {
-                          String[] couple = segmentsNamesPerTenant.get(tenantID).get(segmentID.trim());
-                          if (couple != null)
-                            {
-                              String dimName = couple[INDEX_DIMENSION_NAME];
-                              String dimDisplay = dimNameDisplayMappingPerTenant.get(tenantID).get(dimName);
-                              if (dimDisplay == null || dimDisplay.isEmpty()) dimDisplay = dimName;
-                              result.put(dimDisplay, couple[INDEX_SEGMENT_NAME]);
-                            }
-                          else
-                            {
-                              log.trace("Unknown segment ID : " + segmentID);
-                            }
-                        });
-                  }
-              }
-            else if (field.equals(evolutionSubscriberStatusChangeDate))
-              {
-
-                // TEMP fix for BLK : reformat date with correct template.
-
-                result.put(evolutionSubscriberStatusChangeDate, ReportsCommonCode.parseDate((String) elasticFields.get(evolutionSubscriberStatusChangeDate)));
-
-                // END TEMP fix for BLK
-              }
-            else
-              {
-                result.put(field, elasticFields.get(field));
-              }
-          }
-
-        if (addHeaders)
-          {
-            addHeaders(writer, result.keySet(), 1);
-            addHeaders = false;
-          }
-        String line = ReportUtils.formatResult(result);
-        if (log.isTraceEnabled()) log.trace("Writing to csv file : " + line);
-        writer.write(line.getBytes());
+        {
+          log.info("activationDate is of wrong type : " + activationDateObj.getClass().getName());
+        }
       }
+      else
+      {
+        result.put(activationDate, "");
+      }
+      for (String field : allProfileFields)
+      {
+        if (!field.equals(segments))
+        {
+          result.put(field, elasticFields.get(field));
+        }
+        else if (field.equals(evolutionSubscriberStatusChangeDate))
+        {
+
+          // TEMP fix for BLK : reformat date with correct template.
+
+          result.put(evolutionSubscriberStatusChangeDate, ReportsCommonCode.parseDate((String) elasticFields.get(evolutionSubscriberStatusChangeDate)));
+
+          // END TEMP fix for BLK
+        }
+      }
+      if (elasticFields.containsKey("relationships"))
+      {
+        if (elasticFields.get("relationships") != null)
+        {
+          Object relationshipObject = elasticFields.get("relationships");
+          result.put(relationships, relationshipObject);
+        }
+        else
+        {
+          result.put(relationships, "");
+        }
+      }
+      else
+      {
+        result.put(relationships, "");
+      }
+      result.putAll(allDimensionsMapPerTenant.get(tenantID)); // all dimensions have empty segments
+      for (String field : allProfileFields)
+      {
+        if (elasticFields.containsKey(segments))
+        {
+          String s = "" + elasticFields.get(segments);
+          String removeBrackets = s.substring(1, s.length() - 1); // "[ seg1, seg2, ...]"
+          String segmentIDs[] = removeBrackets.split(",");
+          Arrays.stream(segmentIDs).forEach(
+              segmentID -> {
+                String[] couple = segmentsNamesPerTenant.get(tenantID).get(segmentID.trim());
+                if (couple != null)
+                {
+                  String dimName = couple[INDEX_DIMENSION_NAME];
+                  String dimDisplay = dimNameDisplayMappingPerTenant.get(tenantID).get(dimName);
+                  if (dimDisplay == null || dimDisplay.isEmpty()) dimDisplay = dimName;
+                  result.put(dimDisplay, couple[INDEX_SEGMENT_NAME]);
+                }
+                else
+                {
+                  log.trace("Unknown segment ID : " + segmentID);
+                }
+              });
+        }
+      }
+
+      if (addHeaders)
+      {
+        addHeaders(writer, result.keySet(), 1);
+        addHeaders = false;
+      }
+      String line = ReportUtils.formatResult(result);
+      if (log.isTraceEnabled()) log.trace("Writing to csv file : " + line);
+      writer.write(line.getBytes());
+    }
     return addHeaders;
   }
   
@@ -292,11 +286,12 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
 	  String esNode          = args[1];
 	  String esIndexCustomer = args[2];
     String csvfile         = args[3];
+    if (args.length > 4) tenantID = Integer.parseInt(args[4]);
 
 	  log.info("Reading data from ES in "+esIndexCustomer+"  index and writing to "+csvfile+" file.");	
 
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
-    esIndexWithQuery.put(esIndexCustomer, QueryBuilders.matchAllQuery());
+    esIndexWithQuery.put(esIndexCustomer, QueryBuilders.boolQuery().filter(QueryBuilders.termQuery("tenantID", tenantID)));
 
     ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
         esNode,

@@ -73,6 +73,7 @@ public class TokenOfferReportMonoPhase implements ReportCsvFactory
 
   private SalesChannelService salesChannelService;
   private OfferService offerService = null;
+  private int tenantID = 0;
 
   public boolean dumpElementToCsvMono(Map<String,Object> map, ZipOutputStream writer, boolean addHeaders) throws IOException
   {
@@ -97,6 +98,10 @@ public class TokenOfferReportMonoPhase implements ReportCsvFactory
                         Object alternateId = elasticFields.get(alternateID.getESField());
                         commonFields.put(alternateID.getName(), alternateId);
                       }
+                    else
+                    {
+                      commonFields.put(alternateID.getName(), "");
+                    }
                   }
                 for (int i = 0; i < tokensArray.size(); i++)
                   {
@@ -307,11 +312,12 @@ public class TokenOfferReportMonoPhase implements ReportCsvFactory
     String esNode          = args[0];
     String esIndexCustomer = args[1];
     String csvfile         = args[2];
+    if (args.length > 3) tenantID = Integer.parseInt(args[3]);
 
     log.info("Reading data from ES in "+esIndexCustomer+"  index and writing to "+csvfile+" file.");  
 
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
-    esIndexWithQuery.put(esIndexCustomer, QueryBuilders.matchAllQuery());
+    esIndexWithQuery.put(esIndexCustomer, QueryBuilders.boolQuery().filter(QueryBuilders.termQuery("tenantID", tenantID)));
       
     ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
               esNode,

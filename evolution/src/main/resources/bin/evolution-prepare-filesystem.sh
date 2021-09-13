@@ -353,6 +353,9 @@ do
   ssh $HOST "
       mkdir -p $NGLM_GUI_RUNTIME/fwk-api-$KEY/mnt
    "
+  ssh $HOST "
+      mkdir -p $NGLM_GUI_RUNTIME/SSLcertificates
+   " 
 done
 
 GUI_FWK_AUTH_CONFIGURATION=`echo $GUI_FWK_AUTH_CONFIGURATION | sed 's/ /\n/g' | uniq`

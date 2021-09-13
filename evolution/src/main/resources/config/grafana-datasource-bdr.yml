@@ -1,11 +1,11 @@
 apiVersion: 1
 
 datasources:
-- name: Odr
+- name: bdr
   org_id: null
   type: elasticsearch
   access: proxy
-  database: t*_datacube_odr
+  database: t*_datacube_bdr
   url: http://<_MASTER_ESROUTER_HOST_>:<_MASTER_ESROUTER_PORT_>
   basicAuth: true
   withCredentials: true

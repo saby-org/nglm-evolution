@@ -65,6 +65,12 @@ public class JourneyCustomerStatisticsReportMultithread implements ReportCsvFact
     headerFieldsOrder.add(dateTime);
     headerFieldsOrder.add(startDate);
     headerFieldsOrder.add(endDate);
+    for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricConfiguration().getMetrics().values())
+    {
+      headerFieldsOrder.add(journeyMetricDeclaration.getESFieldPrior());
+      headerFieldsOrder.add(journeyMetricDeclaration.getESFieldDuring());
+      headerFieldsOrder.add(journeyMetricDeclaration.getESFieldPost());
+    }
   }
   
   public void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders)
@@ -99,13 +105,17 @@ public class JourneyCustomerStatisticsReportMultithread implements ReportCsvFact
             journeyInfo.put(customerID, subscriberIDField);
           }
         for (AlternateID alternateID : DeploymentCommon.getAlternateIDs().values())
+        {
+          if (journeyStats.get(alternateID.getID()) != null)
           {
-            if (journeyStats.get(alternateID.getID()) != null)
-              {
-                Object alternateId = journeyStats.get(alternateID.getID());
-                journeyInfo.put(alternateID.getID(), alternateId);
-              }
+            Object alternateId = journeyStats.get(alternateID.getID());
+            journeyInfo.put(alternateID.getID(), alternateId);
           }
+          else
+          {
+            journeyInfo.put(alternateID.getName(), "");
+          }
+        }
         journeyInfo.put(journeyID, journey.getJourneyID());
         journeyInfo.put(journeyName, journey.getGUIManagedObjectDisplay());
         journeyInfo.put(journeyType, journey.getTargetingType());
@@ -200,7 +210,8 @@ public class JourneyCustomerStatisticsReportMultithread implements ReportCsvFact
     String esNode = args[0];
     String esIndexJourney = args[1];
     String csvfile = args[2];
-    
+    if (args.length > 5) tenantID = Integer.parseInt(args[5]);
+
     journeyService = new JourneyService(DeploymentCommon.getBrokerServers(), "JourneyCustomerStatisticsReportMultithread-journeyservice-JourneyCustomerStatisticsReportMultithread", DeploymentCommon.getJourneyTopic(), false);
     journeyService.start();
 

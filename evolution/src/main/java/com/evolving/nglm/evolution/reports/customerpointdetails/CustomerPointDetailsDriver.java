@@ -27,7 +27,7 @@ public class CustomerPointDetailsDriver extends ReportDriver
     log.debug("data for report : " +SUBSCRIBER_ES_INDEX);
     log.debug("PHASE 1 : read ElasticSearch");
     log.trace(kafka+","+zookeeper+","+elasticSearch+","+SUBSCRIBER_ES_INDEX);
-    CustomerPointDetailsMonoPhase.main(new String[]{elasticSearch, SUBSCRIBER_ES_INDEX, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit}, reportGenerationDate);     
+    CustomerPointDetailsMonoPhase.main(new String[]{elasticSearch, SUBSCRIBER_ES_INDEX, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit, tenantID+""}, reportGenerationDate);     
     
     log.debug("Finished with CustomerPointDetails Report");
   }

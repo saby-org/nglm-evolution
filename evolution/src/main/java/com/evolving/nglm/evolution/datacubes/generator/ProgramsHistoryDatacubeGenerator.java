@@ -64,7 +64,7 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
   private static final String DATA_POINT_REDEMPTIONS = "_Redemptions";
   private static final String DATA_POINT_BALANCE = "_Balance";
   private static final String DATA_METRIC_PREFIX = "metric_";
-  private static final String DATA_FILTER_STRATUM_PREFIX = "statisticsStratum."; // from journeystatistic index
+  private static final String DATA_FILTER_STRATUM_PREFIX = "stratum."; // from subscriberprofile index
   private static final String DATACUBE_FILTER_STRATUM_PREFIX = "stratum."; // pushed in datacube index - same as SubscriberProfileDatacube
 
   /*****************************************

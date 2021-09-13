@@ -64,6 +64,10 @@ public class PresentationLog implements SubscriberStreamEvent
     schemaBuilder.field("featureID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("presentationDates", SchemaBuilder.array(Timestamp.SCHEMA).optional().schema());
     schemaBuilder.field("tokenTypeID", Schema.OPTIONAL_STRING_SCHEMA);
+
+    // class init hack call (DNBOToken.serde() refer to Token.serde() which refer to DNBOToken.serde() : TODO: that should just not be like that at all)
+    Token.commonSerde();
+
     schemaBuilder.field("token", DNBOToken.serde().optionalSchema());
     schemaBuilder.field("presentationHistory", SchemaBuilder.array(Presentation.schema()).defaultValue(new ArrayList<Presentation>()).schema());
     schema = schemaBuilder.build();

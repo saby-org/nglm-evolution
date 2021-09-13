@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.Map.Entry;
 import java.util.zip.ZipOutputStream;
 
 public class VDRReportMonoPhase implements ReportCsvFactory
@@ -57,6 +58,7 @@ public class VDRReportMonoPhase implements ReportCsvFactory
   private SupplierService supplierService;
   private VoucherTypeService voucherTypeService;
   private VoucherService voucherService;
+  private int tenantID = 0;
 
   private final static String moduleId = "moduleID";
   private final static String featureId = "featureID";
@@ -119,6 +121,43 @@ public class VDRReportMonoPhase implements ReportCsvFactory
       }
   }
 
+  /****************************************
+  *
+  * dumpElementToCsv
+  *
+  ****************************************/
+ public boolean dumpElementToCsvMono(Map<String,Object> map, ZipOutputStream writer, boolean addHeaders) throws IOException
+ {
+   Map<String, List<Map<String, Object>>> mapLocal = getSplittedReportElementsForFileMono(map);  
+   if(mapLocal.size() != 1) {
+     log.debug("We have multiple dates in the same index " + mapLocal.size());
+   } else {
+     if(mapLocal.values().size() != 1) {
+       log.debug("We have multiple values for this date " + mapLocal.values().size());
+     }
+     else {
+       Set<Entry<String, List<Map<String, Object>>>> setLocal = mapLocal.entrySet();
+       if(setLocal.size() != 1) {
+         log.debug("We have multiple dates in this report " + setLocal.size());
+       } else {
+         for (Entry<String, List<Map<String, Object>>> entry : setLocal) {
+           List<Map<String, Object>> list = entry.getValue();
+
+           if(list.size() != 1) {
+             log.debug("We have multiple reports in this folder " + list.size());
+           } else {
+             Map<String, Object> reportMap = list.get(0);
+             dumpLineToCsv(reportMap, writer, addHeaders);
+             return false;
+           }
+         }
+       }
+     }
+   }
+   return true;
+ }
+
+ 
   public Map<String, List<Map<String, Object>>> getSplittedReportElementsForFileMono(Map<String, Object> map)
   {
     Map<String, List<Map<String, Object>>> result = new LinkedHashMap<String, List<Map<String, Object>>>();
@@ -138,6 +177,9 @@ public class VDRReportMonoPhase implements ReportCsvFactory
                 Object alternateId = VDRFields.get(alternateID.getID());
                 vdrRecs.put(alternateID.getName(), alternateId);
               }
+            {
+              vdrRecs.put(alternateID.getName(), "");
+            }
           }
         if (VDRFields.containsKey(eventID) && VDRFields.get(eventID) != null)
           {
@@ -395,6 +437,8 @@ public class VDRReportMonoPhase implements ReportCsvFactory
         reportPeriodQuantity = Integer.parseInt(args[3]);
         reportPeriodUnit = args[4];
       }
+    if (args.length > 5) tenantID = Integer.parseInt(args[5]);
+
     Date fromDate = getFromDate(reportGenerationDate, reportPeriodUnit, reportPeriodQuantity);
     Date toDate = reportGenerationDate;
 
@@ -411,7 +455,10 @@ public class VDRReportMonoPhase implements ReportCsvFactory
     ReportCsvFactory reportFactory = new VDRReportMonoPhase();
     if (log.isInfoEnabled()) log.info("Reading data from ES in (" + esIndexVDRList.toString() + ")  index and writing to " + csvfile);
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
-    esIndexWithQuery.put(esIndexVDRList.toString(), QueryBuilders.rangeQuery("eventDatetime").gte(RLMDateUtils.formatDateForElasticsearchDefault(fromDate)).lte(RLMDateUtils.formatDateForElasticsearchDefault(toDate)));
+    esIndexWithQuery.put(esIndexVDRList.toString(), 
+        QueryBuilders.boolQuery()
+        .filter(QueryBuilders.termQuery("tenantID", tenantID))
+        .filter(QueryBuilders.rangeQuery("eventDatetime").gte(RLMDateUtils.formatDateForElasticsearchDefault(fromDate)).lte(RLMDateUtils.formatDateForElasticsearchDefault(toDate))));
 
     String journeyTopic = Deployment.getJourneyTopic();
     String offerTopic = Deployment.getOfferTopic();
@@ -464,7 +511,7 @@ public class VDRReportMonoPhase implements ReportCsvFactory
           csvfile
           );
 
-      if (!reportMonoPhase.startOneToOne(true))
+      if (!reportMonoPhase.startOneToOne(false))
         {
           if (log.isWarnEnabled()) log.warn("An error occured, the report might be corrupted");
           throw new RuntimeException("An error occurred, report must be restarted");

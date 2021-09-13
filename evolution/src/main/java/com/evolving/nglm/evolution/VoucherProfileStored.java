@@ -2,6 +2,7 @@ package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.VoucherDelivery.VoucherStatus;
 import com.evolving.nglm.evolution.retention.Cleanable;
 import com.evolving.nglm.evolution.retention.RetentionService;
@@ -87,6 +88,11 @@ public class VoucherProfileStored implements Cleanable {
   public String getFileID() { return fileID; }
   public String getVoucherCode() { return voucherCode; }
   public VoucherStatus getVoucherStatus() { return voucherStatus; }
+  // derived cause stored status might no reflect "expired" based on expiry date
+  public VoucherStatus getVoucherStatusComputed(){
+    if(voucherStatus!=VoucherStatus.Redeemed && voucherStatus!=VoucherStatus.Expired && getVoucherExpiryDate().before(SystemTime.getCurrentTime())) return VoucherStatus.Expired;
+    return voucherStatus;
+  }
   public Date getVoucherExpiryDate() { return voucherExpiryDate; }
   public Date getVoucherDeliveryDate() { return voucherDeliveryDate; }
   public Date getVoucherRedeemDate() { return voucherRedeemDate; }

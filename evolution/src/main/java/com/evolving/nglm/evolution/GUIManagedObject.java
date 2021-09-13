@@ -65,6 +65,8 @@ public abstract class GUIManagedObject
     LoyaltyProgramPoints("loyaltyProgramPoints"),
     LoyaltyProgramMission("loyaltyProgramMission"),
     LoyaltyProgramChallenge("loyaltyProgramChallenge"),
+    Voucher("voucher"),
+    Vouchershared("vouchershared"),
     
     SMSMessageTemplate("smsMessageTemplate"),
     MailMessageTemplate("mailMessageTemplate"),
@@ -171,6 +173,7 @@ public abstract class GUIManagedObject
     guiManagedObjectSerdes.add(DialogTemplate.serde());
     guiManagedObjectSerdes.add(UploadedFile.serde());
     guiManagedObjectSerdes.add(com.evolving.nglm.evolution.Target.serde());
+    guiManagedObjectSerdes.add(CommunicationChannel.serde());
     guiManagedObjectSerdes.add(CommunicationChannelBlackoutPeriod.serde());
     guiManagedObjectSerdes.add(CommunicationChannelTimeWindow.serde());
     guiManagedObjectSerdes.add(LoyaltyProgramPoints.serde());
@@ -647,11 +650,11 @@ public abstract class GUIManagedObject
     {
       super(jsonRoot, epoch, tenantID);
     }
-    @Override public Map<String, List<String>>  getGUIDependencies(int tenantID) { return new HashMap<String, List<String>>(); }
+    @Override public Map<String, List<String>>  getGUIDependencies(List<GUIService> guiServiceList, int tenantID) { return new HashMap<String, List<String>>(); }
   }
   
   //public abstract Map<String, List<String>>  getGUIDependencies();
-  public Map<String, List<String>> getGUIDependencies(int tenantID)
+  public Map<String, List<String>> getGUIDependencies(List<GUIService> guiServiceList, int tenantID)
   {
     return new HashMap<String, List<String>>();
   }

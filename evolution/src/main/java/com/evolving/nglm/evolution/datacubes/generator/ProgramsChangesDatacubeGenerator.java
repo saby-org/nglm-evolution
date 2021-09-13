@@ -53,8 +53,8 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
   private static final String DATACUBE_ES_INDEX_SUFFIX = "_datacube_loyaltyprogramschanges";
   public static final String DATACUBE_ES_INDEX(int tenantID) { return "t" + tenantID + DATACUBE_ES_INDEX_SUFFIX; }
   private static final String DATA_ES_INDEX = "subscriberprofile";
-  private static final String DATA_FILTER_STRATUM_PREFIX = "statisticsStratum."; // from journeystatistic index
-  private static final String DATACUBE_FILTER_STRATUM_PREFIX = "subscriberStratum."; // pushed in datacube index - same as SubscriberProfileDatacube
+  private static final String DATA_FILTER_STRATUM_PREFIX = "stratum."; // from subscriberprofile index
+  private static final String DATACUBE_FILTER_STRATUM_PREFIX = "stratum."; // pushed in datacube index - same as SubscriberProfileDatacube
 
   /*****************************************
   *

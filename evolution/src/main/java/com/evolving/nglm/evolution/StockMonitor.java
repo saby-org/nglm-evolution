@@ -31,6 +31,7 @@ import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -40,8 +41,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class StockMonitor implements Runnable
 {
@@ -561,7 +564,7 @@ public class StockMonitor implements Runnable
               {
                 try
                   {
-                    Stock newStock = new Stock(stockableItem);
+                    Stock newStock = new Stock(stockableItem.getStockableItemID());
                     JSONObject jsonNewStock = newStock.toJSON();
                     String stringNewStock = jsonNewStock.toString();
                     byte[] rawNewStock = stringNewStock.getBytes(StandardCharsets.UTF_8);
@@ -985,6 +988,11 @@ public class StockMonitor implements Runnable
   {
     public String getStockableItemID();
     public Integer getStock();
+    // can return null, means infinite
+    default public @Nullable Integer getApproximateRemainingStock(){
+		if(this.getStock()==null) return null;//no stock, infinite, don't even call cached value, cause if never called no init of zookeeper cache updater
+		return GlobalApproximateStockMonitor.getApproximateRemainingStock(this);
+    }
   }
 
   /*****************************************
@@ -1013,9 +1021,9 @@ public class StockMonitor implements Runnable
     *
     *****************************************/
 
-    public Stock(StockableItem stockableItem)
+    public Stock(String stockableItemID)
     {
-      this.stockableItemID = stockableItem.getStockableItemID();
+      this.stockableItemID = stockableItemID;
       this.stockAllocated = new HashMap<String,Integer>();
       this.stockReserved = 0;
       this.stockConsumed = 0;
@@ -1138,18 +1146,69 @@ public class StockMonitor implements Runnable
     }
   }
 
-  public static Integer getRemainingStock(StockableItem stockableItem){
-  	if(stockableItem.getStock()==null) return null;//no stock, infinite
-    ReaderStock readerStock = ZookeeperEvolution.getZookeeperEvolutionInstance().read(Configuration.NODE.STOCK_STOCKS.node().newChild(stockableItem.getStockableItemID()),new ReaderStock(new Stock(stockableItem)));
-    if(readerStock==null || readerStock.stock==null) return stockableItem.getStock();//not yet any consumed
-    return Math.max(0,stockableItem.getStock() - readerStock.stock.getStockConsumed());//below 0 (can happen if stock modified) means 0 remaining
+  // cached global (so approximate) stock value
+  // inner private class for lazy init
+  private static class GlobalApproximateStockMonitor{
+    private static Logger log = LoggerFactory.getLogger(GlobalApproximateStockMonitor.class);
+    // cache update frequency
+    private static final long CACHE_UPDATE_FREQUENCY_MS = 1000L;
+    // cache values
+    private final static Map<String,ReaderStock> approximateGlobalStocks = new ConcurrentHashMap<>();
+    // cache values updater
+    static {
+      log.info("GlobalApproximateStockMonitor init class");
+      Timer timer = new Timer("global-stocks-items-updater",true);
+      // the regular update of our cache values from zookeeper reading
+      timer.schedule(new TimerTask() {
+        @Override
+        public void run() {
+          for(Map.Entry<String,ReaderStock> entry:approximateGlobalStocks.entrySet()){
+            ReaderStock readerStock = getFromZookeeper(entry.getValue().stockableItem);
+            entry.setValue(readerStock);
+          }
+        }
+      },CACHE_UPDATE_FREQUENCY_MS,CACHE_UPDATE_FREQUENCY_MS);
+      // from time to time we just completely clean the cache, avoid to keep in it stuff not used anymore
+      timer.scheduleAtFixedRate(new TimerTask() {
+        @Override
+        public void run() {
+          approximateGlobalStocks.clear();
+        }
+      },3_600_000L,3_600_000L);
+    }
+
+    private static ReaderStock getFromZookeeper(StockableItem stockableItem){
+      if(log.isTraceEnabled()) log.trace("GlobalApproximateStockMonitor.getFromZookeeper called for "+stockableItem.getStockableItemID());
+      ReaderStock readerStock = ZookeeperEvolution.getZookeeperEvolutionInstance().read(Configuration.NODE.STOCK_STOCKS.node().newChild(stockableItem.getStockableItemID()),new ReaderStock(stockableItem,new Stock(stockableItem.getStockableItemID())));
+      // never seen yet in zookeeper
+      if(readerStock==null) readerStock = new ReaderStock(stockableItem,null);
+      return readerStock;
+    }
+
+    private static Integer getApproximateRemainingStock(StockableItem stockableItem){
+      if(log.isTraceEnabled()) log.trace("GlobalApproximateStockMonitor.getApproximateRemainingStock called for "+stockableItem.getStockableItemID());
+      ReaderStock readerStock = approximateGlobalStocks.get(stockableItem.getStockableItemID());
+      // if not yet cached at all, init
+      if(readerStock==null){
+        if(log.isDebugEnabled()) log.trace("GlobalApproximateStockMonitor.getApproximateRemainingStock will keep in cache for "+stockableItem.getStockableItemID());
+        readerStock = getFromZookeeper(stockableItem);
+        approximateGlobalStocks.put(stockableItem.getStockableItemID(),readerStock);
+      }
+      // if not yet any consumed
+      if(readerStock.stock==null) return readerStock.stockableItem.getStock();
+      //below 0 (can happen if stock modified) means 0 remaining
+      return Math.max(0,stockableItem.getStock() - readerStock.stock.getStockConsumed());
+    }
+
   }
+
   // just to not change old Stock class for the reader changes
   private static class ReaderStock extends ZookeeperJSONObject<ReaderStock>{
+    StockableItem stockableItem;
     Stock stock;
-    ReaderStock(Stock stock){ this.stock=stock; }
-    @Override protected ReaderStock fromJson(JSONObject jsonObject) { return new ReaderStock(new Stock(jsonObject,-1)); }
-    @Override protected JSONObject toJson() { return this.stock.toJSON(); }
+    ReaderStock(StockableItem stockableItem, Stock stock){ this.stockableItem = stockableItem; this.stock=stock; }
+    @Override protected ReaderStock fromJson(JSONObject jsonObject) { return new ReaderStock(stockableItem,new Stock(jsonObject,-1)); }
+    @Override protected JSONObject toJson() { return this.stock.toJSON(); }//not used
     @Override protected ReaderStock updateAtomic(ReaderStock storedInZookeeperObject) { return storedInZookeeperObject; }//not used
     @Override protected void onUpdateAtomicSucces() { }//not used
   }

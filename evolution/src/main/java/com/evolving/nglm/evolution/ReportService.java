@@ -585,13 +585,13 @@ public class ReportService extends GUIService
     
     StringBuilder generatedDatesRAJKString = new StringBuilder();
     generatedDates.forEach(dt -> generatedDatesRAJKString.append("," + printDate(dt)));
-    if(log.isErrorEnabled()) log.error("{} already generatedDates {}", report.getName(), generatedDatesRAJKString);
+    if(log.isInfoEnabled()) log.info("{} already generated Dates {}", report.getName(), generatedDatesRAJKString);
     
     pendingDates = compareAndGetDates(report, generatedDates, report.getTenantID());
     
     StringBuilder pendingDatesDatesRAJKString = new StringBuilder();
     pendingDates.forEach(dt -> pendingDatesDatesRAJKString.append("," + printDate(dt)));
-    if(log.isErrorEnabled()) log.error("{} has pendingDates {} ", report.getName(), pendingDatesDatesRAJKString);
+    if(log.isInfoEnabled()) log.info("{} has pendingDates {} ", report.getName(), pendingDatesDatesRAJKString);
     
     //
     //  filterIfUpdated

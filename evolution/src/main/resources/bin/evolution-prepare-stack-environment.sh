@@ -998,6 +998,22 @@ do
 done
 export GUI_LINKS_SERVER_HOST
 
+
+#
+#  GUI ON SSL -- configuration
+#
+
+GUI_ONSSL_SERVER_HOST=
+for TUPLE in $GUI_ONSSL_CONFIGURATION
+do
+   export KEY=`echo $TUPLE | cut -d: -f1`
+   export HOST=`echo $TUPLE | cut -d: -f2`
+   if [ -z "$GUI_ONSSL_SERVER_HOST" ]; then
+     GUI_ONSSL_SERVER_HOST="$HOST"
+   fi
+done
+export GUI_ONSSL_SERVER_HOST
+
 #
 #  thirdpartymanager -- configuration
 #
