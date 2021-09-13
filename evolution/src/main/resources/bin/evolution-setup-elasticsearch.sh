@@ -833,7 +833,8 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_m
       "filter.contactType" : { "type" : "keyword" },
       "filter.returnCode" : { "type" : "keyword" },
       "count" : { "type" : "integer" },
-      "metric.totalQty" : { "type" : "integer" }
+      "metric.totalQty" : { "type" : "integer" },
+      "filter.origin" : { "type" : "keyword" }
     }
   }
 }'

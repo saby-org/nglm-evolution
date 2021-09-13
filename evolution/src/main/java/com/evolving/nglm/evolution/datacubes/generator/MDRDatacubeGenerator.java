@@ -95,7 +95,7 @@ public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
     this.filterFields.add("returnCode");
     this.filterFields.add("channelID");
     this.filterFields.add("contactType");
-    
+    this.filterFields.add("origin");
   }
   
   public MDRDatacubeGenerator(String datacubeName, int tenantID, DatacubeManager datacubeManager) {

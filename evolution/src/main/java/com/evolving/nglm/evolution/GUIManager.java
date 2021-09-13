@@ -30866,7 +30866,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
             String topic = Deployment.getNotificationEventTopic();
             Serializer<StringKey> keySerializer = StringKey.serde().serializer();
             Serializer<NotificationEvent> valueSerializer = NotificationEvent.serde().serializer();
-            NotificationEvent notificationEvent = new NotificationEvent(subscriberID, now, "eventID", templateID, tagValue, communicationChannelID, contactType, source, featureID, moduleID); 
+            NotificationEvent notificationEvent = new NotificationEvent(subscriberID, now, "eventID", templateID, tagValue, communicationChannelID, contactType, "CC", source, featureID, moduleID); 
             
             kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
                 topic,
