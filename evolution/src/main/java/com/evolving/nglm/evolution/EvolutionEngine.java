@@ -104,6 +104,7 @@ import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvolutionEngineEventDeclaration.EventRule;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
+import com.evolving.nglm.evolution.Expression.ConstantExpression;
 import com.evolving.nglm.evolution.Expression.ExpressionEvaluationException;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
@@ -9428,8 +9429,20 @@ public class EvolutionEngine
     @Override public Map<String, String> getGUIDependencies(List<GUIService> guiServiceList, JourneyNode journeyNode, int tenantID)
     {
       Map<String, String> result = new HashMap<String, String>();
-      String voucherID = (String) journeyNode.getNodeParameters().get("node.parameter.voucher.code");
-      if (voucherID != null) result.put("voucher", voucherID);
+      Object nodeParamObj = journeyNode.getNodeParameters().get("node.parameter.voucher.code");
+      if (nodeParamObj instanceof ParameterExpression && ((ParameterExpression) nodeParamObj).getExpression() instanceof ConstantExpression)
+        {
+          String nodeParam  = (String)  ((ParameterExpression) nodeParamObj).getExpression().evaluateConstant();
+          if (nodeParam != null) result.put("voucher", nodeParam);
+        }
+      else if (nodeParamObj instanceof String)
+        {
+          result.put("voucher", (String) nodeParamObj);
+        }
+      else
+        {
+          log.error("unsupported value/type expression {} - skipping", nodeParamObj);
+        }
       return result;
     }
   }
