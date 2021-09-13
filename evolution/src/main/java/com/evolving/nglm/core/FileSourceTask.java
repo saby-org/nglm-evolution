@@ -556,9 +556,9 @@ public abstract class FileSourceTask extends SourceTask {
 					if(offsetAndMetadata==null) continue;// not yet commit at all on this partition
 					String metadata = offsetAndMetadata.metadata();
 
-					//TODO uncomment this line once everyone run EVPRO-1189 :
+					//TODO uncomment this line once everyone run EVPRO-1133 :
 					//if(metadata==null || metadata.isEmpty()) continue;//no file to restart for that partition
-					//TODO remove once everyone run EVPRO-1189 :
+					//TODO remove once everyone run EVPRO-1133 :
 					if(metadata==null || metadata.isEmpty()){
 						filesNeedToRestart.put(topicPartition,null);
 						continue;
@@ -616,7 +616,7 @@ public abstract class FileSourceTask extends SourceTask {
 			if(restart==null){
 				this.lineProcessed = 0;
 
-				//TODO remove this when everyone run EVPRO-1189
+				//TODO remove this when everyone run EVPRO-1133
 				if(filesNeedToRestart.containsKey(this.getPartition())){
 					//OLD WAY OF STORING FILE PROGRESS
 					Map<String, String> sourcePartition = new HashMap<>();
@@ -626,7 +626,7 @@ public abstract class FileSourceTask extends SourceTask {
 						Long restartLineNumber = (Long) sourceOffset.get("lineNumber");
 						if(restartLineNumber!=null){
 							this.lineProcessed = restartLineNumber;
-							log.info("{} -- SourceFile restart post EVPRO-1189 migration but file {} was in progress at line {}", taskName, this.getAbsolutePath(), this.getLineProcessed());
+							log.info("{} -- SourceFile restart post EVPRO-1133 migration but file {} was in progress at line {}", taskName, this.getAbsolutePath(), this.getLineProcessed());
 						}
 					}
 					filesNeedToRestart.remove(this.partition);
