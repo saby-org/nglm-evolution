@@ -25,6 +25,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.kafka.common.errors.SerializationException;
@@ -55,16 +57,18 @@ import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionOperator;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
+import com.evolving.nglm.evolution.Expression.ConstantExpression;
 import com.evolving.nglm.evolution.Expression.ReferenceExpression;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.JourneyHistory.StatusHistory;
+import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.StockMonitor.StockableItem;
 import com.evolving.nglm.evolution.notification.NotificationTemplateParameters;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
-@GUIDependencyDef(objectType = "journey", serviceClass = JourneyService.class, dependencies = { "journey", "campaign", "journeyobjective" , "target" , "workflow" , "mailtemplate" , "pushtemplate" , "dialogtemplate"})
+@GUIDependencyDef(objectType = "journey", serviceClass = JourneyService.class, dependencies = { "deliverable", "offer", "journey", "campaign", "journeyobjective" , "target" , "workflow" , "mailtemplate" , "pushtemplate" , "dialogtemplate", "voucher", "loyaltyProgramPoints", "loyaltyprogramchallenge", "loyaltyprogrammission", "sourceaddress", "presentationstrategy"})
 public class Journey extends GUIManagedObject implements StockableItem, GUIManagedObject.ElasticSearchMapping
 {
   /*****************************************
@@ -3988,7 +3992,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
    * 
    *******************************/
   
-  @Override public Map<String, List<String>> getGUIDependencies(int tenantID)
+  @Override public Map<String, List<String>> getGUIDependencies(List<GUIService> guiServiceList, int tenantID)
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
     List<String> targetIDs = new ArrayList<String>();
@@ -3997,77 +4001,135 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     List<String> pushTemplateIDs = new ArrayList<String>();
     List<String> mailtemplateIDs = new ArrayList<String>();
     List<String> dialogIDs = new ArrayList<String>();
+    List<String> voucherIDs = new ArrayList<String>();
+    List<String> loyaltyProgramPointsIDs = new ArrayList<String>();
+    List<String> loyaltyprogramchallengeIDs = new ArrayList<String>();
+    List<String> loyaltyprogrammissionIDs = new ArrayList<String>();
+    List<String> saleschannelIDs = new ArrayList<String>();
+    List<String> pointIDs = new ArrayList<String>();
+    List<String> sourceaddressIDs = new ArrayList<String>();
+    List<String> tokentypeIDs = new ArrayList<String>();
+    List<String> presentationstrategiesIDs = new ArrayList<String>();
+    List<String> offerIDs = new ArrayList<String>();
+    List<String> deliverableIDs = new ArrayList<String>();
     
     switch (getGUIManagedObjectType())
       {
         case Journey:
-          
+
           //
-          //  campaign
+          // campaign
           //
-        	internaltargetIDs = new ArrayList<String>();
+          internaltargetIDs = new ArrayList<String>();
           List<String> campaignIDs = new ArrayList<String>();
-          List<EvaluationCriterion> internalTargets=getEligibilityCriteria()==null?new ArrayList<EvaluationCriterion>():getEligibilityCriteria();
-          
+          List<EvaluationCriterion> internalTargets = getEligibilityCriteria() == null ? new ArrayList<EvaluationCriterion>() : getEligibilityCriteria();
+
           for (JourneyNode journeyNode : getJourneyNodes().values())
             {
               if (journeyNode.getNodeType().getActionManager() != null)
                 {
-                  String campaignID = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode, tenantID).get("journey");
-                  if (campaignID != null)campaignIDs.add(campaignID);
-                  String workflowID = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode, tenantID).get("workflow");
+                  String campaignID = journeyNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, journeyNode, tenantID).get("journey");
+                  String workflowID = journeyNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, journeyNode, tenantID).get("workflow");
+                  String pushId = journeyNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, journeyNode, tenantID).get("pushtemplate");
+                  String mailId = journeyNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, journeyNode, tenantID).get("mailtemplate");
+                  String dialogID = journeyNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, journeyNode, tenantID).get("dialogtemplate");
+                  String voucherID = journeyNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, journeyNode, tenantID).get("voucher");
+                  String loyaltyProgramPointsID = journeyNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, journeyNode, tenantID).get("loyaltyprogram");
+                  String loyaltyprogramchallengeID = journeyNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, journeyNode, tenantID).get("loyaltyprogramchallenge");
+                  String loyaltyprogrammissionID = journeyNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, journeyNode, tenantID).get("loyaltyprogrammission");
+                  String sourceaddressID = journeyNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, journeyNode, tenantID).get("sourceaddress");
+                  String presentationstrategyID = journeyNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, journeyNode, tenantID).get("presentationstrategy");
+                  String deliverableID = journeyNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, journeyNode, tenantID).get("deliverable");
+
+                  if (campaignID != null) campaignIDs.add(campaignID);
                   if (workflowID != null) wrkflowIDs.add(workflowID);
-                 
-                  String pushId = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode, tenantID).get("pushtemplate");
                   if (pushId != null) pushTemplateIDs.add(pushId);
-                  String mailId = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode, tenantID).get("mailtemplate");
                   if (mailId != null) mailtemplateIDs.add(mailId);
-                  String dialogID = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode, tenantID).get("dialogtemplate");
                   if (dialogID != null) dialogIDs.add(dialogID);
+                  if (voucherID != null) voucherIDs.add(dialogID);
+                  if (loyaltyProgramPointsID != null) loyaltyProgramPointsIDs.add(loyaltyProgramPointsID);
+                  if (loyaltyprogramchallengeID != null) loyaltyprogramchallengeIDs.add(loyaltyprogramchallengeID);
+                  if (loyaltyprogrammissionID != null) loyaltyprogrammissionIDs.add(loyaltyprogrammissionID);
+                  if (sourceaddressID != null) sourceaddressIDs.add(sourceaddressID);
+                  if (presentationstrategyID != null) presentationstrategiesIDs.add(presentationstrategyID);
+                  if (deliverableID != null) deliverableIDs.add(deliverableID);
                 }
-				if (journeyNode.getNodeName().equals("Profile Selection")
-						|| journeyNode.getNodeName().equals("Event Multi-Selection")
-						|| journeyNode.getNodeName().equals("Event Selection")) {
-					// offerNode.getOutgoingLinks().forEach((a,b)->
-					// internalTargets1.addAll(b.getTransitionCriteria())) ;
-					for (JourneyLink journeyLink : journeyNode.getOutgoingLinks().values()) {
-						if (journeyLink.getTransitionCriteria() != null
-								&& journeyLink.getTransitionCriteria().size() > 0)
-							internalTargets.addAll(journeyLink.getTransitionCriteria());
-					}
-				}
-			}
-			result.put("campaign", campaignIDs);
-			result.put("journey", campaignIDs);
-			result.put("workflow", wrkflowIDs);
+              if (journeyNode.getNodeName().equals("Profile Selection") || journeyNode.getNodeName().equals("Event Multi-Selection") || journeyNode.getNodeName().equals("Event Selection"))
+                {
+                  for (JourneyLink journeyLink : journeyNode.getOutgoingLinks().values())
+                    {
+                      if (journeyLink.getTransitionCriteria() != null && journeyLink.getTransitionCriteria().size() > 0)
+                        {
+                          internalTargets.addAll(journeyLink.getTransitionCriteria());
+                          offerIDs.addAll(getSubcriteriaFieldArgumentValues(journeyLink.getTransitionCriteria(), "offer.id"));
+                          voucherIDs.addAll(getSubcriteriaFieldArgumentValues(journeyLink.getTransitionCriteria(), "voucher.id"));
+                          
+                          for (EvaluationCriterion crt : journeyLink.getTransitionCriteria())
+                            {
+                              String loyaltyProgramPointsID = getGUIManagedObjectIDFromDynamicCriterion(crt, "loyaltyprogrampoints", guiServiceList);
+                              String loyaltyprogramchallengeID = getGUIManagedObjectIDFromDynamicCriterion(crt, "loyaltyprogramchallenge", guiServiceList);
+                              String loyaltyprogrammissionID = getGUIManagedObjectIDFromDynamicCriterion(crt, "loyaltyprogrammission", guiServiceList);
+                              
+                              if (loyaltyProgramPointsID != null) loyaltyProgramPointsIDs.add(loyaltyProgramPointsID);
+                              if (loyaltyprogramchallengeID != null) loyaltyprogramchallengeIDs.add(loyaltyprogramchallengeID);
+                              if (loyaltyprogrammissionID != null) loyaltyprogrammissionIDs.add(loyaltyprogrammissionID);
+                            }
+                        }
+                    }
+                }
+            }
+          result.put("campaign", campaignIDs);
+          result.put("journey", campaignIDs);
+          result.put("workflow", wrkflowIDs);
 
-			List<String> journeyObjectiveIDs = getJourneyObjectiveInstances().stream()
-					.map(journeyObjective -> journeyObjective.getJourneyObjectiveID()).collect(Collectors.toList());
-			result.put("journeyobjective", journeyObjectiveIDs);
+          List<String> journeyObjectiveIDs = getJourneyObjectiveInstances().stream().map(journeyObjective -> journeyObjective.getJourneyObjectiveID()).collect(Collectors.toList());
+          result.put("journeyobjective", journeyObjectiveIDs);
 
-			targetIDs = new ArrayList<>(getTargetIDs());
+          targetIDs = new ArrayList<>(getTargetIDs());
 
-			for (EvaluationCriterion internalTarget : internalTargets) {
-				if (internalTarget != null && internalTarget.getCriterionField() != null
-						&& internalTarget.getCriterionField().getESField() != null
-						&& internalTarget.getCriterionField().getESField().equals("internal.targets")) {
-					if (internalTarget.getCriterionOperator() == CriterionOperator.ContainsOperator
-							|| internalTarget.getCriterionOperator() == CriterionOperator.DoesNotContainOperator)
-						internaltargetIDs.add(internalTarget.getArgumentExpression().replace("'", ""));
-					else if (internalTarget.getCriterionOperator() == CriterionOperator.NonEmptyIntersectionOperator
-							|| internalTarget.getCriterionOperator() == CriterionOperator.EmptyIntersectionOperator)
-						internaltargetIDs.addAll(Arrays.asList(internalTarget.getArgumentExpression().replace("[", "")
-								.replace("]", "").replace("'", "").split(",")));
-				}
-			}
-          if(internaltargetIDs!=null && internaltargetIDs.size()>0)
-          targetIDs.addAll(internaltargetIDs);
+          for (EvaluationCriterion internalTarget : internalTargets)
+            {
+              if (internalTarget != null && internalTarget.getCriterionField() != null && internalTarget.getCriterionField().getESField() != null && internalTarget.getCriterionField().getESField().equals("internal.targets"))
+                {
+                  if (internalTarget.getCriterionOperator() == CriterionOperator.ContainsOperator || internalTarget.getCriterionOperator() == CriterionOperator.DoesNotContainOperator)
+                    internaltargetIDs.add(internalTarget.getArgumentExpression().replace("'", ""));
+                  else if (internalTarget.getCriterionOperator() == CriterionOperator.NonEmptyIntersectionOperator || internalTarget.getCriterionOperator() == CriterionOperator.EmptyIntersectionOperator)
+                    internaltargetIDs.addAll(Arrays.asList(internalTarget.getArgumentExpression().replace("[", "").replace("]", "").replace("'", "").split(",")));
+                }
+            }
+          //
+          // offerIDs from criteria
+          //
+
+          List<EvaluationCriterion> allCriterionsJourney = new ArrayList<EvaluationCriterion>();
+          allCriterionsJourney.addAll(getEligibilityCriteria());
+          allCriterionsJourney.addAll(getTargetingCriteria());
+          allCriterionsJourney.addAll(getTargetingEventCriteria());
+          offerIDs.addAll(getSubcriteriaFieldArgumentValues(allCriterionsJourney, "offer.id"));
+          for (EvaluationCriterion crt : allCriterionsJourney)
+            {
+              String loyaltyProgramPointsID = getGUIManagedObjectIDFromDynamicCriterion(crt, "loyaltyprogrampoints", guiServiceList);
+              String loyaltyprogramchallengeID = getGUIManagedObjectIDFromDynamicCriterion(crt, "loyaltyprogramchallenge", guiServiceList);
+              String loyaltyprogrammissionID = getGUIManagedObjectIDFromDynamicCriterion(crt, "loyaltyprogrammission", guiServiceList);
+              
+              if (loyaltyProgramPointsID != null) loyaltyProgramPointsIDs.add(loyaltyProgramPointsID);
+              if (loyaltyprogramchallengeID != null) loyaltyprogramchallengeIDs.add(loyaltyprogramchallengeID);
+              if (loyaltyprogrammissionID != null) loyaltyprogrammissionIDs.add(loyaltyprogrammissionID);
+            }
+
+          result.put("offer", offerIDs);
+          if(internaltargetIDs!=null && internaltargetIDs.size()>0) targetIDs.addAll(internaltargetIDs);
           result.put("target", targetIDs);
           result.put("pushtemplate", pushTemplateIDs);
           result.put("mailtemplate", mailtemplateIDs);
           result.put("dialogtemplate", dialogIDs);
-          
-          
+          result.put("voucher", voucherIDs);
+          result.put("loyaltyprogrampoints", loyaltyProgramPointsIDs);
+          result.put("loyaltyprogramchallenge", loyaltyprogramchallengeIDs);
+          result.put("loyaltyprogrammission", loyaltyprogrammissionIDs);
+          result.put("sourceaddress", sourceaddressIDs);
+          result.put("presentationstrategy", presentationstrategiesIDs);
+          result.put("deliverable", deliverableIDs);
           break;
           
         case Campaign:
@@ -4076,51 +4138,93 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
           //  offer
           //
           internaltargetIDs = new ArrayList<String>();
-          List<String> pointIDs = new ArrayList<String>();
-          List<String> offerIDs = new ArrayList<String>();
           List<String> workflowIDs = new ArrayList<String>();
           List<EvaluationCriterion> internalTargets1=getEligibilityCriteria()==null?new ArrayList<EvaluationCriterion>():getEligibilityCriteria();
            for (JourneyNode offerNode : getJourneyNodes().values())
             {
               if (offerNode.getNodeType().getActionManager() != null)
                 {
-                  String offerID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("offer");
-                  if (offerID != null) 
-                	  offerIDs.add(offerID);
+                  String offerID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("offer"); 
+                  String pointID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("point"); 
+                  String workflowID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("workflow"); 
+                  String pushId = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("pushtemplate"); 
+                  String mailId = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("mailtemplate"); 
+                  String dialogID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("dialogtemplate"); 
+                  String voucherID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("voucher"); 
+                  String loyaltyProgramPointsID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("loyaltyprogram");
+                  String loyaltyprogramchallengeID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("loyaltyprogramchallenge");
+                  String loyaltyprogrammissionID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("loyaltyprogrammission");
+                  String saleschannelID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("saleschannel");
+                  String sourceaddressID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("sourceaddress");
+                  String tokentypeID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("tokentype");
+                  String presentationstrategyID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("presentationstrategy");
+                  String deliverableID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("deliverable");
                   
-                  
-                  String pointID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("point");
+                  if (offerID != null)  offerIDs.add(offerID);
                   if (pointID != null) pointIDs.add(pointID);
-                  
-                  String workflowID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("workflow");
                   if (workflowID != null) workflowIDs.add(workflowID);
-                  
-                  String pushId = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("pushtemplate");
                   if (pushId != null) pushTemplateIDs.add(pushId);
-                  String mailId = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("mailtemplate");
                   if (mailId != null) mailtemplateIDs.add(mailId);
-                  String dialogID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("dialogtemplate");
                   if (dialogID != null) dialogIDs.add(dialogID);
+                  if (voucherID != null) voucherIDs.add(dialogID);
+                  if (loyaltyProgramPointsID != null) loyaltyProgramPointsIDs.add(loyaltyProgramPointsID);
+                  if (loyaltyprogramchallengeID != null) loyaltyprogramchallengeIDs.add(loyaltyprogramchallengeID);
+                  if (loyaltyprogrammissionID != null) loyaltyprogrammissionIDs.add(loyaltyprogrammissionID);
+                  if (saleschannelID != null) saleschannelIDs.add(saleschannelID);
+                  if (sourceaddressID != null) sourceaddressIDs.add(sourceaddressID);
+                  if (tokentypeID != null) tokentypeIDs.add(tokentypeID);
+                  if (presentationstrategyID != null) presentationstrategiesIDs.add(presentationstrategyID);
+                  if (deliverableID != null) deliverableIDs.add(deliverableID);
                 }
               
-				if (offerNode.getNodeName().equals("Profile Selection")
-						|| offerNode.getNodeName().equals("Event Multi-Selection")
-						|| offerNode.getNodeName().equals("Event Selection")) {
-					// offerNode.getOutgoingLinks().forEach((a,b)->
-					// internalTargets1.addAll(b.getTransitionCriteria())) ;
-					for (JourneyLink journeyLink : offerNode.getOutgoingLinks().values()) {
-						if (journeyLink.getTransitionCriteria() != null
-								&& journeyLink.getTransitionCriteria().size() > 0)
-							internalTargets1.addAll(journeyLink.getTransitionCriteria());
-					}
-				}
+              if (offerNode.getNodeName().equals("Profile Selection") || offerNode.getNodeName().equals("Event Multi-Selection") || offerNode.getNodeName().equals("Event Selection"))
+                {
+                  for (JourneyLink journeyLink : offerNode.getOutgoingLinks().values())
+                    {
+                      if (journeyLink.getTransitionCriteria() != null && journeyLink.getTransitionCriteria().size() > 0)
+                        {
+                          internalTargets1.addAll(journeyLink.getTransitionCriteria());
+                          offerIDs.addAll(getSubcriteriaFieldArgumentValues(journeyLink.getTransitionCriteria(), "offer.id"));
+                          voucherIDs.addAll(getSubcriteriaFieldArgumentValues(journeyLink.getTransitionCriteria(), "voucher.id"));
+                          for (EvaluationCriterion crt : journeyLink.getTransitionCriteria())
+                            {
+                              String loyaltyProgramPointsID = getGUIManagedObjectIDFromDynamicCriterion(crt, "loyaltyprogrampoints", guiServiceList);
+                              String loyaltyprogramchallengeID = getGUIManagedObjectIDFromDynamicCriterion(crt, "loyaltyprogramchallenge", guiServiceList);
+                              String loyaltyprogrammissionID = getGUIManagedObjectIDFromDynamicCriterion(crt, "loyaltyprogrammission", guiServiceList);
+                              
+                              if (loyaltyProgramPointsID != null) loyaltyProgramPointsIDs.add(loyaltyProgramPointsID);
+                              if (loyaltyprogramchallengeID != null) loyaltyprogramchallengeIDs.add(loyaltyprogramchallengeID);
+                              if (loyaltyprogrammissionID != null) loyaltyprogrammissionIDs.add(loyaltyprogrammissionID);
+                            }
+                        }
+                    }
+                }
 			}
+           
+           //
+           //  offerIDs from criteria
+           //
+           
+           List<EvaluationCriterion> allCriterionsCampaign = new ArrayList<EvaluationCriterion>();
+           allCriterionsCampaign.addAll(getEligibilityCriteria());
+           allCriterionsCampaign.addAll(getTargetingCriteria());
+           allCriterionsCampaign.addAll(getTargetingEventCriteria());
+           offerIDs.addAll(getSubcriteriaFieldArgumentValues(allCriterionsCampaign, "offer.id"));
+           for (EvaluationCriterion crt : allCriterionsCampaign)
+             {
+               String loyaltyProgramPointsID = getGUIManagedObjectIDFromDynamicCriterion(crt, "loyaltyprogrampoints", guiServiceList);
+               String loyaltyprogramchallengeID = getGUIManagedObjectIDFromDynamicCriterion(crt, "loyaltyprogramchallenge", guiServiceList);
+               String loyaltyprogrammissionID = getGUIManagedObjectIDFromDynamicCriterion(crt, "loyaltyprogrammission", guiServiceList);
+               
+               if (loyaltyProgramPointsID != null) loyaltyProgramPointsIDs.add(loyaltyProgramPointsID);
+               if (loyaltyprogramchallengeID != null) loyaltyprogramchallengeIDs.add(loyaltyprogramchallengeID);
+               if (loyaltyprogrammissionID != null) loyaltyprogrammissionIDs.add(loyaltyprogrammissionID);
+             }
+           
 			result.put("offer", offerIDs);
 			result.put("point", pointIDs);
 			result.put("workflow", workflowIDs);
-
-			List<String> journeyObjIDs = getJourneyObjectiveInstances().stream()
-					.map(journeyObjective -> journeyObjective.getJourneyObjectiveID()).collect(Collectors.toList());
+			List<String> journeyObjIDs = getJourneyObjectiveInstances().stream().map(journeyObjective -> journeyObjective.getJourneyObjectiveID()).collect(Collectors.toList());
 			result.put("journeyobjective", journeyObjIDs);
 
 			targetIDs = new ArrayList<>(getTargetIDs());
@@ -4148,8 +4252,15 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
           result.put("pushtemplate", pushTemplateIDs);
           result.put("mailtemplate", mailtemplateIDs);
           result.put("dialogtemplate", dialogIDs);
-            
-          
+          result.put("voucher", voucherIDs);
+          result.put("loyaltyprogrampoints", loyaltyProgramPointsIDs);
+          result.put("loyaltyprogramchallenge", loyaltyprogramchallengeIDs);
+          result.put("loyaltyprogrammission", loyaltyprogrammissionIDs);
+          result.put("saleschannel", saleschannelIDs);
+          result.put("sourceaddress", sourceaddressIDs);
+          result.put("tokentype", tokentypeIDs);
+          result.put("presentationstrategy", presentationstrategiesIDs);
+          result.put("deliverable", deliverableIDs);
           break;
 
         case BulkCampaign:
@@ -4178,6 +4289,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
 			List<String> jourObjIDs = getJourneyObjectiveInstances().stream()
 					.map(journeyObjective -> journeyObjective.getJourneyObjectiveID()).collect(Collectors.toList());
 			result.put("journeyobjective", jourObjIDs);
+			result.put("sourceaddress", sourceaddressIDs);
 
 			break;
             
@@ -4192,48 +4304,106 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
                 if (offerNode.getNodeType().getActionManager() != null)
                   {
                            
-                    String pushId = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("pushtemplate");
+                    String pushId = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("pushtemplate");
                     if (pushId != null) pushTemplateIDs.add(pushId);
-                    String mailId = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("mailtemplate");
+                    String mailId = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("mailtemplate");
                     if (mailId != null) mailtemplateIDs.add(mailId);
-                    String dialogID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("dialogtemplate");
+                    String dialogID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("dialogtemplate");
                     if (dialogID != null) dialogIDs.add(dialogID);
+                    String voucherID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("voucher"); 
+                    if (voucherID != null) voucherIDs.add(dialogID);
+                    String loyaltyProgramPointsID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("loyaltyprogram");
+                    String loyaltyprogramchallengeID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("loyaltyprogramchallenge");
+                    String loyaltyprogrammissionID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("loyaltyprogrammission");
+                    String saleschannelID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("saleschannel");
+                    String pointID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("point"); 
+                    String sourceaddressID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("sourceaddress");
+                    String tokentypeID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("tokentype");
+                    String presentationstrategyID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("presentationstrategy");
+                    String deliverableID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("deliverable");
+                    
+                    if (loyaltyProgramPointsID != null) loyaltyProgramPointsIDs.add(loyaltyProgramPointsID);
+                    if (loyaltyprogramchallengeID != null) loyaltyprogramchallengeIDs.add(loyaltyprogramchallengeID);
+                    if (loyaltyprogrammissionID != null) loyaltyprogrammissionIDs.add(loyaltyprogrammissionID);
+                    if (saleschannelID != null) saleschannelIDs.add(saleschannelID);
+                    if (pointID != null) pointIDs.add(pointID);
+                    if (sourceaddressID != null) sourceaddressIDs.add(sourceaddressID);
+                    if (tokentypeID != null) tokentypeIDs.add(tokentypeID);
+                    if (presentationstrategyID != null) presentationstrategiesIDs.add(presentationstrategyID);
+                    if (deliverableID != null) deliverableIDs.add(deliverableID);
                   }
                
-                if(offerNode.getNodeName().equals("Profile Selection") || offerNode.getNodeName().equals("Event Multi-Selection") || offerNode.getNodeName().equals("Event Selection")) {
-                  	// offerNode.getOutgoingLinks().forEach((a,b)->  internalTargets1.addAll(b.getTransitionCriteria())) ; 
-                  	 for (JourneyLink journeyLink : offerNode.getOutgoingLinks().values())
-                       {if(journeyLink.getTransitionCriteria()!=null && journeyLink.getTransitionCriteria().size()>0)
-                  		 internalTargets.addAll(journeyLink.getTransitionCriteria());
-                       }
-                   }  
+                if (offerNode.getNodeName().equals("Profile Selection") || offerNode.getNodeName().equals("Event Multi-Selection") || offerNode.getNodeName().equals("Event Selection"))
+                  {
+                    for (JourneyLink journeyLink : offerNode.getOutgoingLinks().values())
+                      {
+                        if (journeyLink.getTransitionCriteria() != null && journeyLink.getTransitionCriteria().size() > 0)
+                          {
+                            internalTargets.addAll(journeyLink.getTransitionCriteria());
+                            offerIDs.addAll(getSubcriteriaFieldArgumentValues(journeyLink.getTransitionCriteria(), "offer.id"));
+                            voucherIDs.addAll(getSubcriteriaFieldArgumentValues(journeyLink.getTransitionCriteria(), "voucher.id"));
+                            for (EvaluationCriterion crt : journeyLink.getTransitionCriteria())
+                              {
+                                String loyaltyProgramPointsID = getGUIManagedObjectIDFromDynamicCriterion(crt, "loyaltyprogrampoints", guiServiceList);
+                                String loyaltyprogramchallengeID = getGUIManagedObjectIDFromDynamicCriterion(crt, "loyaltyprogramchallenge", guiServiceList);
+                                String loyaltyprogrammissionID = getGUIManagedObjectIDFromDynamicCriterion(crt, "loyaltyprogrammission", guiServiceList);
+                                
+                                if (loyaltyProgramPointsID != null) loyaltyProgramPointsIDs.add(loyaltyProgramPointsID);
+                                if (loyaltyprogramchallengeID != null) loyaltyprogramchallengeIDs.add(loyaltyprogramchallengeID);
+                                if (loyaltyprogrammissionID != null) loyaltyprogrammissionIDs.add(loyaltyprogrammissionID);
+                              }
+                          }
+                      }
+                  }  
 				}
-				for (EvaluationCriterion internalTarget : internalTargets) {
-					if (internalTarget != null && internalTarget.getCriterionField() != null
-							&& internalTarget.getCriterionField().getESField() != null
-							&& internalTarget.getCriterionField().getESField().equals("internal.targets")) {
-						if (internalTarget.getCriterionOperator() == CriterionOperator.ContainsOperator
-								|| internalTarget.getCriterionOperator() == CriterionOperator.DoesNotContainOperator)
-							internaltargetIDs.add(internalTarget.getArgumentExpression().replace("'", ""));
-						else if (internalTarget.getCriterionOperator() == CriterionOperator.NonEmptyIntersectionOperator
-								|| internalTarget.getCriterionOperator() == CriterionOperator.EmptyIntersectionOperator)
-							internaltargetIDs.addAll(Arrays.asList(internalTarget.getArgumentExpression()
-									.replace("[", "").replace("]", "").replace("'", "").split(",")));
+              for (EvaluationCriterion internalTarget : internalTargets)
+                {
+                  if (internalTarget != null && internalTarget.getCriterionField() != null && internalTarget.getCriterionField().getESField() != null && internalTarget.getCriterionField().getESField().equals("internal.targets"))
+                    {
+                      if (internalTarget.getCriterionOperator() == CriterionOperator.ContainsOperator || internalTarget.getCriterionOperator() == CriterionOperator.DoesNotContainOperator)
+                        internaltargetIDs.add(internalTarget.getArgumentExpression().replace("'", ""));
+                      else if (internalTarget.getCriterionOperator() == CriterionOperator.NonEmptyIntersectionOperator || internalTarget.getCriterionOperator() == CriterionOperator.EmptyIntersectionOperator)
+                        internaltargetIDs.addAll(Arrays.asList(internalTarget.getArgumentExpression().replace("[", "").replace("]", "").replace("'", "").split(",")));
 
-					}
-				}
-             if(internaltargetIDs!=null && internaltargetIDs.size()>0)
-             targetIDs.addAll(internaltargetIDs);
+                    }
+                }
+              
+              //
+              //  offerIDs from criteria
+              //
+              
+              List<EvaluationCriterion> allCriterionsworkflow = new ArrayList<EvaluationCriterion>();
+              allCriterionsworkflow.addAll(getEligibilityCriteria());
+              allCriterionsworkflow.addAll(getTargetingCriteria());
+              allCriterionsworkflow.addAll(getTargetingEventCriteria());
+              offerIDs.addAll(getSubcriteriaFieldArgumentValues(allCriterionsworkflow, "offer.id"));
+              for (EvaluationCriterion crt : allCriterionsworkflow)
+                {
+                  String loyaltyProgramPointsID = getGUIManagedObjectIDFromDynamicCriterion(crt, "loyaltyprogrampoints", guiServiceList);
+                  String loyaltyprogramchallengeID = getGUIManagedObjectIDFromDynamicCriterion(crt, "loyaltyprogramchallenge", guiServiceList);
+                  String loyaltyprogrammissionID = getGUIManagedObjectIDFromDynamicCriterion(crt, "loyaltyprogrammission", guiServiceList);
+                  
+                  if (loyaltyProgramPointsID != null) loyaltyProgramPointsIDs.add(loyaltyProgramPointsID);
+                  if (loyaltyprogramchallengeID != null) loyaltyprogramchallengeIDs.add(loyaltyprogramchallengeID);
+                  if (loyaltyprogrammissionID != null) loyaltyprogrammissionIDs.add(loyaltyprogrammissionID);
+                }
+              
+             if(internaltargetIDs!=null && internaltargetIDs.size()>0) targetIDs.addAll(internaltargetIDs);
+             result.put("offer", offerIDs);
              result.put("target", targetIDs);
-        
             result.put("pushtemplate", pushTemplateIDs);
             result.put("mailtemplate", mailtemplateIDs);
             result.put("dialogtemplate", dialogIDs);
-           
-            
-           
-              
-            
+            result.put("voucher", voucherIDs);
+            result.put("loyaltyprogrampoints", loyaltyProgramPointsIDs);
+            result.put("loyaltyprogramchallenge", loyaltyprogramchallengeIDs);
+            result.put("loyaltyprogrammission", loyaltyprogrammissionIDs);
+            result.put("saleschannel", saleschannelIDs);
+            result.put("point", pointIDs);
+            result.put("sourceaddress", sourceaddressIDs);
+            result.put("tokentype", tokentypeIDs);
+            result.put("presentationstrategy", presentationstrategiesIDs);
+            result.put("deliverable", deliverableIDs);
             break;
         default:
           break;
@@ -4334,4 +4504,89 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
   {
     return "mapping_journeys";
   }
+  
+  public List<String> getSubcriteriaFieldArgumentValues(List<EvaluationCriterion> allCriterions, String fieldID)
+  {
+    List<String> result = new ArrayList<String>();
+    if (allCriterions != null && !allCriterions.isEmpty())
+      {
+        for (EvaluationCriterion criterion : allCriterions)
+          {
+            if (criterion.getSubcriteriaExpressions() != null && !criterion.getSubcriteriaExpressions().isEmpty())
+              {
+                for (String field : criterion.getSubcriteriaExpressions().keySet())
+                  {
+                    if (field.equals(fieldID))
+                      {
+                        Expression expression = criterion.getSubcriteriaExpressions().get(field);
+                        if (expression != null && expression instanceof ConstantExpression)
+                          {
+                            ConstantExpression consExpression = (ConstantExpression) expression;
+                            String fieldIDArgVal  = (String) consExpression.evaluateConstant();
+                            result.add(fieldIDArgVal);
+                          }
+                      }
+                  }
+              }
+          }
+      }
+    return result;
+  }
+  
+  private String getGUIManagedObjectIDFromDynamicCriterion(EvaluationCriterion criteria, String objectType, List<GUIService> guiServiceList)
+  {
+    String result = null;
+    switch (objectType.toLowerCase())
+    {
+      case "loyaltyprogrampoints":
+        Pattern fieldNamePattern = Pattern.compile("^loyaltyprogram\\.([^.]+)\\.(.+)$");
+        Matcher fieldNameMatcher = fieldNamePattern.matcher(criteria.getCriterionField().getID());
+        if (fieldNameMatcher.find())
+          {
+            String loyaltyProgramID = fieldNameMatcher.group(1);
+            LoyaltyProgramService loyaltyProgramService = (LoyaltyProgramService) guiServiceList.stream().filter(srvc -> srvc.getClass() == LoyaltyProgramService.class).findFirst().orElse(null);
+            if (loyaltyProgramService != null)
+              {
+                GUIManagedObject uncheckedLoyalty = loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID);
+                if (uncheckedLoyalty !=  null && uncheckedLoyalty.getAccepted() && ((LoyaltyProgram) uncheckedLoyalty).getLoyaltyProgramType() == LoyaltyProgramType.POINTS) result = uncheckedLoyalty.getGUIManagedObjectID();
+              }
+          }
+        break;
+        
+      case "loyaltyprogramchallenge":
+        fieldNamePattern = Pattern.compile("^loyaltyprogram\\.([^.]+)\\.(.+)$");
+        fieldNameMatcher = fieldNamePattern.matcher(criteria.getCriterionField().getID());
+        if (fieldNameMatcher.find())
+          {
+            String loyaltyProgramID = fieldNameMatcher.group(1);
+            LoyaltyProgramService loyaltyProgramService = (LoyaltyProgramService) guiServiceList.stream().filter(srvc -> srvc.getClass() == LoyaltyProgramService.class).findFirst().orElse(null);
+            if (loyaltyProgramService != null)
+              {
+                GUIManagedObject uncheckedLoyalty = loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID);
+                if (uncheckedLoyalty !=  null && uncheckedLoyalty.getAccepted() && ((LoyaltyProgram) uncheckedLoyalty).getLoyaltyProgramType() == LoyaltyProgramType.CHALLENGE) result = uncheckedLoyalty.getGUIManagedObjectID();
+              }
+          }
+        break;
+        
+      case "loyaltyprogrammission":
+        fieldNamePattern = Pattern.compile("^loyaltyprogram\\.([^.]+)\\.(.+)$");
+        fieldNameMatcher = fieldNamePattern.matcher(criteria.getCriterionField().getID());
+        if (fieldNameMatcher.find())
+          {
+            String loyaltyProgramID = fieldNameMatcher.group(1);
+            LoyaltyProgramService loyaltyProgramService = (LoyaltyProgramService) guiServiceList.stream().filter(srvc -> srvc.getClass() == LoyaltyProgramService.class).findFirst().orElse(null);
+            if (loyaltyProgramService != null)
+              {
+                GUIManagedObject uncheckedLoyalty = loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID);
+                if (uncheckedLoyalty !=  null && uncheckedLoyalty.getAccepted() && ((LoyaltyProgram) uncheckedLoyalty).getLoyaltyProgramType() == LoyaltyProgramType.MISSION) result = uncheckedLoyalty.getGUIManagedObjectID();
+              }
+          }
+        break;
+
+      default:
+        break;
+    }
+    return result;
+  }
+  
 }

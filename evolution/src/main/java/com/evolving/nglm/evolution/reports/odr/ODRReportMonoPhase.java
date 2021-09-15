@@ -204,6 +204,10 @@ public class ODRReportMonoPhase implements ReportCsvFactory
                 Object alternateId = odrFields.get(alternateID.getID());
                 oderRecs.put(alternateID.getName(), alternateId);
               }
+            else
+            {
+              oderRecs.put(alternateID.getName(), "");
+            }
           }
 
         if (odrFields.containsKey(originatingDeliveryRequestID))

@@ -1372,6 +1372,10 @@ public class ThirdPartyManager
               Map<String, Object> esFields = hit.getSourceAsMap();
               CommodityDeliveryRequest commodityDeliveryRequest = new CommodityDeliveryRequest(esFields);
               Map<String, Object> esbdrMap = commodityDeliveryRequest.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, tenantID);
+              // EVPRO-1249 do not return a pseudo-expiration date (now+1 year) if not set
+              if (esFields.get("deliverableExpirationDate") == null) {
+                esbdrMap.put(DeliveryRequest.DELIVERABLEEXPIRATIONDATE, null);
+              }
               BDRsJson.add(JSONUtilities.encodeObject(esbdrMap));
             }
           response.put("BDRs", JSONUtilities.encodeArray(BDRsJson));
@@ -4122,7 +4126,16 @@ public class ThirdPartyManager
           generateTokenChange(subscriberID, now, tokenCode, TokenChange.ALLOCATE, str, API.getCustomerNBOs, jsonRoot, tenantID);
           return JSONUtilities.encodeObject(response);
         }
- 
+      
+      if (subscriberToken.getTokenExpirationDate().before(now)) {
+        log.error(RESTAPIGenericReturnCodes.EXPIRED.getGenericDescription());
+        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.EXPIRED.getGenericResponseCode());
+        String str = RESTAPIGenericReturnCodes.EXPIRED.getGenericResponseMessage();
+        response.put(GENERIC_RESPONSE_MSG, str);
+        generateTokenChange(subscriberID, now, tokenCode, TokenChange.REFUSE, str, API.getCustomerNBOs, jsonRoot, tenantID);
+        return JSONUtilities.encodeObject(response);          
+      }
+
       if (!(subscriberToken instanceof DNBOToken))
         {
           // TODO can this really happen ?

@@ -150,7 +150,7 @@ public abstract class ActionManager
     return deliveryRequestSource;
   }
   
-  public Map<String, String> getGUIDependencies(JourneyNode journeyNode, int tenantID)
+  public Map<String, String> getGUIDependencies(List<GUIService> guiServiceList, JourneyNode journeyNode, int tenantID)
   {
     return new HashMap<String, String>();
   }

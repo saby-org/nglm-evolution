@@ -87,6 +87,7 @@ import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.ServerException;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.StringKey;
+import com.evolving.nglm.core.StringValue;
 import com.evolving.nglm.core.SubscriberStreamEvent;
 import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.core.SubscriberTrace;
@@ -103,6 +104,7 @@ import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvolutionEngineEventDeclaration.EventRule;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
+import com.evolving.nglm.evolution.Expression.ConstantExpression;
 import com.evolving.nglm.evolution.Expression.ExpressionEvaluationException;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
@@ -734,6 +736,7 @@ public class EvolutionEngine
 
     final Serde<byte[]> byteArraySerde = new Serdes.ByteArraySerde();
     final ConnectSerde<StringKey> stringKeySerde = StringKey.serde();
+    final ConnectSerde<StringValue> stringValueSerde = StringValue.serde();
     final ConnectSerde<TimedEvaluation> timedEvaluationSerde = TimedEvaluation.serde();
     final ConnectSerde<CleanupSubscriber> cleanupSubscriberSerde = CleanupSubscriber.serde();
     final ConnectSerde<AssignSubscriberIDs> assignSubscriberIDsSerde = AssignSubscriberIDs.serde();
@@ -754,7 +757,6 @@ public class EvolutionEngine
     final ConnectSerde<SubscriberTraceControl> subscriberTraceControlSerde = SubscriberTraceControl.serde();
     final ConnectSerde<SubscriberProfile> subscriberProfileSerde = SubscriberProfile.getSubscriberProfileSerde();
     final Serde<SubscriberTrace> subscriberTraceSerde = SubscriberTrace.serde();
-    final ConnectSerde<ExternalAPIOutput> externalAPISerde = ExternalAPIOutput.serde();
     final ConnectSerde<TokenChange> tokenChangeSerde = TokenChange.serde();
     final ConnectSerde<VoucherChange> voucherChangeSerde = VoucherChange.serde();
     final ConnectSerde<VoucherAction> voucherActionSerde = VoucherAction.serde();
@@ -1152,10 +1154,10 @@ public class EvolutionEngine
         ExternalAPIOutputPredicate[] externalAPIOutputPredicates = new ExternalAPIOutputPredicate[externalAPITopics.values().size()];
         String[] externalAPIOutputTopics = new String[externalAPITopics.values().size()];
         int j = 0;
-        for (String topicID : externalAPITopics.keySet())
+        for (Map.Entry<String, ExternalAPITopic> topicConfig : externalAPITopics.entrySet())
           {
-            externalAPIOutputPredicates[j] = new ExternalAPIOutputPredicate(topicID);
-            externalAPIOutputTopics[j] = externalAPITopics.get(topicID).getName();
+            externalAPIOutputPredicates[j] = new ExternalAPIOutputPredicate(topicConfig.getKey(), topicConfig.getValue().getKeyFieldFromJson(), topicConfig.getValue().getEncoding());
+            externalAPIOutputTopics[j] = externalAPITopics.get(topicConfig.getKey()).getName();
             j += 1;
           }
 
@@ -1172,10 +1174,21 @@ public class EvolutionEngine
         for (int k = 0; k < externalAPIOutputPredicates.length; k++)
           {
             KStream<StringKey, ExternalAPIOutput> rekeyedExternalAPIStream = branchedExternalAPIStreamsByTopic[k].map(EvolutionEngine::rekeyExternalAPIOutputStream);
+            boolean avroEncoding = externalAPIOutputPredicates[k].getEncoding() != null && externalAPIOutputPredicates[k].getEncoding().trim().toLowerCase().equals("avro");
             // Only send the json part to the output topic 
-            KStream<String, String> externalAPIStreamString = rekeyedExternalAPIStream.map(
-                (key,value) -> new KeyValue<String, String>(value.getTopicID(), value.getJsonString()));
-            externalAPIStreamString.to(externalAPIOutputTopics[k], Produced.with(new Serdes.StringSerde(), new Serdes.StringSerde()));
+            if(avroEncoding)
+              {
+                
+                KStream<StringKey, StringValue> externalAPIStreamString = rekeyedExternalAPIStream.map(
+                    (key,value) -> new KeyValue<StringKey, StringValue>(key, new StringValue(value.getJson().toJSONString())));
+                externalAPIStreamString.to(externalAPIOutputTopics[k], Produced.with(stringKeySerde, stringValueSerde));
+              }
+            else
+              {
+                KStream<String, String> externalAPIStreamString = rekeyedExternalAPIStream.map(
+                    (key,value) -> new KeyValue<String, String>(value.getTopicID(), value.getJson().toJSONString()));
+                externalAPIStreamString.to(externalAPIOutputTopics[k], Produced.with(new Serdes.StringSerde(), new Serdes.StringSerde()));
+              }
           }
       }
     
@@ -1594,16 +1607,24 @@ public class EvolutionEngine
     //  data
     //
 
-    String topicId;
+    private String topicId;
+    private String keyFieldFromJson = null;
+    private String encoding = null;
 
     //
     //  constructor
     //
 
-    private ExternalAPIOutputPredicate(String topicId)
+    private ExternalAPIOutputPredicate(String topicId, String keyFieldFromJson, String encoding)
     {
       this.topicId = topicId;
+      this.keyFieldFromJson = keyFieldFromJson;
+      this.encoding = encoding;
     }
+    
+    public String getTopicID() { return topicId; }
+    public String getKeyFieldFromJson() { return keyFieldFromJson; }
+    public String getEncoding() { return encoding; }
 
     //
     //  test (predicate interface)
@@ -1839,40 +1860,44 @@ public class EvolutionEngine
 	switch (evolutionEvent.getSubscriberAction()) {
 	case Cleanup:
 	case CleanupImmediate:
-	  // check if the cleanup has already been set before
+	  // check if the cleanup date has already been set before
 	  // - if no, the current cleanup / cleanupImmediate is the first one so 
 	  //    * compute the end date (in the future for cleanup and now for cleanupimmediate) and schedule a timeout
 	  //    * set the Terminated status 
-	  //    * Trig a second cleanupImmediate that will effectively clean the subscriber
-	  // - if yes, then this is time to effectively clean the subscriber. All should be ok for status Terminated
+	  //    * Trig a schedule for the good date...
+	  // 
 	  
 	  if(subscriberState.getCleanupDate() == null)
 	    {
+	      Date nowDate = SystemTime.getCurrentTime();
 	      if(evolutionEvent.getSubscriberAction() == SubscriberAction.Cleanup)
 	        {
-	          subscriberState.setCleanupDate(EvolutionUtilities.addTime(SystemTime.getCurrentTime(),
+	          subscriberState.setCleanupDate(EvolutionUtilities.addTime(nowDate,
 	              Deployment.getDeployment(tenantID).getSubscriberDeletionTimeUnitNumber(),
 	              Deployment.getDeployment(tenantID).getSubscriberDeletionTimeUnit(),
 	              Deployment.getDeployment(tenantID).getTimeZone(), EvolutionUtilities.RoundingSelection.NoRound));
-	          subscriberState.getScheduledEvaluations().add(new TimedEvaluation(subscriberState.getSubscriberID(), subscriberState.getCleanupDate()));
+	          
 	        }
 	      else // cleanupImmediate
 	        {
-	          subscriberState.setCleanupDate(SystemTime.getCurrentTime());
+	          subscriberState.setCleanupDate(nowDate);	          
 	        }
+	      TimedEvaluation timed = new TimedEvaluation(
+	          subscriberState.getSubscriberID(), 
+            subscriberState.getCleanupDate(), "cleanup-1-" + subscriberProfile.getSubscriberID());
+	      subscriberState.getScheduledEvaluations().add(timed);
+	      updateScheduledEvaluations(scheduledEvaluationsBefore, subscriberState.getScheduledEvaluations());
 	      subscriberState.getSubscriberProfile().setEvolutionSubscriberStatus(EvolutionSubscriberStatus.Terminated);
-	      CleanupSubscriber assignSubscriberIDs = new CleanupSubscriber(
-	          subscriberState.getSubscriberProfile().getSubscriberID(), SystemTime.getCurrentTime(),
-	          SubscriberAction.CleanupImmediate);
-	      subscriberState.getImmediateCleanupActions().add(assignSubscriberIDs);        
 	    }
-    else // cleanDate already exists
-      {
-        // cleanup the subscriber now... just return null...
-        updateScheduledEvaluations(scheduledEvaluationsBefore, Collections.<TimedEvaluation>emptySet());
-        return null;
-      }
-	  
+	  else if(subscriberState.getCleanupDate().before(SystemTime.getCurrentTime()))
+	    {
+	      // reschedule
+	      TimedEvaluation timed = new TimedEvaluation(
+            subscriberState.getSubscriberID(), 
+            subscriberState.getCleanupDate(), "cleanup-2-" + subscriberProfile.getSubscriberID());
+	      subscriberState.getScheduledEvaluations().add(timed);
+	      updateScheduledEvaluations(scheduledEvaluationsBefore, subscriberState.getScheduledEvaluations());     
+	    }
 	  SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(),
         subscriberState);
     return subscriberState;
@@ -1880,20 +1905,16 @@ public class EvolutionEngine
 	case Delete: // Delete is useful for SubscriberManager, not really for Evolution Engine
 	case DeleteImmediate: // DeleteImmediate is useful for SubscriberManager, not really for Evolution
 							// Engine
-		if (previousSubscriberState == null)
-			return null;
+		if (previousSubscriberState == null) { return null; }
 		SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(),
 				subscriberState);
 		return subscriberState;
 	}
-	// make effective clean if needed...
-	if (subscriberState.getCleanupDate() != null
-			&& subscriberState.getCleanupDate().before(SystemTime.getCurrentTime())) {
-		// time to trig an immediate cleanup event
-		CleanupSubscriber cleanupSubscriber = new CleanupSubscriber(
-				subscriberState.getSubscriberProfile().getSubscriberID(), SystemTime.getCurrentTime(),
-				SubscriberAction.CleanupImmediate);
-		subscriberState.getImmediateCleanupActions().add(cleanupSubscriber);
+	// on any event make effective clean if needed...
+	if (subscriberState.getCleanupDate() != null && subscriberState.getCleanupDate().before(SystemTime.getCurrentTime())) {
+	  // cleanup the subscriber now... just return null...
+    updateScheduledEvaluations(scheduledEvaluationsBefore, Collections.<TimedEvaluation>emptySet());
+    return null;
 	}
 
 	SubscriberEvaluationRequest subscriberEvaluationRequest = new SubscriberEvaluationRequest(subscriberProfile,
@@ -2224,8 +2245,13 @@ public class EvolutionEngine
     JSONObject jsonObject = resExternalAPI.getSecondElement();
     if (jsonObject != null)
       {
-        subscriberState.setExternalAPIOutput(new ExternalAPIOutput(resExternalAPI.getFirstElement(), jsonObject.toJSONString()));
-        subscriberStateUpdated = true;
+        // ensure the given topic ID exists
+        if(resExternalAPI.getFirstElement() != null && Deployment.getExternalAPITopics().get(resExternalAPI.getFirstElement()) != null)
+            {
+              ExternalAPITopic externalTopicConfig = Deployment.getExternalAPITopics().get(resExternalAPI.getFirstElement());
+              subscriberState.setExternalAPIOutput(new ExternalAPIOutput(resExternalAPI.getFirstElement(), jsonObject, externalTopicConfig.getKeyFieldFromJson(), externalTopicConfig.getEncoding()));
+              subscriberStateUpdated = true;
+            }
       }
 
     /*****************************************
@@ -2819,7 +2845,7 @@ public class EvolutionEngine
           toTrig.add(reScheduledDeliveryRequest);
         }else{
           // or the future one we need to schedule again ( we always clean up entirely scheduled requests on any event )
-          TimedEvaluation timedEvaluation = new TimedEvaluation(subscriberProfile.getSubscriberID(), reScheduledDeliveryRequest.getDeliveryRequest().getRescheduledDate());
+          TimedEvaluation timedEvaluation = new TimedEvaluation(subscriberProfile.getSubscriberID(), reScheduledDeliveryRequest.getDeliveryRequest().getRescheduledDate(), "reschedule-" + reScheduledDeliveryRequest.getDeliveryRequest().getDeliveryRequestID() + "-" + reScheduledDeliveryRequest.getDeliveryRequest().getModuleID()+"-"+reScheduledDeliveryRequest.getDeliveryRequest().getFeatureID());
           subscriberState.getScheduledEvaluations().add(timedEvaluation);
           subscriberProfileUpdated = true;
         }
@@ -5490,24 +5516,15 @@ public class EvolutionEngine
     // Subscriber token list cleaning.
     // We will delete all already expired tokens before doing anything.
 
-    List<Token> cleanedList = new ArrayList<Token>();
     Date now = SystemTime.getCurrentTime();
     for (Token token : subscriberTokens)
       {
-        if (token.getTokenExpirationDate().before(now))
+        if ((token.getTokenStatus() != TokenStatus.Expired) && token.getTokenExpirationDate().before(now))
           {
-            if(log.isTraceEnabled()) log.trace("removing token "+token.getTokenCode()+" expired on "+token.getTokenExpirationDate()+" for "+subscriberProfile.getSubscriberID());
+            if(log.isTraceEnabled()) log.trace("Token "+token.getTokenCode()+" expired on "+token.getTokenExpirationDate()+" for "+subscriberProfile.getSubscriberID());
+            token.setTokenStatus(TokenStatus.Expired);
             subscriberStateUpdated=true;
           }
-        else
-          {
-            cleanedList.add(token);
-          }
-      }
-
-    if (subscriberStateUpdated)
-      {
-        subscriberProfile.setTokens(cleanedList);
       }
 
     /*****************************************
@@ -6377,15 +6394,18 @@ public class EvolutionEngine
         *
         *****************************************/
 
-        if (evolutionEvent instanceof DeliveryRequest && !((DeliveryRequest)evolutionEvent).getDeliveryStatus().equals(DeliveryStatus.Pending))
+        if (evolutionEvent instanceof DeliveryRequest && !((DeliveryRequest) evolutionEvent).getDeliveryStatus().equals(DeliveryStatus.Pending))
           {
             DeliveryRequest deliveryResponse = (DeliveryRequest) evolutionEvent;
-            if(deliveryResponse.getOriginatingSubscriberID() == null || deliveryResponse.getOriginatingSubscriberID().startsWith(DeliveryManager.ORIGIN))
+            if (deliveryResponse.getOriginatingSubscriberID() == null || deliveryResponse.getOriginatingSubscriberID().startsWith(DeliveryManager.ORIGIN))
               {
-                // case where the response is to the parent into the relationship, so the history must be taken in account...
-                // this history is not taken in account for a response to the original subscriber as this response is only here to unlock the Journey
+                // case where the response is to the parent into the relationship, so the
+                // history must be taken in account...
+                // this history is not taken in account for a response to the original
+                // subscriber as this response is only here to unlock the Journey
                 if (Objects.equals(deliveryResponse.getModuleID(), DeliveryRequest.Module.Journey_Manager.getExternalRepresentation()) && Objects.equals(deliveryResponse.getFeatureID(), journeyState.getJourneyID()))
                   {
+                    // in case of workflow, here we are already on the mother campaign (not sure why), workflows do not get the reward info, should be ok
                     journeyState.getJourneyHistory().addRewardInformation(deliveryResponse, deliverableService, now);
                   }
               }
@@ -6468,7 +6488,7 @@ public class EvolutionEngine
                   {
                     if(nextEvaluationDate.before(RLMDateUtils.addDays(SystemTime.getCurrentTime(), 2, Deployment.getDeployment(tenantID).getTimeZone())))
                       {
-                        subscriberState.getScheduledEvaluations().add(new TimedEvaluation(subscriberState.getSubscriberID(), nextEvaluationDate));
+                        subscriberState.getScheduledEvaluations().add(new TimedEvaluation(subscriberState.getSubscriberID(), nextEvaluationDate, "Journey-" + journey.getJourneyID() + "-" + journeyNode.getNodeID()));
                         subscriberStateUpdated = true;
                       }
                   }
@@ -6790,29 +6810,6 @@ public class EvolutionEngine
                 *  journeyStatistic for node transition
                 *
                 *****************************************/
-
-                //
-                //  markNotified
-                //
-
-                boolean currentStatusNotified = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) : Boolean.FALSE;
-                boolean markNotified = originalStatusNotified == false && currentStatusNotified == true;
-
-                //
-                //  markConverted & conversionCount
-                //
-                boolean markConverted = false;
-                
-                if(originalStatusConverted == false) { // first conversion 
-                  markConverted = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) : Boolean.FALSE;
-                }
-                else { // conversion on already converted -- Be careful, we are comparing references here, not the value (as intended) !
-                  markConverted = (convertedReference != journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()));
-                }
-                
-                if(markConverted) {
-                  journeyState.getJourneyHistory().incrementConversions(now);
-                }
                 
                 //
                 // abTesting (we remove it so its only counted once per journey)
@@ -6835,37 +6832,25 @@ public class EvolutionEngine
                 //  journeyStatistic
                 //
                 
+                subscriberState.addJourneyStatistic(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, firedLink, journeyState.getNotifiedThisEvent(), journeyState.getConvertedThisEvent(), sample, subscriberState.getSubscriberProfile().getStatisticsSegmentsMap(subscriberGroupEpochReader, segmentationDimensionService), subscriberState.getSubscriberProfile()));
+                
                 boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getCurrentTime(), journeyState, journeyNode.getExitNode());
                 if(journey.isWorkflow())
                   {
                     // retrieve the journey state of the calling campaign
-                	JourneyState sourceJourneyState = null;
                     if(subscriberState.getJourneyStates() != null)
                       {
-                        for(JourneyState state : subscriberState.getJourneyStates())
+                        for(JourneyState parentState : subscriberState.getJourneyStates())
                           {
-                            if(state.getJourneyID().equals(journeyState.getsourceFeatureID()) && DeliveryRequest.Module.Journey_Manager.getExternalRepresentation().equals(journeyState.getSourceModuleID()))
+                            if(parentState.getJourneyID().equals(journeyState.getsourceFeatureID()) && DeliveryRequest.Module.Journey_Manager.getExternalRepresentation().equals(journeyState.getSourceModuleID()))
                               {
-                                sourceJourneyState = state;
+                                subscriberState.addJourneyStatistic(new JourneyStatistic(context, subscriberState.getSubscriberID(), parentState.getJourneyHistory(), parentState, null, parentState.getNotifiedThisEvent(), parentState.getConvertedThisEvent(), sample, subscriberState.getSubscriberProfile().getStatisticsSegmentsMap(subscriberGroupEpochReader, segmentationDimensionService), subscriberState.getSubscriberProfile()));
+                                break;
                               }
                           }
                       }
-                    if(sourceJourneyState != null)
-                      {
-                        subscriberState.addJourneyStatistic(new JourneyStatistic(context, subscriberState.getSubscriberID(), sourceJourneyState.getJourneyHistory(), journeyState.getJourneyHistory(), sourceJourneyState, journeyState, firedLink, markNotified, markConverted, sample, subscriberState.getSubscriberProfile().getStatisticsSegmentsMap(subscriberGroupEpochReader, segmentationDimensionService), subscriberState.getSubscriberProfile()));
-                      }
-                    else
-                      {
-                        // error...generate a jounrey statistic for the workflow as it it was a normal journey for debug help
-                        log.warn("Can't retrieve source journey state for workflow " + journeyState.getJourneyID() + " and subscriber " + subscriberState.getSubscriberID());
-                        subscriberState.addJourneyStatistic(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), null, journeyState, null, firedLink, markNotified, markConverted, sample, subscriberState.getSubscriberProfile().getStatisticsSegmentsMap(subscriberGroupEpochReader, segmentationDimensionService), subscriberState.getSubscriberProfile()));
-                      }
-                  }
-                else
-                  {
-                	// normal case
-                	subscriberState.addJourneyStatistic(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), null, journeyState, null, firedLink, markNotified, markConverted, sample, subscriberState.getSubscriberProfile().getStatisticsSegmentsMap(subscriberGroupEpochReader, segmentationDimensionService), subscriberState.getSubscriberProfile()));
-                  }
+                  }           	
+
                 /*****************************************
                 *
                 *  update subscriberJourneys in profile
@@ -7091,7 +7076,103 @@ public class EvolutionEngine
 
             case JourneyContextUpdate:
               ContextUpdate journeyContextUpdate = (ContextUpdate) action;
-              journeyState.getJourneyParameters().putAll(journeyContextUpdate.getParameters());
+              if(journeyContextUpdate.getParameters() != null) 
+                {
+                  for(Map.Entry<String, Object> current : journeyContextUpdate.getParameters().entrySet())
+                    {
+                      if(current.getKey().equals(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()))
+                        {
+                          if(journey.isWorkflow())
+                            {
+                              boolean original = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) : Boolean.FALSE;
+                              boolean newValue = (Boolean)current.getValue();
+                              if(!original && newValue)
+                                {
+                                  // this workflow changed to notified
+                                  journeyState.setNotifiedThisEvent(true);
+                                  journeyState.getJourneyParameters().put(current.getKey(), current.getValue());
+                                  // retrieve the main campaign (if exist) that triggered this workflow
+                                  for(JourneyState existing : subscriberState.getJourneyStates())
+                                    {
+                                      if(Module.Journey_Manager.getExternalRepresentation().equals(journeyState.getSourceModuleID()) && existing.getJourneyID().equals(journeyState.getsourceFeatureID())){
+                                        existing.getJourneyParameters().put(current.getKey(), current.getValue());
+                                        break;
+                                      }
+                                    }
+                                }
+                            }
+                          else {
+                            // any other kind of journey
+                            boolean original = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusNotified.getJourneyParameterName()) : Boolean.FALSE;
+                            boolean newValue = (Boolean)current.getValue();
+                            if(!original && newValue)
+                              {
+                                // this journey (not workflow) changed to notified
+                                journeyState.setNotifiedThisEvent(true);
+                                journeyState.getJourneyParameters().put(current.getKey(), current.getValue());
+                                // retrieve the main campaign (if exist) that triggered this workflow
+                                for(JourneyState existing : subscriberState.getJourneyStates())
+                                  {
+                                    if(Module.Journey_Manager.getExternalRepresentation().equals(existing.getSourceModuleID()) && journeyState.getJourneyID().equals(existing.getsourceFeatureID())){
+                                      // this is a workflow of the given journey
+                                      existing.getJourneyParameters().put(current.getKey(), current.getValue());
+                                    }
+                                  }
+                              }
+                          }
+                        }
+                      else if(current.getKey().equals(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()))
+                        {
+                          if(journey.isWorkflow())
+                            {
+                              boolean original = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) : Boolean.FALSE;
+                              boolean newValue = (Boolean)current.getValue();
+                              if(!original && newValue)
+                                {
+                                  // this workflow changed to notified
+                                  journeyState.setConvertedThisEvent(true);
+                                  journeyState.getJourneyHistory().incrementConversions(SystemTime.getCurrentTime());
+                                  journeyState.getJourneyParameters().put(current.getKey(), current.getValue());
+                                  // retrieve the main campaign (if exist) that triggered this workflow
+                                  for(JourneyState existing : subscriberState.getJourneyStates())
+                                    {
+                                      if(Module.Journey_Manager.getExternalRepresentation().equals(journeyState.getSourceModuleID()) && existing.getJourneyID().equals(journeyState.getsourceFeatureID())){
+                                        existing.getJourneyParameters().put(current.getKey(), current.getValue());
+                                        existing.getJourneyHistory().setConversionsCount(journeyState.getJourneyHistory().getConversionCount(), SystemTime.getCurrentTime());
+                                        break;
+                                      }
+                                    }
+                                }
+                            }
+                          else {
+                            // any other kind of journey
+                            boolean original = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) : Boolean.FALSE;
+                            boolean newValue = (Boolean)current.getValue();
+                            if(!original && newValue)
+                              {
+                                // this journey (not workflow) changed to notified
+                                journeyState.setConvertedThisEvent(true);
+                                journeyState.getJourneyHistory().incrementConversions(SystemTime.getCurrentTime());
+                                journeyState.getJourneyParameters().put(current.getKey(), current.getValue());
+                                // retrieve the main campaign (if exist) that triggered this workflow
+                                for(JourneyState existing : subscriberState.getJourneyStates())
+                                  {
+                                    if(Module.Journey_Manager.getExternalRepresentation().equals(existing.getSourceModuleID()) && journeyState.getJourneyID().equals(existing.getsourceFeatureID())){
+                                      // this is a workflow of the given journey
+                                      existing.getJourneyParameters().put(current.getKey(), current.getValue());
+                                      existing.getJourneyHistory().setConversionsCount(journeyState.getJourneyHistory().getConversionCount(), SystemTime.getCurrentTime());
+                                    }
+                                  }
+                              }
+                          }
+                        }
+                      else 
+                        {
+                          journeyState.getJourneyParameters().put(current.getKey(), current.getValue());
+                        }
+                    }
+                }
+              //journeyState.getJourneyParameters().putAll(journeyContextUpdate.getParameters());  
               break;
 
             case ActionManagerContextUpdate:
@@ -7475,6 +7556,15 @@ public class EvolutionEngine
 
   private static KeyValue<StringKey, ExternalAPIOutput> rekeyExternalAPIOutputStream(StringKey key, ExternalAPIOutput value)
   {
+    if(value.getKeyFieldFromJson() != null)
+      {
+        String keyInJson = (String) value.getJson().get(value.getKeyFieldFromJson());
+        if(keyInJson != null) 
+          {
+            return new KeyValue<StringKey, ExternalAPIOutput>(new StringKey(keyInJson), value);
+          }
+      }
+    // default
     return new KeyValue<StringKey, ExternalAPIOutput>(new StringKey(value.getTopicID()), value);
   }
 
@@ -8778,7 +8868,7 @@ public class EvolutionEngine
       return Collections.<Action>singletonList(request);
     }
 
-    @Override public Map<String, String> getGUIDependencies(JourneyNode journeyNode, int tenantID)
+    @Override public Map<String, String> getGUIDependencies(List<GUIService> guiServiceList, JourneyNode journeyNode, int tenantID)
     {
       Map<String, String> result = new HashMap<String, String>();
       String journeyID = (String) journeyNode.getNodeParameters().get("node.parameter.journey");
@@ -8887,7 +8977,7 @@ public class EvolutionEngine
       return (request != null) ? Collections.<Action>singletonList(request) : Collections.<Action>emptyList();
     }
 
-    @Override public Map<String, String> getGUIDependencies(JourneyNode journeyNode, int tenantID)
+    @Override public Map<String, String> getGUIDependencies(List<GUIService> guiServiceList, JourneyNode journeyNode, int tenantID)
     {
       Map<String, String> result = new HashMap<String, String>();
       WorkflowParameter workflowparam= (WorkflowParameter) journeyNode.getNodeParameters().get("node.parameter.workflow");
@@ -8964,6 +9054,43 @@ public class EvolutionEngine
       *****************************************/
 
       return Collections.<Action>singletonList(request);
+    }
+    
+    @Override public Map<String, String> getGUIDependencies(List<GUIService> guiServiceList, JourneyNode journeyNode, int tenantID)
+    {
+      Map<String, String> result = new HashMap<String, String>();
+      String loyaltyProgramId = (String) journeyNode.getNodeParameters().get("node.parameter.loyaltyProgramId");
+      LoyaltyProgramService loyaltyProgramService = (LoyaltyProgramService) guiServiceList.stream().filter(srvc -> srvc.getClass() == LoyaltyProgramService.class).findFirst().orElse(null);
+      if (loyaltyProgramService == null)
+        {
+          log.error("loyaltyProgramService not found in guiServiceList - getGUIDependencies will be effected");
+        }
+      else
+        {
+          GUIManagedObject loyaltyUnchecked = loyaltyProgramService.getStoredLoyaltyPrograms(tenantID).stream().filter(obj -> obj.getGUIManagedObjectID().equals(loyaltyProgramId)).findFirst().orElse(null);
+          if (loyaltyUnchecked != null && loyaltyUnchecked.getAccepted())
+            {
+              LoyaltyProgram loyaltyProgram = (LoyaltyProgram) loyaltyUnchecked;
+              switch (loyaltyProgram.getLoyaltyProgramType())
+              {
+                case POINTS:
+                  if (loyaltyProgramId != null) result.put("loyaltyprogram", loyaltyProgramId);
+                  break;
+                  
+                case MISSION:
+                  if (loyaltyProgramId != null) result.put("loyaltyprogrammission", loyaltyProgramId);
+                  break;
+                  
+                case CHALLENGE:
+                  if (loyaltyProgramId != null) result.put("loyaltyprogramchallenge", loyaltyProgramId);
+                  break;
+
+                default:
+                  break;
+              }
+            }
+        }
+      return result;
     }
   }
   
@@ -9297,7 +9424,26 @@ public class EvolutionEngine
       if (log.isDebugEnabled()) log.debug("VoucherActionManager - VoucherAction {}, journeyID {}, voucherActionEvent is {} and supplier is {}", operation, journeyID, voucherActionEvent, supplierDisplay);
 
       return actions;
-
+    }
+    
+    @Override public Map<String, String> getGUIDependencies(List<GUIService> guiServiceList, JourneyNode journeyNode, int tenantID)
+    {
+      Map<String, String> result = new HashMap<String, String>();
+      Object nodeParamObj = journeyNode.getNodeParameters().get("node.parameter.voucher.code");
+      if (nodeParamObj instanceof ParameterExpression && ((ParameterExpression) nodeParamObj).getExpression() instanceof ConstantExpression)
+        {
+          String nodeParam  = (String)  ((ParameterExpression) nodeParamObj).getExpression().evaluateConstant();
+          if (nodeParam != null) result.put("voucher", nodeParam);
+        }
+      else if (nodeParamObj instanceof String)
+        {
+          result.put("voucher", (String) nodeParamObj);
+        }
+      else
+        {
+          log.error("unsupported value/type expression {} - skipping", nodeParamObj);
+        }
+      return result;
     }
   }
   

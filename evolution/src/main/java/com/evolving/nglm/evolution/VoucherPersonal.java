@@ -4,6 +4,7 @@ import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
@@ -87,7 +88,7 @@ public class VoucherPersonal extends Voucher {
 
   public VoucherPersonal(JSONObject jsonRoot, long epoch, GUIManagedObject existingVoucherUnchecked, VoucherType voucherType, int tenantID) throws GUIManagerException {
 
-    super(jsonRoot, epoch, existingVoucherUnchecked, tenantID);
+    super(jsonRoot, GUIManagedObjectType.Voucher, epoch, existingVoucherUnchecked, tenantID);
 
     // not allow this type change
     if(existingVoucherUnchecked instanceof VoucherShared) throw new GUIManagerException("can not modify Shared to Personal Voucher type",existingVoucherUnchecked.getGUIManagedObjectDisplay());
@@ -172,7 +173,7 @@ public class VoucherPersonal extends Voucher {
     return jsonRoot;
   }
   
-  @Override public Map<String, List<String>> getGUIDependencies(int tenantID)
+  @Override public Map<String, List<String>> getGUIDependencies(List<GUIService> guiServiceList, int tenantID)
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
     List<String> wrkflowIDs = new ArrayList<String>();
@@ -187,6 +188,11 @@ public class VoucherPersonal extends Voucher {
     result.put("supplier", supplierIDs);
     result.put("vouchertype", vouchertypeIDs);
     return result;
+  }
+  
+  @Override public GUIManagedObjectType getGUIManagedObjectType()
+  {
+    return GUIManagedObjectType.Voucher;
   }
 
 }
