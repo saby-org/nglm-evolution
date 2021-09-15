@@ -956,11 +956,11 @@ public class ReportUtils {
   }
 
   
-  public static Date yesterdayAtMidnight(Date currentDate)
+  public static Date delayAtMidnight(Date currentDate, int delay)
   {
     Calendar c = Calendar.getInstance();
     c.setTime(currentDate);
-    c.add(Calendar.HOUR_OF_DAY, -24); // go back 24 hours
+    c.add(Calendar.HOUR_OF_DAY, (-1)*delay); // go back delay hours
     c.set(Calendar.HOUR_OF_DAY, 23); // now set to one second before midnight
     c.set(Calendar.MINUTE, 59);
     c.set(Calendar.SECOND, 59);
@@ -968,11 +968,11 @@ public class ReportUtils {
     return yesterdayAtMidnight;
   }
 
-  public static Date yesterdayAtZeroHour(Date currentDate)
+  public static Date delayAtZeroHour(Date currentDate, int delay)
   {
     Calendar c = Calendar.getInstance();
     c.setTime(currentDate);
-    c.add(Calendar.HOUR_OF_DAY, -24); // go back 24 hours
+    c.add(Calendar.HOUR_OF_DAY, (-1)*delay); // go back delay hours
     c.set(Calendar.HOUR_OF_DAY, 0); // now set to one second after 0h
     c.set(Calendar.MINUTE, 0);
     c.set(Calendar.SECOND, 1);
