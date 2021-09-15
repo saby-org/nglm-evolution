@@ -5618,6 +5618,11 @@ public class ThirdPartyManager
       VoucherPersonalES voucherES = VoucherPersonalESService.getESVoucherFromVoucherCode(supplier.getSupplierID(),voucherCode,elasticsearch, tenantID);
       if(voucherES==null) throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_CODE_NOT_FOUND);
       subscriberID=voucherES.getSubscriberId();
+      String voucherId = voucherES.getVoucherId();
+      Boolean isTransferable = (boolean) voucherTypeService.getStoredVoucherType(voucherId).getJSONRepresentation().get("transferable");
+      if(isTransferable) {
+    	  throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_NOT_TRANSFERABLE);
+      }
     }
     
     SubscriberProfile subscriberProfile=null;

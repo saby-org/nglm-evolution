@@ -85,6 +85,7 @@ public enum RESTAPIGenericReturnCodes
   REMOVE_SUPPLIEROFFER_FAILED(429, "PUT_SUPPLIEROFFER_FAILED", "supplier offer is not created"),
   PRODUCT_PARENT_SUPPLIER_INACTIVE(430, "PRODUCT_PARENT_SUPPLIER_INACTIVE", "product parent Supplier is inactive"),
   OFFER_UNKNOWN(431, "OFFER_UNKNOWN", "supplier offer unknown"),
+  VOUCHER_NOT_TRANSFERABLE(432, "VOUCHER NOT TRANSFERABLE", "Voucher not transferable"),
   INVALID_TOKEN_CODE(500, "INVALID_TOKEN_CODE", "The token-code is not valid"),
   MSISDN_TOKEN_CODE_NOT_COMPATIBLE(501, "MSISDN_TOKEN_CODE_NOT_COMPATIBLE", "The token-code is not associated to the current MSISDN"),
   CONCURRENT_ALLOCATION(502, "CONCURRENT_ALLOCATION", "The pair <MSISDN, token-code> is already in allocation phase"),
