@@ -3,6 +3,8 @@ package com.evolving.nglm.evolution;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -19,8 +21,13 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.SearchScrollRequest;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.Scroll;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.slf4j.Logger;
@@ -55,9 +62,15 @@ public class PredictionOrganizer
   * SubscriberPredictionsRequest producer
   *
   *****************************************/
-  private static int BATCH_SIZE = 1000;
+  private static int BATCH_SIZE = 1000; // TODO: plus tard - refactoring topic (SubscriberID, <..PredictionOrderID, ID Execution, Boolean(training/prediction)..>)
+  // Connaitre la fin de l'envoie de toutes les request (par subID)
+  // - check les predictionOrder - flag lastIDExec - signifie que dans le topic il ya tt les
   
-  private static String requestTopic = Deployment.getSubscriberPredictionsRequestTopic(); // Topic(SubscriberID, List<SubscriberID>)  
+  // Comment renvoyer les courbes ROC - dans le topic PredictionOrder directement ?
+  // spark est très sensible au chgt de schema MAIS il y'a peu de chance qsu'on modifie le schema de Predictionorder sans que spark soit aussi dans la story du change
+  
+  
+  private static String requestTopic = Deployment.getSubscriberPredictionsRequestTopic(); // Topic(PredictionOrderID, List<SubscriberID>)  
   private static ConnectSerde<StringKey> keySerde = StringKey.serde();
   private static ConnectSerde<SubscriberPredictionsRequest> valueSerde = SubscriberPredictionsRequest.serde();
   private static KafkaProducer<byte[], byte[]> kafkaProducer;
@@ -223,26 +236,7 @@ public class PredictionOrganizer
           return;
         }
         
-        List<String> subscribers = getSubscribers(order.getTargetCriteria(), order.getTenantID(), elasticsearchRestClient);
-        Set<String> batch = new HashSet<String>();
-        
-        for(String subscriberID: subscribers) {
-          batch.add(subscriberID);
-          if(batch.size() >= BATCH_SIZE) {
-            //
-            // push
-            //
-            send(order.getGUIManagedObjectID(), batch);
-            batch = new HashSet<String>();
-          }
-        }
-        
-        //
-        // push remaining
-        //
-        if(batch.size() > 0) {
-          send(orderID, batch);
-        }
+        getSubscribersAndPush(orderID, order.getTargetCriteria(), order.getTenantID(), elasticsearchRestClient);
       } 
       catch (ElasticsearchStatusException | IOException | GUIManagerException e) {
         log.error("Unable to retrieve list of subscribers matching target criteria {}", e.getMessage());
@@ -278,28 +272,64 @@ public class PredictionOrganizer
   //
   /**
    * Retrieve the list of all subscribers matching a list of EvaluationCriterion
+   * Push them in the request topic using send() call
    */
-  public static List<String> getSubscribers(List<EvaluationCriterion> criteriaList, int tenantID, ElasticsearchClientAPI elasticsearch) throws IOException, ElasticsearchStatusException, GUIManagerException {
+  public static void getSubscribersAndPush(String orderID, List<EvaluationCriterion> criteriaList, int tenantID, ElasticsearchClientAPI elasticsearch) throws IOException, ElasticsearchStatusException, GUIManagerException {
+    int scrollSize = Math.min(BATCH_SIZE, ElasticsearchClientAPI.MAX_RESULT_WINDOW); // Capped by max size of ES request (10000)
+    
+    //
+    // Build Elasticsearch request (retrieving subscriberIDs matching criteria)
+    //
     BoolQueryBuilder query = EvaluationCriterion.esCountMatchCriteriaGetQuery(criteriaList);
     query.filter().add(QueryBuilders.termQuery("tenantID", tenantID)); // filter to keep only tenant related subscribers.
     
     SearchSourceBuilder searchSourceRequest = new SearchSourceBuilder().query(query);
-    
     log.info(searchSourceRequest.toString());  // TODO debug
+    
+    SearchRequest searchRequest = new SearchRequest("subscriberprofile").source(searchSourceRequest);
+    Scroll scroll = new Scroll(TimeValue.timeValueSeconds(10L));
+    searchRequest.scroll(scroll);
+    searchRequest.source().size(scrollSize); // batch size
+    try
+      {
+        SearchResponse searchResponse = elasticsearch.search(searchRequest, RequestOptions.DEFAULT);
+        String scrollId = searchResponse.getScrollId(); // always null
+        SearchHit[] searchHits = searchResponse.getHits().getHits();
+        while (searchHits != null && searchHits.length > 0)
+          {
+            //
+            // Construct batch (list of subscriberIDs) from ES hits
+            //
+            Set<String> batch = new HashSet<String>(); // Will contain subscriberIDs - Set to avoid duplicate
 
-    List<SearchHit> hits = elasticsearch.getESHits(new SearchRequest("subscriberprofile").source(searchSourceRequest));
-    
-    List<String> result = new LinkedList<String>();
-    for (SearchHit hit : hits) {
-      Map<String, Object> esFields = hit.getSourceAsMap();
-      if((String) esFields.get("subscriberID") != null) {
-        result.add((String) esFields.get("subscriberID"));
+            for (SearchHit hit : searchHits) {
+              Map<String, Object> esFields = hit.getSourceAsMap();
+              if((String) esFields.get("subscriberID") != null) {
+                batch.add((String) esFields.get("subscriberID"));
+              }
+            }
+            
+            //
+            // push batch - we need to do that in the same function otherwise we will reach heap space (OOM) 
+            //
+            send(orderID, batch);
+            
+            //
+            //  scroll
+            //
+            
+            SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId); 
+            scrollRequest.scroll(scroll);
+            searchResponse = elasticsearch.searchScroll(scrollRequest, RequestOptions.DEFAULT);
+            scrollId = searchResponse.getScrollId();
+            searchHits = searchResponse.getHits().getHits();
+          }
+      } 
+    catch (IOException e)
+      {
+        log.error("IOException in ES query {}", e.getMessage());
+        throw new GUIManagerException(e);
       }
-    }
-    
-    log.info(result.toString()); // TODO debug
-    
-    return result;
   }
 }
 

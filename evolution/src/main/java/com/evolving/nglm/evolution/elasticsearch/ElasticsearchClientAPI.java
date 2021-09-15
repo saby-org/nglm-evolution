@@ -3,6 +3,7 @@ package com.evolving.nglm.evolution.elasticsearch;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -1358,7 +1359,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
             //  add
             //
             
-            hits.addAll(new ArrayList<SearchHit>(Arrays.asList(searchHits)));
+            hits.addAll(Arrays.asList(searchHits));
             
             //
             //  scroll
@@ -1373,7 +1374,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
       } 
     catch (IOException e)
       {
-        log.error("IOException in ES qurery {}", e.getMessage());
+        log.error("IOException in ES query {}", e.getMessage());
         throw new GUIManagerException(e);
       }
     
@@ -1392,7 +1393,6 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
   
   public List<SearchHit> getESHits(SearchRequest searchRequest) throws GUIManagerException
   {
-    List<SearchHit> hits = new ArrayList<SearchHit>();
     searchRequest.source().size(10000);
     try
       {
@@ -1404,20 +1404,18 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
             //  add
             //
             
-            hits.addAll(new ArrayList<SearchHit>(Arrays.asList(searchHits)));
+            return Arrays.asList(searchHits);
+          }
+        else 
+          {
+            return Collections.emptyList();
           }
       } 
     catch (IOException e)
       {
-        log.error("IOException in ES qurery {}", e.getMessage());
+        log.error("IOException in ES query {}", e.getMessage());
         throw new GUIManagerException(e);
       }
-    
-    //
-    //  return
-    //
-    
-    return hits;
   }
   
 
