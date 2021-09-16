@@ -46,13 +46,13 @@ import com.evolving.nglm.evolution.SegmentationDimensionService;
 import com.evolving.nglm.evolution.datacubes.DatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.DatacubeManager;
 import com.evolving.nglm.evolution.datacubes.DatacubeWriter;
-import com.evolving.nglm.evolution.datacubes.mapping.LoyaltyProgramsMap;
+import com.evolving.nglm.evolution.datacubes.mapping.LoyaltyProgramMissionsMap;
 import com.evolving.nglm.evolution.datacubes.mapping.SegmentationDimensionsMap;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
-public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
+public class MissionsChangesDatacubeGenerator extends DatacubeGenerator
 {
-  private static final String DATACUBE_ES_INDEX_SUFFIX = "_datacube_loyaltyprogramschanges";
+  private static final String DATACUBE_ES_INDEX_SUFFIX = "_datacube_missionschanges";
   public static final String DATACUBE_ES_INDEX(int tenantID) { return "t" + tenantID + DATACUBE_ES_INDEX_SUFFIX; }
   private static final String DATA_ES_INDEX = "subscriberprofile";
   private static final String DATA_FILTER_STRATUM_PREFIX = "stratum."; // from subscriberprofile index
@@ -63,7 +63,7 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
   * Properties
   *
   *****************************************/
-  private LoyaltyProgramsMap loyaltyProgramsMap;
+  private LoyaltyProgramMissionsMap loyaltyProgramMissionsMap;
   private SegmentationDimensionsMap segmentationDimensionList;
 
   private long targetPeriod;
@@ -75,15 +75,15 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
   * Constructors
   *
   *****************************************/
-  public ProgramsChangesDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, DatacubeWriter datacubeWriter, LoyaltyProgramService loyaltyProgramService, int tenantID, String timeZone, SegmentationDimensionService segmentationDimensionService)
+  public MissionsChangesDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, DatacubeWriter datacubeWriter, LoyaltyProgramService loyaltyProgramService, int tenantID, String timeZone, SegmentationDimensionService segmentationDimensionService)
   {
     super(datacubeName, elasticsearch, datacubeWriter, tenantID, timeZone);
     
-    this.loyaltyProgramsMap = new LoyaltyProgramsMap(loyaltyProgramService);
+    this.loyaltyProgramMissionsMap = new LoyaltyProgramMissionsMap(loyaltyProgramService);
     this.segmentationDimensionList = new SegmentationDimensionsMap(segmentationDimensionService);
   }
   
-  public ProgramsChangesDatacubeGenerator(String datacubeName, int tenantID, DatacubeManager datacubeManager) {
+  public MissionsChangesDatacubeGenerator(String datacubeName, int tenantID, DatacubeManager datacubeManager) {
     this(datacubeName,
         datacubeManager.getElasticsearchClientAPI(),
         datacubeManager.getDatacubeWriter(),
@@ -109,7 +109,7 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
   @Override
   protected boolean runPreGenerationPhase() throws ElasticsearchException, IOException, ClassCastException
   {
-    loyaltyProgramsMap.update();
+    loyaltyProgramMissionsMap.update();
     this.segmentationDimensionList.update();
     return true;
   }
@@ -133,23 +133,22 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
     BoolQueryBuilder query = QueryBuilders.boolQuery();
     query.filter().add(QueryBuilders.existsQuery("lastUpdateDate"));
     query.filter().add(QueryBuilders.termQuery("tenantID", this.tenantID)); // filter to keep only tenant related items !
-    query.filter().add(QueryBuilders.nestedQuery("loyaltyPrograms", QueryBuilders.boolQuery().filter(QueryBuilders.termQuery("loyaltyPrograms.loyaltyProgramType", LoyaltyProgram.LoyaltyProgramType.POINTS.getExternalRepresentation())), ScoreMode.Total));
-    
+    query.filter().add(QueryBuilders.nestedQuery("loyaltyPrograms", QueryBuilders.boolQuery().filter(QueryBuilders.termQuery("loyaltyPrograms.loyaltyProgramType", LoyaltyProgram.LoyaltyProgramType.MISSION.getExternalRepresentation())), ScoreMode.Total));
+
     //
     // Aggregations
     //
     List<CompositeValuesSourceBuilder<?>> sources = new ArrayList<>();
     sources.add(new TermsValuesSourceBuilder("loyaltyProgramID").field("loyaltyPrograms.programID"));
-    sources.add(new TermsValuesSourceBuilder("newTier").field("loyaltyPrograms.tierName").missingBucket(true)); // Missing means opt-out. We need to catch them !
-    sources.add(new TermsValuesSourceBuilder("previousTier").field("loyaltyPrograms.previousTierName").missingBucket(true)); // Missing means opt-in. We need to catch them !
-    sources.add(new TermsValuesSourceBuilder("tierChangeType").field("loyaltyPrograms.tierChangeType"));
+    sources.add(new TermsValuesSourceBuilder("newStep").field("loyaltyPrograms.stepName").missingBucket(true)); // Missing means opt-out. We need to catch them !
+    sources.add(new TermsValuesSourceBuilder("previousStep").field("loyaltyPrograms.previousStepName").missingBucket(true)); // Missing means opt-out. We need to catch them !
     
     //
     // Sub Aggregation DATE - It is a filter (only one bucket), but for a field of the nested object.
     //
     
     RangeAggregationBuilder dateAgg = AggregationBuilders.range("DATE")
-        .field("loyaltyPrograms.tierUpdateDate")
+        .field("loyaltyPrograms.stepUpdateDate")
         .addRange(targetPeriodStartIncluded, targetPeriodStartIncluded + targetPeriod); // Reminder: from is included, to is excluded
     
     //
@@ -200,7 +199,7 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
   protected void embellishFilters(Map<String, Object> filters)
   {
     String loyaltyProgramID = (String) filters.remove("loyaltyProgramID");
-    filters.put("loyaltyProgram", loyaltyProgramsMap.getDisplay(loyaltyProgramID, "loyaltyProgram"));
+    filters.put("loyaltyProgram", loyaltyProgramMissionsMap.getDisplay(loyaltyProgramID, "loyaltyProgram"));
     
     //
     // Dimensions
@@ -215,9 +214,6 @@ public class ProgramsChangesDatacubeGenerator extends DatacubeGenerator
       }
     }
     
-    // "newTier" stay the same (None is managed in extractDatacubeRows)
-    // "previousTier" stay the same (None is managed in extractDatacubeRows)
-    // "tierChangeType" stay the same
   }
   
   /**
