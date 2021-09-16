@@ -48,6 +48,10 @@
     "VDR-hourly-definitive"          : { "type": "VDR-hourly-definitive",        "enabled": false, "scheduledAtRestart": false, "cronEntry": "0 1 * * *" },
     "LoyaltyPrograms-preview"        : { "type": "LoyaltyPrograms-preview",      "enabled": false, "scheduledAtRestart": false, "cronEntry": "0 * * * *" },
     "LoyaltyPrograms-definitive"     : { "type": "LoyaltyPrograms-definitive",   "enabled": true,  "scheduledAtRestart": false, "cronEntry": "0 0 * * *" },
+    "Challenges-preview"             : { "type": "Challenges-preview",           "enabled": false, "scheduledAtRestart": false, "cronEntry": "0 * * * *" },
+    "Challenges-definitive"          : { "type": "Challenges-definitive",        "enabled": true,  "scheduledAtRestart": false, "cronEntry": "0 0 * * *" },
+    "Missions-preview"               : { "type": "Missions-preview",             "enabled": false, "scheduledAtRestart": false, "cronEntry": "0 * * * *" },
+    "Missions-definitive"            : { "type": "Missions-definitive",          "enabled": true,  "scheduledAtRestart": false, "cronEntry": "0 0 * * *" },
     "SubscriberProfile-preview"      : { "type": "SubscriberProfile-preview",    "enabled": false, "scheduledAtRestart": false, "cronEntry": "0 * * * *" },
     "SubscriberProfile-definitive"   : { "type": "SubscriberProfile-definitive", "enabled": true,  "scheduledAtRestart": false, "cronEntry": "0 0 * * *" },
     "Journeys"                       : { "type": "Journeys",                     "enabled": true,  "scheduledAtRestart": false, "cronEntry": "1 * * * *" }

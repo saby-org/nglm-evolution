@@ -152,7 +152,7 @@ public abstract class SubscriberProfile
     //
 
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(12));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(13));
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("subscriberTraceEnabled", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("evolutionSubscriberStatus", Schema.OPTIONAL_STRING_SCHEMA);
@@ -168,6 +168,8 @@ public abstract class SubscriberProfile
     schemaBuilder.field("universalControlGroup", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("tokens", SchemaBuilder.array(Token.commonSerde().schema()).defaultValue(Collections.<Token>emptyList()).schema());
     schemaBuilder.field("pointBalances", SchemaBuilder.map(Schema.STRING_SCHEMA, PointBalance.schema()).name("subscriber_profile_balances").schema());
+    schemaBuilder.field("scoreBalances", SchemaBuilder.map(Schema.STRING_SCHEMA, MetricHistory.schema()).name("subscriber_score_balances").schema());
+    schemaBuilder.field("progressionBalances", SchemaBuilder.map(Schema.STRING_SCHEMA, MetricHistory.schema()).name("subscriber_progression_balances").schema());
     schemaBuilder.field("vouchers", SchemaBuilder.array(VoucherProfileStored.voucherProfileStoredSchema()).name("subscriber_profile_vouchers").optional().schema());
     schemaBuilder.field("language", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("extendedSubscriberProfile", ExtendedSubscriberProfile.getExtendedSubscriberProfileSerde().optionalSchema());
@@ -249,6 +251,8 @@ public abstract class SubscriberProfile
   private boolean universalControlGroup;
   private List<Token> tokens;
   private Map<String,PointBalance> pointBalances;
+  private Map<String,MetricHistory> scoreBalances;
+  private Map<String,MetricHistory> progressionBalances;
   private List<VoucherProfileStored> vouchers; // vouchers action rely on this being ordered (soonest expiry date first)
   private String languageID;
   private ExtendedSubscriberProfile extendedSubscriberProfile;
@@ -288,6 +292,8 @@ public abstract class SubscriberProfile
   public boolean getUniversalControlGroup() { return universalControlGroup; }
   public List<Token> getTokens(){ return tokens; }
   public Map<String,PointBalance> getPointBalances() { return pointBalances; }
+  public Map<String, MetricHistory> getScoreBalances() { return scoreBalances; }
+  public Map<String, MetricHistory> getProgressionBalances() { return progressionBalances; }
   public List<VoucherProfileStored> getVouchers() { return vouchers; }
   public String getLanguageID() { return languageID; }
   public ExtendedSubscriberProfile getExtendedSubscriberProfile() { return extendedSubscriberProfile; }
@@ -762,7 +768,52 @@ public abstract class SubscriberProfile
       }
     return result;
   }
+
   
+  public JSONObject getScoreFluctuationsJSON()
+  {
+    JSONObject result = new JSONObject();
+    if(this.scoreBalances != null)
+      {
+        Date evaluationDate = SystemTime.getCurrentTime();
+        
+        for(Entry<String, MetricHistory> score : scoreBalances.entrySet())
+          {
+            JSONObject fluctuations = new JSONObject();
+            
+            fluctuations.put("today", score.getValue().getToday(evaluationDate));
+            fluctuations.put("yesterday", score.getValue().getYesterday(evaluationDate));
+            fluctuations.put("last7days", score.getValue().getPrevious7Days(evaluationDate));
+            fluctuations.put("last30days", score.getValue().getPrevious30Days(evaluationDate));
+
+            result.put(score.getKey(), fluctuations);
+          }
+      }
+    return result;
+  }
+  
+  public JSONObject getProgressionFluctuationsJSON()
+  {
+    JSONObject result = new JSONObject();
+    if(this.progressionBalances != null)
+      {
+        Date evaluationDate = SystemTime.getCurrentTime();
+        
+        for(Entry<String, MetricHistory> progression : progressionBalances.entrySet())
+          {
+            JSONObject fluctuations = new JSONObject();
+            
+            fluctuations.put("today", progression.getValue().getToday(evaluationDate));
+            fluctuations.put("yesterday", progression.getValue().getYesterday(evaluationDate));
+            fluctuations.put("last7days", progression.getValue().getPrevious7Days(evaluationDate));
+            fluctuations.put("last30days", progression.getValue().getPrevious30Days(evaluationDate));
+
+            result.put(progression.getKey(), fluctuations);
+          }
+      }
+    return result;
+  }
+
   /****************************************
   *
   *  getPointsBalanceJSON - PointBalance
@@ -1685,6 +1736,8 @@ public abstract class SubscriberProfile
     this.universalControlGroup = false;
     this.tokens = new ArrayList<Token>();
     this.pointBalances = new HashMap<String,PointBalance>();
+    this.scoreBalances = new HashMap<String,MetricHistory>();
+    this.progressionBalances = new HashMap<String,MetricHistory>();
     this.vouchers = new LinkedList<>();
     this.languageID = null;
     this.extendedSubscriberProfile = null;
@@ -1744,6 +1797,9 @@ public abstract class SubscriberProfile
 
     Boolean universalControlGroupPrevious = (schemaVersion >= 12) ? valueStruct.getBoolean("universalControlGroupPrevious") : null;
     Date universalControlGroupChangeDate = (schemaVersion >= 12) ? (Date)valueStruct.get("universalControlGroupChangeDate") : null;
+    Map<String,MetricHistory> scoreBalances = (schemaVersion >= 13) ? unpackScoreBalances(schema.field("scoreBalances").schema(), (Map<String,Object>) valueStruct.get("scoreBalances")): Collections.<String,MetricHistory>emptyMap();
+    Map<String,MetricHistory> progressionBalances = (schemaVersion >= 13) ? unpackProgressionBalances(schema.field("progressionBalances").schema(), (Map<String,Object>) valueStruct.get("progressionBalances")): Collections.<String,MetricHistory>emptyMap();
+    
     //
     //  return
     //
@@ -1762,6 +1818,8 @@ public abstract class SubscriberProfile
     this.universalControlGroup = universalControlGroup;
     this.tokens = tokens;
     this.pointBalances = pointBalances;
+    this.scoreBalances = scoreBalances;
+    this.progressionBalances = progressionBalances;
     this.vouchers = vouchers;
     this.languageID = languageID;
     this.extendedSubscriberProfile = extendedSubscriberProfile;
@@ -2034,6 +2092,58 @@ public abstract class SubscriberProfile
     return result;
   }
 
+  
+
+  private static Map<String,MetricHistory> unpackScoreBalances(Schema schema, Map<String,Object> value)
+  {
+    //
+    //  get schema for ScoreBalances
+    //
+
+    Schema scoreBalanceSchema = schema.valueSchema();
+
+    //
+    //  unpack
+    //
+
+    Map<String,MetricHistory> result = new HashMap<>();
+    for (String key : value.keySet())
+      {
+        result.put(key, MetricHistory.unpack(new SchemaAndValue(scoreBalanceSchema, value.get(key))));
+      }
+
+    //
+    //  return
+    //
+
+    return result;
+  }
+
+  private static Map<String,MetricHistory> unpackProgressionBalances(Schema schema, Map<String,Object> value)
+  {
+    //
+    //  get schema for ScoreBalances
+    //
+
+    Schema progressionBalanceSchema = schema.valueSchema();
+
+    //
+    //  unpack
+    //
+
+    Map<String,MetricHistory> result = new HashMap<>();
+    for (String key : value.keySet())
+      {
+        result.put(key, MetricHistory.unpack(new SchemaAndValue(progressionBalanceSchema, value.get(key))));
+      }
+
+    //
+    //  return
+    //
+
+    return result;
+  }
+
   /*****************************************
    *
    *  unpackVouchers
@@ -2153,6 +2263,8 @@ public abstract class SubscriberProfile
     this.universalControlGroup = subscriberProfile.getUniversalControlGroup();
     this.tokens = new ArrayList<Token>(subscriberProfile.getTokens());
     this.pointBalances = new HashMap<String,PointBalance>(subscriberProfile.getPointBalances()); // WARNING:  NOT a deep copy, PointBalance must be copied before update
+    this.scoreBalances = new HashMap<>(subscriberProfile.getScoreBalances());
+    this.progressionBalances = new HashMap<>(subscriberProfile.getProgressionBalances());
     this.vouchers = new LinkedList<VoucherProfileStored>(subscriberProfile.getVouchers());
     this.languageID = subscriberProfile.getLanguageID();
     this.extendedSubscriberProfile = subscriberProfile.getExtendedSubscriberProfile() != null ? ExtendedSubscriberProfile.copy(subscriberProfile.getExtendedSubscriberProfile()) : null;
@@ -2188,6 +2300,8 @@ public abstract class SubscriberProfile
     struct.put("universalControlGroup", subscriberProfile.getUniversalControlGroup());
     struct.put("tokens", packTokens(subscriberProfile.getTokens()));
     struct.put("pointBalances", packPointBalances(subscriberProfile.getPointBalances()));
+    struct.put("scoreBalances", packScoreBalances(subscriberProfile.getScoreBalances()));
+    struct.put("progressionBalances", packProgressionBalances(subscriberProfile.getProgressionBalances()));
     struct.put("vouchers", packVouchers(subscriberProfile.getVouchers()));
     struct.put("language", subscriberProfile.getLanguageID());
     struct.put("extendedSubscriberProfile", (subscriberProfile.getExtendedSubscriberProfile() != null) ? ExtendedSubscriberProfile.getExtendedSubscriberProfileSerde().packOptional(subscriberProfile.getExtendedSubscriberProfile()) : null);
@@ -2374,6 +2488,29 @@ public abstract class SubscriberProfile
     for (String pointID : pointBalances.keySet())
       {
         result.put(pointID, PointBalance.pack(pointBalances.get(pointID)));
+      }
+    return result;
+  }
+
+  
+
+  public static Map<String,Object> packScoreBalances(Map<String,MetricHistory> scoreBalances)
+  {
+    Map<String,Object> result = new HashMap<String,Object>();
+    for (String loyaltyProgramID : scoreBalances.keySet())
+      {
+        result.put(loyaltyProgramID, MetricHistory.pack(scoreBalances.get(loyaltyProgramID)));
+      }
+    return result;
+  }
+
+
+  public static Map<String,Object> packProgressionBalances(Map<String,MetricHistory> progressionBalances)
+  {
+    Map<String,Object> result = new HashMap<String,Object>();
+    for (String loyaltyProgramID : progressionBalances.keySet())
+      {
+        result.put(loyaltyProgramID, MetricHistory.pack(progressionBalances.get(loyaltyProgramID)));
       }
     return result;
   }

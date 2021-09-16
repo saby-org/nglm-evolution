@@ -119,6 +119,8 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/subscriber
       "targets"                             : { "type" : "keyword" },
       "lastUpdateDate"                      : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
       "pointFluctuations"                   : { "type" : "object"  },
+      "scoreFluctuations"                   : { "type" : "object"  },
+      "progressionFluctuations"             : { "type" : "object"  },
       "subscriberJourneys"                  : { "type" : "nested"  },
       "tokens"                              : { "type" : "nested",
         "properties" : {
