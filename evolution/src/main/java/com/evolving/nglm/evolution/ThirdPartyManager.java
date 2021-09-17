@@ -6292,8 +6292,8 @@ public class ThirdPartyManager
                 return JSONUtilities.encodeObject(response);          
               }
           }
-    	
-        response.put("offerDetails", JSONUtilities.encodeObject(JSONUtilities.encodeObject(ThirdPartyJSONGenerator.buildOfferElement(offerID, offerService, offerObjectiveService, SystemTime.getCurrentTime(), callingChannel, null, null, paymentMeanService, tenantID))));
+    	boolean isPresentOfferDetails  = true;
+        response.put("offerDetails", JSONUtilities.encodeObject(JSONUtilities.encodeObject(ThirdPartyJSONGenerator.buildOfferElement(offerID, offerService, offerObjectiveService, SystemTime.getCurrentTime(), callingChannel, isPresentOfferDetails, null, null, paymentMeanService, tenantID))));
         updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
         return JSONUtilities.encodeObject(response);
       }
