@@ -8594,6 +8594,16 @@ public class GUIManager
 
   private JSONObject processGetOfferList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived, int tenantID)
   {
+	  
+  /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();;
+	  
+	  
     /*****************************************
     *
     *  retrieve and convert offers
@@ -8603,6 +8613,36 @@ public class GUIManager
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> offers = new ArrayList<JSONObject>();
     Collection <GUIManagedObject> offerObjects = new ArrayList<GUIManagedObject>();
+    
+ // _inbound_channel_ indicates which information to be returned for each presented offer
+    String callingChannelDisplay = JSONUtilities.decodeString(jsonRoot, "inboundChannel", false);
+    CallingChannel callingChannel = null;
+    if (callingChannelDisplay != null)
+      {
+        String callingChannelID = null;
+        for (CallingChannel callingChannelLoop : callingChannelService.getActiveCallingChannels(SystemTime.getCurrentTime(), tenantID))
+          {
+            if (callingChannelLoop.getGUIManagedObjectDisplay().equals(callingChannelDisplay))
+              {
+                callingChannelID = callingChannelLoop.getGUIManagedObjectID();
+                break;
+              }
+          }
+        if (callingChannelID == null)
+          {
+            response.put("responseCode", "ChannelNotValid");
+            response.put("responseMessage", "Inbound Channel not found");
+            return JSONUtilities.encodeObject(response);          
+          }
+        callingChannel = callingChannelService.getActiveCallingChannel(callingChannelID, SystemTime.getCurrentTime());
+        if (callingChannel == null)
+          {
+            log.error(RESTAPIGenericReturnCodes.CHANNEL_NOT_FOUND.getGenericDescription()+" unknown id : "+callingChannelID);
+            response.put("responseCode", "ChannelNotValid");
+            response.put("responseMessage", "Inbound Channel not found");
+            return JSONUtilities.encodeObject(response);          
+          }
+      }
     
     if (jsonRoot.containsKey("ids"))
       {
@@ -8667,13 +8707,6 @@ public class GUIManager
           }
       }
 
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();;
     response.put("responseCode", "ok");
     response.put("offers", JSONUtilities.encodeArray(offers));
     return JSONUtilities.encodeObject(response);
