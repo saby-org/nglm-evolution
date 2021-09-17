@@ -197,12 +197,23 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   //
 
   private static Schema commonSchema = null;
+  private static Schema groupIDSchema = null;
 
   static
   {
+    //
+    //  groupID schema
+    //
+
+    SchemaBuilder groupIDSchemaBuilder = SchemaBuilder.struct();
+    groupIDSchemaBuilder.name("subscribergroup_groupid");
+    groupIDSchemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
+    groupIDSchemaBuilder.field("subscriberGroupIDs", SchemaBuilder.array(Schema.STRING_SCHEMA).defaultValue(new ArrayList<String>()).schema());
+    groupIDSchema = groupIDSchemaBuilder.build();
+
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("delivery_request");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),12));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),13));
     for (Field field : subscriberStreamOutputSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("deliveryRequestID", Schema.STRING_SCHEMA);
     schemaBuilder.field("deliveryRequestSource", Schema.STRING_SCHEMA);
@@ -230,6 +241,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     schemaBuilder.field("rescheduledDate", Schema.OPTIONAL_INT64_SCHEMA);
     schemaBuilder.field("notificationHistory",MetricHistory.serde().optionalSchema());
     schemaBuilder.field("subscriberFields", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.OPTIONAL_STRING_SCHEMA).optional().schema());
+    schemaBuilder.field("segments", SchemaBuilder.map(groupIDSchema, Schema.INT32_SCHEMA).name("deliveryrequest_segments").schema());
     schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
     commonSchema = schemaBuilder.build();
   };
@@ -294,6 +306,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   private Date rescheduledDate;
   private MetricHistory notificationHistory;
   private Map<String,String> subscriberFields;
+  private Map<Pair<String,String>,Integer> segments; // Map<Pair<dimensionID,segmentID> epoch>> // TODO : put it in struct
   protected int tenantID;
 
   // internal, not stored
@@ -331,6 +344,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   public Date getRescheduledDate() { return rescheduledDate; }
   public MetricHistory getNotificationHistory(){ return notificationHistory; }
   public Map<String,String> getSubscriberFields(){return subscriberFields;}
+  public Map<Pair<String, String>, Integer> getSegments(){return segments;}
   public int getTenantID(){ return tenantID; }
 
   public TopicPartition getTopicPartition(){return topicPartition;}
@@ -446,6 +460,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.rescheduledDate = null;
     this.notificationHistory = new MetricHistory(MetricHistory.MINIMUM_DAY_BUCKETS,MetricHistory.MINIMUM_MONTH_BUCKETS, tenantID);
     this.subscriberFields = buildSubscriberFields(context.getSubscriberState().getSubscriberProfile(),context.getSubscriberGroupEpochReader(), tenantID);
+    this.segments = context.getSubscriberState().getSubscriberProfile().getSegments();
     this.topicPartition = new TopicPartition("unknown",-1);
     this.tenantID = tenantID;
   }
@@ -488,6 +503,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.rescheduledDate = null;
     this.notificationHistory = new MetricHistory(MetricHistory.MINIMUM_DAY_BUCKETS,MetricHistory.MINIMUM_MONTH_BUCKETS, tenantID);
     this.subscriberFields = buildSubscriberFields(subscriberProfile,subscriberGroupEpochReader, tenantID);
+    this.segments = subscriberProfile.getSegments();
     this.topicPartition = new TopicPartition("unknown",-1);
     this.tenantID = tenantID;
   }
@@ -525,6 +541,8 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.notificationHistory = deliveryRequest.getNotificationHistory();
     this.subscriberFields = new LinkedHashMap<>();
     if(deliveryRequest.getSubscriberFields()!=null) subscriberFields.putAll(deliveryRequest.getSubscriberFields());
+    this.segments = new LinkedHashMap<>();
+    if (deliveryRequest.getSegments() != null) segments.putAll(deliveryRequest.getSegments());
     this.topicPartition = new TopicPartition(deliveryRequest.getTopicPartition().topic(),deliveryRequest.getTopicPartition().partition());
     this.tenantID = deliveryRequest.getTenantID();
   }
@@ -565,6 +583,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.rescheduledDate = JSONUtilities.decodeDate(jsonRoot, "rescheduledDate", false);
     this.notificationHistory = new MetricHistory(MetricHistory.MINIMUM_DAY_BUCKETS,MetricHistory.MINIMUM_MONTH_BUCKETS, tenantID);
     this.subscriberFields = buildSubscriberFields(subscriberProfile,subscriberGroupEpochReader, tenantID);
+    this.segments = subscriberProfile.getSegments();
     this.topicPartition = new TopicPartition("unknown",-1);
     this.tenantID = tenantID;
   }
@@ -608,6 +627,8 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.notificationHistory = new MetricHistory(MetricHistory.MINIMUM_DAY_BUCKETS,MetricHistory.MINIMUM_MONTH_BUCKETS, tenantID);
     this.subscriberFields = new LinkedHashMap<>();
     if(originatingDeliveryRequest.getSubscriberFields()!=null) this.subscriberFields.putAll(originatingDeliveryRequest.getSubscriberFields());
+    this.segments = new LinkedHashMap<>();
+    if (originatingDeliveryRequest.getSegments() != null) segments.putAll(originatingDeliveryRequest.getSegments());
     this.topicPartition = new TopicPartition("unknown",-1);
     this.tenantID = tenantID;
   }
@@ -641,6 +662,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.rescheduledDate = null;
     this.notificationHistory = null;
     this.subscriberFields = null;
+    this.segments = null;
     this.topicPartition = null;
     this.tenantID = -1;
   }
@@ -677,6 +699,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     struct.put("rescheduledDate", deliveryRequest.getRescheduledDate() != null ? deliveryRequest.getRescheduledDate().getTime() : null);
     struct.put("notificationHistory",MetricHistory.serde().packOptional(deliveryRequest.getNotificationHistory()));
     struct.put("subscriberFields",deliveryRequest.getSubscriberFields());
+    struct.put("segments",packSegments(deliveryRequest.getSegments()));
     struct.put("tenantID", (short)deliveryRequest.getTenantID()); 
   }
 
@@ -725,6 +748,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     Date rescheduledDate = (schemaVersion >= 4) ? (valueStruct.get("rescheduledDate") != null ? new Date(valueStruct.getInt64("rescheduledDate")) : null) : null;
     MetricHistory notificationHistory = schemaVersion >= 4 ?  MetricHistory.serde().unpackOptional(new SchemaAndValue(schema.field("notificationHistory").schema(),valueStruct.get("notificationHistory"))) : null;
     Map<String,String> subscriberFields = (schemaVersion >= 8 && schema.field("subscriberFields")!=null && valueStruct.get("subscriberFields") != null) ? (Map<String,String>) valueStruct.get("subscriberFields") : new LinkedHashMap<>();
+    Map<Pair<String,String>, Integer> segments = (schemaVersion >= 13) ? unpackSegments(valueStruct.get("segments")) : unpackSegmentsV1(valueStruct.get("subscriberGroups"));
     int tenantID = schema.field("tenantID") != null ? valueStruct.getInt16("tenantID") : 1; // by default tenant id 1 
     //
     //  return
@@ -753,6 +777,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.rescheduledDate = rescheduledDate;
     this.notificationHistory = notificationHistory;
     this.subscriberFields = subscriberFields;
+    this.segments = segments;
     this.tenantID = tenantID;
     this.topicPartition = new TopicPartition("unknown",-1);
   }
@@ -774,7 +799,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.originatingRequest = true;
     this.deliveryStatus = DeliveryStatus.Delivered; // not in ES
   }
-
+  
   /****************************************
   *
   *  presentation utilities
@@ -966,6 +991,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     b.append("," + originatingSubscriberID);
     b.append("," + targetedSubscriberID);
     b.append("," + subscriberFields);
+    b.append("," + segments);
     b.append("," + tenantID);
     if(topicPartition!=null) b.append("," + topicPartition);
     return b.toString();
@@ -985,7 +1011,73 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     b.append("}");
     return b.toString();
   }
+
+  /****************************************
+  *
+  *  packSegments
+  *
+  ****************************************/
+
+  private static Object packSegments(Map<Pair<String,String>, Integer> segments)
+  {
+    Map<Object, Object> result = new HashMap<Object, Object>();
+    for (Pair<String,String> groupID : segments.keySet())
+      {
+        String dimensionID = groupID.getFirstElement();
+        String segmentID = groupID.getSecondElement();
+        Integer epoch = segments.get(groupID);
+        Struct packedGroupID = new Struct(groupIDSchema);
+        packedGroupID.put("subscriberGroupIDs", Arrays.asList(dimensionID, segmentID));
+        result.put(packedGroupID, epoch);
+      }
+    return result;
+  }
   
+  /*****************************************
+  *
+  *  unpackSegments
+  *
+  *****************************************/
+
+  private static Map<Pair<String,String>, Integer> unpackSegments(Object value)
+  {
+    Map<Pair<String,String>, Integer> result = new HashMap<Pair<String,String>, Integer>();
+    if (value != null)
+      {
+        Map<Object, Integer> valueMap = (Map<Object, Integer>) value;
+        for (Object packedGroupID : valueMap.keySet())
+          {
+            List<String> subscriberGroupIDs = (List<String>) ((Struct) packedGroupID).get("subscriberGroupIDs");
+            Pair<String,String> groupID = new Pair<String,String>(subscriberGroupIDs.get(0), subscriberGroupIDs.get(1));
+            Integer epoch = valueMap.get(packedGroupID);
+            result.put(groupID, epoch);
+          }
+      }
+    return result;
+  }
+
+  /*****************************************
+  *
+  *  unpackSegmentsV1
+  *
+  *****************************************/
+
+  private static Map<Pair<String,String>, Integer> unpackSegmentsV1(Object value)
+  {
+    Map<Pair<String,String>, Integer> result = new HashMap<Pair<String,String>, Integer>();
+    if (value != null)
+      {
+        Map<Object, Integer> valueMap = (Map<Object, Integer>) value;
+        for (Object packedGroupID : valueMap.keySet())
+          {
+            Pair<String,String> groupID = new Pair<String,String>(((Struct) packedGroupID).getString("dimensionID"), ((Struct) packedGroupID).getString("segmentID"));
+            Integer epoch = valueMap.get(packedGroupID);
+            result.put(groupID, epoch);
+          }
+      }
+    return result;
+  }
+
   /*****************************************
   *
   *  getDateString
@@ -1025,4 +1117,37 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     }
     return subscriberFields;
   }
+  
+  
+  public Map<String, String> getStatisticsSegmentsMap(ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, SegmentationDimensionService segmentationDimensionService)
+  {
+    Map<String, String> result = new HashMap<String, String>();
+    if (segments != null) {
+      for (Pair<String, String> groupID : segments.keySet()) {
+        String dimensionID = groupID.getFirstElement();
+        boolean statistics = false;
+        if (dimensionID != null) {
+          GUIManagedObject segmentationDimensionObject = segmentationDimensionService
+              .getStoredSegmentationDimension(dimensionID);
+          if (segmentationDimensionObject != null && segmentationDimensionObject instanceof SegmentationDimension) {
+            SegmentationDimension segmenationDimension = (SegmentationDimension) segmentationDimensionObject;
+            statistics = segmenationDimension.getStatistics();
+          }
+        }
+        if (statistics) {
+          int epoch = segments.get(groupID);
+          if (epoch == (subscriberGroupEpochReader.get(dimensionID) != null
+              ? subscriberGroupEpochReader.get(dimensionID).getEpoch()
+                  : 0)) {
+                    result.put(dimensionID, groupID.getSecondElement());
+            }
+        }
+      }
+    }
+    return result;
+  }
+
+  
+
+  
 }
