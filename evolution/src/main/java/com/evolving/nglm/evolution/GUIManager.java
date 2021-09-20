@@ -8655,7 +8655,7 @@ public class GUIManager
                         GUIManagedObject offerObjectiveObject = offerObjectiveService.getStoredOfferObjective(offerObjectiveID);
                         if (offerObjectiveObject != null)
                           {
-                            String offerObjectiveDisplay = ((OfferObjective) offerObjectiveObject).getDisplay();
+                            String offerObjectiveDisplay = offerObjectiveObject.getGUIManagedObjectDisplay();
                             offerObjective.put("offerObjectiveDisplay", offerObjectiveDisplay);
                             offerObjectivesWithDispaly.add(offerObjective);
                           }
