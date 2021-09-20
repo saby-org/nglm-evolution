@@ -8686,8 +8686,7 @@ public class GUIManager
         	Offer offer = offerService.getActiveOffer(offerID, now);
                 
     	  offerMap.put("id", offerID);
-          offerMap.put("name", offer.getJSONRepresentation().get("displayName")); 
-
+          offerMap.put("name", offer.getGUIManagedObjectDisplay());
           Collection<ProposedOfferDetails> presentedOffers = null; //TODO
           // Add more elements to offerMap, based on what's in the channel
           JSONObject callingChannelJSON = callingChannel.getJSONRepresentation();
@@ -8774,6 +8773,10 @@ public class GUIManager
                                             }
                                         }
                                     }
+                                  else if ("offerDescription".equals(offerPropertyName))
+                                  {
+                                	  offerMap.put("description", (String) offerGUI.getJSONRepresentation().get("description"));
+                                  }
                                   else
                                     {
                                       Object offerProperty = offerJSON.get(offerPropertyName);
