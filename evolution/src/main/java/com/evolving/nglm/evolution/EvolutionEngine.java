@@ -2528,8 +2528,7 @@ public class EvolutionEngine
                         if (voucherChange.getAction() == VoucherChange.VoucherChangeAction.Redeem)
                           {
                             boolean success = checkRedeemVoucher(voucherStored, voucherChange, true);
-                            if (success) break; //RAJ K added
-                            //if (voucherStored.getVoucherStatus() == VoucherDelivery.VoucherStatus.Redeemed) break;
+                            if (success) break;
                           }
 
                         // extend
@@ -9399,8 +9398,7 @@ public class EvolutionEngine
                   if (voucherStored.getVoucherCode().equals(voucherChange.getVoucherCode()) && voucherStored.getVoucherID().equals(voucherChange.getVoucherID()))
                     {
                       boolean success = checkRedeemVoucher(voucherStored, voucherChange, true);
-                      if (success) break; // RAJ K
-                      // if (voucherChange.getReturnStatus() == RESTAPIGenericReturnCodes.SUCCESS) break;
+                      if (success) break;
                     }
 
                 }
