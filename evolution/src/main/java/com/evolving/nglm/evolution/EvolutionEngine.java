@@ -2527,8 +2527,8 @@ public class EvolutionEngine
                         // redeem
                         if (voucherChange.getAction() == VoucherChange.VoucherChangeAction.Redeem)
                           {
-                            checkRedeemVoucher(voucherStored, voucherChange, true);
-                            if (voucherChange.getReturnStatus() == RESTAPIGenericReturnCodes.SUCCESS) break; //RAJ K added
+                            boolean success = checkRedeemVoucher(voucherStored, voucherChange, true);
+                            if (success) break; //RAJ K added
                             //if (voucherStored.getVoucherStatus() == VoucherDelivery.VoucherStatus.Redeemed) break;
                           }
 
@@ -2654,8 +2654,9 @@ public class EvolutionEngine
    return subscriberUpdated;
  }
 
-  private static void checkRedeemVoucher(VoucherProfileStored voucherStored, VoucherChange voucherChange, boolean redeem)
+  private static boolean checkRedeemVoucher(VoucherProfileStored voucherStored, VoucherChange voucherChange, boolean redeem)
   {
+    boolean success = false;
     if (voucherStored.getVoucherStatus() == VoucherDelivery.VoucherStatus.Redeemed)
       {
         // already redeemed
@@ -2675,12 +2676,14 @@ public class EvolutionEngine
             voucherStored.setVoucherRedeemDate(SystemTime.getCurrentTime());
           }
         voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
+        success = true;
       } 
     else
       {
         // default KO
         voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_NON_REDEEMABLE);
       }
+    return success;
   }
 
 
@@ -9395,8 +9398,9 @@ public class EvolutionEngine
                 {
                   if (voucherStored.getVoucherCode().equals(voucherChange.getVoucherCode()) && voucherStored.getVoucherID().equals(voucherChange.getVoucherID()))
                     {
-                      checkRedeemVoucher(voucherStored, voucherChange, true);
-                      if (voucherChange.getReturnStatus() == RESTAPIGenericReturnCodes.SUCCESS) break;
+                      boolean success = checkRedeemVoucher(voucherStored, voucherChange, true);
+                      if (success) break; // RAJ K
+                      // if (voucherChange.getReturnStatus() == RESTAPIGenericReturnCodes.SUCCESS) break;
                     }
 
                 }
