@@ -7,6 +7,8 @@
 package com.evolving.nglm.evolution;
 
 import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.kafka.connect.data.*;
 
@@ -16,7 +18,7 @@ import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.ActionManager.ActionType;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
-
+import java.util.ArrayList;
 
 public class TokenChange extends SubscriberStreamOutput implements EvolutionEngineEvent, Action
 {
@@ -63,6 +65,8 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
     schemaBuilder.field("featureID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("callUniqueIdentifier", Schema.OPTIONAL_STRING_SCHEMA);//map to an AcceptanceLog
     schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
+    schemaBuilder.field("acceptedOfferID", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("presentedOfferIDs", SchemaBuilder.array(Schema.STRING_SCHEMA));
     schema = schemaBuilder.build();
   };
 
@@ -96,6 +100,8 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
   private String featureID;
   private String callUniqueIdentifier;
   private int tenantID;
+  private String acceptedOfferID;
+  private List<String> presentedOfferIDs;
   
   /****************************************
   *
@@ -120,6 +126,8 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
   public ActionType getActionType() { return ActionType.TokenChange; }
   public String getCallUniqueIdentifier() { return callUniqueIdentifier; }
   public int getTenantID() { return tenantID; }
+  public String getAcceptedOfferID() { return acceptedOfferID;}
+  public List<String> getPresentedOffersIDs() {return presentedOfferIDs;}
 
   //
   //  setters
@@ -135,17 +143,28 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
   public void setModuleID(String moduleID) { this.moduleID = moduleID; }
   public void setFeatureID(String featureID) { this.featureID = featureID; }
   public void setCallUniqueIdentifier(String callUniqueIdentifier) { this.callUniqueIdentifier = callUniqueIdentifier; }
-
+  public void setAcceptedOfferID(String acceptedOfferID){this.acceptedOfferID=acceptedOfferID;}
+  public void setPresentedOffersIDs(List<String> presentedOfferIDs) {this.presentedOfferIDs=presentedOfferIDs; }
   /*****************************************
   *
   * constructor (simple)
   *
   *****************************************/
-
   public TokenChange(String subscriberID, Date eventDateTime, String eventID, String tokenCode, String action, String returnStatus, String origin, Module module, String featureID, int tenantID)
   {
     this(subscriberID, eventDateTime, eventID, tokenCode, action, returnStatus, origin, module.getExternalRepresentation(), featureID, null, tenantID);
   }
+  public TokenChange(String subscriberID, Date eventDateTime, String eventID, String tokenCode, String action, String returnStatus, String origin, Module module, String featureID, int tenantID,String acceptedOfferID,List<String> presentedOfferIDs)
+  {
+    this(subscriberID, eventDateTime, eventID, tokenCode, action, returnStatus, origin, module.getExternalRepresentation(), featureID, null, tenantID,acceptedOfferID,presentedOfferIDs);
+  }
+  
+  public TokenChange(String subscriberID, Date eventDateTime, String eventID, String tokenCode, String action, String returnStatus, String origin, Module module, String featureID, int tenantID,List<String> presentedOfferIDs)
+  {
+    this(subscriberID, eventDateTime, eventID, tokenCode, action, returnStatus, origin, module.getExternalRepresentation(), featureID, null, tenantID,presentedOfferIDs);
+  }
+
+
 
   /*****************************************
   *
@@ -167,6 +186,38 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
     this.callUniqueIdentifier = callUniqueIdentifier;
     this.tenantID = tenantID;
   }
+   public TokenChange(String subscriberID, Date eventDateTime, String eventID, String tokenCode, String action, String returnStatus, String origin, String moduleID, String featureID, String callUniqueIdentifier, int tenantID,String acceptedOfferID,List<String> presentedOfferIDs)
+  {
+    this.subscriberID = subscriberID;
+    this.eventDateTime = eventDateTime;
+    this.eventID = eventID;
+    this.tokenCode = tokenCode;
+    this.action = action;
+    this.returnStatus = returnStatus;
+    this.origin = origin;
+    this.moduleID = moduleID;
+    this.featureID = featureID;
+    this.callUniqueIdentifier = callUniqueIdentifier;
+    this.tenantID = tenantID;
+    this.acceptedOfferID=acceptedOfferID;
+    this.presentedOfferIDs = presentedOfferIDs;
+  }
+  public TokenChange(String subscriberID, Date eventDateTime, String eventID, String tokenCode, String action, String returnStatus, String origin, String moduleID, String featureID, String callUniqueIdentifier, int tenantID,List<String> presentedOfferIDs)
+  {
+    this.subscriberID = subscriberID;
+    this.eventDateTime = eventDateTime;
+    this.eventID = eventID;
+    this.tokenCode = tokenCode;
+    this.action = action;
+    this.returnStatus = returnStatus;
+    this.origin = origin;
+    this.moduleID = moduleID;
+    this.featureID = featureID;
+    this.callUniqueIdentifier = callUniqueIdentifier;
+    this.tenantID = tenantID;
+    this.presentedOfferIDs = presentedOfferIDs;
+  }
+  
 
   /*****************************************
    *
@@ -187,6 +238,24 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
     this.featureID = featureID;
     this.tenantID = tenantID;
     this.callUniqueIdentifier = callUniqueIdentifier;
+  }
+
+  public TokenChange(SchemaAndValue schemaAndValue, String subscriberID, Date eventDateTime, String eventID, String tokenCode, String action, String returnStatus, String origin, String moduleID, String featureID, String callUniqueIdentifier, int tenantID, String acceptedOfferID,List<String> presentedOfferIDs)
+  {
+    super(schemaAndValue);
+    this.subscriberID = subscriberID;
+    this.eventDateTime = eventDateTime;
+    this.eventID = eventID;
+    this.tokenCode = tokenCode;
+    this.action = action;
+    this.returnStatus = returnStatus;
+    this.origin = origin;
+    this.moduleID = moduleID;
+    this.featureID = featureID;
+    this.tenantID = tenantID;
+    this.callUniqueIdentifier = callUniqueIdentifier;
+    this.acceptedOfferID = acceptedOfferID;
+    this.presentedOfferIDs = presentedOfferIDs;
   }
 
   /*****************************************
@@ -211,6 +280,12 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
     struct.put("featureID", tokenChange.getFeatureID());
     if(tokenChange.getCallUniqueIdentifier()!=null) struct.put("callUniqueIdentifier", tokenChange.getCallUniqueIdentifier());
     struct.put("tenantID", (short) tokenChange.getTenantID());
+    struct.put("acceptedOfferID", tokenChange.getAcceptedOfferID()); 
+   
+    if(tokenChange.getPresentedOffersIDs()==null)
+    struct.put("presentedOfferIDs", new ArrayList<String>()); 
+    else
+    struct.put("presentedOfferIDs", tokenChange.getPresentedOffersIDs());
     return struct;
   }
 
@@ -246,16 +321,19 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
     String featureID = (schemaVersion >=3 ) ? valueStruct.getString("featureID") : "";
     String callUniqueIdentifier = (schemaVersion >=10 && schema.field("callUniqueIdentifier")!=null) ? valueStruct.getString("callUniqueIdentifier") : null;
     int tenantID = (schemaVersion >= 9)? valueStruct.getInt16("tenantID") : 1; // for old system, default to tenant 1
-    
-    //
-    // validate
-    //
+    String acceptedOfferID = valueStruct.getString("acceptedOfferID");
+    //List<String> presentedOfferIDs = (List<String>) valueStruct.get("presentedOfferIDs");
+    /*List<String> presentedOfferIDs=new ArrayList<String>();
+    if(valueStruct.getString("presentedOfferIDs")!="")*/
+
+    //List<String> presentedOfferIDs= list;//
+    List<String> presentedOfferIDs = (List<String>) valueStruct.get("presentedOfferIDs");
 
     //
     // return
     //
 
-    return new TokenChange(schemaAndValue, subscriberID, eventDateTime, eventID, tokenCode, action, returnStatus, origin, moduleID, featureID, callUniqueIdentifier, tenantID);
+    return new TokenChange(schemaAndValue, subscriberID, eventDateTime, eventID, tokenCode, action, returnStatus, origin, moduleID, featureID, callUniqueIdentifier, tenantID,acceptedOfferID,presentedOfferIDs);
   }
   
   

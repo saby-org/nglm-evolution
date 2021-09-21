@@ -10,6 +10,7 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.ScheduledJob;
 import com.evolving.nglm.evolution.ScheduledJobConfiguration;
 import com.evolving.nglm.evolution.datacubes.generator.BDRDatacubeGenerator;
+import com.evolving.nglm.evolution.datacubes.generator.TDRDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.generator.JourneyRewardsDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.generator.JourneyTrafficDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.generator.MDRDatacubeGenerator;
@@ -33,7 +34,7 @@ public class DatacubeJobs
         return ODRHourlyPreview(config, datacubeManager);
       case ODRHourlyDefinitive:
         return ODRHourlyDefinitive(config, datacubeManager);
-      case BDRDailyPreview:
+        case BDRDailyPreview:
         return BDRDailyPreview(config, datacubeManager);
       case BDRDailyDefinitive:
         return BDRDailyDefinitive(config, datacubeManager);
@@ -41,6 +42,14 @@ public class DatacubeJobs
         return BDRHourlyPreview(config, datacubeManager);
       case BDRHourlyDefinitive:
         return BDRHourlyDefinitive(config, datacubeManager);
+    case TDRDailyPreview:
+        return TDRDailyPreview(config, datacubeManager);
+      case TDRDailyDefinitive:
+        return TDRDailyDefinitive(config, datacubeManager);
+      case TDRHourlyPreview:
+        return TDRHourlyPreview(config, datacubeManager);
+      case TDRHourlyDefinitive:
+        return TDRHourlyDefinitive(config, datacubeManager);
       case MDRDailyPreview:
         return MDRDailyPreview(config, datacubeManager);
       case MDRDailyDefinitive:
@@ -317,6 +326,85 @@ public class DatacubeJobs
       }
     };
   }
+  /**********************TDR */
+  /*****************************************
+   * BDR daily preview
+   *
+   * This will generated a datacube preview of the day from the detailedrecords_bonuses-yyyy-MM-dd index of the day
+   * Those data are not definitive, the day is not ended yet, new BDR can still be added.
+   *****************************************/
+  private static ScheduledJob TDRDailyPreview(ScheduledJobConfiguration config, DatacubeManager datacubeManager) {
+    // Datacube generators classes are NOT thread-safe and must be used by only one thread (the AsyncJob thread).
+    TDRDatacubeGenerator dailyTdrDatacubePreview = new TDRDatacubeGenerator(NAME_PREFIX(config)+"TDR:Daily(Preview)", config.getTenantID(), datacubeManager);
+    
+    return new AsyncScheduledJob(config)
+    {
+      @Override
+      protected void asyncRun()
+      {
+        dailyTdrDatacubePreview.dailyPreview();
+      }
+    };
+  }
+  
+  /*****************************************
+   * TDR daily definitive
+   *
+   * This will generated a datacube every day from the detailedrecords_bonuses-yyyy-MM-dd index of the previous day.
+   *****************************************/
+  private static ScheduledJob TDRDailyDefinitive(ScheduledJobConfiguration config, DatacubeManager datacubeManager) {
+    // Datacube generators classes are NOT thread-safe and must be used by only one thread (the AsyncJob thread).
+    TDRDatacubeGenerator dailyTdrDatacubeDefinitive = new TDRDatacubeGenerator(NAME_PREFIX(config)+"TDR:Daily(Definitive)", config.getTenantID(), datacubeManager);
+    
+    return new AsyncScheduledJob(config)
+    {
+      @Override
+      protected void asyncRun()
+      {
+        dailyTdrDatacubeDefinitive.dailyDefinitive();
+      }
+    };
+  }
+  
+  /*****************************************
+   * TDR hourly preview
+   *
+   * This will generated a datacube preview of every hour from the detailedrecords_bonuses-yyyy-MM-dd index of the current day
+   * Those data are not definitive, the day is not ended yet, new BDR can still be added.
+   *****************************************/
+  private static ScheduledJob TDRHourlyPreview(ScheduledJobConfiguration config, DatacubeManager datacubeManager) {
+    // Datacube generators classes are NOT thread-safe and must be used by only one thread (the AsyncJob thread).
+    TDRDatacubeGenerator hourlyTdrDatacubePreview = new TDRDatacubeGenerator(NAME_PREFIX(config)+"TDR:Hourly(Preview)", config.getTenantID(), datacubeManager);
+    
+    return new AsyncScheduledJob(config)
+    {
+      @Override
+      protected void asyncRun()
+      {
+        hourlyTdrDatacubePreview.hourlyPreview();
+      }
+    };
+  }
+  
+  /*****************************************
+   * TDR hourly definitive
+   *
+   * This will generated a datacube of every hour from the detailedrecords_bonuses-yyyy-MM-dd index of the previous day.
+   *****************************************/
+  private static ScheduledJob TDRHourlyDefinitive(ScheduledJobConfiguration config, DatacubeManager datacubeManager) {
+    // Datacube generators classes are NOT thread-safe and must be used by only one thread (the AsyncJob thread).
+    TDRDatacubeGenerator hourlyTdrDatacubeDefinitive = new TDRDatacubeGenerator(NAME_PREFIX(config)+"TDR:Hourly(Definitive)", config.getTenantID(), datacubeManager);
+    
+    return new AsyncScheduledJob(config)
+    {
+      @Override
+      protected void asyncRun()
+      {
+        hourlyTdrDatacubeDefinitive.hourlyDefinitive();
+      }
+    };
+  }
+/********************************* */
 
   /*****************************************
    * MDR daily preview
