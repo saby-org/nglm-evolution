@@ -5189,7 +5189,7 @@ public class EvolutionEngine
     SubscriberState subscriberState = context.getSubscriberState();
     SubscriberProfile subscriberProfile = subscriberState.getSubscriberProfile();
     boolean subscriberStateUpdated = false;
-
+    boolean external = false;
     /*****************************************
     *
     *  presentation and acceptance evaluation
@@ -5205,7 +5205,6 @@ public class EvolutionEngine
         List<Token> subscriberTokens = subscriberProfile.getTokens();
         String tokenTypeID = null;
         DNBOToken presentationLogToken = null;
-        boolean external = false;
         String callUniqueIdentifier = null;
 
         //
@@ -5413,11 +5412,7 @@ public class EvolutionEngine
                   {
                     subscriberStoredToken.setPurchaseDeliveryRequestID(purchaseFulfillmentRequest.getDeliveryRequestID());
                     subscriberStoredToken.setPurchaseStatus(purchaseFulfillmentRequest.getStatus());
-                  }
-                // trigger output log
-                subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), acceptanceLog.getEventDate(), context.getEventID(), eventTokenCode, TokenChange.REDEEM, TokenChange.OK, "AcceptanceLog", moduleID, featureID, callUniqueIdentifier, tenantID,acceptanceLog.getOfferID(), subscriberStoredToken.getPresentedOfferIDs()));
-                // trigger tokenRedeemed event (does it make sense ? should we just map token redeem event to AcceptanceLog ?
-                if(!external) subscriberState.getTokenRedeemeds().add(new TokenRedeemed(subscriberState.getSubscriberID(), acceptanceLog.getEventDate(), subscriberStoredToken.getTokenTypeID(), subscriberStoredToken.getAcceptedOfferID()));
+                  }    
               }
             subscriberStateUpdated = true;
           }
@@ -5452,9 +5447,32 @@ public class EvolutionEngine
             if(!(token instanceof DNBOToken)) continue;
             DNBOToken dnboToken = (DNBOToken) token;
             if(dnboToken.getPurchaseDeliveryRequestID()==null) continue;
+
+            boolean failed = false;
             if(dnboToken.getPurchaseDeliveryRequestID().equals(purchaseResponseEvent.getDeliveryRequestID()))
               {
-                dnboToken.setPurchaseStatus(purchaseResponseEvent.getStatus());
+                  String purchasedStatus = purchaseResponseEvent.getStatus().name();       
+              String tokenRedeem=TokenChange.REDEEM;
+              String tokenChangeStatus = TokenChange.OK;
+              String purchaseOfferID = purchaseResponseEvent.getOfferID();
+              dnboToken.setPurchaseStatus(purchaseResponseEvent.getStatus());
+
+            if (!purchasedStatus.equals(purchaseResponseEvent.getStatus().PURCHASED.name()))
+              {               
+              failed=true;
+              tokenChangeStatus=TokenChange.REFUSE;
+              purchaseOfferID = null;
+              dnboToken.setTokenStatus(TokenStatus.Bound);  
+              dnboToken.setAcceptedOfferID(null);          
+              }   
+                          
+              subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), purchaseResponseEvent.getEventDate(),
+              context.getEventID(), dnboToken.getTokenCode(), tokenRedeem, tokenChangeStatus, "AcceptanceLog",
+              dnboToken.getModuleID(), dnboToken.getFeatureID(), purchaseResponseEvent.getDeliveryRequestID(),
+              tenantID, purchaseOfferID, dnboToken.getPresentedOfferIDs()));
+              if((!external) && (!failed)) 
+               subscriberState.getTokenRedeemeds().add(new TokenRedeemed(subscriberState.getSubscriberID(), purchaseResponseEvent.getEventDate(), dnboToken.getTokenTypeID(), dnboToken.getAcceptedOfferID()));
+              break;
               }
           }
       }

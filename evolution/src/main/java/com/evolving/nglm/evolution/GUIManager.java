@@ -24153,7 +24153,12 @@ public class GUIManager
             response.put("responseCode", "ok");
 		  }else{
           	purchaseWaitingResponse.cancel(true);
-            if(redeemResponse!=null) response.put("responseMessage", redeemResponse.getReturnStatus());
+            if(redeemResponse!=null && redeemResponse.getReturnStatus().equals(TokenChange.REFUSE)){
+              handlePurchaseResponse(purchaseWaitingResponse);
+            }
+            else
+            response.put("responseMessage", redeemResponse.getReturnStatus());
+            
             response.put("responseCode", "ko");
             return JSONUtilities.encodeObject(response);
 		  }
