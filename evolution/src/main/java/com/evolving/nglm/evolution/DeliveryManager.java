@@ -250,7 +250,12 @@ public abstract class DeliveryManager
       {
         try
           {
-            this.wait(nextSubmitDate.getTime() - SystemTime.getCurrentTime().getTime());
+            //guard just in case systemTime advances faster than threads release lock
+            long timeToSleep = nextSubmitDate.getTime() - SystemTime.getCurrentTime().getTime();
+            if(timeToSleep > 0)
+            {
+              this.wait(timeToSleep);
+            }
           }
         catch (InterruptedException e)
           {
