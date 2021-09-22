@@ -108,6 +108,7 @@ public class ODRSinkConnector extends SimpleESSinkConnector
       productService.stop();
       voucherService.stop();
       paymentMeanService.stop();
+      segmentationDimensionService.stop();
       
       //
       //  super

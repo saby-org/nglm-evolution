@@ -6,8 +6,10 @@
 
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.DeploymentCommon;
 import com.evolving.nglm.core.RLMDateUtils;
+import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
 
@@ -18,10 +20,13 @@ import org.apache.kafka.connect.sink.SinkRecord;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 public class TokenChangeESSinkConnector extends SimpleESSinkConnector
 {
-  
+  private static SegmentationDimensionService segmentationDimensionService;
+  private static ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
+
   /****************************************
   *
   *  taskClass
@@ -43,6 +48,54 @@ public class TokenChangeESSinkConnector extends SimpleESSinkConnector
   {
     public static final String ES_FIELD_SUBSCRIBER_ID = "subscriberID";
     public static final String ES_FIELD_TOKEN_CODE = "tokenCode";
+    
+    
+    /*****************************************
+    *
+    *  start
+    *
+    *****************************************/
+
+    @Override public void start(Map<String, String> taskConfig)
+    {
+      //
+      //  super
+      //
+
+      super.start(taskConfig);
+    
+      //
+      //  services
+      //
+
+      subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("tdrsinkconnector-subscriberGroupEpoch", Deployment.getBrokerServers(), Deployment.getSubscriberGroupEpochTopic(), SubscriberGroupEpoch::unpack);
+   
+      segmentationDimensionService = new SegmentationDimensionService(Deployment.getBrokerServers(), "tdrsinkconnector-segmentationDimensionservice-" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getSegmentationDimensionTopic(), false);
+      segmentationDimensionService.start();
+    }
+
+    /*****************************************
+    *
+    *  stop
+    *
+    *****************************************/
+
+    @Override public void stop()
+    {
+      //
+      //  services
+      //
+
+      segmentationDimensionService.stop();
+      
+      //
+      //  super
+      //
+
+      super.stop();
+    }
+
+    
     
     @Override public TokenChange unpackRecord(SinkRecord sinkRecord) 
     {
@@ -72,7 +125,8 @@ public class TokenChangeESSinkConnector extends SimpleESSinkConnector
       documentMap.put("origin", tokenChange.getOrigin());
       documentMap.put("moduleID", tokenChange.getModuleID());
       documentMap.put("featureID", tokenChange.getFeatureID());
-      
+      documentMap.put("stratum", tokenChange.getStatisticsSegmentsMap(subscriberGroupEpochReader, segmentationDimensionService));
+
       return documentMap;
     }
   }

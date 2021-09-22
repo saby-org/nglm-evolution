@@ -79,6 +79,8 @@ public class BDRSinkConnector extends SimpleESSinkConnector
 
     @Override public void stop()
     {
+      segmentationDimensionService.stop();
+
       //
       //  super
       //

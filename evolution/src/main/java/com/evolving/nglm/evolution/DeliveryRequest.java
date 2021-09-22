@@ -306,7 +306,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   private Date rescheduledDate;
   private MetricHistory notificationHistory;
   private Map<String,String> subscriberFields;
-  private Map<Pair<String,String>,Integer> segments; // Map<Pair<dimensionID,segmentID> epoch>> // TODO : put it in struct
+  private Map<Pair<String,String>,Integer> segments;
   protected int tenantID;
 
   // internal, not stored

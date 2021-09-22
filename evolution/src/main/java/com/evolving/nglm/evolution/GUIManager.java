@@ -16376,13 +16376,26 @@ public class GUIManager
      *  resolve subscriberID
      *
      *****************************************/
-
+    Map<Pair<String, String>, Integer> segments = null;
     String subscriberID = resolveSubscriberID(customerID, tenantID);
     if (subscriberID == null)
     {
       log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
       response.put("responseCode", "CustomerNotFound");
       return JSONUtilities.encodeObject(response);
+    } else {
+      try {
+        SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
+        if (baseSubscriberProfile == null) {
+          response.put("responseCode", "CustomerNotFound");
+          log.debug("SubscriberProfile is null for subscriberID {}" , subscriberID);
+          return JSONUtilities.encodeObject(response);
+        } else {
+          segments = baseSubscriberProfile.getSegments();
+        }
+      } catch (SubscriberProfileServiceException e) {
+        throw new GUIManagerException(e);
+      }
     }
     //build the request to send
     VoucherChange request = new VoucherChange(
@@ -16398,6 +16411,7 @@ public class GUIManager
             (userID != null) ? userID : "1",//for PTT tests, never happens when called by browser
             origin,
             RESTAPIGenericReturnCodes.UNKNOWN,
+            segments,
             tenantID);
 
     // put a listener on the reponse topic
@@ -23883,7 +23897,7 @@ public class GUIManager
               String str = "No tokens returned";
               log.error(str);
               response.put("responseCode", str);
-              generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.ALLOCATE, str, tenantID);
+              generateTokenChange(subscriberProfile, now, tokenCode, userID, TokenChange.ALLOCATE, str, tenantID);
               return JSONUtilities.encodeObject(response);
             }
 
@@ -23891,7 +23905,7 @@ public class GUIManager
             String str = "Token expired";
             log.error(str);
             response.put("responseCode", str);
-            generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.REFUSE, str, tenantID);
+            generateTokenChange(subscriberProfile, now, tokenCode, userID, TokenChange.REFUSE, str, tenantID);
             return JSONUtilities.encodeObject(response);
           }
 
@@ -23901,7 +23915,7 @@ public class GUIManager
               String str = "Bad token type";
               log.error(str);
               response.put("responseCode", str);
-              generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.ALLOCATE, str, tenantID);
+              generateTokenChange(subscriberProfile, now, tokenCode, userID, TokenChange.ALLOCATE, str, tenantID);
               return JSONUtilities.encodeObject(response);
             }
 
@@ -23920,7 +23934,7 @@ public class GUIManager
               String str = "Bad strategy : unknown id : "+presentationStrategyID;
               log.error(str);
               response.put("responseCode", str);
-              generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.ALLOCATE, str, tenantID);
+              generateTokenChange(subscriberProfile, now, tokenCode, userID, TokenChange.ALLOCATE, str, tenantID);
               return JSONUtilities.encodeObject(response);
             }
 
@@ -23942,7 +23956,7 @@ public class GUIManager
                   supplierService,
                   subscriberGroupEpochReader, tenantID);
               if (list.isEmpty()) {
-                generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.ALLOCATE, "no offers presented", tenantID);
+                generateTokenChange(subscriberProfile, now, tokenCode, userID, TokenChange.ALLOCATE, "no offers presented", tenantID);
               }
             }
 
@@ -24049,7 +24063,7 @@ public class GUIManager
               String str = "No tokens returned";
               log.error(str);
               response.put("responseCode", str);
-              generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.REDEEM, str, tenantID);
+              generateTokenChange(subscriberProfile, now, tokenCode, userID, TokenChange.REDEEM, str, tenantID);
               return JSONUtilities.encodeObject(response);
             }
 
@@ -24059,7 +24073,7 @@ public class GUIManager
               String str = "Bad token type";
               log.error(str);
               response.put("responseCode", str);
-              generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.REDEEM, str, tenantID);
+              generateTokenChange(subscriberProfile, now, tokenCode, userID, TokenChange.REDEEM, str, tenantID);
               return JSONUtilities.encodeObject(response);
             }
 
@@ -24070,7 +24084,7 @@ public class GUIManager
               String str = "Token already in Redeemed state";
               log.error(str);
               response.put("responseCode", str);
-              generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.REDEEM, str, tenantID);
+              generateTokenChange(subscriberProfile, now, tokenCode, userID, TokenChange.REDEEM, str, tenantID);
               return JSONUtilities.encodeObject(response);
             }
 
@@ -24079,7 +24093,7 @@ public class GUIManager
               String str = "No offers allocated for this token";
               log.error(str);
               response.put("responseCode", str);
-              generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.REDEEM, str, tenantID);
+              generateTokenChange(subscriberProfile, now, tokenCode, userID, TokenChange.REDEEM, str, tenantID);
               return JSONUtilities.encodeObject(response);
             }
 
@@ -24102,7 +24116,7 @@ public class GUIManager
               String str = "Offer has not been presented";
               log.error(str);
               response.put("responseCode", str);
-              generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.REDEEM, str, tenantID);
+              generateTokenChange(subscriberProfile, now, tokenCode, userID, TokenChange.REDEEM, str, tenantID);
               return JSONUtilities.encodeObject(response);
             }
           String salesChannelID = subscriberStoredToken.getPresentedOffersSalesChannel();
@@ -29021,16 +29035,16 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
   *
   *****************************************/
 
-  private void generateTokenChange(String subscriberID, Date now, String tokenCode, String userID, String action, String str, int tenantID)
+  private void generateTokenChange(SubscriberProfile subscriberProfile, Date now, String tokenCode, String userID, String action, String str, int tenantID)
   {
     if (tokenCode != null) {
       String topic = Deployment.getTokenChangeTopic();
       Serializer<StringKey> keySerializer = StringKey.serde().serializer();
       Serializer<TokenChange> valueSerializer = TokenChange.serde().serializer();
-      TokenChange tokenChange = new TokenChange(subscriberID, now, "event from ".concat(Module.Customer_Care.toString()), tokenCode, action, str, "CC", Module.Customer_Care, userID, tenantID);
+      TokenChange tokenChange = new TokenChange(subscriberProfile, now, "event from ".concat(Module.Customer_Care.toString()), tokenCode, action, str, "CC", Module.Customer_Care, userID, tenantID);
       kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
           topic,
-          keySerializer.serialize(topic, new StringKey(subscriberID)),
+          keySerializer.serialize(topic, new StringKey(subscriberProfile.getSubscriberID())),
           valueSerializer.serialize(topic, tokenChange)
           ));
     }

@@ -84,6 +84,9 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
 
     @Override public void stop()
     {
+      
+      segmentationDimensionService.stop();
+
       //
       //  super
       //
