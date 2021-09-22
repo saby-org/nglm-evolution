@@ -37,5 +37,7 @@ public interface INotificationRequest
   public DeliveryRequest.Module getModule();
 
   public String getSegmentContactPolicyID();
+
+  public Map<String, String> getDiplomaticBriefcase();
   
 }
