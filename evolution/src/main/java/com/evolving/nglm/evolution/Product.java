@@ -408,7 +408,7 @@ public class Product extends GUIManagedObject implements StockableItem
     if (! deliverableService.isActiveDeliverableThroughInterval(deliverable, this.getEffectiveStartDate(), this.getEffectiveEndDate())) throw new GUIManagerException("invalid deliverable (start/end dates)", deliverableID);
   }
   
-  @Override public Map<String, List<String>> getGUIDependencies(int tenantID)
+  @Override public Map<String, List<String>> getGUIDependencies(List<GUIService> guiServiceList, int tenantID)
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
     List<String> supplierIDs = new ArrayList<String>();

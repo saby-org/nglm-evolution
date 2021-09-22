@@ -554,6 +554,7 @@ public class CommunicationChannelTimeWindow extends GUIManagedObject
       for (GUIManagedObject timeWindows : communicationChannelTimeWindowObjects)
         {
           JSONObject timeWindow = communicationChannelTimeWindowService.generateResponseJSON(timeWindows, fullDetails, now);
+          timeWindow.put("communicationChannelID", timeWindows.getJSONRepresentation().get("communicationChannelID"));
           communicationChannelTimeWindowList.add(timeWindow);
         }
 
@@ -591,7 +592,7 @@ public class CommunicationChannelTimeWindow extends GUIManagedObject
       *
       ****************************************/
 
-      String communicationChannelTimeWindowPeriodID = JSONUtilities.decodeString(jsonRoot, "id", true);
+      String communicationChannelID = JSONUtilities.decodeString(jsonRoot, "communicationChannelID", true);
 
       /**************************************************************
       *
@@ -599,7 +600,7 @@ public class CommunicationChannelTimeWindow extends GUIManagedObject
       *
       ***************************************************************/
 
-      GUIManagedObject communicationChannelTimeWindowPeriod = communicationChannelTimeWindowService.getStoredCommunicationChannelTimeWindow(communicationChannelTimeWindowPeriodID, includeArchived);
+      GUIManagedObject communicationChannelTimeWindowPeriod = communicationChannelTimeWindowService.getStoredCommunicationChannelTimeWindow(communicationChannelID, includeArchived);
       JSONObject communicationChannelTimeWindowPeriodJSON = communicationChannelTimeWindowService.generateResponseJSON(communicationChannelTimeWindowPeriod, true, SystemTime.getCurrentTime());
 
       /*****************************************
@@ -619,7 +620,7 @@ public class CommunicationChannelTimeWindow extends GUIManagedObject
     *
     *****************************************/
 
-    public static JSONObject processPutTimeWindows(String userID, JSONObject jsonRoot, CommunicationChannelTimeWindowService communicationChannelTimeWindowService, UniqueKeyServer epochServer, int tenantID)
+    public static JSONObject processPutTimeWindows(String userID, JSONObject jsonRoot, CommunicationChannelTimeWindowService communicationChannelTimeWindowService, UniqueKeyServer epochServer, int tenantID) throws GUIManagerException
     {
       /****************************************
       *
@@ -647,20 +648,26 @@ public class CommunicationChannelTimeWindow extends GUIManagedObject
       *
       *****************************************/
 
-      String communicationChannelTimeWindowID = JSONUtilities.decodeString(jsonRoot, "id", false);
-      if (communicationChannelTimeWindowID == null)
-        {
-          communicationChannelTimeWindowID = communicationChannelTimeWindowService.generateCommunicationChannelTimeWindowID((String)jsonRoot.get("communicationChannelID"));
-          jsonRoot.put("id", communicationChannelTimeWindowID);
-        }
+      String communicationChannelID = JSONUtilities.decodeString(jsonRoot, "communicationChannelID", false);
+      if (communicationChannelID == null)
+      {
+        throw new GUIManagerException("No communication channel ID provided", "");
+      }
 
+     String timeWindowID=communicationChannelTimeWindowService.generateCommunicationChannelTimeWindowID(communicationChannelID);
+    
+     //inject id property
+      jsonRoot.put("id", timeWindowID);
+ 
+          
+  
       /*****************************************
       *
       *  existing CommunicationChannelTimeWindows
       *
       *****************************************/
 
-      GUIManagedObject existingCommunicationChannelTimeWindows = communicationChannelTimeWindowService.getStoredCommunicationChannelTimeWindow(communicationChannelTimeWindowID);
+      GUIManagedObject existingCommunicationChannelTimeWindows = communicationChannelTimeWindowService.getStoredCommunicationChannelTimeWindow(communicationChannelID);
 
       /*****************************************
       *
@@ -774,9 +781,9 @@ public class CommunicationChannelTimeWindow extends GUIManagedObject
 
       String responseCode = "";
       String singleIDresponseCode = "";
-      List<GUIManagedObject> timeWindows = new ArrayList<>();
+      List<CommunicationChannelTimeWindow> timeWindows = new ArrayList<>();
       List<String> validIDs = new ArrayList<>();
-      JSONArray timeWindowsIDS = new JSONArray();
+        JSONArray communicationChannelIDS = new JSONArray();
 
       /****************************************
       *
@@ -788,12 +795,14 @@ public class CommunicationChannelTimeWindow extends GUIManagedObject
       //
       //remove single communicationChannel
       //
-      if (jsonRoot.containsKey("id"))
+
+    
+      if (jsonRoot.containsKey("communicationChannelID"))
         {
-          String timeWindowsID = JSONUtilities.decodeString(jsonRoot, "id", false);
-          timeWindowsIDS.add(timeWindowsID);
-          GUIManagedObject timeWindow = communicationChannelTimeWindowService
-              .getStoredCommunicationChannelTimeWindow(timeWindowsID);
+          String communicationChannelID = JSONUtilities.decodeString(jsonRoot, "communicationChannelID", false);
+          communicationChannelIDS.add(communicationChannelID);
+          
+          CommunicationChannelTimeWindow timeWindow =(CommunicationChannelTimeWindow) communicationChannelTimeWindowService.getStoredCommunicationChannelTimeWindow(communicationChannelID);
 
           if (timeWindow != null && (force || !timeWindow.getReadOnly()))
             singleIDresponseCode = "ok";
@@ -803,23 +812,24 @@ public class CommunicationChannelTimeWindow extends GUIManagedObject
 
             singleIDresponseCode = "existingTimeWindowPeriodNotFound";
         }
+
       //
       // multiple deletion
       //
       
-      if (jsonRoot.containsKey("ids"))
+      if (jsonRoot.containsKey("communicationChannelIDs"))
         {
-          timeWindowsIDS = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false);
+          communicationChannelIDS = JSONUtilities.decodeJSONArray(jsonRoot, "communicationChannelIDs", false);
         }
       
-      for (int i = 0; i < timeWindowsIDS.size(); i++)
+      for (int i = 0; i < communicationChannelIDS.size(); i++)
         {
-          String timeWindowID = timeWindowsIDS.get(i).toString();
-          GUIManagedObject timeWindow = communicationChannelTimeWindowService.getStoredCommunicationChannelTimeWindow(timeWindowID);
+          String communicationChannelID = communicationChannelIDS.get(i).toString();
+          CommunicationChannelTimeWindow timeWindow = (CommunicationChannelTimeWindow) communicationChannelTimeWindowService.getStoredCommunicationChannelTimeWindow(communicationChannelID);
           if (timeWindow != null && (force || !timeWindow.getReadOnly()))
             {
               timeWindows.add(timeWindow);
-              validIDs.add(timeWindowID);
+              validIDs.add(communicationChannelID);
             }
         }
           
@@ -833,12 +843,20 @@ public class CommunicationChannelTimeWindow extends GUIManagedObject
       for (int i = 0; i < timeWindows.size(); i++)
         {
 
-          GUIManagedObject existingTimeWindowPeriod = timeWindows.get(i);
+          CommunicationChannelTimeWindow existingTimeWindowPeriod = timeWindows.get(i);
 
           communicationChannelTimeWindowService
-              .removeCommunicationChannelTimeWindow(existingTimeWindowPeriod.getGUIManagedObjectID(), userID, tenantID);
+              .removeCommunicationChannelTimeWindow(existingTimeWindowPeriod.getCommunicationChannelID(), userID, tenantID);
 
         }
+
+      /*****************************************
+       *
+       * response
+       *
+       *****************************************/
+      response.put("removedExistingTimeWindowPeriodIDS", JSONUtilities.encodeArray(validIDs));
+
       /*****************************************
        *
        * responseCode
@@ -855,13 +873,6 @@ public class CommunicationChannelTimeWindow extends GUIManagedObject
         {
           response.put("responseCode", "ok");
         }
-
-      /*****************************************
-       *
-       * response
-       *
-       *****************************************/
-      response.put("removedExistingTimeWindowPeriodIDS", JSONUtilities.encodeArray(validIDs));
 
       return JSONUtilities.encodeObject(response);
     }

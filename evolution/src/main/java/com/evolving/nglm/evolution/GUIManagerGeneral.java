@@ -658,6 +658,37 @@ public class GUIManagerGeneral extends GUIManager
     return JSONUtilities.encodeObject(response);
   }
 
+/*****************************************
+ * 
+ * processGetDefaultNotificationDailyWindow
+ * 
+ *****************************************/
+
+  JSONObject processGetDefaultNotificationDailyWindow(String userID, JSONObject jsonRoot, int tenantID)
+  {
+    /*****************************************
+    *
+    *  retrieve default time window
+    *
+    *****************************************/
+
+    CommunicationChannelTimeWindow defaultNotificationDailyWindows = Deployment.getDeployment(tenantID).getDefaultNotificationDailyWindows();
+    
+    
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    response.put("responseCode", "ok");
+    response.put("defaultNoftificationDailyWindows", defaultNotificationDailyWindows.getJSONRepresentation());
+    return JSONUtilities.encodeObject(response);
+    
+  }
+  
+
   /*****************************************
   *
   *  processConfigAdaptorSupportedLanguages

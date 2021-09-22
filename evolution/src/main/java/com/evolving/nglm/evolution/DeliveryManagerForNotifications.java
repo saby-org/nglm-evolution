@@ -84,11 +84,13 @@ public abstract class DeliveryManagerForNotifications extends DeliveryManager
     private static final SubscriberMessageTemplateService subscriberMessageTemplateService = new SubscriberMessageTemplateService(Deployment.getBrokerServers(), "NOT_USED", Deployment.getSubscriberMessageTemplateTopic(), false);
     private static final CommunicationChannelBlackoutService blackoutService = new CommunicationChannelBlackoutService(Deployment.getBrokerServers(), "NOT_USED", Deployment.getCommunicationChannelBlackoutTopic(), false);
     private static final CommunicationChannelTimeWindowService timeWindowService = new CommunicationChannelTimeWindowService(Deployment.getBrokerServers(), "NOT_USED", Deployment.getCommunicationChannelTimeWindowTopic(), false);
+    private static final CommunicationChannelService communicationChannelService = new CommunicationChannelService(Deployment.getBrokerServers(), "NOT_USED", Deployment.getCommunicationChannelTopic(), false);
     private static final SourceAddressService sourceAddressService = new SourceAddressService(Deployment.getBrokerServers(), "NOT_USED", Deployment.getSourceAddressTopic(),false);
     static{
       subscriberMessageTemplateService.start();
       blackoutService.start();
       timeWindowService.start();
+      communicationChannelService.start();
       sourceAddressService.start();
     }
   }
@@ -113,6 +115,11 @@ public abstract class DeliveryManagerForNotifications extends DeliveryManager
   public CommunicationChannelTimeWindowService getTimeWindowService() 
   { 
     return ServicesSingletonHolder.timeWindowService;
+  }
+
+  public static CommunicationChannelService getCommunicationChannelService() 
+  { 
+    return ServicesSingletonHolder.communicationChannelService;
   }
 
   public SourceAddressService getSourceAddressService() {
