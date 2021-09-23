@@ -176,6 +176,7 @@ import com.evolving.nglm.evolution.offeroptimizer.GetOfferException;
 import com.evolving.nglm.evolution.offeroptimizer.ProposedOfferDetails;
 import com.evolving.nglm.evolution.otp.GUIManagerOTP;
 import com.evolving.nglm.evolution.otp.OTPTypeService;
+import com.evolving.nglm.evolution.redisqueryutils.RedisQueryUtils;
 import com.google.gson.JsonArray;
 import com.evolving.nglm.evolution.reports.ReportCsvFactory;
 import com.evolving.nglm.evolution.reports.bdr.BDRReportDriver;
@@ -650,6 +651,8 @@ public class GUIManager
     getSoftwareVersions("getSoftwareVersions"),
     
     sendMessage("sendMessage"),
+    
+    getRedisSubscriberIDAndAlternateIDs("getRedisSubscriberIDAndAlternateIDs"), // for PTT testing
 
     
     //
@@ -2405,7 +2408,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/removeOTPType", new APISimpleHandler(API.removeOTPType));
 
         restServer.createContext("/nglm-guimanager/sendMessage", new APISimpleHandler(API.sendMessage));
-
+        restServer.createContext("/nglm-guimanager/getRedisSubscriberIDAndAlternateIDs", new APISimpleHandler(API.getRedisSubscriberIDAndAlternateIDs));
         
         restServer.setExecutor(Executors.newFixedThreadPool(10));
         restServer.start();
@@ -4363,6 +4366,11 @@ public class GUIManager
                 
                 case sendMessage:
                   jsonResponse = processSendMessage(userID, jsonRoot, tenantID);
+                  break;
+                  
+                case getRedisSubscriberIDAndAlternateIDs:
+                  // jsonResponse = RedisQueryUtils.processGetRedisSubscriberIDAndAlternateIDs(userID, jsonRoot, subscriberIDService, subscriberProfileService, tenantID);
+                  jsonResponse = subscriberIDService.getRedisSubscriberIDsForPTTTests((String)jsonRoot.get("alternateIDName"), (String)jsonRoot.get("alternateIDValue"));
                   break;
 
               }

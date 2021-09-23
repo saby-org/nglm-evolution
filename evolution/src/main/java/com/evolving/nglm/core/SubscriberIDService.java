@@ -369,6 +369,7 @@ public class SubscriberIDService
 
   private Map<String, String> getMappingValueAlternateIDToSubcriberIDRedisIndex(String alternateIDName, String alternateIDValue)
   {
+    if(alternateIDValue == null) { return null; }
     
     List<byte[]> binaryAlternateIDs = new ArrayList<byte[]>();
     
@@ -499,6 +500,91 @@ public class SubscriberIDService
           }
       }
     return result;
+  }
+  
+  public boolean deleteRedisReverseAlternateID(String alternateIDName, String subscriberID)
+  {
+    List<byte[]> binaryAlternateIDs = new ArrayList<byte[]>();
+    
+    binaryAlternateIDs.add(Longs.toByteArray(Long.parseLong(subscriberID)));
+    int redisCacheIndex = Deployment.getAlternateIDs().get(alternateIDName).getReverseRedisCacheIndex();
+
+    /****************************************
+    *
+    *  retrieve from redis
+    *
+    ****************************************/
+    
+    BinaryJedis jedis = jedisSentinelPool.getResource();
+    try
+      {
+        jedis.select(redisCacheIndex);
+        jedis.del(Longs.toByteArray(Long.parseLong(subscriberID)));
+      }
+    catch (JedisException e)
+      {
+        //
+        //  log
+        //
+
+        log.error("JEDIS error");
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.error(stackTraceWriter.toString());
+
+        return false;
+      }
+    finally
+      {
+        try { jedis.close(); } catch (JedisException e1) { }
+      }
+    return true;
+  }
+
+  
+  public boolean deleteRedisStraightAlternateID(String alternateIDName, String alternateIDValue)
+  {
+    if(alternateIDValue == null) { return false; }
+    
+    List<byte[]> binaryAlternateIDs = new ArrayList<byte[]>();
+    
+    binaryAlternateIDs.add(alternateIDValue.getBytes(StandardCharsets.UTF_8));
+    int redisCacheIndex = Deployment.getAlternateIDs().get(alternateIDName).getRedisCacheIndex();
+    
+    /****************************************
+    *
+    *  retrieve from redis
+    *
+    ****************************************/
+    
+    BinaryJedis jedis = jedisSentinelPool.getResource();
+    try
+      {
+        jedis.select(redisCacheIndex);
+        jedis.del(alternateIDValue.getBytes(StandardCharsets.UTF_8));
+      }
+    catch (JedisException e)
+      {
+        //
+        //  log
+        //
+
+        log.error("JEDIS error");
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.error(stackTraceWriter.toString());
+
+        //
+        //  abort
+        //
+
+        return false;
+      }
+    finally
+      {
+        try { jedis.close(); } catch (JedisException e1) { }
+      }
+    return true;
   }
 
 
