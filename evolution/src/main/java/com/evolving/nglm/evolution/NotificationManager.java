@@ -1022,6 +1022,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
         if(log.isDebugEnabled()) log.debug("NotificationManagerRequest run deliveryRequest" + deliveryRequest);
 
         NotificationManagerRequest dialogRequest = (NotificationManagerRequest) deliveryRequest;
+        //prometheus status pending
         incrementStats(dialogRequest);
         dialogRequest.resolveFromAddressToSourceAddress(getSourceAddressService());
         DialogTemplate dialogTemplate = (DialogTemplate) getSubscriberMessageTemplateService().getActiveSubscriberMessageTemplate(dialogRequest.getTemplateID(), now);
