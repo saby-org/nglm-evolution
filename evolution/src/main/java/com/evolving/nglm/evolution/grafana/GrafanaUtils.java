@@ -31,7 +31,7 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.Pair;
-import com.evolving.nglm.core.UniqueKeyServer;
+import com.evolving.nglm.evolution.TokenUtils;
 import com.evolving.nglm.evolution.tenancy.Tenant;
 
 
@@ -194,7 +194,7 @@ public class GrafanaUtils
                         JSONObject dashbaordDef = (JSONObject) fullDashbaordDef.get("dashboard");
                         String expectedTitle = (String) dashbaordDef.get("title");
                         String existingUID = uidOfExistingDashBoards.get(expectedTitle);
-                        UniqueKeyServer keyServer = new UniqueKeyServer();
+                        String regex = "[ACDEFGHJKMNPQRTWXYacdefghjkmnpqrtwx34679]{15}";
                         
                         log.info("The dashboard under-study is: === " + expectedTitle + " ===");
                         
@@ -212,8 +212,7 @@ public class GrafanaUtils
                             log.warn("Problem while loading dashboard " + expectedTitle + " for organisation orgID, " + orgID + " error code " + response.getStatusLine().getStatusCode() + " response message " + response.getStatusLine().getReasonPhrase());
                           }
                           // Then recreate it using a unique uid that starts with t<tenandID>-
-                          keyServer = new UniqueKeyServer();
-                          String newUID = "t"+ tenantID + "-" + keyServer.getKey();
+                          String newUID = "t"+ tenantID + "-" + TokenUtils.generateFromRegex(regex);
                           s = s.replace("replaceWithUniqueID", newUID );
                           fullDashbaordDef = (JSONObject) (new JSONParser()).parse(s);
                           log.info("The new uid of the already existing Dashboard: " + expectedTitle + " is " + newUID);
@@ -232,8 +231,7 @@ public class GrafanaUtils
                         {
                           log.info("GrafanaUtils.prepareGrafanaForTenants: Dashboard " + expectedTitle + " doesn't exist for orgID " + orgID + " for dashboard file name " + currentFileName + " and it'll be created.");
                           // Create it using a unique uid that starts with t<tenandID>-
-                          keyServer = new UniqueKeyServer();
-                          String newUID = "t"+ tenantID + "-" + keyServer.getKey();
+                          String newUID = "t"+ tenantID + "-" + TokenUtils.generateFromRegex(regex);
                           s = s.replace("replaceWithUniqueID", newUID );
                           fullDashbaordDef = (JSONObject) (new JSONParser()).parse(s);
                           log.info("The uid of the newly created Dashboard: " + expectedTitle + " is " + newUID );
