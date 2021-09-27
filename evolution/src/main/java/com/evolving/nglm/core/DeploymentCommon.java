@@ -296,6 +296,8 @@ public class DeploymentCommon
   private static String segmentationDimensionTopic;
   private static String pointTopic;
   private static String complexObjectTypeTopic;
+  private static String dataModelDefTopic;
+  private static String eventDefTopic;
   private static String offerTopic;
   private static String reportTopic;
   private static String paymentMeanTopic;
@@ -611,6 +613,8 @@ public class DeploymentCommon
   public static String getJourneyTemplateTopic() { return journeyTemplateTopic; }
   public static String getSegmentationDimensionTopic() { return segmentationDimensionTopic; }
   public static String getPointTopic() { return pointTopic; }
+  public static String getDataModelDefTopic() { return dataModelDefTopic; }
+  public static String getEventDefTopic() { return eventDefTopic; }
   public static String getOfferTopic() { return offerTopic; }
   public static String getReportTopic() { return reportTopic; }
   public static String getComplexObjectTypeTopic() { return complexObjectTypeTopic; }
@@ -914,6 +918,8 @@ public class DeploymentCommon
     segmentationDimensionTopic = jsonReader.decodeString("segmentationDimensionTopic");
     pointTopic = jsonReader.decodeString("pointTopic");
     complexObjectTypeTopic = jsonReader.decodeString("complexObjectTypeTopic");
+    dataModelDefTopic = jsonReader.decodeString("dataModelDefTopic");
+    eventDefTopic = jsonReader.decodeString("eventDefTopic");
     offerTopic = jsonReader.decodeString("offerTopic");
     reportTopic = jsonReader.decodeString("reportTopic");
     paymentMeanTopic = jsonReader.decodeString("paymentMeanTopic");
