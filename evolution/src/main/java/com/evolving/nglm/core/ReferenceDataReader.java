@@ -67,10 +67,6 @@ public class ReferenceDataReader<K, V extends ReferenceDataValue<K>>
   *
   *****************************************/
 
-  // to remove once cleaned up
-  protected ReferenceDataReader(String readerName, String readerKey, String bootstrapServers, String referenceDataTopic, UnpackValue<V> unpackValue){
-    this(readerName,bootstrapServers,referenceDataTopic,unpackValue);
-  }
   protected ReferenceDataReader(String readerName, String bootstrapServers, String referenceDataTopic, UnpackValue<V> unpackValue)
   {
     //

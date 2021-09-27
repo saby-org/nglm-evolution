@@ -313,6 +313,7 @@ public class DeploymentCommon
   private static String productTypeTopic;
   private static String ucgRuleTopic;
   private static String predictionOrderTopic;
+  private static String predictionOrderMetadataTopic;
   private static String deliverableTopic;
   private static String tokenTypeTopic;
   private static String otpTypeTopic;
@@ -632,6 +633,7 @@ public class DeploymentCommon
   public static String getProductTypeTopic() { return productTypeTopic; }
   public static String getUCGRuleTopic() { return ucgRuleTopic; }
   public static String getPredictionOrderTopic() { return predictionOrderTopic; }
+  public static String getPredictionOrderMetadataTopic() { return predictionOrderMetadataTopic; }
   public static String getDeliverableTopic() { return deliverableTopic; }
   public static String getTokenTypeTopic() { return tokenTypeTopic; }
   public static String getOTPTypeTopic() { return otpTypeTopic; }
@@ -937,6 +939,7 @@ public class DeploymentCommon
     productTypeTopic = jsonReader.decodeString("productTypeTopic");
     ucgRuleTopic = jsonReader.decodeString("ucgRuleTopic");
     predictionOrderTopic = jsonReader.decodeString("predictionOrderTopic");
+    predictionOrderMetadataTopic = jsonReader.decodeString("predictionOrderMetadataTopic");
     deliverableTopic = jsonReader.decodeString("deliverableTopic");
     tokenTypeTopic = jsonReader.decodeString("tokenTypeTopic");
     otpTypeTopic = jsonReader.decodeString("otpTypeTopic");

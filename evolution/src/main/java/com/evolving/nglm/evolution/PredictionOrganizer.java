@@ -62,17 +62,12 @@ public class PredictionOrganizer
   * SubscriberPredictionsRequest producer
   *
   *****************************************/
-  private static int BATCH_SIZE = 1000; // TODO: plus tard - refactoring topic (SubscriberID, <..PredictionOrderID, ID Execution, Boolean(training/prediction)..>)
-  // Connaitre la fin de l'envoie de toutes les request (par subID)
-  // - check les predictionOrder - flag lastIDExec - signifie que dans le topic il ya tt les
+  private static int BATCH_SIZE = 1000;  
+  private static String requestTopic = Deployment.getSubscriberPredictionsRequestTopic();   // Topic(SubscriberID, SubscriberPredictionRequest)
   
-  // Comment renvoyer les courbes ROC - dans le topic PredictionOrder directement ?
-  // spark est très sensible au chgt de schema MAIS il y'a peu de chance qsu'on modifie le schema de Predictionorder sans que spark soit aussi dans la story du change
+  private static ConnectSerde<StringKey> requestKeySerde = StringKey.serde();
+  private static ConnectSerde<SubscriberPredictionsRequest> requestValueSerde = SubscriberPredictionsRequest.serde();
   
-  
-  private static String requestTopic = Deployment.getSubscriberPredictionsRequestTopic(); // Topic(PredictionOrderID, List<SubscriberID>)  
-  private static ConnectSerde<StringKey> keySerde = StringKey.serde();
-  private static ConnectSerde<SubscriberPredictionsRequest> valueSerde = SubscriberPredictionsRequest.serde();
   private static KafkaProducer<byte[], byte[]> kafkaProducer;
   static {
     Properties producerProperties = new Properties();
@@ -83,14 +78,45 @@ public class PredictionOrganizer
     kafkaProducer = new KafkaProducer<byte[], byte[]>(producerProperties);
   }
   
-  public static void send(String predictionID, Set<String> subscriberIDs) {
+  public static void sendBatch(String predictionID, int executionID, boolean trainingMode, Set<String> subscriberIDs) {
+    for (String subscriberID: subscriberIDs) {
+      try {
+        kafkaProducer.send(new ProducerRecord<byte[], byte[]>(requestTopic, 
+            requestKeySerde.serializer().serialize(requestTopic, new StringKey(subscriberID)),
+            requestValueSerde.serializer().serialize(requestTopic, new SubscriberPredictionsRequest(predictionID, executionID, trainingMode)))).get();
+      } 
+      catch (InterruptedException|ExecutionException e) {
+        log.error("Error while trying to push a new prediction request.",e);
+      }
+    }
+  }
+  
+  /*****************************************
+  *
+  * PredictionOrderMetadata producer (PredictionOrderService is read-only for this topic - see ReferenceDataReader)
+  *
+  *****************************************/
+  private static String metadataTopic = Deployment.getPredictionOrderMetadataTopic();       // Topic(PredictionOrderID, PredictionOrderMetadata)
+  
+  private static ConnectSerde<StringKey> metadataKeySerde = StringKey.serde();
+  private static ConnectSerde<PredictionOrderMetadata> metadataValueSerde = PredictionOrderMetadata.serde();
+  
+  /**
+   * Update lastExecutionID when all request have been pushed for this executionID
+   */
+  public static void updateMetadata(String predictionID) 
+  {
+    // Retrieve the complete object (metadata) from ReferenceDataReader. Therefore only the concerning variable will be overriden.
+    PredictionOrderMetadata metadata = predictionOrderService.getPredictionOrderMetadata(predictionID);
+    metadata.incrementExecutionID();
+    
     try {
-      kafkaProducer.send(new ProducerRecord<byte[], byte[]>(requestTopic, 
-          keySerde.serializer().serialize(requestTopic, new StringKey(predictionID)),
-          valueSerde.serializer().serialize(requestTopic, new SubscriberPredictionsRequest(subscriberIDs)))).get();
+      kafkaProducer.send(new ProducerRecord<byte[], byte[]>(metadataTopic, 
+          metadataKeySerde.serializer().serialize(metadataTopic, new StringKey(predictionID)),
+          metadataValueSerde.serializer().serialize(metadataTopic, metadata))).get();
     } 
     catch (InterruptedException|ExecutionException e) {
-      log.error("Error while trying to push a new prediction request.",e);
+      log.error("Error while trying to update prediction order metadata.",e);
     }
   }
   
@@ -181,7 +207,7 @@ public class PredictionOrganizer
         ScheduledJobConfiguration.Type.PredictionWakeUp, 
         true, // enabled 
         true, // schedule at restart
-        "* * * * *", // Every minute // TODO CHANGE AFTER DEV ?
+        "* * * * *", // Every minute        // TODO CHANGE AFTER DEV ? 
         0,
         Deployment.getDefault().getTimeZone());
     
@@ -190,8 +216,8 @@ public class PredictionOrganizer
         @Override
         protected void run()
         {
-          Collection<PredictionOrder> orders = predictionOrderService.getActivePredictionOrders(SystemTime.getCurrentTime(), 0); // Tenat 0: retrieve all
-          Map<String, PredictionOrder> predictionOrdersCopy = new HashMap<String, PredictionOrder>(predictionOrders); // to keep track removed ones.
+          Collection<PredictionOrder> orders = predictionOrderService.getActivePredictionOrders(SystemTime.getCurrentTime(), 0); // Tenant 0: retrieve all
+          Map<String, PredictionOrder> predictionOrdersCopy = new HashMap<String, PredictionOrder>(predictionOrders); // a copy of the list that will contain remaining ones at the end
           
           //
           // Check if any changes since last wake up
@@ -230,13 +256,18 @@ public class PredictionOrganizer
   //
   public static void predictionJobRun(String orderID) {
     PredictionOrder order = predictionOrders.get(orderID);
+    PredictionOrderMetadata metadata = predictionOrderService.getPredictionOrderMetadata(orderID);
+    
     if(order != null) {
       try {
         if(skipRun(orderID, order)) {
           return;
         }
         
-        getSubscribersAndPush(orderID, order.getTargetCriteria(), order.getTenantID(), elasticsearchRestClient);
+        getSubscribersAndPush(orderID, metadata.getLastExecutionID(), order.getTargetCriteria(), order.getTenantID(), elasticsearchRestClient);
+        
+        // End of requests generation phase - notify metadata (increase lastExecutionID)
+        updateMetadata(orderID);
       } 
       catch (ElasticsearchStatusException | IOException | GUIManagerException e) {
         log.error("Unable to retrieve list of subscribers matching target criteria {}", e.getMessage());
@@ -253,7 +284,7 @@ public class PredictionOrganizer
    * This cannot be managed by CRON directly (do not fit cron standard), therefore, before each run we need to 
    * check if we skip it or not
    */
-  public static boolean skipRun(String orderID, PredictionOrder predictionOrder) {
+  private static boolean skipRun(String orderID, PredictionOrder predictionOrder) {
     Date now = SystemTime.getCurrentTime();
     Date start = predictionOrderStartDate.get(orderID);
     if(start == null) {
@@ -274,7 +305,7 @@ public class PredictionOrganizer
    * Retrieve the list of all subscribers matching a list of EvaluationCriterion
    * Push them in the request topic using send() call
    */
-  public static void getSubscribersAndPush(String orderID, List<EvaluationCriterion> criteriaList, int tenantID, ElasticsearchClientAPI elasticsearch) throws IOException, ElasticsearchStatusException, GUIManagerException {
+  private static void getSubscribersAndPush(String orderID, int executionID, List<EvaluationCriterion> criteriaList, int tenantID, ElasticsearchClientAPI elasticsearch) throws IOException, ElasticsearchStatusException, GUIManagerException {
     int scrollSize = Math.min(BATCH_SIZE, ElasticsearchClientAPI.MAX_RESULT_WINDOW); // Capped by max size of ES request (10000)
     
     //
@@ -312,7 +343,7 @@ public class PredictionOrganizer
             //
             // push batch - we need to do that in the same function otherwise we will reach heap space (OOM) 
             //
-            send(orderID, batch);
+            sendBatch(orderID, executionID, false, batch); // TODO implements training mode
             
             //
             //  scroll

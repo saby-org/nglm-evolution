@@ -6,7 +6,10 @@
 
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.core.Deployment;
+import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.PredictionOrderMetadata;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import org.json.simple.JSONObject;
@@ -22,12 +25,22 @@ public class PredictionOrderService extends GUIService
   
   /*****************************************
   *
+  * Properties
+  *
+  *****************************************/
+  private ReferenceDataReader<String,PredictionOrderMetadata> metadata;
+  
+  /*****************************************
+  *
   * Constructor
   *
   *****************************************/
   public PredictionOrderService(String bootstrapServers, String predictionOrderTopic, boolean masterService, PredictionOrderListener predictionOrderListener, boolean notifyOnSignificantChange)
   {
     super(bootstrapServers, "PredictionOrderService", predictionOrderTopic, masterService, getSuperListener(predictionOrderListener), "putPredictionOrder", "removePredictionOrder", notifyOnSignificantChange);
+    
+    // Init metadata ReferenceDataReader
+    metadata = ReferenceDataReader.<String,PredictionOrderMetadata>startReader("predictionorderservice-predictionordermetadata", Deployment.getBrokerServers(), Deployment.getPredictionOrderMetadataTopic(), PredictionOrderMetadata::unpack);
   }
   
   public PredictionOrderService(String bootstrapServers, String predictionOrderTopic, boolean masterService, PredictionOrderListener predictionOrderListener)
@@ -84,6 +97,20 @@ public class PredictionOrderService extends GUIService
 
   /*****************************************
   *
+  *  getPredictionOrderMetaData
+  *
+  *****************************************/
+  public PredictionOrderMetadata getPredictionOrderMetadata(String predictionOrderID)
+  {
+    PredictionOrderMetadata result = metadata.get(predictionOrderID);
+    if(result == null) {
+      result = new PredictionOrderMetadata(predictionOrderID);
+    }
+    return result;
+  }
+  
+  /*****************************************
+  *
   *  putPredictionOrder
   *
   *****************************************/
@@ -119,7 +146,11 @@ public class PredictionOrderService extends GUIService
   *  removePredictionOrder
   *
   *****************************************/
-  public void removePredictionOrder(String predictionOrder, String userID, int tenantID) { removeGUIManagedObject(predictionOrder, SystemTime.getCurrentTime(), userID, tenantID); }
+  public void removePredictionOrder(String predictionOrder, String userID, int tenantID) { 
+    removeGUIManagedObject(predictionOrder, SystemTime.getCurrentTime(), userID, tenantID); 
+    
+    // TODO: no deletion of Metadata for the moment...
+  }
 
   /*****************************************
   *

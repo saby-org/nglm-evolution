@@ -218,7 +218,7 @@ public class SubscriberPredictions
   /*****************************************
   *
   * SubscriberPredictionsRequest
-  * Object pushed by Evolution to be read by the prediction module (list of subscribers)
+  * Object pushed by Evolution to be read by the prediction module
   *
   *****************************************/
   public static class SubscriberPredictionsRequest
@@ -233,8 +233,10 @@ public class SubscriberPredictions
     {
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("subscriber_predictions_request");
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
-      schemaBuilder.field("subscribers",   SchemaBuilder.array(Schema.STRING_SCHEMA));
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
+      schemaBuilder.field("predictionID",  Schema.STRING_SCHEMA);
+      schemaBuilder.field("executionID",   Schema.INT32_SCHEMA);
+      schemaBuilder.field("trainingMode",  Schema.BOOLEAN_SCHEMA);
       return schemaBuilder.build();
     };  
     
@@ -252,7 +254,9 @@ public class SubscriberPredictions
       SubscriberPredictionsRequest t = (SubscriberPredictionsRequest) value;
       
       Struct struct = new Struct(schema);
-      struct.put("subscribers",  t.subscribers);
+      struct.put("predictionID",  t.predictionID);
+      struct.put("executionID",   t.executionID);
+      struct.put("trainingMode",  t.trainingMode);
       return struct;
     }
     
@@ -271,9 +275,11 @@ public class SubscriberPredictions
       // unpack
       //
       Struct valueStruct = (Struct) value;
-      List<String> subscribers = (List<String>) valueStruct.get("predictions");
+      String predictionID = valueStruct.getString("predictionID");
+      int executionID = valueStruct.getInt32("executionID");
+      boolean trainingMode = valueStruct.getBoolean("trainingMode");
       
-      return new SubscriberPredictionsRequest(new HashSet<String>(subscribers));
+      return new SubscriberPredictionsRequest(predictionID, executionID, trainingMode);
     }
     
     /*****************************************
@@ -281,10 +287,16 @@ public class SubscriberPredictions
     * Properties
     *
     *****************************************/
-    public Set<String> subscribers;
+    public String predictionID;
+    public int executionID;       // ExecutionID is here because we never clean manually the topic - (auto cleaned every 48h) 
+                                  // It is also here for Spark to know that all requests has been pushed in the topic.
+                                  // It is when PredictionOrderMetadata.executionID switch to this one (at the very end of the push)
+    public boolean trainingMode;  // isTraining ? (otherwise prediction mode)
     
-    public SubscriberPredictionsRequest(Set<String> subscribers) {
-      this.subscribers = subscribers;
+    public SubscriberPredictionsRequest(String predictionID, int executionID, boolean trainingMode) {
+      this.predictionID = predictionID;
+      this.executionID = executionID;
+      this.trainingMode = trainingMode;
     }
   }
   
