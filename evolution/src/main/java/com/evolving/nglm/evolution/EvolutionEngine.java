@@ -130,7 +130,7 @@ import com.evolving.nglm.evolution.Token.TokenStatus;
 import com.evolving.nglm.evolution.VoucherChange.VoucherChangeAction;
 import com.evolving.nglm.evolution.UCGState.UCGGroup;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
-import com.evolving.nglm.evolution.SubscriberPredictions.SubscriberPredictionsPush;
+import com.evolving.nglm.evolution.SubscriberPredictions.Prediction;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -741,7 +741,7 @@ public class EvolutionEngine
     final ConnectSerde<AssignSubscriberIDs> assignSubscriberIDsSerde = AssignSubscriberIDs.serde();
     final ConnectSerde<PresentationLog> presentationLogSerde = PresentationLog.serde();
     final ConnectSerde<AcceptanceLog> acceptanceLogSerde = AcceptanceLog.serde();
-    final ConnectSerde<SubscriberPredictionsPush> subscriberPredictionsPushSerde = SubscriberPredictionsPush.serde();
+    final ConnectSerde<Prediction> subscriberPredictionsPushSerde = Prediction.serde();
     final ConnectSerde<PointFulfillmentRequest> pointFulfillmentRequestSerde = PointFulfillmentRequest.serde();
     final ConnectSerde<SubscriberProfileForceUpdate> subscriberProfileForceUpdateSerde = SubscriberProfileForceUpdate.serde();
     final ConnectSerde<ExecuteActionOtherSubscriber> executeActionOtherSubscriberSerde = ExecuteActionOtherSubscriber.serde();
@@ -828,7 +828,7 @@ public class EvolutionEngine
     KStream<StringKey, SubscriberTraceControl> subscriberTraceControlSourceStream = builder.stream(subscriberTraceControlTopic, Consumed.with(stringKeySerde, subscriberTraceControlSerde));
     KStream<StringKey, PresentationLog> presentationLogSourceStream = builder.stream(presentationLogTopic, Consumed.with(stringKeySerde, presentationLogSerde));
     KStream<StringKey, AcceptanceLog> acceptanceLogSourceStream = builder.stream(acceptanceLogTopic, Consumed.with(stringKeySerde, acceptanceLogSerde));
-    KStream<StringKey, SubscriberPredictionsPush> subscriberPredictionsPushSourceStream = builder.stream(subscriberPredictionsPushTopic, Consumed.with(stringKeySerde, subscriberPredictionsPushSerde));
+    KStream<StringKey, Prediction> subscriberPredictionsPushSourceStream = builder.stream(subscriberPredictionsPushTopic, Consumed.with(stringKeySerde, subscriberPredictionsPushSerde));
     KStream<StringKey, ProfileSegmentChangeEvent> profileSegmentChangeEventStream = builder.stream(Deployment.getProfileSegmentChangeEventTopic(), Consumed.with(stringKeySerde, profileSegmentChangeEventSerde));
     KStream<StringKey, ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEventStream = builder.stream(Deployment.getProfileLoyaltyProgramChangeEventTopic(), Consumed.with(stringKeySerde, profileLoyaltyProgramChangeEventSerde));
     KStream<StringKey, VoucherChange> voucherChangeRequestSourceStream = builder.stream(voucherChangeRequestTopic, Consumed.with(stringKeySerde, voucherChangeSerde));
@@ -5164,12 +5164,12 @@ public class EvolutionEngine
 
     /*****************************************
     *
-    *  SubscriberPredictionsPush
+    *  subscriberpredictionspush
     *
     *****************************************/
 
-    if (evolutionEvent instanceof SubscriberPredictionsPush) {
-      subscriberProfile.getPredictions().update((SubscriberPredictionsPush) evolutionEvent);
+    if (evolutionEvent instanceof Prediction) {
+      subscriberProfile.getPredictions().update((Prediction) evolutionEvent);
     }
 
     /*****************************************

@@ -773,9 +773,9 @@ public class EvolutionSetup
     // The serialize() function only return a byte[] that we do not use nor push.
     //
     
-    SubscriberPredictionsPush.serde().serializer().serialize(
+    SubscriberPredictions.Prediction.serde().serializer().serialize(
         DeploymentCommon.getSubscriberPredictionsPushTopic(), 
-        new SubscriberPredictionsPush("1", new Date(), Collections.singletonList(new SubscriberPredictions.Prediction("2", 0.0, 0.0, new Date())))
+        new SubscriberPredictions.Prediction("2", 0.0, 0.0, new Date())
       );
   }
   
