@@ -9430,6 +9430,7 @@ public class EvolutionEngine
     {
       Map<String, String> result = new HashMap<String, String>();
       Object nodeParamObj = journeyNode.getNodeParameters().get("node.parameter.voucher.code");
+      Object nodeParamSupplierObj = journeyNode.getNodeParameters().get("node.parameter.supplier");
       if (nodeParamObj instanceof ParameterExpression && ((ParameterExpression) nodeParamObj).getExpression() instanceof ConstantExpression)
         {
           String nodeParam  = (String)  ((ParameterExpression) nodeParamObj).getExpression().evaluateConstant();
@@ -9442,6 +9443,19 @@ public class EvolutionEngine
       else
         {
           log.error("unsupported value/type expression {} - skipping", nodeParamObj);
+        }
+      if (nodeParamSupplierObj instanceof ParameterExpression && ((ParameterExpression) nodeParamSupplierObj).getExpression() instanceof ConstantExpression)
+        {
+          String nodeParam  = (String)  ((ParameterExpression) nodeParamSupplierObj).getExpression().evaluateConstant();
+          if (nodeParam != null) result.put("supplier", nodeParam);
+        }
+      else if (nodeParamSupplierObj instanceof String)
+        {
+          result.put("supplier", (String) nodeParamSupplierObj);
+        }
+      else
+        {
+          log.error("unsupported value/type expression {} - skipping", nodeParamSupplierObj);
         }
       return result;
     }
