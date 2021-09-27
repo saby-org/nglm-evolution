@@ -9447,7 +9447,7 @@ public class EvolutionEngine
       if (nodeParamSupplierObj instanceof ParameterExpression && ((ParameterExpression) nodeParamSupplierObj).getExpression() instanceof ConstantExpression)
         {
           String nodeParamDisplay  = (String)  ((ParameterExpression) nodeParamSupplierObj).getExpression().evaluateConstant();
-          SupplierService supplierService = (SupplierService) guiServiceList.stream().filter(srvc -> srvc.getClass() == DeliverableService.class).findFirst().orElse(null);
+          SupplierService supplierService = (SupplierService) guiServiceList.stream().filter(srvc -> srvc.getClass() == SupplierService.class).findFirst().orElse(null);
           if (supplierService != null && nodeParamDisplay != null)
             {
               GUIManagedObject guiObjectSupplier = supplierService.getStoredGUIManagedObjects(tenantID).stream().filter(guiObject -> nodeParamDisplay.equals(guiObject.getGUIManagedObjectDisplay())).findFirst().orElse(null);
@@ -9456,7 +9456,7 @@ public class EvolutionEngine
         }
       else if (nodeParamSupplierObj instanceof String)
         {
-          SupplierService supplierService = (SupplierService) guiServiceList.stream().filter(srvc -> srvc.getClass() == DeliverableService.class).findFirst().orElse(null);
+          SupplierService supplierService = (SupplierService) guiServiceList.stream().filter(srvc -> srvc.getClass() == SupplierService.class).findFirst().orElse(null);
           if (supplierService != null && nodeParamSupplierObj != null)
             {
               GUIManagedObject guiObjectSupplier = supplierService.getStoredGUIManagedObjects(tenantID).stream().filter(guiObject -> nodeParamSupplierObj.equals(guiObject.getGUIManagedObjectDisplay())).findFirst().orElse(null);
