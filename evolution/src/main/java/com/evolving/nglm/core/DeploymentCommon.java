@@ -553,6 +553,10 @@ public class DeploymentCommon
   public static Long getElasticsearchDatacubeSubscriberprofileTemplateVersion() { return elasticsearchTemplatesVersion.get("datacube_subscriberprofile"); }
   public static Long getElasticsearchDatacubeLoyaltyprogramshistoryTemplateVersion() { return elasticsearchTemplatesVersion.get("datacube_loyaltyprogramshistory"); }
   public static Long getElasticsearchDatacubeLoyaltyprogramschangesTemplateVersion() { return elasticsearchTemplatesVersion.get("datacube_loyaltyprogramschanges"); }
+  public static Long getElasticsearchDatacubeChallengeshistoryTemplateVersion() { return elasticsearchTemplatesVersion.get("datacube_challengeshistory"); }
+  public static Long getElasticsearchDatacubeChallengeschangesTemplateVersion() { return elasticsearchTemplatesVersion.get("datacube_challengeschanges"); }
+  public static Long getElasticsearchDatacubeMissionshistoryTemplateVersion() { return elasticsearchTemplatesVersion.get("datacube_missionshistory"); }
+  public static Long getElasticsearchDatacubeMissionschangesTemplateVersion() { return elasticsearchTemplatesVersion.get("datacube_missionschanges"); }
   public static Long getElasticsearchDatacubeJourneytrafficTemplateVersion() { return elasticsearchTemplatesVersion.get("datacube_journeytraffic"); }
   public static Long getElasticsearchDatacubeJourneyrewardsTemplateVersion() { return elasticsearchTemplatesVersion.get("datacube_journeyrewards"); }
   public static Long getElasticsearchDatacubeOdrTemplateVersion() { return elasticsearchTemplatesVersion.get("datacube_odr"); }

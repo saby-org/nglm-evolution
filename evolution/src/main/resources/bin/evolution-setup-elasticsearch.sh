@@ -733,6 +733,82 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_l
 }'
 echo
 
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_challengeshistory -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
+{
+  "index_patterns": ["t*_datacube_challengeshistory"],
+  "mappings" : {
+    "_meta": { "datacube_challengeshistory" : { "version": Deployment.getElasticsearchDatacubeChallengeshistoryTemplateVersion() } },
+    "properties" : {
+      "timestamp" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
+      "period" : { "type" : "long" },
+      "filter.tenantID" : { "type" : "integer" },
+      "filter.loyaltyProgram" : { "type" : "keyword" },
+      "filter.level" : { "type" : "keyword" },
+      "filter.occurrenceNumber" : { "type" : "integer" },
+      "count" : { "type" : "integer" },
+      "metric.score" : { "type" : "integer" }
+    }
+  }
+}'
+echo
+
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_challengeschanges -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
+{
+  "index_patterns": ["t*_datacube_challengeschanges"],
+  "mappings" : {
+    "_meta": { "datacube_challengeschanges" : { "version": Deployment.getElasticsearchDatacubeChallengeschangesTemplateVersion() } },
+    "properties" : {
+      "timestamp" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
+      "period" : { "type" : "long" },
+      "filter.tenantID" : { "type" : "integer" },
+      "filter.loyaltyProgram" : { "type" : "keyword" },
+      "filter.newLevel" : { "type" : "keyword" },
+      "filter.previousLevel" : { "type" : "keyword" },
+      "filter.levelChangeType" : { "type" : "keyword" },
+      "filter.occurrenceNumber" : { "type" : "integer" },
+      "count" : { "type" : "integer" }
+    }
+  }
+}'
+echo
+
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_missionshistory -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
+{
+  "index_patterns": ["t*_datacube_missionshistory"],
+  "mappings" : {
+    "_meta": { "datacube_datacube_missionshistory" : { "version": Deployment.getElasticsearchDatacubeMissionshistoryTemplateVersion() } },
+    "properties" : {
+      "timestamp" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
+      "period" : { "type" : "long" },
+      "filter.tenantID" : { "type" : "integer" },
+      "filter.loyaltyProgram" : { "type" : "keyword" },
+      "filter.step" : { "type" : "keyword" },
+      "filter.occurrenceNumber" : { "type" : "integer" },
+      "count" : { "type" : "integer" },
+      "metric.progression" : { "type" : "long" }
+    }
+  }
+}'
+echo
+
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_missionschanges -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
+{
+  "index_patterns": ["t*_datacube_missionschanges"],
+  "mappings" : {
+    "_meta": { "datacube_missionschanges" : { "version": Deployment.getElasticsearchDatacubeMissionschangesTemplateVersion() } },
+    "properties" : {
+      "timestamp" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
+      "period" : { "type" : "long" },
+      "filter.tenantID" : { "type" : "integer" },
+      "filter.loyaltyProgram" : { "type" : "keyword" },
+      "filter.newStep" : { "type" : "keyword" },
+      "filter.previousStep" : { "type" : "keyword" },
+      "count" : { "type" : "integer" }
+    }
+  }
+}'
+echo
+
 prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/datacube_journeytraffic- -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
   "index_patterns": ["t*_datacube_journeytraffic-*"],
