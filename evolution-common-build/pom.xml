@@ -113,7 +113,7 @@
     <topic.producttype>producttype</topic.producttype>
     <topic.ucgrule>ucgrule</topic.ucgrule>
     <topic.predictionorder>predictionorder</topic.predictionorder>
-    <topic.predictionorder>predictionordermetadata</topic.predictionorder>
+    <topic.predictionordermetadata>predictionordermetadata</topic.predictionordermetadata>
     <topic.catalogobjective>catalogobjective</topic.catalogobjective>
     <topic.guiaudit>guiaudit</topic.guiaudit>
     <topic.deliverable>deliverable</topic.deliverable>
