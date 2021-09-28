@@ -61,7 +61,7 @@ public class DNBOToken extends Token
     schemaBuilder.field("scoringStrategyIDs", SchemaBuilder.array(Schema.STRING_SCHEMA).defaultValue(new ArrayList<String>()).schema());
     schemaBuilder.field("isAutoBounded", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("isAutoRedeemed", Schema.BOOLEAN_SCHEMA);
-    schemaBuilder.field("proposedOfferDetails", SchemaBuilder.array(ProposedOfferDetails.schema())); // rename from presentedOfferIDs to proposedOfferDetails
+    schemaBuilder.field("proposedOfferDetails", SchemaBuilder.array(ProposedOfferDetails.schema()).schema()); // rename from presentedOfferIDs to proposedOfferDetails
     schemaBuilder.field("presentedOffersSalesChannel", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("acceptedOfferID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("presentationDates", SchemaBuilder.array(Timestamp.SCHEMA).defaultValue(new ArrayList<Date>()).schema());
