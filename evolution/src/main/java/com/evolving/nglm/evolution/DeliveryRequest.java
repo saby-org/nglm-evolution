@@ -816,6 +816,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     thirdPartyPresentationMap.put(CREATIONDATE, getDateString(getCreationDate()));
     thirdPartyPresentationMap.put(DELIVERYDATE, getDateString(getDeliveryDate()));
     thirdPartyPresentationMap.put(ACTIVITYTYPE, getActivityType().toString());
+    thirdPartyPresentationMap.put(DELIVERYSTATUS, getDeliveryStatus().getExternalRepresentation()); 
     addFieldsForThirdPartyPresentation(thirdPartyPresentationMap, subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, tenantID);
     return thirdPartyPresentationMap;
   }

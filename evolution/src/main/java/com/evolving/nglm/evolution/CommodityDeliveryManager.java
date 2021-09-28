@@ -127,8 +127,6 @@ public class CommodityDeliveryManager
         return DeliveryManager.DeliveryStatus.Failed;
       case BONUS_NOT_FOUND:
         return DeliveryManager.DeliveryStatus.BonusNotFound;
-      case THIRD_PARTY_ERROR:
-          return DeliveryManager.DeliveryStatus.Failed;
       case INSUFFICIENT_BALANCE:
         return DeliveryManager.DeliveryStatus.InsufficientBalance;
       case CHECK_BALANCE_LT:
