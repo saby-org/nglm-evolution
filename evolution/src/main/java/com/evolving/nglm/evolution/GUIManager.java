@@ -2465,7 +2465,7 @@ public class GUIManager
       {
         boolean grafanaStarted = false;
         while (!grafanaStarted) {
-          grafanaStarted = GrafanaUtils.prepareGrafanaForTenants();
+          grafanaStarted = GrafanaUtils.prepareGrafanaForTenants(elasticsearch);
         }        
       }
     });

@@ -1,6 +1,8 @@
 package com.evolving.nglm.evolution.grafana;
 
 import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
@@ -32,7 +34,10 @@ import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.Pair;
 import com.evolving.nglm.evolution.TokenUtils;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 import com.evolving.nglm.evolution.tenancy.Tenant;
+import org.elasticsearch.action.update.UpdateRequest;
+import org.elasticsearch.client.RequestOptions;
 
 
 public class GrafanaUtils
@@ -46,7 +51,7 @@ public class GrafanaUtils
   private static final Logger log = LoggerFactory.getLogger(GrafanaUtils.class);
 
   
-  public static boolean prepareGrafanaForTenants()
+  public static boolean prepareGrafanaForTenants(ElasticsearchClientAPI elasticsearch)
   {
     try
       {
@@ -180,6 +185,11 @@ public class GrafanaUtils
 
                     for (String currentFileName : fileNames)
                     {
+                      // Dashboards of tenant 0
+                      if(currentFileName.substring(19,22).equals("t0-")) 
+                      {
+                        continue;
+                      }
                       try {
                         // check if the dashboard already exists
                         InputStream is = GrafanaUtils.class.getResourceAsStream("/" + currentFileName);
@@ -190,11 +200,13 @@ public class GrafanaUtils
                         
                         log.info("GrafanaUtils.prepareGrafanaForTenants: = parsing a Dashboard = " + currentFileName);
                         log.trace("GrafanaUtils.prepareGrafanaForTenants ===parsing a Dashboard==== " + currentFileName + "\n" + s);
-                        JSONObject fullDashbaordDef = (JSONObject) (new JSONParser()).parse(s);
-                        JSONObject dashbaordDef = (JSONObject) fullDashbaordDef.get("dashboard");
-                        String expectedTitle = (String) dashbaordDef.get("title");
+                        JSONObject fulldashboardDef = (JSONObject) (new JSONParser()).parse(s);
+                        JSONObject dashboardDef = (JSONObject) fulldashboardDef.get("dashboard");
+                        String expectedTitle = (String) dashboardDef.get("title");
                         String existingUID = uidOfExistingDashBoards.get(expectedTitle);
                         String regex = "[ACDEFGHJKMNPQRTWXYacdefghjkmnpqrtwx34679]{15}";
+                        HashMap<String,Object> mapDbEs=new HashMap<String,Object>();
+                        UpdateRequest request = new UpdateRequest();
                         
                         log.info("The dashboard under-study is: === " + expectedTitle + " ===");
                         
@@ -214,7 +226,10 @@ public class GrafanaUtils
                           // Then recreate it using a unique uid that starts with t<tenandID>-
                           String newUID = "t"+ tenantID + "-" + TokenUtils.generateFromRegex(regex);
                           s = s.replace("replaceWithUniqueID", newUID );
-                          fullDashbaordDef = (JSONObject) (new JSONParser()).parse(s);
+                          fulldashboardDef = (JSONObject) (new JSONParser()).parse(s);
+                          mapDbEs.put("name",expectedTitle);
+                          mapDbEs.put("reportID",newUID);
+                          request = new UpdateRequest("dashboard_links",newUID);
                           log.info("The new uid of the already existing Dashboard: " + expectedTitle + " is " + newUID);
                         }
                         // 2- The dashboard already exists and its uid starts with t<tenantID>-
@@ -223,7 +238,10 @@ public class GrafanaUtils
                           // overwrite it using the same existing uid
                           log.info("GrafanaUtils.prepareGrafanaForTenants: Dashboard " + expectedTitle + " already exists for orgID " + orgID + " for dashboard file name " + currentFileName + " and it'll be overwritten.");
                           s= s.replace("replaceWithUniqueID", existingUID);
-                          fullDashbaordDef = (JSONObject) (new JSONParser()).parse(s);
+                          fulldashboardDef = (JSONObject) (new JSONParser()).parse(s);
+                          mapDbEs.put("name",expectedTitle);
+                          mapDbEs.put("reportID",existingUID);
+                          request = new UpdateRequest("dashboard_links",existingUID);
                           log.info("The uid of the already existing Dashboard: " + expectedTitle + " is " + existingUID);
                         }
                         // 3- The dashboard doesn't exist already
@@ -233,12 +251,15 @@ public class GrafanaUtils
                           // Create it using a unique uid that starts with t<tenandID>-
                           String newUID = "t"+ tenantID + "-" + TokenUtils.generateFromRegex(regex);
                           s = s.replace("replaceWithUniqueID", newUID );
-                          fullDashbaordDef = (JSONObject) (new JSONParser()).parse(s);
+                          fulldashboardDef = (JSONObject) (new JSONParser()).parse(s);
+                          mapDbEs.put("name",expectedTitle);
+                          mapDbEs.put("reportID",newUID);
+                          request = new UpdateRequest("dashboard_links",newUID);
                           log.info("The uid of the newly created Dashboard: " + expectedTitle + " is " + newUID );
                         }
                         scanner.close();
                         // Overwrite / create the dashboard
-                        Pair<String, Integer> db = createGrafanaDashBoardForOrg(orgID, fullDashbaordDef);
+                        Pair<String, Integer> db = createGrafanaDashBoardForOrg(orgID, fulldashboardDef);
                         if (db != null && db.getFirstElement() != null && db.getSecondElement() != null)
                         {
                           log.info("GrafanaUtils.prepareGrafanaForTenants: Dashboard " + db.getFirstElement() + " " + db.getSecondElement() + " is well loaded");
@@ -246,6 +267,27 @@ public class GrafanaUtils
                         else
                         {
                           log.warn("GrafanaUtils.prepareGrafanaForTenants: Problem while loading Dashboard " + db.getFirstElement() + " for orgID " + orgID + " for dashboard file name " + currentFileName);
+                        }
+                        
+                        mapDbEs.put("webguiname","IAR"); 
+                        mapDbEs.put("type","GRAFANA"); 
+                        mapDbEs.put("icon",""); 
+                        mapDbEs.put("iframewidth",1800); 
+                        mapDbEs.put("iframeheight",1600); 
+                        mapDbEs.put("webpath",""); 
+                        mapDbEs.put("reportGroup",""); 
+                        mapDbEs.put("permissionKey",""); 
+                        mapDbEs.put("tenantid",orgID);  
+                        request.doc(mapDbEs);
+                        request.docAsUpsert(true);
+                        request.retryOnConflict(4);
+
+                        try {
+                          elasticsearch.update(request, RequestOptions.DEFAULT);
+                        } catch (Exception e) {
+                          StringWriter stackTraceWriter = new StringWriter();
+                          e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+                          log.error("Pushing failed: "+stackTraceWriter.toString()+"");
                         }
                       }
                       catch(Exception e)
