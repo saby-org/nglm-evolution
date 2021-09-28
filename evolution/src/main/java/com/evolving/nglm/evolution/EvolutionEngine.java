@@ -5170,6 +5170,7 @@ public class EvolutionEngine
 
     if (evolutionEvent instanceof Prediction) {
       subscriberProfile.getPredictions().update((Prediction) evolutionEvent);
+      subscriberStateUpdated = true;
     }
 
     /*****************************************
