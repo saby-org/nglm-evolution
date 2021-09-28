@@ -1052,7 +1052,9 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
   {
     if(log.isDebugEnabled()) log.debug("NotificationManager.completeDeliveryRequest(deliveryRequest=" + deliveryRequest + ")");
     if(((NotificationManagerRequest) deliveryRequest).getReturnCode() == MessageStatus.DELIVERED.getReturnCode()) 
-    ((NotificationManagerRequest) deliveryRequest).setReturnCodeDetails(deliveryRequest.getDeliveryStatus().name());
+    {
+      ((NotificationManagerRequest) deliveryRequest).setReturnCodeDetails(deliveryRequest.getDeliveryStatus().name());
+    }
     super.completeRequest(deliveryRequest);
   }
 
