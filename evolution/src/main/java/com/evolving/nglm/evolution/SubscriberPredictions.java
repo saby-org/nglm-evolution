@@ -23,7 +23,7 @@ public class SubscriberPredictions
   * - Object stored in SubscriberProfile
   *
   *****************************************/
-  public static class Prediction 
+  public static class Prediction implements SubscriberStreamEvent
   {
     /*****************************************
     *
@@ -36,6 +36,7 @@ public class SubscriberPredictions
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("prediction");
       schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+      schemaBuilder.field("subscriberID",  Schema.STRING_SCHEMA); // because SubscriberStreamEvent
       schemaBuilder.field("predictionID",  Schema.STRING_SCHEMA);
       schemaBuilder.field("score",         Schema.FLOAT64_SCHEMA);
       schemaBuilder.field("position",      Schema.FLOAT64_SCHEMA);
@@ -57,6 +58,7 @@ public class SubscriberPredictions
       Prediction prediction = (Prediction) value;
       
       Struct struct = new Struct(schema);
+      struct.put("subscriberID", prediction.subscriberID);
       struct.put("predictionID", prediction.predictionID);
       struct.put("score", prediction.score);
       struct.put("position", prediction.position);
@@ -79,12 +81,13 @@ public class SubscriberPredictions
       // unpack
       //
       Struct valueStruct = (Struct) value;
+      String subscriberID = valueStruct.getString("subscriberID");
       String predictionID = valueStruct.getString("predictionID");
       Double score = valueStruct.getFloat64("score");
       Double position = valueStruct.getFloat64("position");
       Long date = valueStruct.getInt64("date");
       
-      return new Prediction(predictionID, score, position, new Date(date));
+      return new Prediction(subscriberID, predictionID, score, position, new Date(date));
     }
     
     /*****************************************
@@ -92,12 +95,14 @@ public class SubscriberPredictions
     * Properties
     *
     *****************************************/
+    public String subscriberID;
     public String predictionID;
     public double score;
     public double position; // [0,1[ (p/PopSize)
     public Date date;
     
-    public Prediction(String predictionID, double score, double position, Date date) {
+    public Prediction(String subscriberID, String predictionID, double score, double position, Date date) {
+      this.subscriberID = subscriberID;
       this.predictionID = predictionID;
       this.score = score; 
       this.position = position;
@@ -123,6 +128,17 @@ public class SubscriberPredictions
     public int getDecileInterval() { 
       return getNcileInterval(10);
     }
+    
+    /*****************************************
+    *
+    * SubscriberStreamEvent
+    *
+    *****************************************/
+    @Override public String getSubscriberID() { return this.subscriberID; }
+    @Override public Date getEventDate() { return this.date; }
+    @Override public Schema subscriberStreamEventSchema() { return schema; }
+    @Override public Object subscriberStreamEventPack(Object value) { return pack(value); }
+    @Override public DeliveryPriority getDeliveryPriority() { return DeliveryRequest.DeliveryPriority.High;} // @rl not sure ?
   }
   
   /*****************************************
@@ -144,6 +160,7 @@ public class SubscriberPredictions
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("subscriber_predictions_request");
       schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
+      schemaBuilder.field("subscriberID",  Schema.STRING_SCHEMA); // for consistency
       schemaBuilder.field("predictionID",  Schema.STRING_SCHEMA);
       schemaBuilder.field("executionID",   Schema.INT32_SCHEMA);
       schemaBuilder.field("trainingMode",  Schema.BOOLEAN_SCHEMA);
@@ -164,6 +181,7 @@ public class SubscriberPredictions
       SubscriberPredictionsRequest t = (SubscriberPredictionsRequest) value;
       
       Struct struct = new Struct(schema);
+      struct.put("subscriberID",  t.subscriberID);
       struct.put("predictionID",  t.predictionID);
       struct.put("executionID",   t.executionID);
       struct.put("trainingMode",  t.trainingMode);
@@ -185,11 +203,12 @@ public class SubscriberPredictions
       // unpack
       //
       Struct valueStruct = (Struct) value;
+      String subscriberID = valueStruct.getString("subscriberID");
       String predictionID = valueStruct.getString("predictionID");
       int executionID = valueStruct.getInt32("executionID");
       boolean trainingMode = valueStruct.getBoolean("trainingMode");
       
-      return new SubscriberPredictionsRequest(predictionID, executionID, trainingMode);
+      return new SubscriberPredictionsRequest(subscriberID, predictionID, executionID, trainingMode);
     }
     
     /*****************************************
@@ -197,13 +216,15 @@ public class SubscriberPredictions
     * Properties
     *
     *****************************************/
+    public String subscriberID;   // It is already the key of the topic. Only here for consistency (and having an independent object)
     public String predictionID;
     public int executionID;       // ExecutionID is here because we never clean manually the topic - (auto cleaned every 48h) 
                                   // It is also here for Spark to know that all requests has been pushed in the topic.
                                   // It is when PredictionOrderMetadata.executionID switch to this one (at the very end of the push)
     public boolean trainingMode;  // isTraining ? (otherwise prediction mode)
     
-    public SubscriberPredictionsRequest(String predictionID, int executionID, boolean trainingMode) {
+    public SubscriberPredictionsRequest(String subscriberID, String predictionID, int executionID, boolean trainingMode) {
+      this.subscriberID = subscriberID;
       this.predictionID = predictionID;
       this.executionID = executionID;
       this.trainingMode = trainingMode;

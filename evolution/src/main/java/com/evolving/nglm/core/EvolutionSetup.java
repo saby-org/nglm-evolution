@@ -65,7 +65,6 @@ import com.evolving.nglm.evolution.CommunicationChannel;
 import com.evolving.nglm.evolution.DeliveryManagerDeclaration;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager;
 import com.evolving.nglm.evolution.SubscriberPredictions;
-import com.evolving.nglm.evolution.SubscriberPredictions.SubscriberPredictionsPush;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchUpgrade;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchUpgrade.IndexPatch;
 import com.evolving.nglm.evolution.kafka.Topic;
@@ -775,7 +774,7 @@ public class EvolutionSetup
     
     SubscriberPredictions.Prediction.serde().serializer().serialize(
         DeploymentCommon.getSubscriberPredictionsPushTopic(), 
-        new SubscriberPredictions.Prediction("2", 0.0, 0.0, new Date())
+        new SubscriberPredictions.Prediction("001", "2", 0.0, 0.0, new Date())
       );
   }
   

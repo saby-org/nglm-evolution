@@ -83,7 +83,7 @@ public class PredictionOrganizer
       try {
         kafkaProducer.send(new ProducerRecord<byte[], byte[]>(requestTopic, 
             requestKeySerde.serializer().serialize(requestTopic, new StringKey(subscriberID)),
-            requestValueSerde.serializer().serialize(requestTopic, new SubscriberPredictionsRequest(predictionID, executionID, trainingMode)))).get();
+            requestValueSerde.serializer().serialize(requestTopic, new SubscriberPredictionsRequest(subscriberID, predictionID, executionID, trainingMode)))).get();
       } 
       catch (InterruptedException|ExecutionException e) {
         log.error("Error while trying to push a new prediction request.",e);
