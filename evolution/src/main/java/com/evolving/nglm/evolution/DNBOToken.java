@@ -9,10 +9,13 @@ package com.evolving.nglm.evolution;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
@@ -30,6 +33,7 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Token;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.Token.TokenStatus;
+import com.evolving.nglm.evolution.offeroptimizer.ProposedOfferDetails;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
 
 
@@ -51,13 +55,13 @@ public class DNBOToken extends Token
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("dnbo_token");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),6));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(), 7));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("presentationStrategyID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("scoringStrategyIDs", SchemaBuilder.array(Schema.STRING_SCHEMA).defaultValue(new ArrayList<String>()).schema());
     schemaBuilder.field("isAutoBounded", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("isAutoRedeemed", Schema.BOOLEAN_SCHEMA);
-    schemaBuilder.field("presentedOfferIDs", SchemaBuilder.array(Schema.STRING_SCHEMA));
+    schemaBuilder.field("proposedOfferDetails", SchemaBuilder.array(ProposedOfferDetails.schema())); // rename from presentedOfferIDs to proposedOfferDetails
     schemaBuilder.field("presentedOffersSalesChannel", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("acceptedOfferID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("presentationDates", SchemaBuilder.array(Timestamp.SCHEMA).defaultValue(new ArrayList<Date>()).schema());
@@ -90,7 +94,7 @@ public class DNBOToken extends Token
   private List<String> scoringStrategyIDs;      // reference to the {@link ScoringStrategy}s used to configure the Token.
   private boolean isAutoBound;
   private boolean isAutoRedeemed;
-  private List<String> presentedOfferIDs;       // list of offersIDs last presented to the subscriber, in the same order they were presented.
+  private List<ProposedOfferDetails> proposedOfferDetails = new ArrayList<ProposedOfferDetails>();      // ArrayList in the same order they were presented.
   private String presentedOffersSalesChannel;
   private String acceptedOfferID;               // offer that has been accepted  if any, null otherwise.
   private List<Date> presentationDates;         // dates when this token has been bound (to be compared to max pres of the pres strategy)
@@ -114,7 +118,7 @@ public class DNBOToken extends Token
   public List<String> getScoringStrategyIDs() { return scoringStrategyIDs; }
   public boolean isAutoBound() { return isAutoBound; }
   public boolean isAutoRedeemed() { return isAutoRedeemed; }
-  public List<String> getPresentedOfferIDs() { return presentedOfferIDs; }
+  public List<ProposedOfferDetails> getProposedOfferDetails() { return proposedOfferDetails; }
   public String getPresentedOffersSalesChannel() { return presentedOffersSalesChannel; }
   public String getAcceptedOfferID() { return acceptedOfferID; }
   public List<Date> getPresentationDates() { return presentationDates;}
@@ -130,7 +134,7 @@ public class DNBOToken extends Token
   public void setScoringStrategyIDs(List<String> scoringStrategyIDs) { this.scoringStrategyIDs = scoringStrategyIDs; }
   public void setAutoBound(boolean isAutoBound) { this.isAutoBound = isAutoBound; }
   public void setAutoRedeemed(boolean isAutoRedeemed) { this.isAutoRedeemed = isAutoRedeemed; }
-  public void setPresentedOfferIDs(List<String> presentedOfferIDs) { this.presentedOfferIDs = presentedOfferIDs; }
+  public void setPresentedOffers(List<ProposedOfferDetails> proposedOfferDetails) { this.proposedOfferDetails = proposedOfferDetails; }
   public void setPresentedOffersSalesChannel(String presentedOffersSalesChannel) { this.presentedOffersSalesChannel = presentedOffersSalesChannel; }
   public void setAcceptedOfferID(String acceptedOfferID) { this.acceptedOfferID = acceptedOfferID; }
   public void setPresentationDates(List<Date> presentationDates) { this.presentationDates = presentationDates; }
@@ -148,14 +152,14 @@ public class DNBOToken extends Token
                    Date redeemedDate, Date tokenExpirationDate, int boundedCount, String eventID,
                    String subscriberID, String tokenTypeID, String moduleID, String featureID,
                    String presentationStrategyID, List<String> scoringStrategyIDs, boolean isAutoBound, boolean isAutoRedeemed,
-                   List<String> presentedOfferIDs, String presentedOffersSalesChannel, String acceptedOfferID, List<Date> presentationDates, List<Presentation> presentationHistory) {
+                   List<ProposedOfferDetails> proposedOfferDetails, String presentedOffersSalesChannel, String acceptedOfferID, List<Date> presentationDates, List<Presentation> presentationHistory) {
     super(tokenCode, tokenStatus, creationDate, boundedDate, redeemedDate, tokenExpirationDate,
           boundedCount, eventID, subscriberID, tokenTypeID, moduleID, featureID);
     this.presentationStrategyID = presentationStrategyID;
     this.scoringStrategyIDs = scoringStrategyIDs;
     this.isAutoBound = isAutoBound;
     this.isAutoRedeemed = isAutoRedeemed;
-    this.presentedOfferIDs = presentedOfferIDs;
+    this.proposedOfferDetails = proposedOfferDetails;
     this.presentedOffersSalesChannel = presentedOffersSalesChannel;
     this.acceptedOfferID = acceptedOfferID;
     this.presentationDates = presentationDates;
@@ -185,7 +189,7 @@ public class DNBOToken extends Token
          Collections.<String>emptyList(),                                 // scoringStrategyIDs
          false,                                                           // isAutoBound
          false,                                                           // isAutoRedeemed
-         new ArrayList<String>(),                                         // presentedOfferIDs
+         new ArrayList<ProposedOfferDetails>(),                             // presentedOfferIDs
          null,                                                            // presentedOffersSalesChannel
          null,                                                            // acceptedOfferID
          new ArrayList<Date>(),                                           // presentationDates
@@ -199,14 +203,14 @@ public class DNBOToken extends Token
   *
   *****************************************/
 
-  protected DNBOToken(SchemaAndValue schemaAndValue, String presentationStrategyID, List<String> scoringStrategyIDs, boolean isAutoBound, boolean isAutoRedeemed, List<String> presentedOfferIDs, String presentedOffersSalesChannel, String acceptedOfferID, List<Date> presentationDates, List<Presentation> presentationHistory, String purchaseDeliveryRequestID, PurchaseFulfillmentManager.PurchaseFulfillmentStatus purchaseStatus)
+  protected DNBOToken(SchemaAndValue schemaAndValue, String presentationStrategyID, List<String> scoringStrategyIDs, boolean isAutoBound, boolean isAutoRedeemed, List<ProposedOfferDetails> proposedOfferDetails, String presentedOffersSalesChannel, String acceptedOfferID, List<Date> presentationDates, List<Presentation> presentationHistory, String purchaseDeliveryRequestID, PurchaseFulfillmentManager.PurchaseFulfillmentStatus purchaseStatus)
   {
     super(schemaAndValue);
     this.presentationStrategyID = presentationStrategyID;
     this.scoringStrategyIDs = scoringStrategyIDs;
     this.isAutoBound = isAutoBound;
     this.isAutoRedeemed = isAutoRedeemed;
-    this.presentedOfferIDs = presentedOfferIDs;
+    this.proposedOfferDetails = proposedOfferDetails;
     this.presentedOffersSalesChannel = presentedOffersSalesChannel;
     this.acceptedOfferID = acceptedOfferID;
     this.presentationDates = presentationDates;
@@ -230,7 +234,7 @@ public class DNBOToken extends Token
     struct.put("scoringStrategyIDs",dnboToken.getScoringStrategyIDs());
     struct.put("isAutoBounded", dnboToken.isAutoBound());
     struct.put("isAutoRedeemed", dnboToken.isAutoRedeemed());
-    struct.put("presentedOfferIDs", dnboToken.getPresentedOfferIDs());
+    struct.put("proposedOfferDetails", dnboToken.getProposedOfferDetails());
     struct.put("presentedOffersSalesChannel", dnboToken.getPresentedOffersSalesChannel());
     struct.put("acceptedOfferID", dnboToken.getAcceptedOfferID());
     struct.put("presentationDates", dnboToken.getPresentationDates());
@@ -268,15 +272,57 @@ public class DNBOToken extends Token
     List<String> scoringStrategyIDs = (schemaVersion >= 2) ? (List<String>) valueStruct.get("scoringStrategyIDs") : Collections.<String>emptyList();
     boolean isAutoBound = valueStruct.getBoolean("isAutoBounded");
     boolean isAutoRedeemed = valueStruct.getBoolean("isAutoRedeemed");
-    List<String> presentedOfferIDs = (List<String>) valueStruct.get("presentedOfferIDs");
+    //List<String> presentedOfferIDs = (List<String>) valueStruct.get("presentedOfferIDs");
     String presentedOffersSalesChannel = (schemaVersion >= 3) ? (String) valueStruct.get("presentedOffersSalesChannel") : null;
     String acceptedOfferID = valueStruct.getString("acceptedOfferID");
     List<Date> presentationDates = (schemaVersion >= 4) ? (List<Date>) valueStruct.get("presentationDates") : new ArrayList<Date>();
     List<Presentation> presentationHistory = (schemaVersion >= 5) ? unpackPresentationHistory(schema.field("presentationHistory").schema(), valueStruct.get("presentationHistory")) : new ArrayList<Presentation>();
     String purchaseDeliveryRequestID = (schemaVersion >= 6) ? (String) valueStruct.get("purchaseDeliveryRequestID") : null;
     PurchaseFulfillmentManager.PurchaseFulfillmentStatus purchaseStatus = (schemaVersion >= 6) ? (valueStruct.getInt32("purchaseStatus")!=null ? PurchaseFulfillmentManager.PurchaseFulfillmentStatus.fromReturnCode(valueStruct.getInt32("purchaseStatus")) : null) : null;
+    List<ProposedOfferDetails> proposedOfferDetails = (schemaVersion >= 7) ? unpackPresentedOffers7(schema.field("proposedOfferDetails").schema(), valueStruct.get("proposedOfferDetails")) : unpackPresentedOffers6(valueStruct.get("presentedOfferIDs"));
 
-    return new DNBOToken(schemaAndValue, presentationStrategyID, scoringStrategyIDs, isAutoBound, isAutoRedeemed, presentedOfferIDs, presentedOffersSalesChannel, acceptedOfferID, presentationDates, presentationHistory, purchaseDeliveryRequestID, purchaseStatus);
+    return new DNBOToken(schemaAndValue, presentationStrategyID, scoringStrategyIDs, isAutoBound, isAutoRedeemed, proposedOfferDetails, presentedOffersSalesChannel, acceptedOfferID, presentationDates, presentationHistory, purchaseDeliveryRequestID, purchaseStatus);
+  }
+  
+  private static List<ProposedOfferDetails> unpackPresentedOffers7(Schema schema, Object value)
+  {
+    //
+    //  get schema for ProposedOfferDetails
+    //
+
+    Schema proposedOfferDetailsSchema = schema.valueSchema();
+
+    //
+    //  unpack
+    //
+
+    List<ProposedOfferDetails> result = new ArrayList<ProposedOfferDetails>();
+    List<Object> valueArray = (List<Object>) value;
+    for (Object proposedOffer : valueArray)
+      {
+        ProposedOfferDetails proposedOfferDetails = ProposedOfferDetails.unpack(new SchemaAndValue(proposedOfferDetailsSchema, proposedOffer));
+        result.add(proposedOfferDetails);
+      }
+
+    //
+    //  return
+    //
+
+    return result;
+  }
+  private static List<ProposedOfferDetails> unpackPresentedOffers6(Object value)
+  {
+    List<ProposedOfferDetails> result = new ArrayList<ProposedOfferDetails>();
+    if (value instanceof List)
+      {
+        List<String> presentedOfferIDs = (List<String>) value;
+        for (String offerID : presentedOfferIDs)
+          {
+            ProposedOfferDetails proposedOfferDetails = new ProposedOfferDetails(offerID, null, 0);
+            result.add(proposedOfferDetails);
+          }
+      }
+    return result;
   }
   
   private static List<Presentation> unpackPresentationHistory(Schema schema, Object value)
@@ -299,7 +345,7 @@ public class DNBOToken extends Token
         + (presentationStrategyID != null ? "presentationStrategyID=" + presentationStrategyID + ", " : "")
         + (scoringStrategyIDs != null ? "scoringStrategyIDs=" + scoringStrategyIDs + ", " : "")
         + "isAutoBound=" + isAutoBound + ", isAutoRedeemed=" + isAutoRedeemed + ", "
-        + (presentedOfferIDs != null ? "presentedOfferIDs=" + presentedOfferIDs + ", " : "")
+        + (proposedOfferDetails != null ? "presentedOffers=" + proposedOfferDetails + ", " : "")
         + (presentedOffersSalesChannel != null ? "presentedOffersSalesChannel=" + presentedOffersSalesChannel + ", " : "")
         + (acceptedOfferID != null ? "acceptedOfferID=" + acceptedOfferID + ", " : "")
         + (presentationHistory != null ? "presentationHistory=" + presentationHistory + ", " : "")
@@ -332,11 +378,11 @@ public class DNBOToken extends Token
       }
     result.put("acceptedOfferID", getAcceptedOfferID());
     result.put("qtyAllocations", getBoundCount());
-    if (getPresentedOfferIDs() != null)
+    if (getProposedOfferDetails() != null)
       {
-        result.put("qtyAllocatedOffers", getPresentedOfferIDs().size());
+        result.put("qtyAllocatedOffers", getProposedOfferDetails().size());
         final JSONArray presentedOfferIDs = new JSONArray();
-        getPresentedOfferIDs().stream().forEach(offerID -> presentedOfferIDs.add(offerID));
+        getProposedOfferDetails().stream().forEach(offer -> presentedOfferIDs.add(offer.getOfferId()));
         result.put("presentedOfferIDs", presentedOfferIDs);
       }
     else

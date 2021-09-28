@@ -24085,7 +24085,7 @@ public class GUIManager
 
           // Check that offer has been presented to customer
 
-          List<String> offers = subscriberStoredToken.getPresentedOfferIDs();
+          List<String> offers = subscriberStoredToken.getProposedOfferDetails().stream().map(offerDetails -> offerDetails.getOfferId()).collect(Collectors.toList());
           int position = 0;
           boolean found = false;
           for (String offID : offers)

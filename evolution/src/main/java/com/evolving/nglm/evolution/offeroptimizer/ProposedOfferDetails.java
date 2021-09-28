@@ -1,32 +1,91 @@
 package com.evolving.nglm.evolution.offeroptimizer;
 
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.UUID;
 
+import com.evolving.nglm.evolution.EvolutionUtilities;
 import com.evolving.nglm.evolution.GUIManagedObject;
+import com.evolving.nglm.evolution.JourneyEndedState;
+import com.evolving.nglm.evolution.JourneyState;
+import com.evolving.nglm.evolution.MetricHistory;
 import com.evolving.nglm.evolution.Offer;
 import com.evolving.nglm.evolution.OfferService;
+import com.evolving.nglm.evolution.Presentation;
+import com.evolving.nglm.evolution.ReScheduledDeliveryRequest;
+import com.evolving.nglm.evolution.SubscriberProfile;
+import com.evolving.nglm.evolution.SubscriberState;
+import com.evolving.nglm.evolution.TimedEvaluation;
+
+import org.apache.kafka.connect.data.Field;
+import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.SchemaAndValue;
+import org.apache.kafka.connect.data.SchemaBuilder;
+import org.apache.kafka.connect.data.Struct;
+import org.apache.kafka.connect.data.Timestamp;
 import org.json.simple.JSONObject;
 
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.SchemaUtilities;
 
 /**
  * This class represents the result of an offer proposition from the algorithm
+ * 
  * @author fduclos
  *
  */
 public class ProposedOfferDetails implements Comparable<ProposedOfferDetails>
 {
+
+  /*****************************************
+   *
+   * schema
+   *
+   *****************************************/
+
+  //
+  // schema
+  //
+
+  private static Schema schema = null;
+  static
+    {
+      SchemaBuilder schemaBuilder = SchemaBuilder.struct();
+      schemaBuilder.name("proposed_offer_details");
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+      schemaBuilder.field("offerId", Schema.STRING_SCHEMA);
+      schemaBuilder.field("offerScore", Schema.OPTIONAL_FLOAT32_SCHEMA);
+      schema = schemaBuilder.build();
+    };
+
   private String offerId; // evolution offerId not E4OOfferId
   private String salesChannelId;
   private double offerScore;
   private int offerRank;
-  
-  public ProposedOfferDetails(String offerId, String salesChannelId, double offerScore){
+
+  public ProposedOfferDetails(String offerId, String salesChannelId, double offerScore)
+  {
     this.offerId = offerId;
     this.salesChannelId = salesChannelId;
     this.offerScore = offerScore;
   }
 
+  //
+  // accessor
+  //
+
+  public static Schema schema()
+  {
+    return schema;
+  }
+  
   public String getOfferId()
   {
     return offerId;
@@ -35,10 +94,7 @@ public class ProposedOfferDetails implements Comparable<ProposedOfferDetails>
   @Override
   public String toString()
   {
-    return "ProposedOfferDetails ["
-        + (offerId != null ? "offerId=" + offerId + ", " : "") 
-        + (salesChannelId != null ? "salesChannelId=" + salesChannelId + ", " : "") 
-        + "offerScore=" + offerScore + ", offerRank=" + offerRank + "]";
+    return "ProposedOfferDetails [" + (offerId != null ? "offerId=" + offerId + ", " : "") + (salesChannelId != null ? "salesChannelId=" + salesChannelId + ", " : "") + "offerScore=" + offerScore + ", offerRank=" + offerRank + "]";
   }
 
   public void setOfferId(String offerId)
@@ -75,9 +131,54 @@ public class ProposedOfferDetails implements Comparable<ProposedOfferDetails>
   {
     this.offerRank = offerRank;
   }
+  
+  /*****************************************
+  *
+  *  pack
+  *
+  *****************************************/
 
-  @Override
-  public int compareTo(ProposedOfferDetails o)
+ public static Object pack(Object value)
+ {
+   ProposedOfferDetails proposedOfferDetails = (ProposedOfferDetails) value;
+   Struct struct = new Struct(schema);
+   struct.put("offerId", proposedOfferDetails.getOfferId());
+   struct.put("offerScore", proposedOfferDetails.getOfferScore());
+   return struct;
+ }
+ 
+ /*****************************************
+  *
+  * unpack
+  *
+  *****************************************/
+
+ public static ProposedOfferDetails unpack(SchemaAndValue schemaAndValue)
+ {
+   //
+   // data
+   //
+
+   Schema schema = schemaAndValue.schema();
+   Object value = schemaAndValue.value();
+   Integer schemaVersion = (schema != null) ? SchemaUtilities.unpackSchemaVersion0(schema.version()) : null;
+
+   //
+   // unpack
+   //
+
+   Struct valueStruct = (Struct) value;
+   String offerId = valueStruct.getString("subscriberID");
+   double offerScore = valueStruct.getFloat64("offerScore");
+
+   //
+   // return
+   //
+
+   return new ProposedOfferDetails(offerId, null, offerScore);
+ }
+
+  @Override public int compareTo(ProposedOfferDetails o)
   {
     // Make this method "consistent with equals", so that ordering works
     double res = (o.getOfferScore() - this.getOfferScore());
@@ -86,28 +187,31 @@ public class ProposedOfferDetails implements Comparable<ProposedOfferDetails>
     if (res < 0.0)
       return -1;
     int result = o.getOfferId().compareTo(this.getOfferId());
-    if (result != 0) return result;
+    if (result != 0)
+      return result;
     result = o.getSalesChannelId().compareTo(this.getSalesChannelId());
-    if (result != 0) return result;
+    if (result != 0)
+      return result;
     result = o.getOfferRank() - this.getOfferRank();
-    if (result != 0) return result;
+    if (result != 0)
+      return result;
     if (o.equals(this))
       result = 0;
     else
       // Should not happen, by construction. Return anything
       result = 1;
     return result;
-  }  
-  
+  }
+
   /*****************************************
-  *
-  *  getJSONRepresentation
-  *
-  *****************************************/
+   *
+   * getJSONRepresentation
+   *
+   *****************************************/
 
   public JSONObject getJSONRepresentation()
   {
-    HashMap<String,Object> jsonRepresentation = new HashMap<String,Object>();
+    HashMap<String, Object> jsonRepresentation = new HashMap<String, Object>();
     jsonRepresentation.put("offerID", offerId);
     jsonRepresentation.put("salesChannelId", salesChannelId);
     jsonRepresentation.put("offerScore", offerScore);
@@ -120,11 +224,12 @@ public class ProposedOfferDetails implements Comparable<ProposedOfferDetails>
   {
     JSONObject jsonObject = getJSONRepresentation();
     GUIManagedObject offerObject = offerService.getStoredOffer(offerId);
-    if(offerObject instanceof Offer){
-      Offer offer = (Offer) offerObject;
-      jsonObject.put("remainingStock", offer.getApproximateRemainingStock());
-    }
+    if (offerObject instanceof Offer)
+      {
+        Offer offer = (Offer) offerObject;
+        jsonObject.put("remainingStock", offer.getApproximateRemainingStock());
+      }
     return jsonObject;
   }
-  
+
 }

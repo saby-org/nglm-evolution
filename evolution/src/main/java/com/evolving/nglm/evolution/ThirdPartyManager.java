@@ -3971,7 +3971,8 @@ public class ThirdPartyManager
                      TokenStatus status = dnboToken.getTokenStatus();
                      if (status != null && (status.equals(TokenStatus.New) || status.equals(TokenStatus.Bound)) && !token.getTokenExpirationDate().before(now))
                        {
-                         response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService, callingChannel, null, paymentMeanService, tenantID);
+                         List<ProposedOfferDetails> proposedOfferDetails = dnboToken.getProposedOfferDetails();
+                         response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService, callingChannel, proposedOfferDetails, paymentMeanService, tenantID);
                          response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
                          response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
                          return JSONUtilities.encodeObject(response);
@@ -4249,7 +4250,7 @@ public class ThirdPartyManager
     if (presentedOffers.isEmpty())
       {
         log.error(returnedLog.toString()); // is not expected, trace errors
-        token.setPresentedOfferIDs(new ArrayList<>());
+        token.setPresentedOffers(new ArrayList<ProposedOfferDetails>());
       }
     else
       {
@@ -4367,7 +4368,9 @@ public class ThirdPartyManager
        // Update token locally, so that it is correctly displayed in the response
        // For the real token stored in Kafka, this is done offline in EnvolutionEngine.
 
-       token.setPresentedOfferIDs(presentedOfferIDs);
+       //token.setPresentedOfferIDs(presentedOfferIDs);
+       List<ProposedOfferDetails> presentedOffersList = presentedOffers.stream().collect(Collectors.toList());
+       token.setPresentedOffers(presentedOffersList);
        token.setPresentedOffersSalesChannel(salesChannelID);
        token.setTokenStatus(TokenStatus.Bound);
        if (token.getCreationDate() == null)
@@ -4484,7 +4487,7 @@ public class ThirdPartyManager
 
       // Check that offer has been presented to customer
       
-      List<String> offers = subscriberStoredToken.getPresentedOfferIDs();
+      List<String> offers = subscriberStoredToken.getProposedOfferDetails().stream().map(offerDetails -> offerDetails.getOfferId()).collect(Collectors.toList());
       int position = 0;
       boolean found = false;
       for (String offID : offers)

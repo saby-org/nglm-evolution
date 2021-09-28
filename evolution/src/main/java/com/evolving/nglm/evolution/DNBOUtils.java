@@ -14,6 +14,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
@@ -307,7 +308,8 @@ public class DNBOUtils
           tokenContextUpdate.getParameters().put("action.presented.offer." + (j+1), "");
         }
       
-      token.setPresentedOfferIDs(presentedOfferIDs);
+      List<ProposedOfferDetails> proposedOfferDetails = presentedOffers.stream().collect(Collectors.toList());
+      token.setPresentedOffers(proposedOfferDetails);
       // TODO token.setPresentedOffersSalesChannel(salesChannelID);
       token.setBoundDate(now);
       // add a new presentation in the token
@@ -736,7 +738,7 @@ public class DNBOUtils
           return invalidPurchase(evolutionEventContext, subscriberEvaluationRequest, null, null, null);
         }
       DNBOToken token = (DNBOToken) lastToken;
-      List<String> presentedOffers = token.getPresentedOfferIDs();
+      List<String> presentedOffers = token.getProposedOfferDetails().stream().map(offerDetails -> offerDetails.getOfferId()).collect(Collectors.toList());
       if (presentedOffers == null)
         {
           String str = "token has no presented offers"; 
