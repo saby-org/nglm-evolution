@@ -61,7 +61,7 @@ public class DNBOToken extends Token
     schemaBuilder.field("scoringStrategyIDs", SchemaBuilder.array(Schema.STRING_SCHEMA).defaultValue(new ArrayList<String>()).schema());
     schemaBuilder.field("isAutoBounded", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("isAutoRedeemed", Schema.BOOLEAN_SCHEMA);
-    schemaBuilder.field("proposedOfferDetails", SchemaBuilder.array(ProposedOfferDetails.schema()).schema()); // rename from presentedOfferIDs to proposedOfferDetails
+    schemaBuilder.field("proposedOfferDetails", SchemaBuilder.array(ProposedOfferDetails.schema()).defaultValue(new ArrayList<Presentation>()).schema()); // rename from presentedOfferIDs to proposedOfferDetails
     schemaBuilder.field("presentedOffersSalesChannel", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("acceptedOfferID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("presentationDates", SchemaBuilder.array(Timestamp.SCHEMA).defaultValue(new ArrayList<Date>()).schema());
@@ -234,7 +234,7 @@ public class DNBOToken extends Token
     struct.put("scoringStrategyIDs",dnboToken.getScoringStrategyIDs());
     struct.put("isAutoBounded", dnboToken.isAutoBound());
     struct.put("isAutoRedeemed", dnboToken.isAutoRedeemed());
-    struct.put("proposedOfferDetails", dnboToken.getProposedOfferDetails());
+    struct.put("proposedOfferDetails", packProposedOfferDetails(dnboToken.getProposedOfferDetails()));
     struct.put("presentedOffersSalesChannel", dnboToken.getPresentedOffersSalesChannel());
     struct.put("acceptedOfferID", dnboToken.getAcceptedOfferID());
     struct.put("presentationDates", dnboToken.getPresentationDates());
@@ -244,6 +244,16 @@ public class DNBOToken extends Token
     return struct;
   }
 
+  private static List<Object> packProposedOfferDetails(List<ProposedOfferDetails> proposedOfferDetails)
+  {
+    List<Object> result = new ArrayList<Object>();
+    for (ProposedOfferDetails offerDetails : proposedOfferDetails)
+      {
+        result.add(ProposedOfferDetails.pack(offerDetails));
+      }
+    return result;
+  }
+  
   private static List<Object> packPresentationHistory(List<Presentation> presentationHistory)
   {
     List<Object> result = new ArrayList<Object>();

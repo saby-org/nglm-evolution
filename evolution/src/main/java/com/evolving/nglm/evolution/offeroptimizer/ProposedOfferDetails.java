@@ -1,39 +1,21 @@
 package com.evolving.nglm.evolution.offeroptimizer;
 
-import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.UUID;
 
-import com.evolving.nglm.evolution.EvolutionUtilities;
-import com.evolving.nglm.evolution.GUIManagedObject;
-import com.evolving.nglm.evolution.JourneyEndedState;
-import com.evolving.nglm.evolution.JourneyState;
-import com.evolving.nglm.evolution.MetricHistory;
-import com.evolving.nglm.evolution.Offer;
-import com.evolving.nglm.evolution.OfferService;
-import com.evolving.nglm.evolution.Presentation;
-import com.evolving.nglm.evolution.ReScheduledDeliveryRequest;
-import com.evolving.nglm.evolution.SubscriberProfile;
-import com.evolving.nglm.evolution.SubscriberState;
-import com.evolving.nglm.evolution.TimedEvaluation;
-
-import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
-import org.apache.kafka.connect.data.Timestamp;
 import org.json.simple.JSONObject;
 
+import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.evolution.DNBOToken;
+import com.evolving.nglm.evolution.GUIManagedObject;
+import com.evolving.nglm.evolution.Offer;
+import com.evolving.nglm.evolution.OfferService;
+import com.evolving.nglm.evolution.SubscriberState;
 
 /**
  * This class represents the result of an offer proposition from the algorithm
@@ -76,6 +58,12 @@ public class ProposedOfferDetails implements Comparable<ProposedOfferDetails>
     this.salesChannelId = salesChannelId;
     this.offerScore = offerScore;
   }
+  
+  //
+  // serde
+  //
+
+  private static ConnectSerde<ProposedOfferDetails> serde = new ConnectSerde<ProposedOfferDetails>(schema, false, ProposedOfferDetails.class, ProposedOfferDetails::pack, ProposedOfferDetails::unpack);
 
   //
   // accessor
@@ -85,6 +73,7 @@ public class ProposedOfferDetails implements Comparable<ProposedOfferDetails>
   {
     return schema;
   }
+  public static ConnectSerde<ProposedOfferDetails> serde() { return serde; }
   
   public String getOfferId()
   {
@@ -168,7 +157,7 @@ public class ProposedOfferDetails implements Comparable<ProposedOfferDetails>
    //
 
    Struct valueStruct = (Struct) value;
-   String offerId = valueStruct.getString("subscriberID");
+   String offerId = valueStruct.getString("offerId");
    double offerScore = valueStruct.getFloat64("offerScore");
 
    //
