@@ -5388,7 +5388,6 @@ public class EvolutionEngine
                     subscriberStoredToken.setPresentedOffers(proposedOfferDetailsList); // replace whatever was there
                     String salesChannelID = presentationLog.getSalesChannelID();
                     subscriberStoredToken.setPresentedOffersSalesChannel(salesChannelID); // replace whatever was there
-                    log.info("RAJ K proposedOfferDetailsList {}", proposedOfferDetailsList);
                   }
               }
           }
