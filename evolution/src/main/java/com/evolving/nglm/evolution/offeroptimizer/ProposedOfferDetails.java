@@ -43,7 +43,7 @@ public class ProposedOfferDetails implements Comparable<ProposedOfferDetails>
       schemaBuilder.name("proposed_offer_details");
       schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
       schemaBuilder.field("offerId", Schema.STRING_SCHEMA);
-      schemaBuilder.field("offerScore", Schema.OPTIONAL_FLOAT32_SCHEMA);
+      schemaBuilder.field("offerScore", Schema.OPTIONAL_FLOAT64_SCHEMA);
       schema = schemaBuilder.build();
     };
 
@@ -158,7 +158,7 @@ public class ProposedOfferDetails implements Comparable<ProposedOfferDetails>
 
    Struct valueStruct = (Struct) value;
    String offerId = valueStruct.getString("offerId");
-   double offerScore = valueStruct.getFloat64("offerScore");
+   Double offerScore = valueStruct.getFloat64("offerScore");
 
    //
    // return
