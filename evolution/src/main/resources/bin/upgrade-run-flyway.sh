@@ -112,6 +112,9 @@ do
   # flyway info -url=$THE_URL -user=$THE_USER -password=$THE_PASS -driver=$THE_DRIVER -locations=filesystem:$LOCATION
   echo
 
+  # because ENV VARS are changing SQL files(ussualy when moving from HTTP to HTTPS or changing URL from IP to HOSTNAME ) , repair must be run before migrate 
+  flyway repair -url=$THE_URL -user=$THE_USER -password=$THE_PASS -driver=$THE_DRIVER -locations=filesystem:$LOCATION
+
   flyway migrate -url=$THE_URL -user=$THE_USER -password=$THE_PASS -driver=$THE_DRIVER -locations=filesystem:$LOCATION
 
 done
