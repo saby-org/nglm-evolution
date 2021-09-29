@@ -5,6 +5,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -63,13 +64,13 @@ public class GrafanaUtils
         for (Tenant tenant : tenants)
           {
             int tenantID = tenant.getTenantID();
-            if (tenantID == 0)
-              {
-                continue;
-              }
 
             // check if organization exists
             String orgName = tenant.getDisplay();
+            if(tenantID == 0) 
+            { 
+              orgName = "Main Org."; 
+            }
             if (!existingOrgs.containsKey(orgName))
               {
                 // create this org.
@@ -89,7 +90,7 @@ public class GrafanaUtils
 
                 if (switchOK)
                   {
-                    // Prepare Data sources
+                    // -----------Prepare Data sources-----------------
                     // check which dashboard already exist in this org
                     HashMap<String, Integer> exisitingDatasources = getExistingGrafanaDatasourceForOrg(orgID);
 
@@ -175,21 +176,61 @@ public class GrafanaUtils
                           }
                       }
 
+                    // -----------Prepare Dashboards-----------------
                     // check which dashboard already exists in this org and extract its uid
                     HashMap<String, Integer> exisitingDashBoards = getExistingGrafanaDashboardForOrg(orgID);
                     HashMap<String, String> uidOfExistingDashBoards = getUIDofExistingGrafanaDashboardForOrg(orgID);
                     
                     // retrieve all dashboards's configuration that must exist at the end
                     reflections = new Reflections(new ConfigurationBuilder().setUrls(ClasspathHelper.forPackage("com.evolving.nglm.evolution", ClasspathHelper.contextClassLoader(), ClasspathHelper.staticClassLoader())).setScanners(new ResourcesScanner()));
-                    fileNames = reflections.getResources(x -> x.startsWith("grafana-gui"));
+                    Set<String> dbFileNames = reflections.getResources(x -> x.startsWith("grafana-gui"));
+                    Set<String> nonT0FileNames = new LinkedHashSet<String>();
+                    Set<String> t0FileNames = new LinkedHashSet<String>();
+                    for(String fileName : dbFileNames)
+                    {
+                      log.info("fileName under study = " + fileName);
+                      log.info("tenant ID under study = " + tenantID);
+                      if(tenantID == 0 && fileName.startsWith("config/grafana-gui-t0"))
+                      {
+                        t0FileNames.add(fileName);
+                      }
+                      else if(tenantID != 0 && !fileName.startsWith("config/grafana-gui-t0")){
+                        nonT0FileNames.add(fileName);
+                      }
+                    }
+                    log.info("NONt0files    " +nonT0FileNames);
+                    log.info("t0files    " +t0FileNames);
+                    if(tenantID == 0)
+                    {
+                      createDashboardForOrg(elasticsearch, existingOrgs, tenantID, orgID, t0FileNames, exisitingDashBoards,
+                        uidOfExistingDashBoards);
+                    }
+                    else {
+                      createDashboardForOrg(elasticsearch, existingOrgs, tenantID, orgID, nonT0FileNames, exisitingDashBoards,
+                        uidOfExistingDashBoards);
+                    }
+                  }
+                else
+                  {
+                    log.warn("GrafanaUtils.prepareGrafanaForTenants: Can't switch to org " + orgID);
+                    return false;
+                  }
+              }
+          }
+        return true;
+      }
+      catch(Exception e)
+      {
+        log.warn("Exception " + e.getClass().getName() + " while creating grafana configuration", e);
+        return false;
+      }
+  }
 
+  private static void createDashboardForOrg(ElasticsearchClientAPI elasticsearch, HashMap<String, Integer> existingOrgs,
+      int tenantID, int orgID, Set<String> fileNames, HashMap<String, Integer> exisitingDashBoards,
+      HashMap<String, String> uidOfExistingDashBoards) {
                     for (String currentFileName : fileNames)
                     {
-                      // Dashboards of tenant 0
-                      if(currentFileName.substring(19,22).equals("t0-")) 
-                      {
-                        continue;
-                      }
                       try {
                         // check if the dashboard already exists
                         InputStream is = GrafanaUtils.class.getResourceAsStream("/" + currentFileName);
@@ -297,21 +338,6 @@ public class GrafanaUtils
 
                     }
                   }
-                else
-                  {
-                    log.warn("GrafanaUtils.prepareGrafanaForTenants: Can't switch to org " + orgID);
-                    return false;
-                  }
-              }
-          }
-        return true;
-      }
-      catch(Exception e)
-      {
-        log.warn("Exception " + e.getClass().getName() + " while creating grafana configuration", e);
-        return false;
-      }
-  }
   
   private static HttpResponse sendGrafanaCurl(JSONObject body, String uri, String httpMethod) {
 
