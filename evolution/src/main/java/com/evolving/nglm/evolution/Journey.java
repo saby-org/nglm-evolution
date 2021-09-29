@@ -4474,29 +4474,31 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     // targetCount EVPRO-977
     //
     
-    long targetCount = 0;
-    if (journeyService.getJourneyStatus(this) == JourneyStatus.StartedApproved || journeyService.getJourneyStatus(this) == JourneyStatus.Started)
+    long targetCount = TargetingType.FileVariables == getTargetingType() ? JSONUtilities.decodeLong(getJSONRepresentation(), "targetCount", 0L) : this.evaluateTargetCount(elasticsearch, getTenantID());
+    long journeySubsCount = 0;
+    JourneyStatus journeyStatus = journeyService.getJourneyStatus(this);
+    if (journeyStatus == JourneyStatus.Running || journeyStatus == JourneyStatus.Suspended || journeyStatus == JourneyStatus.Complete)
       {
         //
         //  recalculate
         //
         
-        targetCount = this.evaluateTargetCount(elasticsearch, getTenantID());
+        List<String> journeyIDs = new ArrayList<String>();
+        journeyIDs.add(getGUIManagedObjectID());
+        Map<String, Long> journeysubsCountMap;
+        try
+          {
+            journeysubsCountMap = elasticsearch.getJourneySubscriberCountMap(journeyIDs);
+          } 
+        catch (ElasticsearchClientException e)
+          {
+            journeysubsCountMap = new HashMap<String, Long>();
+          }
+        journeySubsCount = journeysubsCountMap.get(getGUIManagedObjectID()) == null ? new Long(0) : journeysubsCountMap.get(getGUIManagedObjectID());
       }
-    List<String> journeyIDs = new ArrayList<String>();
-    journeyIDs.add(getGUIManagedObjectID());
-    Map<String, Long> journeysubsCount;
-    try
-      {
-        journeysubsCount = elasticsearch.getJourneySubscriberCountMap(journeyIDs);
-      } 
-    catch (ElasticsearchClientException e)
-      {
-        journeysubsCount = new HashMap<String, Long>();
-      }
-    long journeySubscount = journeysubsCount.get(getGUIManagedObjectID()) == null ? new Long(0) : journeysubsCount.get(getGUIManagedObjectID());
-    targetCount = targetCount > journeySubscount ? targetCount : journeySubscount;
-    
+    log.info("RAJ K initial targetCount {}, journeySubsCount {}", targetCount, journeySubsCount);
+    targetCount = targetCount > journeySubsCount ? targetCount : journeySubsCount;
+    log.info("RAJ K final targetCount {}", targetCount);
     
     //
     // documentMap
@@ -4520,10 +4522,11 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     //
     // return
     //
+    
     return documentMap;
   }
-  @Override
-  public String getESIndexName()
+  
+  @Override public String getESIndexName()
   {
     return "mapping_journeys";
   }
