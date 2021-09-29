@@ -1147,6 +1147,13 @@
       "availableScheduling" : [ "none","daily" ],
       "defaultReportPeriodQuantity" : 1,
       "defaultReportPeriodUnit"     : "DAYS"
+    },
+    {
+      "name"                : "badgeCustomerReport",
+      "display"             : "Badge Customer Report",
+      "description"         : "Description of status of badges delivered to customers",
+      "class"               : "com.evolving.nglm.evolution.reports.badgeCustomer.BadgeCustomerReportDriver",
+      "availableScheduling" : [ "none","daily", "weekly", "monthly" ]
     }
   ],
 

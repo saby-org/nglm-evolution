@@ -68,7 +68,7 @@ public class BadgeService extends GUIService
   {
     this(bootstrapServers, groupID, badgeTopic, masterService, (BadgeListener) null, true);
   }
-
+  
   //
   //  getSuperListener
   //
