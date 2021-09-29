@@ -188,8 +188,6 @@ public class GrafanaUtils
                     Set<String> t0FileNames = new LinkedHashSet<String>();
                     for(String fileName : dbFileNames)
                     {
-                      log.info("fileName under study = " + fileName);
-                      log.info("tenant ID under study = " + tenantID);
                       if(tenantID == 0 && fileName.startsWith("config/grafana-gui-t0"))
                       {
                         t0FileNames.add(fileName);
@@ -198,8 +196,6 @@ public class GrafanaUtils
                         nonT0FileNames.add(fileName);
                       }
                     }
-                    log.info("NONt0files    " +nonT0FileNames);
-                    log.info("t0files    " +t0FileNames);
                     if(tenantID == 0)
                     {
                       createDashboardForOrg(elasticsearch, existingOrgs, tenantID, orgID, t0FileNames, exisitingDashBoards,
