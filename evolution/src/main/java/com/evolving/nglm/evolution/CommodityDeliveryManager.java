@@ -6,9 +6,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.evolving.nglm.core.*;
-import com.evolving.nglm.evolution.commoditydelivery.CommodityDeliveryException;
-import com.evolving.nglm.evolution.commoditydelivery.CommodityDeliveryManagerRemovalUtils;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -20,13 +17,24 @@ import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.Deployment;
+import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.RLMDateUtils;
+import com.evolving.nglm.core.ReferenceDataReader;
+import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.core.ServerRuntimeException;
+import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EmptyFulfillmentManager.EmptyFulfillmentRequest;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
+import com.evolving.nglm.evolution.Expression.ConstantExpression;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.INFulfillmentManager.INFulfillmentRequest;
+import com.evolving.nglm.evolution.commoditydelivery.CommodityDeliveryException;
+import com.evolving.nglm.evolution.commoditydelivery.CommodityDeliveryManagerRemovalUtils;
 
 
 public class CommodityDeliveryManager
@@ -733,11 +741,46 @@ public class CommodityDeliveryManager
       }
     }
 
-    @Override public Map<String, String> getGUIDependencies(JourneyNode journeyNode, int tenantID)
+    @Override public Map<String, String> getGUIDependencies(List<GUIService> guiServiceList, JourneyNode journeyNode, int tenantID)
     {
       Map<String, String> result = new HashMap<String, String>();
-      String pointID = (String) journeyNode.getNodeParameters().get("node.parameter.commodityid");
-      if (pointID != null) result.put("point", pointID.startsWith(POINT_PREFIX)?pointID.replace(POINT_PREFIX, ""):"");
+      String commodityidID = null;
+      Object nodeParamObj = journeyNode.getNodeParameters().get("node.parameter.commodityid");
+      if (nodeParamObj instanceof ParameterExpression && ((ParameterExpression) nodeParamObj).getExpression() instanceof ConstantExpression)
+        {
+          commodityidID  = (String)  ((ParameterExpression) nodeParamObj).getExpression().evaluateConstant();
+        }
+      else if (nodeParamObj instanceof String)
+        {
+          commodityidID = (String) nodeParamObj;
+        }
+      else
+        {
+          log.error("unsupported value/type expression {} - skipping for node.parameter.commodityid", nodeParamObj);
+        }
+      if (commodityidID != null)
+        {
+          if (commodityidID.startsWith(POINT_PREFIX))
+            {
+              result.put("point", commodityidID.replace(POINT_PREFIX, ""));
+            }
+          else
+            {
+              DeliverableService deliverableService = (DeliverableService) guiServiceList.stream().filter(srvc -> srvc.getClass() == DeliverableService.class).findFirst().orElse(null);
+              if (deliverableService != null)
+                {
+                  GUIManagedObject uncheckedDeliverable = deliverableService.getStoredDeliverable(commodityidID);
+                  if (uncheckedDeliverable != null && uncheckedDeliverable.getAccepted())
+                    {
+                      result.put("deliverable", commodityidID);
+                    }
+                }
+              else
+                {
+                  throw new ServerRuntimeException("deliverableService not found in guiServiceList");
+                }
+            }
+        }
       return result;
     }
 

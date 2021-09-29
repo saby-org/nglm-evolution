@@ -96,7 +96,7 @@ public class PeriodicEvaluationFileSourceConnector extends FileSourceConnector
         {
           JSONObject jsonRoot = (JSONObject) (new JSONParser()).parse(record);          
           String subscriberID = JSONUtilities.decodeString(jsonRoot, "subscriberID", true);
-          TimedEvaluation periodicEvaluation = new TimedEvaluation(subscriberID, SystemTime.getCurrentTime(), true, false);
+          TimedEvaluation periodicEvaluation = new TimedEvaluation(subscriberID, SystemTime.getCurrentTime(), true, false, "CDR");
           result = Collections.<KeyValue>singletonList(new KeyValue(Schema.STRING_SCHEMA, periodicEvaluation.getSubscriberID(), TimedEvaluation.schema(), TimedEvaluation.pack(periodicEvaluation)));
         }
       catch (org.json.simple.parser.ParseException|JSONUtilitiesException e)

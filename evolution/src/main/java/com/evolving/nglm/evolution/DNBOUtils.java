@@ -11,7 +11,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
@@ -20,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
+import com.evolving.nglm.evolution.Expression.ConstantExpression;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.Journey.ContextUpdate;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
@@ -388,6 +391,40 @@ public class DNBOUtils
       *****************************************/
       return result;
     }
+    
+    @Override public Map<String, String> getGUIDependencies(List<GUIService> guiServiceList, JourneyNode journeyNode, int tenantID)
+    {
+      Map<String, String> result = new HashMap<String, String>();
+      Object tokentypeNodeParamObj = journeyNode.getNodeParameters().get("node.parameter.tokentype");
+      if (tokentypeNodeParamObj instanceof ParameterExpression && ((ParameterExpression) tokentypeNodeParamObj).getExpression() instanceof ConstantExpression)
+        {
+          String nodeParam  = (String)  ((ParameterExpression) tokentypeNodeParamObj).getExpression().evaluateConstant();
+          if (nodeParam != null) result.put("tokentype", nodeParam);
+        }
+      else if (tokentypeNodeParamObj instanceof String)
+        {
+          result.put("tokentype", (String) tokentypeNodeParamObj);
+        }
+      else
+        {
+          log.error("unsupported value/type expression {} - skipping", tokentypeNodeParamObj);
+        }
+      Object nodeParamObj = journeyNode.getNodeParameters().get("node.parameter.strategy");
+      if (nodeParamObj instanceof ParameterExpression && ((ParameterExpression) nodeParamObj).getExpression() instanceof ConstantExpression)
+        {
+          String nodeParam  = (String)  ((ParameterExpression) nodeParamObj).getExpression().evaluateConstant();
+          if (nodeParam != null) result.put("presentationstrategy", nodeParam);
+        }
+      else if (nodeParamObj instanceof String)
+        {
+          result.put("presentationstrategy", (String) nodeParamObj);
+        }
+      else
+        {
+          log.error("unsupported value/type expression {} - skipping for node.parameter.strategy", nodeParamObj);
+        }
+      return result;
+    }
   }
   
   /*****************************************
@@ -453,6 +490,41 @@ public class DNBOUtils
       *****************************************/
       return result;
     }
+    
+    @Override public Map<String, String> getGUIDependencies(List<GUIService> guiServiceList, JourneyNode journeyNode, int tenantID)
+    {
+      Map<String, String> result = new HashMap<String, String>();
+      Object tokentypeNodeParamObj = journeyNode.getNodeParameters().get("node.parameter.tokentype");
+      if (tokentypeNodeParamObj instanceof ParameterExpression && ((ParameterExpression) tokentypeNodeParamObj).getExpression() instanceof ConstantExpression)
+        {
+          String nodeParam  = (String)  ((ParameterExpression) tokentypeNodeParamObj).getExpression().evaluateConstant();
+          if (nodeParam != null) result.put("tokentype", nodeParam);
+        }
+      else if (tokentypeNodeParamObj instanceof String)
+        {
+          result.put("tokentype", (String) tokentypeNodeParamObj);
+        }
+      else
+        {
+          log.error("unsupported value/type expression {} - skipping", tokentypeNodeParamObj);
+        }
+      Object nodeParamObj = journeyNode.getNodeParameters().get("node.parameter.strategy");
+      if (nodeParamObj instanceof ParameterExpression && ((ParameterExpression) nodeParamObj).getExpression() instanceof ConstantExpression)
+        {
+          String nodeParam  = (String)  ((ParameterExpression) nodeParamObj).getExpression().evaluateConstant();
+          if (nodeParam != null) result.put("presentationstrategy", nodeParam);
+        }
+      else if (nodeParamObj instanceof String)
+        {
+          result.put("presentationstrategy", (String) nodeParamObj);
+        }
+      else
+        {
+          log.error("unsupported value/type expression {} - skipping for node.parameter.strategy", nodeParamObj);
+        }
+      return result;
+    }
+    
   }
 
   
@@ -556,6 +628,40 @@ public class DNBOUtils
       *  return
       *
       *****************************************/
+      return result;
+    }
+    
+    @Override public Map<String, String> getGUIDependencies(List<GUIService> guiServiceList, JourneyNode journeyNode, int tenantID)
+    {
+      Map<String, String> result = new HashMap<String, String>();
+      Object tokentypeNodeParamObj = journeyNode.getNodeParameters().get("node.parameter.tokentype");
+      if (tokentypeNodeParamObj instanceof ParameterExpression && ((ParameterExpression) tokentypeNodeParamObj).getExpression() instanceof ConstantExpression)
+        {
+          String nodeParam  = (String)  ((ParameterExpression) tokentypeNodeParamObj).getExpression().evaluateConstant();
+          if (nodeParam != null) result.put("tokentype", nodeParam);
+        }
+      else if (tokentypeNodeParamObj instanceof String)
+        {
+          result.put("tokentype", (String) tokentypeNodeParamObj);
+        }
+      else
+        {
+          log.error("unsupported value/type expression {} - skipping", tokentypeNodeParamObj);
+        }
+      Object nodeParamObj = journeyNode.getNodeParameters().get("node.parameter.strategy");
+      if (nodeParamObj instanceof ParameterExpression && ((ParameterExpression) nodeParamObj).getExpression() instanceof ConstantExpression)
+        {
+          String nodeParam  = (String)  ((ParameterExpression) nodeParamObj).getExpression().evaluateConstant();
+          if (nodeParam != null) result.put("presentationstrategy", nodeParam);
+        }
+      else if (nodeParamObj instanceof String)
+        {
+          result.put("presentationstrategy", (String) nodeParamObj);
+        }
+      else
+        {
+          log.error("unsupported value/type expression {} - skipping for node.parameter.strategy", nodeParamObj);
+        }
       return result;
     }
   }
