@@ -67,6 +67,7 @@ import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.StockMonitor.StockableItem;
 import com.evolving.nglm.evolution.notification.NotificationTemplateParameters;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientException;
 
 @GUIDependencyDef(objectType = "journey", serviceClass = JourneyService.class, dependencies = { "deliverable", "offer", "journey", "campaign", "journeyobjective" , "target" , "workflow" , "mailtemplate" , "pushtemplate" , "dialogtemplate", "voucher", "loyaltyProgramPoints", "loyaltyprogramchallenge", "loyaltyprogrammission", "sourceaddress", "presentationstrategy"})
 public class Journey extends GUIManagedObject implements StockableItem, GUIManagedObject.ElasticSearchMapping
@@ -4418,7 +4419,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     return "_" + this.getJourneyID().hashCode();
   }
   @Override
-  public Map<String, Object> getESDocumentMap(JourneyService journeyService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, ContactPolicyService contactPolicyService)
+  public Map<String, Object> getESDocumentMap(ElasticsearchClientAPI elasticsearch, JourneyService journeyService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, ContactPolicyService contactPolicyService)
   {
     Map<String,Object> documentMap = new HashMap<String,Object>();
     
@@ -4470,15 +4471,37 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     }
     
     //
-    // targetCount: retrieved from JSON, not in the object
+    // targetCount EVPRO-977
     //
-    Object targetCountObj = this.getJSONRepresentation().get("targetCount");
-    long targetCount = (targetCountObj != null && targetCountObj instanceof Long) ? (long) targetCountObj : 0;
+    
+    long targetCount = 0;
+    if (journeyService.getJourneyStatus(this) == JourneyStatus.StartedApproved || journeyService.getJourneyStatus(this) == JourneyStatus.Started)
+      {
+        //
+        //  recalculate
+        //
+        
+        targetCount = this.evaluateTargetCount(elasticsearch, getTenantID());
+      }
+    List<String> journeyIDs = new ArrayList<String>();
+    journeyIDs.add(getGUIManagedObjectID());
+    Map<String, Long> journeysubsCount;
+    try
+      {
+        journeysubsCount = elasticsearch.getJourneySubscriberCountMap(journeyIDs);
+      } 
+    catch (ElasticsearchClientException e)
+      {
+        journeysubsCount = new HashMap<String, Long>();
+      }
+    long journeySubscount = journeysubsCount.get(getGUIManagedObjectID()) == null ? new Long(0) : journeysubsCount.get(getGUIManagedObjectID());
+    targetCount = targetCount > journeySubscount ? targetCount : journeySubscount;
     
     
     //
     // documentMap
     //
+    
     documentMap.put("journeyID", this.getJourneyID());
     documentMap.put("tenantID", this.getTenantID());
     documentMap.put("display", this.getGUIManagedObjectDisplay());

@@ -1486,7 +1486,7 @@ public class GUIService {
         else
           {
             UpdateRequest request = new UpdateRequest(((ElasticSearchMapping) guiManagedObject).getESIndexName(), ((ElasticSearchMapping) guiManagedObject).getESDocumentID());
-            request.doc(((ElasticSearchMapping) guiManagedObject).getESDocumentMap(journeyService, targetService, journeyObjectiveService, contactPolicyService));
+            request.doc(((ElasticSearchMapping) guiManagedObject).getESDocumentMap(elasticsearch, journeyService, targetService, journeyObjectiveService, contactPolicyService));
             request.docAsUpsert(true);
             request.retryOnConflict(4);
             try
