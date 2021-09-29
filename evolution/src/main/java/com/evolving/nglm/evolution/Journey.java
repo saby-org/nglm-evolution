@@ -4496,9 +4496,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
           }
         journeySubsCount = journeysubsCountMap.get(getGUIManagedObjectID()) == null ? new Long(0) : journeysubsCountMap.get(getGUIManagedObjectID());
       }
-    log.info("RAJ K initial targetCount {}, journeySubsCount {}", targetCount, journeySubsCount);
     targetCount = targetCount > journeySubsCount ? targetCount : journeySubsCount;
-    log.info("RAJ K final targetCount {}", targetCount);
     
     //
     // documentMap

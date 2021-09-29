@@ -255,7 +255,6 @@ public class GUIService {
             //  ES update
             //
             
-            log.info("RAJ K updating ES index...");
             for (GUIManagedObject guiManagedObject : getStoredGUIManagedObjects(0))
               {
                 updateElasticSearch(guiManagedObject);
