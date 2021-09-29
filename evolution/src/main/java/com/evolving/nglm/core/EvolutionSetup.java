@@ -766,12 +766,20 @@ public class EvolutionSetup
    */
   private static void handleSpecialSchemasSetup() throws EvolutionSetupException 
   {
-    //
     // Call .serialize() (with fake object) in order to force push schema in Schema Registry if not already present.
     // The object passed as parameter will not be pushed in the topic. 
     // The serialize() function only return a byte[] that we do not use nor push.
     //
+    // if isKey = true   in ConnectSerde -> push in topic-key
+    // if isKey = false  in ConnectSerde -> push in topic-value
     
+    // isKey = true (topic-key)
+    StringKey.serde().serializer().serialize(
+        DeploymentCommon.getSubscriberPredictionsPushTopic(), 
+        new StringKey("001")
+      );
+
+    // isKey = false (topic-key)
     SubscriberPredictions.Prediction.serde().serializer().serialize(
         DeploymentCommon.getSubscriberPredictionsPushTopic(), 
         new SubscriberPredictions.Prediction("001", "2", 0.0, 0.0, new Date())

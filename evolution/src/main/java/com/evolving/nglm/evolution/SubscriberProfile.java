@@ -931,8 +931,8 @@ public abstract class SubscriberProfile
             prediction.put("predictionID", pred.predictionID);
             prediction.put("score", pred.score);
             prediction.put("position", pred.position);
-            prediction.put("date", pred.date.getTime());
-            previous.add(pred);
+            prediction.put("date", RLMDateUtils.formatDateForElasticsearchDefault(pred.date));
+            previous.add(prediction);
           }
         for (SubscriberPredictions.Prediction pred : this.predictions.getCurrent().values())
           {
@@ -940,8 +940,8 @@ public abstract class SubscriberProfile
             prediction.put("predictionID", pred.predictionID);
             prediction.put("score", pred.score);
             prediction.put("position", pred.position);
-            prediction.put("date", pred.date.getTime());
-            current.add(pred);
+            prediction.put("date", RLMDateUtils.formatDateForElasticsearchDefault(pred.date));
+            current.add(prediction);
           }
         predictionsJSON.put("previous", previous);
         predictionsJSON.put("current", current);

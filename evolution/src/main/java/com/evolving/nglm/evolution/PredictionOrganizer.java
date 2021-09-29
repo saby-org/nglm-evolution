@@ -264,7 +264,8 @@ public class PredictionOrganizer
           return;
         }
         
-        getSubscribersAndPush(orderID, metadata.getLastExecutionID(), order.getTargetCriteria(), order.getTenantID(), elasticsearchRestClient);
+        int executionID = metadata.getLastExecutionID() + 1; // +1 because it is the next execution
+        getSubscribersAndPush(orderID, executionID, order.getTargetCriteria(), order.getTenantID(), elasticsearchRestClient);
         
         // End of requests generation phase - notify metadata (increase lastExecutionID)
         updateMetadata(orderID);
