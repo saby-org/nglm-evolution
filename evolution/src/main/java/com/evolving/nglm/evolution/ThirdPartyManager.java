@@ -4275,7 +4275,6 @@ public class ThirdPartyManager
             positions.add(new Integer(position));
             position++;
             presentedOfferScores.add(presentedOffer.getOfferScore());
-            //presentedOfferScores.add(1.0);  //RAJ K why hard coded?
           }
          
         presentedOfferIDs = (ArrayList<String>) presentedOfferIDs.stream().filter(offerID -> (offerValidation(offerID,
