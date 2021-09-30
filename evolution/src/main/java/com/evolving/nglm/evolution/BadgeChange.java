@@ -155,7 +155,7 @@ public class BadgeChange extends SubscriberStreamOutput implements EvolutionEngi
     Struct struct = new Struct(schema);
     packSubscriberStreamOutput(struct, badgeChange);
     struct.put("subscriberID", badgeChange.getSubscriberID());
-    struct.put("deliveryRequestID", badgeChange.getSubscriberID());
+    struct.put("deliveryRequestID", badgeChange.getDeliveryRequestID());
     struct.put("eventDate", badgeChange.getEventDate());
     struct.put("eventID", badgeChange.getEventID());
     struct.put("action", badgeChange.getAction().getExternalRepresentation());

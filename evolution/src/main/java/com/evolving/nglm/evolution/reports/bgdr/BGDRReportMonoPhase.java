@@ -20,44 +20,35 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.RLMDateUtils;
+import com.evolving.nglm.evolution.Badge;
+import com.evolving.nglm.evolution.BadgeObjectiveInstance;
+import com.evolving.nglm.evolution.BadgeObjectiveService;
+import com.evolving.nglm.evolution.BadgeService;
 import com.evolving.nglm.evolution.DeliveryManager;
 import com.evolving.nglm.evolution.DeliveryRequest;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.GUIManagedObject;
 import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.LoyaltyProgramService;
-import com.evolving.nglm.evolution.Offer;
-import com.evolving.nglm.evolution.OfferProduct;
 import com.evolving.nglm.evolution.OfferService;
-import com.evolving.nglm.evolution.OfferVoucher;
-import com.evolving.nglm.evolution.Product;
-import com.evolving.nglm.evolution.ProductService;
-import com.evolving.nglm.evolution.VoucherService;
 import com.evolving.nglm.evolution.RESTAPIGenericReturnCodes;
-import com.evolving.nglm.evolution.Report;
-import com.evolving.nglm.evolution.Reseller;
-import com.evolving.nglm.evolution.ResellerService;
-import com.evolving.nglm.evolution.SalesChannel;
 import com.evolving.nglm.evolution.SalesChannelService;
-import com.evolving.nglm.evolution.Supplier;
-import com.evolving.nglm.evolution.SupplierService;
-import com.evolving.nglm.evolution.Voucher;
 import com.evolving.nglm.evolution.reports.ReportCsvFactory;
-import com.evolving.nglm.evolution.reports.notification.NotificationReportMonoPhase;
 import com.evolving.nglm.evolution.reports.ReportMonoPhase;
 import com.evolving.nglm.evolution.reports.ReportMonoPhase.PERIOD;
 import com.evolving.nglm.evolution.reports.ReportUtils;
-import com.evolving.nglm.evolution.reports.ReportsCommonCode;
-import com.evolving.nglm.evolution.reports.ReportUtils.ReportElement;
-import com.evolving.nglm.evolution.reports.bdr.BDRReportMonoPhase;
-
 
 public class BGDRReportMonoPhase implements ReportCsvFactory
 {
   private static final Logger log = LoggerFactory.getLogger(BGDRReportMonoPhase.class);
- 
+
   private static final String CSV_SEPARATOR = ReportUtils.getSeparator();
   private SalesChannelService salesChannelService;
+  private BadgeService badgeService = null;
+  private BadgeObjectiveService badgeObjectiveService = null;
+  private JourneyService journeyService;
+  private OfferService offerService;
+  private LoyaltyProgramService loyaltyProgramService;
 
   private final static String badgeID = "badgeID";
   private final static String badgeDisplay = "badgeDisplay";
@@ -75,72 +66,79 @@ public class BGDRReportMonoPhase implements ReportCsvFactory
   private static final String eventID = "eventID";
   private static final String origin = "origin";
   private static final String returnCode = "returnCode";
-  private static final String returnCodeDescription  = "returnCodeDescription";
+  private static final String returnCodeDescription = "returnCodeDescription";
   private static final String deliveryStatus = "deliveryStatus";
 
   static List<String> headerFieldsOrder = new LinkedList<String>();
   static
-  {
-    headerFieldsOrder.add(customerID);
-    for (AlternateID alternateID : Deployment.getAlternateIDs().values())
-      {
-        headerFieldsOrder.add(alternateID.getName());
-      }
-    headerFieldsOrder.add(badgeID);
-    headerFieldsOrder.add(badgeDisplay);
-    headerFieldsOrder.add(badgeType);
-    headerFieldsOrder.add(badgeObjective);
-    headerFieldsOrder.add(operation);
-    headerFieldsOrder.add(moduleId);
-    headerFieldsOrder.add(featureId);
-    headerFieldsOrder.add(moduleName);
-    headerFieldsOrder.add(featureName);
-    headerFieldsOrder.add(origin);
-    headerFieldsOrder.add(eventID);
-    headerFieldsOrder.add(eventDatetime);
-    headerFieldsOrder.add(deliveryRequestID);
-    headerFieldsOrder.add(returnCode);
-    headerFieldsOrder.add(returnCodeDescription);
-    headerFieldsOrder.add(deliveryStatus);
-  }
+    {
+      headerFieldsOrder.add(customerID);
+      for (AlternateID alternateID : Deployment.getAlternateIDs().values())
+        {
+          headerFieldsOrder.add(alternateID.getName());
+        }
+      headerFieldsOrder.add(badgeID);
+      headerFieldsOrder.add(badgeDisplay);
+      headerFieldsOrder.add(badgeType);
+      headerFieldsOrder.add(badgeObjective);
+      headerFieldsOrder.add(operation);
+      headerFieldsOrder.add(moduleId);
+      headerFieldsOrder.add(featureId);
+      headerFieldsOrder.add(moduleName);
+      headerFieldsOrder.add(featureName);
+      headerFieldsOrder.add(origin);
+      headerFieldsOrder.add(eventID);
+      headerFieldsOrder.add(eventDatetime);
+      headerFieldsOrder.add(deliveryRequestID);
+      headerFieldsOrder.add(returnCode);
+      headerFieldsOrder.add(returnCodeDescription);
+      headerFieldsOrder.add(deliveryStatus);
+    }
 
   /****************************************
-  *
-  * dumpElementToCsv
-  *
-  ****************************************/
- public boolean dumpElementToCsvMono(Map<String,Object> map, ZipOutputStream writer, boolean addHeaders) throws IOException
- {
-   Map<String, List<Map<String, Object>>> mapLocal = getSplittedReportElementsForFileMono(map);  
-   if(mapLocal.size() != 1) {
-	   log.debug("We have multiple dates in the same index " + mapLocal.size());
-   } else {
-	   if(mapLocal.values().size() != 1) {
-		   log.debug("We have multiple values for this date " + mapLocal.values().size());
-	   }
-	   else {
-		   Set<Entry<String, List<Map<String, Object>>>> setLocal = mapLocal.entrySet();
-		   if(setLocal.size() != 1) {
-			   log.debug("We have multiple dates in this report " + setLocal.size());
-		   } else {
-			   for (Entry<String, List<Map<String, Object>>> entry : setLocal) {
-				   List<Map<String, Object>> list = entry.getValue();
+   *
+   * dumpElementToCsv
+   *
+   ****************************************/
+  public boolean dumpElementToCsvMono(Map<String, Object> map, ZipOutputStream writer, boolean addHeaders) throws IOException
+  {
+    Map<String, List<Map<String, Object>>> mapLocal = getSplittedReportElementsForFileMono(map);
+    if (mapLocal.size() != 1)
+      {
+        log.debug("We have multiple dates in the same index " + mapLocal.size());
+      } else
+      {
+        if (mapLocal.values().size() != 1)
+          {
+            log.debug("We have multiple values for this date " + mapLocal.values().size());
+          } else
+          {
+            Set<Entry<String, List<Map<String, Object>>>> setLocal = mapLocal.entrySet();
+            if (setLocal.size() != 1)
+              {
+                log.debug("We have multiple dates in this report " + setLocal.size());
+              } else
+              {
+                for (Entry<String, List<Map<String, Object>>> entry : setLocal)
+                  {
+                    List<Map<String, Object>> list = entry.getValue();
 
-				   if(list.size() != 1) {
-					   log.debug("We have multiple reports in this folder " + list.size());
-				   } else {
-					   Map<String, Object> reportMap = list.get(0);
-					   dumpLineToCsv(reportMap, writer, addHeaders);
-					   return false;
-				   }
-			   }
-		   }
-	   }
-   }
-   return true;
- }
- 
- 
+                    if (list.size() != 1)
+                      {
+                        log.debug("We have multiple reports in this folder " + list.size());
+                      } else
+                      {
+                        Map<String, Object> reportMap = list.get(0);
+                        dumpLineToCsv(reportMap, writer, addHeaders);
+                        return false;
+                      }
+                  }
+              }
+          }
+      }
+    return true;
+  }
+
   @Override public void dumpLineToCsv(Map<String, Object> lineMap, ZipOutputStream writer, boolean addHeaders)
   {
     try
@@ -158,18 +156,19 @@ public class BGDRReportMonoPhase implements ReportCsvFactory
         e.printStackTrace();
       }
   }
-  
+
   public Map<String, List<Map<String, Object>>> getSplittedReportElementsForFileMono(Map<String, Object> map)
   {
     Map<String, List<Map<String, Object>>> result = new LinkedHashMap<String, List<Map<String, Object>>>();
     Map<String, Object> bgdrFields = map;
     LinkedHashMap<String, Object> bgdrRecs = new LinkedHashMap<>();
-    if (bgdrFields != null && !bgdrFields.isEmpty()) 
+    if (bgdrFields != null && !bgdrFields.isEmpty())
       {
-        if(bgdrFields.get(subscriberID) != null) {
-          Object subscriberIDField = bgdrFields.get(subscriberID);
-          bgdrRecs.put(customerID, subscriberIDField);
-        }
+        if (bgdrFields.get(subscriberID) != null)
+          {
+            Object subscriberIDField = bgdrFields.get(subscriberID);
+            bgdrRecs.put(customerID, subscriberIDField);
+          }
         for (AlternateID alternateID : Deployment.getAlternateIDs().values())
           {
             if (bgdrFields.get(alternateID.getID()) != null)
@@ -179,79 +178,94 @@ public class BGDRReportMonoPhase implements ReportCsvFactory
               }
           }
 
-        if (bgdrFields.containsKey(deliveryRequestID))
-          {
-            bgdrRecs.put(deliveryRequestID, bgdrFields.get(deliveryRequestID));
-          }
-        if (bgdrFields.containsKey(eventID))
-          {
-            bgdrRecs.put(eventID, bgdrFields.get(eventID));
-          }
+        //
+        // ESVal
+        //
 
-        if (bgdrFields.get(eventDatetime) != null)
+        String deliveryRequestIDESVal = (String) bgdrFields.get(deliveryRequestID);
+        String badgeIDESVal = (String) bgdrFields.get(badgeID);
+        String operationESVal = (String) bgdrFields.get("action");
+        Object eventDatetimeObjESVal = bgdrFields.get(eventDatetime);
+        String moduleIdESVal = (String) bgdrFields.get(moduleId);
+        String featureIdESVal = (String) bgdrFields.get(featureId);
+        String eventIDESVal = (String) bgdrFields.get(eventID);
+        String originESVal = (String) bgdrFields.get(origin);
+        Integer returnCodeESVal = (Integer) bgdrFields.get(returnCode);
+        String deliveryStatusVal = 0 == returnCodeESVal ? DeliveryManager.DeliveryStatus.Delivered.toString() : DeliveryManager.DeliveryStatus.Failed.toString();
+
+        //
+        // derived
+        //
+
+        String badgeDisplayVal = "";
+        String badgeTypeVal = "";
+        StringBuilder badgeObjectives = new StringBuilder();
+        if (badgeIDESVal != null)
           {
-            Object eventDatetimeObj = bgdrFields.get(eventDatetime);
-            bgdrRecs.put(eventDatetime, ReportsCommonCode.parseDate((String) eventDatetimeObj));
-            /*
-             * if (eventDatetimeObj instanceof String) {
-             * 
-             * // TEMP fix for BLK : reformat date with correct template.
-             * 
-             * bgdrRecs.put(eventDatetime, ReportsCommonCode.parseDate((String)
-             * eventDatetimeObj));
-             * 
-             * // END TEMP fix for BLK
-             * 
-             * } else { log.info(eventDatetime +
-             * " is of wrong type : "+eventDatetimeObj.getClass().getName()); }
-             */
-          }
-
-
-        //Compute featureName and ModuleName from ID
-        if(bgdrFields.containsKey(moduleId) && bgdrFields.containsKey(featureId)){
-          Module module = Module.fromExternalRepresentation(String.valueOf(bgdrFields.get(moduleId)));
-          //String feature = DeliveryRequest.getFeatureDisplay(module, String.valueOf(bgdrFields.get(featureId).toString()), journeyService, offerService, loyaltyProgramService);
-          String feature = "RAJ K";
-          bgdrRecs.put(featureName, feature);
-          bgdrRecs.put(moduleName, module.toString());
-          bgdrRecs.put(featureId, bgdrFields.get(featureId));
-          bgdrRecs.put(moduleId, bgdrFields.get(moduleId));
-        }  
-
-
-        if (bgdrFields.containsKey(origin))
-          {
-            bgdrRecs.put(origin, bgdrFields.get(origin));
-          }
-        
-        
-        
-        if (bgdrFields.containsKey(returnCode))
-          {
-            Object code = bgdrFields.get(returnCode);
-            bgdrRecs.put(returnCode, code);
-            bgdrRecs.put(returnCodeDescription, (code != null && code instanceof Integer) ? RESTAPIGenericReturnCodes.fromGenericResponseCode((int) code).getGenericResponseMessage() : "");
-            
-            if (code instanceof Integer && code != null)
+            GUIManagedObject guiManagedObject = badgeService.getStoredBadge(badgeIDESVal, true);
+            if (guiManagedObject != null)
+              badgeDisplayVal = guiManagedObject.getGUIManagedObjectDisplay();
+            if (guiManagedObject != null && guiManagedObject.getAccepted())
               {
-                int codeInt = (int) code;
-                bgdrRecs.put(deliveryStatus, (codeInt == 0) ? DeliveryManager.DeliveryStatus.Delivered.toString() : DeliveryManager.DeliveryStatus.Failed.toString());
+                Badge badgeChecked = ((Badge) guiManagedObject);
+                Set<BadgeObjectiveInstance> badgeObjectiveValues = badgeChecked.getBadgeObjectives();
+                badgeTypeVal = badgeChecked.getBadgeType().getExternalRepresentation();
+                if (badgeObjectiveValues != null && !badgeObjectiveValues.isEmpty())
+                  {
+                    for (BadgeObjectiveInstance badgeObjective : badgeObjectiveValues)
+                      {
+                        GUIManagedObject guiManagedObjectBadge = badgeObjectiveService.getStoredBadgeObjective(badgeObjective.getBadgeObjectiveID(), true);
+                        if (guiManagedObjectBadge != null)
+                          {
+                            badgeObjectives.append("(").append(guiManagedObjectBadge.getGUIManagedObjectDisplay()).append("),");
+                          }
+                      }
+
+                  }
               }
-          }    
+
+          }
+        String badgeObjectivesValue = null;
+        if (badgeObjectives.length() > 0)
+          {
+            badgeObjectivesValue = badgeObjectives.toString().substring(0, badgeObjectives.toString().length() - 1);
+          }
+        Module module = Module.fromExternalRepresentation(String.valueOf(moduleIdESVal));
+        String featureESVal = DeliveryRequest.getFeatureDisplay(module, String.valueOf(bgdrFields.get(featureId).toString()), journeyService, offerService, loyaltyProgramService);
+
+        //
+        //  bgdrRecs
+        //
+        
+        bgdrRecs.put(badgeID, badgeIDESVal);
+        bgdrRecs.put(badgeDisplay, badgeDisplayVal);
+        bgdrRecs.put(badgeType, badgeTypeVal);
+        bgdrRecs.put(badgeObjective, badgeObjectivesValue);
+        bgdrRecs.put(operation, operationESVal);
+        bgdrRecs.put(moduleId, moduleIdESVal);
+        bgdrRecs.put(featureId, featureIdESVal);
+        bgdrRecs.put(moduleName, module.getExternalRepresentation());
+        bgdrRecs.put(featureName, featureESVal);
+        bgdrRecs.put(origin, originESVal);
+        bgdrRecs.put(eventID, eventIDESVal);
+        bgdrRecs.put(eventDatetime, eventDatetimeObjESVal);
+        bgdrRecs.put(deliveryRequestID, deliveryRequestIDESVal);
+        bgdrRecs.put(returnCode, returnCodeESVal);
+        bgdrRecs.put(returnCodeDescription, RESTAPIGenericReturnCodes.fromGenericResponseCode(returnCodeESVal).getGenericResponseMessage());
+        bgdrRecs.put(deliveryStatus, deliveryStatusVal);
 
         //
         // result
         //
 
         String rawEventDateTime = bgdrRecs.get(eventDatetime) == null ? null : bgdrRecs.get(eventDatetime).toString();
-        if (rawEventDateTime == null) log.warn("bad EventDateTime -- report will be generated in 'null' file name -- for record {} ", bgdrFields );
+        if (rawEventDateTime == null)
+          log.warn("bad EventDateTime -- report (bgdr) will be generated in 'null' file name -- for record {} ", bgdrFields);
         String evntDate = getEventDate(rawEventDateTime);
         if (result.containsKey(evntDate))
           {
             result.get(evntDate).add(bgdrRecs);
-          } 
-        else
+          } else
           {
             List<Map<String, Object>> elements = new ArrayList<Map<String, Object>>();
             elements.add(bgdrRecs);
@@ -260,7 +274,7 @@ public class BGDRReportMonoPhase implements ReportCsvFactory
       }
     return result;
   }
-  
+
   private String getEventDate(String rawEventDateTime)
   {
     String result = "null";
@@ -269,7 +283,7 @@ public class BGDRReportMonoPhase implements ReportCsvFactory
     result = rawEventDateTime.substring(0, eventDateTimeFormat.length());
     return result;
   }
-    
+
   private void addHeaders(ZipOutputStream writer, List<String> headers, int offset) throws IOException
   {
     if (headers != null && !headers.isEmpty())
@@ -285,7 +299,7 @@ public class BGDRReportMonoPhase implements ReportCsvFactory
           {
             writer.write("\n".getBytes());
           }
-      }  
+      }
   }
 
   public static void main(String[] args, final Date reportGenerationDate)
@@ -293,7 +307,7 @@ public class BGDRReportMonoPhase implements ReportCsvFactory
     BGDRReportMonoPhase bgdrReportMonoPhase = new BGDRReportMonoPhase();
     bgdrReportMonoPhase.start(args, reportGenerationDate);
   }
-  
+
   private void start(String[] args, final Date reportGenerationDate)
   {
     log.info("received " + args.length + " args");
@@ -307,9 +321,9 @@ public class BGDRReportMonoPhase implements ReportCsvFactory
         log.warn("Usage : BGDRReportMonoPhase <ESNode> <ES journey index> <csvfile> <defaultReportPeriodQuantity> <defaultReportPeriodUnit>");
         return;
       }
-    String esNode     = args[0];
+    String esNode = args[0];
     String esIndexBgdr = args[1];
-    String csvfile    = args[2];
+    String csvfile = args[2];
 
     Integer reportPeriodQuantity = 0;
     String reportPeriodUnit = null;
@@ -320,13 +334,14 @@ public class BGDRReportMonoPhase implements ReportCsvFactory
       }
     Date fromDate = getFromDate(reportGenerationDate, reportPeriodUnit, reportPeriodQuantity);
     Date toDate = reportGenerationDate;
-    
+
     Set<String> esIndexWeeks = ReportCsvFactory.getEsIndexWeeks(fromDate, toDate);
     StringBuilder esIndexBgdrList = new StringBuilder();
     boolean firstEntry = true;
     for (String esIndexWk : esIndexWeeks)
       {
-        if (!firstEntry) esIndexBgdrList.append(",");
+        if (!firstEntry)
+          esIndexBgdrList.append(",");
         String indexName = esIndexBgdr + esIndexWk;
         esIndexBgdrList.append(indexName);
         firstEntry = false;
@@ -335,61 +350,67 @@ public class BGDRReportMonoPhase implements ReportCsvFactory
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
     esIndexWithQuery.put(esIndexBgdrList.toString(), QueryBuilders.rangeQuery("eventDatetime").gte(RLMDateUtils.formatDateForElasticsearchDefault(fromDate)).lte(RLMDateUtils.formatDateForElasticsearchDefault(toDate)));
 
-    String journeyTopic = Deployment.getJourneyTopic();
-    String offerTopic = Deployment.getOfferTopic();
     String salesChannelTopic = Deployment.getSalesChannelTopic();
+    String offerTopic = Deployment.getOfferTopic();
+    String journeyTopic = Deployment.getJourneyTopic();
     String loyaltyProgramTopic = Deployment.getLoyaltyProgramTopic();
-    String productTopic = Deployment.getProductTopic();
-    String resellerTopic = Deployment.getResellerTopic();
-    String voucherTopic = Deployment.getVoucherTopic();
-    String supplierTopic = Deployment.getSupplierTopic();
 
     salesChannelService = new SalesChannelService(Deployment.getBrokerServers(), "bgdrreportcsvwriter-saleschannelservice-BGDRReportMonoPhase", salesChannelTopic, false);
-    
-
+    badgeService = new BadgeService(Deployment.getBrokerServers(), "bgdrreportcsvwriter-badgeService-BGDRReportMonoPhase", Deployment.getBadgeTopic(), false);
+    badgeObjectiveService = new BadgeObjectiveService(Deployment.getBrokerServers(), "bgdrreportcsvwriter-badgeObjectiveService-BGDRReportMonoPhase", Deployment.getBadgeObjectiveTopic(), false);
+    journeyService = new JourneyService(Deployment.getBrokerServers(), "bgdrreportcsvwriter-journeyService-BGDRReportMonoPhase", journeyTopic, false);
+    offerService = new OfferService(Deployment.getBrokerServers(), "bgdrreportcsvwriter-offerService-BGDRReportMonoPhase", offerTopic, false);
+    loyaltyProgramService = new LoyaltyProgramService(Deployment.getBrokerServers(), "bgdrreportcsvwriter-loyaltyProgramService-BGDRReportMonoPhase", loyaltyProgramTopic, false);
+    badgeService.start();
+    badgeObjectiveService.start();
     salesChannelService.start();
+    journeyService.start();
+    offerService.start();
+    loyaltyProgramService.start();
 
-    try {
-      ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
-          esNode,
-          esIndexWithQuery,
-          this,
-          csvfile
-          );
+    try
+      {
+        ReportMonoPhase reportMonoPhase = new ReportMonoPhase(esNode, esIndexWithQuery, this, csvfile);
 
-      // check if a report with multiple dates is required in the zipped file 
-      boolean isMultiDates = false;
-      if (reportPeriodQuantity > 1)
-        {
-          isMultiDates = true;
-        }
+        // check if a report with multiple dates is required in the zipped file
+        boolean isMultiDates = false;
+        if (reportPeriodQuantity > 1)
+          {
+            isMultiDates = true;
+          }
 
-      if (!reportMonoPhase.startOneToOne(isMultiDates))
-        {
-          log.warn("An error occured, the report " + csvfile + "  might be corrupted");
-          throw new RuntimeException("An error occurred, report must be restarted");
-        }
-    } finally {
-      salesChannelService.stop();
-      log.info("The report " + csvfile + " is finished");
-    }
+        if (!reportMonoPhase.startOneToOne(isMultiDates))
+          {
+            log.warn("An error occured, the report " + csvfile + "  might be corrupted");
+            throw new RuntimeException("An error occurred, report must be restarted");
+          }
+      } 
+    finally
+      {
+        salesChannelService.stop();
+        badgeService.stop();
+        badgeObjectiveService.stop();
+        journeyService.stop();
+        offerService.stop();
+        loyaltyProgramService.stop();
+        log.info("The report " + csvfile + " is finished");
+      }
 
   }
-  
+
   @Deprecated // TO BE FACTORIZED
   public static List<String> getEsIndexDates(final Date fromDate, Date toDate)
   {
     Date tempfromDate = fromDate;
     List<String> esIndexBgdrList = new ArrayList<String>();
-    // to get the reports with yesterday's date only
-    while(tempfromDate.getTime() < toDate.getTime())
+    while (tempfromDate.getTime() < toDate.getTime())
       {
-        esIndexBgdrList.add(RLMDateUtils.formatDateDay(tempfromDate, Deployment.getDefault().getTimeZone())); // TODO EVPRO-99 It needs to be refactored PER TENANT
-        tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, Deployment.getDefault().getTimeZone()); // TODO EVPRO-99 It needs to be refactored PER TENANT
+        esIndexBgdrList.add(RLMDateUtils.formatDateDay(tempfromDate, Deployment.getDefault().getTimeZone())); // TODO EVPRO-99
+        tempfromDate = RLMDateUtils.addDays(tempfromDate, 1, Deployment.getDefault().getTimeZone()); // TODO EVPRO-99 
       }
     return esIndexBgdrList;
   }
-  
+
   private static Date getFromDate(final Date reportGenerationDate, String reportPeriodUnit, Integer reportPeriodQuantity)
   {
     reportPeriodQuantity = reportPeriodQuantity == null || reportPeriodQuantity == 0 ? new Integer(1) : reportPeriodQuantity;
@@ -404,15 +425,15 @@ public class BGDRReportMonoPhase implements ReportCsvFactory
     switch (reportPeriodUnit.toUpperCase())
     {
       case "DAYS":
-        fromDate = RLMDateUtils.addDays(now, -reportPeriodQuantity, Deployment.getDefault().getTimeZone());  // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+        fromDate = RLMDateUtils.addDays(now, -reportPeriodQuantity, Deployment.getDefault().getTimeZone()); // TODO EVPRO-99
         break;
 
       case "WEEKS":
-        fromDate = RLMDateUtils.addWeeks(now, -reportPeriodQuantity, Deployment.getDefault().getTimeZone());  // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+        fromDate = RLMDateUtils.addWeeks(now, -reportPeriodQuantity, Deployment.getDefault().getTimeZone()); // TODO EVPRO-99
         break;
 
       case "MONTHS":
-        fromDate = RLMDateUtils.addMonths(now, -reportPeriodQuantity, Deployment.getDefault().getTimeZone()); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+        fromDate = RLMDateUtils.addMonths(now, -reportPeriodQuantity, Deployment.getDefault().getTimeZone()); // TODO EVPRO-99
         break;
 
       default:
@@ -421,18 +442,18 @@ public class BGDRReportMonoPhase implements ReportCsvFactory
     if (fromDate != null) fromDate = RLMDateUtils.truncate(fromDate, Calendar.DATE, Deployment.getDefault().getTimeZone());
     return fromDate;
   }
-  
+
   public static String getESAllIndices(String esIndexBgdrInitial)
   {
     return esIndexBgdrInitial + "*";
   }
-  
+
   /*********************
    * 
    * getESIndices
    *
    ********************/
-  
+
   public static String getESIndices(String esIndexBgdr, Set<String> esIndexWks)
   {
     StringBuilder esIndexBgdrList = new StringBuilder();
@@ -440,7 +461,7 @@ public class BGDRReportMonoPhase implements ReportCsvFactory
     for (String esIndexWk : esIndexWks)
       {
         if (!firstEntry) esIndexBgdrList.append(",");
-        String indexName = esIndexBgdr + esIndexWks;
+        String indexName = esIndexBgdr + esIndexWk;
         esIndexBgdrList.append(indexName);
         firstEntry = false;
       }
