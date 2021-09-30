@@ -172,7 +172,7 @@ public class DNBOUtils
       DNBOToken token = TokenUtils.generateTokenCode(evolutionEventContext.getSubscriberState().getSubscriberProfile(), tokenType);
       if (token == null)
         {
-          String str = "unable to generate a new token code";
+          String str = RESTAPIGenericReturnCodes.CANNOT_GENERATE_TOKEN_CODE.getGenericResponseCode()+"";             //"unable to generate a new token code";
           if (log.isTraceEnabled()) log.trace(str);
           return new Object[] {Collections.<Action>singletonList(generateTokenChange(evolutionEventContext, subscriberEvaluationRequest, "", action, str))};
         }

@@ -171,7 +171,7 @@ public class TDRDatacubeGenerator extends SimpleDatacubeGenerator
     
     DatacubeUtils.embelishFeature(filters, moduleID, modulesMap, loyaltyProgramsMap, deliverablesMap, offersMap, journeysMap);
 
-    DatacubeUtils.embelishTokenChangeReturnCode(filters);
+    DatacubeUtils.embelishReturnCode(filters);
     
     // Specials for timestamp (will not be display in filter but extracted later in DatacubeGenerator)
     if(this.hourlyMode) {

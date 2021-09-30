@@ -4012,7 +4012,7 @@ public class ThirdPartyManager
          supplierService,
          subscriberGroupEpochReader, tenantID);
      if (presentedOffers.isEmpty()) {
-       generateTokenChange(subscriberID, now, newToken.getTokenCode(), TokenChange.ALLOCATE, "no offers presented", API.getCustomerTokenAndNBO, jsonRoot, tenantID);
+       generateTokenChange(subscriberID, now, newToken.getTokenCode(), TokenChange.ALLOCATE, RESTAPIGenericReturnCodes.NO_OFFER_ALLOCATED.getGenericResponseCode()+"", API.getCustomerTokenAndNBO, jsonRoot, tenantID);
      }
      
      /*****************************************
@@ -4185,7 +4185,7 @@ public class ThirdPartyManager
             supplierService,
             subscriberGroupEpochReader, tenantID);
         if (list.isEmpty()) {
-          generateTokenChange(subscriberID, now, tokenCode, TokenChange.ALLOCATE, "no offers presented", API.getCustomerNBOs, jsonRoot, tenantID);
+          generateTokenChange(subscriberID, now, tokenCode, TokenChange.ALLOCATE, RESTAPIGenericReturnCodes.NO_OFFER_ALLOCATED.getGenericResponseCode()+"", API.getCustomerNBOs, jsonRoot, tenantID);
         }
       }
 
@@ -4578,7 +4578,7 @@ public class ThirdPartyManager
         redeemResponse = handleWaitingResponse(tokenChangeWaitingResponse);
       }
 
-      if(redeemResponse!=null && redeemResponse.getReturnStatus().equals(TokenChange.OK) && purchaseWaitingResponse!=null){
+      if(redeemResponse!=null && redeemResponse.getReturnStatus().equals(RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode()+"") && purchaseWaitingResponse!=null){
         purchaseResponse = handleWaitingResponse(purchaseWaitingResponse);
       }else if(purchaseWaitingResponse!=null){
         purchaseWaitingResponse.cancel(true);
@@ -4601,11 +4601,11 @@ public class ThirdPartyManager
       if(purchaseResponse==null){
         if(redeemResponse!=null){
           log.info("unable to process acceptOffer for {}, {}", subscriberID, redeemResponse.getReturnStatus());
-          if(redeemResponse.getReturnStatus().equals(TokenChange.ALREADY_REDEEMED)){
+          if(redeemResponse.getReturnStatus().equals(RESTAPIGenericReturnCodes.INVALID_TOKEN_CODE.getGenericResponseCode()+"")){
             updateResponse(response, RESTAPIGenericReturnCodes.CONCURRENT_ACCEPT);
-          }else if(redeemResponse.getReturnStatus().equals(TokenChange.BAD_TOKEN_TYPE)){
+          }else if(redeemResponse.getReturnStatus().equals( RESTAPIGenericReturnCodes.TOKEN_BAD_TYPE.getGenericResponseCode()+"")){
             updateResponse(response, RESTAPIGenericReturnCodes.TOKEN_BAD_TYPE);
-          }else if(redeemResponse.getReturnStatus().equals(TokenChange.NO_TOKEN)){
+          }else if(redeemResponse.getReturnStatus().equals(RESTAPIGenericReturnCodes.NO_TOKENS_RETURNED.getGenericResponseCode()+"")){
             updateResponse(response, RESTAPIGenericReturnCodes.NO_TOKENS_RETURNED);
           }
         }else{

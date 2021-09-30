@@ -32,10 +32,10 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
   public static final String REFUSE   = "Refuse";
   public static final String EXTEND   = "Extend";
 
-  public static final String OK = "OK";
-  public static final String BAD_TOKEN_TYPE = "invalid token type";
-  public static final String ALREADY_REDEEMED = "already redeemed";
-  public static final String NO_TOKEN = "no token";
+  //public static final String OK = "OK";
+  //public static final String BAD_TOKEN_TYPE = "invalid token type";
+  //public static final String ALREADY_REDEEMED = "already redeemed";
+  //public static final String NO_TOKEN = "no token";
   
   /*****************************************
   *
@@ -159,13 +159,6 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
     this(subscriberID, eventDateTime, eventID, tokenCode, action, returnStatus, origin, module.getExternalRepresentation(), featureID, null, tenantID,acceptedOfferID,presentedOfferIDs);
   }
   
-  public TokenChange(String subscriberID, Date eventDateTime, String eventID, String tokenCode, String action, String returnStatus, String origin, Module module, String featureID, int tenantID,List<String> presentedOfferIDs)
-  {
-    this(subscriberID, eventDateTime, eventID, tokenCode, action, returnStatus, origin, module.getExternalRepresentation(), featureID, null, tenantID,presentedOfferIDs);
-  }
-
-
-
   /*****************************************
   *
   * constructor (simple)
@@ -201,23 +194,7 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
     this.tenantID = tenantID;
     this.acceptedOfferID=acceptedOfferID;
     this.presentedOfferIDs = presentedOfferIDs;
-  }
-  public TokenChange(String subscriberID, Date eventDateTime, String eventID, String tokenCode, String action, String returnStatus, String origin, String moduleID, String featureID, String callUniqueIdentifier, int tenantID,List<String> presentedOfferIDs)
-  {
-    this.subscriberID = subscriberID;
-    this.eventDateTime = eventDateTime;
-    this.eventID = eventID;
-    this.tokenCode = tokenCode;
-    this.action = action;
-    this.returnStatus = returnStatus;
-    this.origin = origin;
-    this.moduleID = moduleID;
-    this.featureID = featureID;
-    this.callUniqueIdentifier = callUniqueIdentifier;
-    this.tenantID = tenantID;
-    this.presentedOfferIDs = presentedOfferIDs;
-  }
-  
+  }  
 
   /*****************************************
    *
@@ -322,11 +299,6 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
     String callUniqueIdentifier = (schemaVersion >=10 && schema.field("callUniqueIdentifier")!=null) ? valueStruct.getString("callUniqueIdentifier") : null;
     int tenantID = (schemaVersion >= 9)? valueStruct.getInt16("tenantID") : 1; // for old system, default to tenant 1
     String acceptedOfferID = valueStruct.getString("acceptedOfferID");
-    //List<String> presentedOfferIDs = (List<String>) valueStruct.get("presentedOfferIDs");
-    /*List<String> presentedOfferIDs=new ArrayList<String>();
-    if(valueStruct.getString("presentedOfferIDs")!="")*/
-
-    //List<String> presentedOfferIDs= list;//
     List<String> presentedOfferIDs = (List<String>) valueStruct.get("presentedOfferIDs");
 
     //
