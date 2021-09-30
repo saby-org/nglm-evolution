@@ -103,6 +103,7 @@ public class BadgeCustomerReportMonoPhase implements ReportCsvFactory
                             Object alternateId = subscriberFields.get(alternateID.getESField());
                             commonFields.put(alternateID.getName(), alternateId);
                           }
+                        else
                           {
                             commonFields.put(alternateID.getName(), "");
                           }
