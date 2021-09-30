@@ -2049,7 +2049,7 @@ protected JSONObject processSetStatusBadge(String userID, JSONObject jsonRoot, i
    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
    String badgeID = JSONUtilities.decodeString(jsonRoot, "badge", true);
    String userName = JSONUtilities.decodeString(jsonRoot, "userName", false);
-   String origin = JSONUtilities.decodeString(jsonRoot, "origin", false);
+   String origin = JSONUtilities.decodeString(jsonRoot, "origin", "CC");
 
    /*****************************************
     *

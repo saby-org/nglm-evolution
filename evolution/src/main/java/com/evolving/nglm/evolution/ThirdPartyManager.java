@@ -5057,7 +5057,7 @@ public class ThirdPartyManager
 
    String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
    String badgeDisplay = JSONUtilities.decodeString(jsonRoot, "badge", true);
-   String origin = JSONUtilities.decodeString(jsonRoot, "origin", false);
+   String origin = JSONUtilities.decodeString(jsonRoot, "origin", "loyalty"+action.getExternalRepresentation()+"Badge");
 
    /*****************************************
     *

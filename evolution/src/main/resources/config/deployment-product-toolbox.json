@@ -829,7 +829,7 @@
             "actionManagerClass" : "com.evolving.nglm.evolution.EvolutionEngine$BadgeActionManager",
             "moduleID" : "1",
             "operation": "AWARD",
-            "origin" : "JMR"
+            "origin" : "awardBadge"
           }
       },
       
@@ -863,7 +863,7 @@
             "actionManagerClass" : "com.evolving.nglm.evolution.EvolutionEngine$BadgeActionManager",
             "moduleID" : "1",
             "operation": "REMOVE",
-            "origin" : "JMR"
+            "origin" : "removeBadge"
           }
       },
       
