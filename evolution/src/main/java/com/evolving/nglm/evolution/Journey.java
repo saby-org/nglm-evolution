@@ -4474,9 +4474,14 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     // targetCount EVPRO-977
     //
     
-    long targetCount = TargetingType.FileVariables == getTargetingType() ? JSONUtilities.decodeLong(getJSONRepresentation(), "targetCount", 0L) : this.evaluateTargetCount(elasticsearch, getTenantID());
+    long targetCount = 0;
     long journeySubsCount = 0;
     JourneyStatus journeyStatus = journeyService.getJourneyStatus(this);
+    Date post24HourStartDate = RLMDateUtils.addHours(getEffectiveStartDate(), 24);
+    if (SystemTime.getCurrentTime().before(post24HourStartDate))
+      {
+        targetCount = TargetingType.FileVariables == getTargetingType() ? JSONUtilities.decodeLong(getJSONRepresentation(), "targetCount", 0L) : this.evaluateTargetCount(elasticsearch, getTenantID());
+      }
     if (journeyStatus == JourneyStatus.Running || journeyStatus == JourneyStatus.Suspended || journeyStatus == JourneyStatus.Complete)
       {
         //
