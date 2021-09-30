@@ -9373,7 +9373,6 @@ public class EvolutionEngine
         {
           subscriberEvaluationRequest.getJourneyState().getBadgeChanges().add(badgeChangeRequest);
         }
-      
 
       /*****************************************
       *
