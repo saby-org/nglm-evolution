@@ -157,6 +157,11 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/subscriber
           "earliestExpirationDate" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
           "expirationDates"        : { "type": "nested", "properties": { "date" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" } } }
          }
+      },
+      "badges"                            : { "type" : "nested",
+        "properties" : {
+          "badges"        : { "type": "nested", "properties": { "badgeAwardDate" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" }, "badgeRemoveDate" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" } } }
+        }
       }
     }
   }
