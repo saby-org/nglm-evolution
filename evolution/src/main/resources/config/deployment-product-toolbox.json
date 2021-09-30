@@ -820,7 +820,7 @@
               "dataType" : "string", 
               "multiple" : false,
               "mandatory" : true,
-              "availableValues" : [ "#callableLoyaltyBadges#" ],
+              "availableValues" : [ "#badges#" ],
               "defaultValue" : null
             }
           ],
@@ -854,7 +854,7 @@
               "dataType" : "string", 
               "multiple" : false,
               "mandatory" : true,
-              "availableValues" : [ "#callableLoyaltyBadges#" ],
+              "availableValues" : [ "#badges#" ],
               "defaultValue" : null
             }
           ],
