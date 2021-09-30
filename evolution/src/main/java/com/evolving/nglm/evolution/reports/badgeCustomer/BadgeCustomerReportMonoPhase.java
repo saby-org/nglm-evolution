@@ -145,7 +145,7 @@ public class BadgeCustomerReportMonoPhase implements ReportCsvFactory
                                         GUIManagedObject guiManagedObjectBadge = badgeObjectiveService.getStoredBadgeObjective(badgeObjective.getBadgeObjectiveID(), true);
                                         if (guiManagedObjectBadge != null)
                                           {
-                                            badgeObjectives.append("(").append(guiManagedObjectBadge.getGUIManagedObjectDisplay()).append("),");
+                                            badgeObjectives.append(guiManagedObjectBadge.getGUIManagedObjectDisplay()).append(",");
                                           }
                                       }
                                     

@@ -106,18 +106,21 @@ public class BGDRReportMonoPhase implements ReportCsvFactory
     if (mapLocal.size() != 1)
       {
         log.debug("We have multiple dates in the same index " + mapLocal.size());
-      } else
+      } 
+    else
       {
         if (mapLocal.values().size() != 1)
           {
             log.debug("We have multiple values for this date " + mapLocal.values().size());
-          } else
+          } 
+        else
           {
             Set<Entry<String, List<Map<String, Object>>>> setLocal = mapLocal.entrySet();
             if (setLocal.size() != 1)
               {
                 log.debug("We have multiple dates in this report " + setLocal.size());
-              } else
+              } 
+            else
               {
                 for (Entry<String, List<Map<String, Object>>> entry : setLocal)
                   {
@@ -126,7 +129,8 @@ public class BGDRReportMonoPhase implements ReportCsvFactory
                     if (list.size() != 1)
                       {
                         log.debug("We have multiple reports in this folder " + list.size());
-                      } else
+                      } 
+                    else
                       {
                         Map<String, Object> reportMap = list.get(0);
                         dumpLineToCsv(reportMap, writer, addHeaders);
@@ -217,7 +221,7 @@ public class BGDRReportMonoPhase implements ReportCsvFactory
                         GUIManagedObject guiManagedObjectBadge = badgeObjectiveService.getStoredBadgeObjective(badgeObjective.getBadgeObjectiveID(), true);
                         if (guiManagedObjectBadge != null)
                           {
-                            badgeObjectives.append("(").append(guiManagedObjectBadge.getGUIManagedObjectDisplay()).append("),");
+                            badgeObjectives.append(guiManagedObjectBadge.getGUIManagedObjectDisplay()).append(",");
                           }
                       }
 
