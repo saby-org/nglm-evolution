@@ -4471,7 +4471,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     }
     
     //
-    // targetCount EVPRO-977
+    // targetCount 
     //
     
     long targetCount = 0;
