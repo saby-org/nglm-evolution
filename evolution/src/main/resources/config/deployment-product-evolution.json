@@ -969,6 +969,16 @@
       "id"           : "getCustomerVouchers",
       "methodName"   : "getCustomerVouchers",
       "permissions"  : ["API-GET-CUSTOMER-VOUCHERS"]
+    },
+    {
+      "id"           : "loyaltyAwardBadge",
+      "methodName"   : "loyaltyAwardBadge",
+      "permissions"  : ["API-LOYALTY-BADGE-AWARD"]
+    },
+    {
+      "id"           : "loyaltyRemoveBadge",
+      "methodName"   : "loyaltyRemoveBadge",
+      "permissions"  : ["API-LOYALTY-BADGE-REMOVE"]
     }
   ],
 

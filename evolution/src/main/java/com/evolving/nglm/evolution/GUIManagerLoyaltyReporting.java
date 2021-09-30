@@ -1592,7 +1592,7 @@ protected JSONObject processSetStatusBadge(String userID, JSONObject jsonRoot, i
                *
                ****************************************/
 
-              Badge badge = new Badge(jsonRoot, epoch, existingElement, catalogCharacteristicService, tenantID);
+              Badge badge = new Badge(elementRoot, epoch, existingElement, catalogCharacteristicService, tenantID);
 
               /*****************************************
                *
@@ -2111,7 +2111,6 @@ protected JSONObject processSetStatusBadge(String userID, JSONObject jsonRoot, i
 
    response.put("responseCode", "ok");
    return JSONUtilities.encodeObject(response);
-
  }
   
   /*****************************************
