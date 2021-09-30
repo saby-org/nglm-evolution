@@ -32,10 +32,10 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
   public static final String REFUSE   = "Refuse";
   public static final String EXTEND   = "Extend";
 
-  public static final String OK = "OK";
-  public static final String BAD_TOKEN_TYPE = "invalid token type";
-  public static final String ALREADY_REDEEMED = "already redeemed";
-  public static final String NO_TOKEN = "no token";
+  //public static final String OK = "OK";
+  //public static final String BAD_TOKEN_TYPE = "invalid token type";
+  //public static final String ALREADY_REDEEMED = "already redeemed";
+  //public static final String NO_TOKEN = "no token";
   
   /*****************************************
   *
@@ -194,7 +194,7 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
     this.tenantID = tenantID;
     this.acceptedOfferID=acceptedOfferID;
     this.presentedOfferIDs = presentedOfferIDs;
-  }
+  }  
 
   /*****************************************
    *

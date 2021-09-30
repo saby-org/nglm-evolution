@@ -5238,7 +5238,7 @@ public class EvolutionEngine
         if (defaultDNBOTokenType == null)
           {
             log.error("Could not find token type with ID " + tokenTypeID + " Check your configuration.");
-            subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), evolutionEvent.getEventDate(), context.getEventID(), eventTokenCode, TokenChange.REDEEM, TokenChange.BAD_TOKEN_TYPE, "AcceptanceLog", moduleID, featureID, callUniqueIdentifier, tenantID));
+            subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), evolutionEvent.getEventDate(), context.getEventID(), eventTokenCode, TokenChange.REDEEM, RESTAPIGenericReturnCodes.TOKEN_BAD_TYPE.getGenericResponseCode()+"", "AcceptanceLog", moduleID, featureID, callUniqueIdentifier, tenantID));
             return false;
           }
 
@@ -5314,14 +5314,14 @@ public class EvolutionEngine
             if (subscriberStoredToken == null)
             {
               if(log.isInfoEnabled()) log.info("received "+evolutionEvent.getClass().getSimpleName()+" for a non external token "+eventTokenCode+" for subscriber "+subscriberProfile.getSubscriberID()+" but not stored in the profile");
-              subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), evolutionEvent.getEventDate(), context.getEventID(), eventTokenCode, TokenChange.REDEEM, TokenChange.NO_TOKEN, "AcceptanceLog", moduleID, featureID, callUniqueIdentifier, tenantID));
+              subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), evolutionEvent.getEventDate(), context.getEventID(), eventTokenCode, TokenChange.REDEEM, RESTAPIGenericReturnCodes.NO_TOKENS_RETURNED.getGenericResponseCode()+"","AcceptanceLog", moduleID, featureID, callUniqueIdentifier, tenantID));
               return subscriberStateUpdated;
             }
 
             subscriberTokens.add(subscriberStoredToken);
             subscriberStoredToken.setFeatureID(featureID);
             subscriberStoredToken.setModuleID(moduleID);
-            subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), SystemTime.getCurrentTime(), context.getEventID(), eventTokenCode, TokenChange.CREATE, TokenChange.OK, evolutionEvent.getClass().getSimpleName(), moduleID, featureID, callUniqueIdentifier, tenantID));
+            subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), SystemTime.getCurrentTime(), context.getEventID(), eventTokenCode,TokenChange.CREATE,RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode()+"" , evolutionEvent.getClass().getSimpleName(), moduleID, featureID, callUniqueIdentifier, tenantID));
             subscriberStateUpdated = true;
 
           }
@@ -5345,7 +5345,7 @@ public class EvolutionEngine
                 subscriberStateUpdated = true;
               }
             Date eventDate = presentationLog.getEventDate();
-            subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), eventDate, context.getEventID(), eventTokenCode, "Allocate", "OK", "PresentationLog", moduleID, featureID, callUniqueIdentifier, tenantID,null,presentationLog.getOfferIDs()));
+            subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), eventDate, context.getEventID(), eventTokenCode, "Allocate", RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode()+"","PresentationLog", moduleID, featureID, callUniqueIdentifier, tenantID,null,presentationLog.getOfferIDs()));
             if (subscriberStoredToken.getCreationDate() == null)
               {
                 subscriberStoredToken.setCreationDate(eventDate);
@@ -5389,7 +5389,7 @@ public class EvolutionEngine
             if (subscriberStoredToken.getAcceptedOfferID() != null)
               {
                 log.error("Unexpected acceptance record ("+ acceptanceLog.toString() +") for a token ("+ subscriberStoredToken.toString() +") already redeemed by a previous acceptance record");
-                subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), acceptanceLog.getEventDate(), context.getEventID(), eventTokenCode, TokenChange.REDEEM, TokenChange.ALREADY_REDEEMED, "AcceptanceLog", moduleID, featureID, callUniqueIdentifier, tenantID));
+                subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), acceptanceLog.getEventDate(), context.getEventID(), eventTokenCode, TokenChange.REDEEM, RESTAPIGenericReturnCodes.INVALID_TOKEN_CODE.getGenericResponseCode()+"", "AcceptanceLog", moduleID, featureID, callUniqueIdentifier, tenantID));
                 return subscriberStateUpdated;
               }
             else
@@ -5450,26 +5450,23 @@ public class EvolutionEngine
 
             boolean failed = false;
             if(dnboToken.getPurchaseDeliveryRequestID().equals(purchaseResponseEvent.getDeliveryRequestID()))
-              {
-                  String purchasedStatus = purchaseResponseEvent.getStatus().name();       
+              {               
               String tokenRedeem=TokenChange.REDEEM;
-              String tokenChangeStatus = TokenChange.OK;
+              String tokenChangeStatus = RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode()+"";
               String purchaseOfferID = purchaseResponseEvent.getOfferID();
               dnboToken.setPurchaseStatus(purchaseResponseEvent.getStatus());
 
-            if (!purchasedStatus.equals(purchaseResponseEvent.getStatus().PURCHASED.name()))
+              if (!PurchaseFulfillmentManager.PurchaseFulfillmentStatus.PURCHASED.equals(purchaseResponseEvent.getStatus()))
               {               
               failed=true;
-              tokenChangeStatus=TokenChange.REFUSE;
+              tokenChangeStatus=RESTAPIGenericReturnCodes.CANNOT_GENERATE_TOKEN_CODE.getGenericResponseCode()+"";
               purchaseOfferID = null;
               dnboToken.setTokenStatus(TokenStatus.Bound);  
               dnboToken.setAcceptedOfferID(null);          
               }   
                           
-              subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), purchaseResponseEvent.getEventDate(),
-              context.getEventID(), dnboToken.getTokenCode(), tokenRedeem, tokenChangeStatus, "AcceptanceLog",
-              dnboToken.getModuleID(), dnboToken.getFeatureID(), purchaseResponseEvent.getDeliveryRequestID(),
-              tenantID, purchaseOfferID, dnboToken.getPresentedOfferIDs()));
+              subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), purchaseResponseEvent.getEventDate(),context.getEventID(), dnboToken.getTokenCode(), tokenRedeem, tokenChangeStatus, "AcceptanceLog",dnboToken.getModuleID(), dnboToken.getFeatureID(), purchaseResponseEvent.getDeliveryRequestID(),tenantID, purchaseOfferID, dnboToken.getPresentedOfferIDs()));
+              
               if((!external) && (!failed)) 
                subscriberState.getTokenRedeemeds().add(new TokenRedeemed(subscriberState.getSubscriberID(), purchaseResponseEvent.getEventDate(), dnboToken.getTokenTypeID(), dnboToken.getAcceptedOfferID()));
               break;
@@ -7264,7 +7261,7 @@ public class EvolutionEngine
 
   private static TokenChange generateTokenChange(String subscriberId, Date eventDateTime, String eventID, String action, Token token, String journeyID, String origin, int tenantID)
   {
-    return new TokenChange(subscriberId, eventDateTime, eventID, token.getTokenCode(), action, "OK", origin, Module.Journey_Manager, journeyID, tenantID);
+    return new TokenChange(subscriberId, eventDateTime, eventID, token.getTokenCode(), action, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode()+"", origin, Module.Journey_Manager, journeyID, tenantID);
   }
 
   /****************************************

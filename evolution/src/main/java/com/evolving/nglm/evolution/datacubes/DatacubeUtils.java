@@ -25,18 +25,18 @@ public class DatacubeUtils
     Integer returnCodeInt = -1; // will translate to UNKNOWN(-1, "UNKNOWN", "UNKNOWN")
     Object returnCode = filters.remove("returnCode");
     try {
-      returnCodeInt = (Integer) returnCode; // ! It should already be an integer
+      returnCodeInt =  Integer.parseInt((String) returnCode);
     } catch (NumberFormatException e) {
       log.info("Invalid value found for return code : " + returnCode.toString() );
     }
     filters.put("returnCode", RESTAPIGenericReturnCodes.fromGenericResponseCode(returnCodeInt).getGenericResponseMessage());
   }
 
-  public static void embelishTokenChangeReturnCode(Map<String, Object> filters)
+ /* public static void embelishTokenChangeReturnCode(Map<String, Object> filters)
   {
     String returnCode = (String) filters.remove("returnCode");
     filters.put("returnCode", RESTAPIGenericReturnCodes.fromGenericResponseMessage(returnCode).getGenericResponseMessage());
-  }
+  }*/
 
   public static void embelishFeature(Map<String, Object> filters, String moduleID, ModulesMap modulesMap, LoyaltyProgramsMap loyaltyProgramsMap, DeliverablesMap deliverablesMap, OffersMap offersMap, JourneysMap journeysMap)
   {
