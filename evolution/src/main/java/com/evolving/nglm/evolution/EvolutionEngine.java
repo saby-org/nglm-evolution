@@ -5459,7 +5459,7 @@ public class EvolutionEngine
               if (!PurchaseFulfillmentManager.PurchaseFulfillmentStatus.PURCHASED.equals(purchaseResponseEvent.getStatus()))
               {               
               failed=true;
-              tokenChangeStatus=RESTAPIGenericReturnCodes.CANNOT_GENERATE_TOKEN_CODE.getGenericResponseCode()+"";
+              tokenChangeStatus=RESTAPIGenericReturnCodes.INSUFFICIENT_BALANCE.getGenericResponseCode()+"";
               purchaseOfferID = null;
               dnboToken.setTokenStatus(TokenStatus.Bound);  
               dnboToken.setAcceptedOfferID(null);          

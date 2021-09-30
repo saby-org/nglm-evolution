@@ -762,7 +762,7 @@ public class DNBOUtils
       Offer offer = evolutionEventContext.getOfferService().getActiveOffer(offerID, evolutionEventContext.now());
       if (offer == null)
         {
-          String str = RESTAPIGenericReturnCodes.INVALID_TOKEN_CODE.getGenericResponseCode()+"";/"invalid offer returned by scoring " + offerID; 
+          String str = RESTAPIGenericReturnCodes.INVALID_TOKEN_CODE.getGenericResponseCode()+"";//"invalid offer returned by scoring " + offerID; 
           log.error(str);
           return Collections.<Action>singletonList(generateTokenChange(evolutionEventContext, subscriberEvaluationRequest, token.getTokenCode(), TokenChange.REDEEM, str));
         }

@@ -24153,7 +24153,7 @@ public class GUIManager
             response.put("responseCode", "ok");
 		  }else{
           	purchaseWaitingResponse.cancel(true);
-            if(redeemResponse!=null && redeemResponse.getReturnStatus().equals(TokenChange.REFUSE)){
+            if(redeemResponse!=null && redeemResponse.getReturnStatus().equals(RESTAPIGenericReturnCodes.INSUFFICIENT_BALANCE.getGenericResponseCode()+"")){
               handlePurchaseResponse(purchaseWaitingResponse);
             }
             else
