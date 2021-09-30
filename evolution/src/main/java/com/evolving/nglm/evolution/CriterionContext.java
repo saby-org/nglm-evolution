@@ -1008,6 +1008,7 @@ public class CriterionContext
           result.put(unknownRelationship.getID(), unknownRelationship);
           result.put(internalRandom100.getID(), internalRandom100);
           result.put(subscriberTmpSuccessVouchers.getID(), subscriberTmpSuccessVouchers);
+          result.put(subscriberTmpSuccessBadges.getID(), subscriberTmpSuccessBadges);
           result.put(internalFalse.getID(), internalFalse);
           result.put(internalTargets.getID(), internalTargets);
           result.put(internalExclusionInclusionList.getID(), internalExclusionInclusionList);
