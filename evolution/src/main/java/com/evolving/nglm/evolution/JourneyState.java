@@ -97,6 +97,7 @@ public class JourneyState
   private SubscriberJourneyStatus specialExitReason;
   private int priority;
   private String sourceOrigin;
+  private List<BadgeChange> badgeChanges;
   
   /*****************************************
   *
@@ -138,6 +139,7 @@ public class JourneyState
   public String getsourceOrigin() { return sourceOrigin; }  
   public SubscriberJourneyStatus getSpecialExitReason() {return specialExitReason;}
   public String getSourceModuleID() {return sourceModuleID;}
+  public List<BadgeChange> getBadgeChanges() { return badgeChanges; }
   
   // transient
   public boolean getNotifiedThisEvent() { return notifiedThisEvent; }
@@ -183,6 +185,7 @@ public class JourneyState
     this.sourceOrigin = sourceOrigin;
     this.specialExitReason = null;
     this.sourceModuleID = sourceModuleID;
+    this.badgeChanges = new ArrayList<BadgeChange>();
   }
   
  
@@ -193,7 +196,7 @@ public class JourneyState
   *
   *****************************************/
 
-  public JourneyState(JourneyEndedState journeyEndedState, JourneyRequest callingJourneyRequest, String journeyNodeID, ParameterMap journeyParameters, ParameterMap journeyActionManagerContext, Date journeyEntryDate, Date journeyNodeEntryDate, String journeyOutstandingDeliveryRequestID, String sourceModuleID, String sourceFeatureID, JourneyHistory journeyHistory, Date journeyEndDate, List<VoucherChange> voucherChanges, SubscriberJourneyStatus specialExitReason, int priority, String sourceOrigin)
+  public JourneyState(JourneyEndedState journeyEndedState, JourneyRequest callingJourneyRequest, String journeyNodeID, ParameterMap journeyParameters, ParameterMap journeyActionManagerContext, Date journeyEntryDate, Date journeyNodeEntryDate, String journeyOutstandingDeliveryRequestID, String sourceModuleID, String sourceFeatureID, JourneyHistory journeyHistory, Date journeyEndDate, List<VoucherChange> voucherChanges, SubscriberJourneyStatus specialExitReason, int priority, String sourceOrigin, List<BadgeChange> badgeChanges)
   {
   	this.journeyEndedState = journeyEndedState;
     this.callingJourneyRequest = callingJourneyRequest;
@@ -211,6 +214,7 @@ public class JourneyState
     this.priority = priority;
     this.sourceOrigin = sourceOrigin;
     this.sourceModuleID = sourceModuleID;
+    this.badgeChanges = badgeChanges;
   }
 
 
@@ -278,6 +282,7 @@ public class JourneyState
     int priority = schema.field("priority") != null ? valueStruct.getInt32("priority") : Integer.MAX_VALUE; // for legacy campaigns, very low priority
     String sourceOrigin= schema.field("sourceOrigin") != null ? valueStruct.getString("sourceOrigin") : null;
     String sourceModuleID = schema.field("sourceModuleID") != null ? valueStruct.getString("sourceModuleID") : null;
+    List<BadgeChange> badgeChanges = new ArrayList<BadgeChange>();
   
 
     JourneyEndedState journeyEndedState=null;
@@ -304,7 +309,7 @@ public class JourneyState
     //  return
     //
 
-    return new JourneyState(journeyEndedState, callingJourneyRequest, journeyNodeID, journeyParameters, journeyActionManagerContext, journeyEntryDate, journeyNodeEntryDate, journeyOutstandingDeliveryRequestID, sourceModuleID, sourceFeatureID, journeyHistory, journeyEndDate, voucherChanges, specialExitReason, priority, sourceOrigin);
+    return new JourneyState(journeyEndedState, callingJourneyRequest, journeyNodeID, journeyParameters, journeyActionManagerContext, journeyEntryDate, journeyNodeEntryDate, journeyOutstandingDeliveryRequestID, sourceModuleID, sourceFeatureID, journeyHistory, journeyEndDate, voucherChanges, specialExitReason, priority, sourceOrigin, badgeChanges);
   }
   
   private static SubscriberJourneyStatus unpackSpecialExitReason(Struct valueStruct)

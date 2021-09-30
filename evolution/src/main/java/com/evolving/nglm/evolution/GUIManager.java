@@ -26673,6 +26673,23 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                 }
             }
           break;
+          
+        case "callableLoyaltyBadges":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject badgeUnchecked : badgeService.getStoredBadges(tenantID))
+                {
+                  if (badgeUnchecked.getAccepted())
+                    {
+                      Badge badge = (Badge) badgeUnchecked;
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", badge.getGUIManagedObjectID());
+                      availableValue.put("display", badge.getGUIManagedObjectDisplay());
+                      result.add(JSONUtilities.encodeObject(availableValue));
+                    }
+                }
+            }
+          break;
 
         case "callableJourneys":
           if (includeDynamic)

@@ -2693,110 +2693,13 @@ public class EvolutionEngine
    boolean result = evolutionEvent instanceof BadgeChange;
    if (result)
      {
-       log.info("RAJ K updateBadges");
        BadgeChange badgeChangeRequest = (BadgeChange) evolutionEvent;
-       BadgeChange badgeChangeResponse = new BadgeChange(badgeChangeRequest);
-       badgeChangeResponse.changeToBadgeChangeResponse();
-       BadgeAction actionRequest = badgeChangeRequest.getAction();
-       log.info("RAJ K actionRequest {}", actionRequest.getExternalRepresentation());
-       SubscriberProfile subscriberProfile = context.getSubscriberState().getSubscriberProfile();
-       Badge badge = badgeService.getActiveBadge(badgeChangeRequest.getBadgeID(), context.now());
-       if (badge != null)
-         {
-           BadgeState subscriberBadge = subscriberProfile.getBadgeByID(badgeChangeRequest.getBadgeID());
-           switch (actionRequest)
-           {
-             case AWARD:
-               if (subscriberBadge == null)
-                 {
-                   //
-                   //  newBadge
-                   //
-                   
-                   BadgeState newBadge = new BadgeState(badge.getBadgeID(), badge.getBadgeObjectives().stream().map(badgeObj -> badgeObj.getBadgeObjectiveID()).collect(Collectors.toList()), badge.getBadgeType(), CustomerBadgeStatus.AWARDED, context.now(), null);
-                   subscriberProfile.getBadges().add(newBadge);
-                   badgeChangeResponse.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
-                   log.info("RAJ K newBadge {}", newBadge);
-                   
-                   //
-                   //  triggerBadgeWorflow AwardedWorkflow
-                   //
-                   
-                   triggerBadgeWorflow(badgeChangeRequest, context.getSubscriberState(), badge.getAwardedWorkflowID(), badgeChangeRequest.getFeatureID(), badgeChangeRequest.getOrigin());
-                 }
-               else if (subscriberBadge.getCustomerBadgeStatus().equals(CustomerBadgeStatus.PENDING))
-                 {
-                   //
-                   //  re award if removed
-                   //
-                   
-                   subscriberBadge.setBadgeObjectiveIDs(badge.getBadgeObjectives().stream().map(badgeObj -> badgeObj.getBadgeObjectiveID()).collect(Collectors.toList()));
-                   subscriberBadge.setCustomerBadgeStatus(CustomerBadgeStatus.AWARDED);
-                   subscriberBadge.setBadgeAwardDate(context.now());
-                   subscriberBadge.setBadgeRemoveDate(null);
-                   badgeChangeResponse.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
-                   log.info("RAJ K re award {}", subscriberBadge);
-                   
-                   //
-                   //  triggerBadgeWorflow AwardedWorkflow
-                   //
-                   
-                   triggerBadgeWorflow(badgeChangeRequest, context.getSubscriberState(), badge.getAwardedWorkflowID(), badgeChangeRequest.getFeatureID(), badgeChangeRequest.getOrigin());
-                 }
-               else
-                 {
-                   badgeChangeResponse.setReturnStatus(RESTAPIGenericReturnCodes.BADGE_ALREADY_AWARDED);
-                   log.info("RAJ K BADGE_ALREADY_AWARDED");
-                 }
-               break;
-               
-             case REMOVE:
-               if (subscriberBadge == null || subscriberBadge.getCustomerBadgeStatus().equals(CustomerBadgeStatus.PENDING))
-                 {
-                   badgeChangeResponse.setReturnStatus(RESTAPIGenericReturnCodes.BADGE_NOT_AVAILABLE);
-                   log.info("RAJ K BADGE_NOT_AVAILABLE");
-                 }
-               else if (badge.getBadgeType().equals(BadgeType.PERMANENT))
-                 {
-                   badgeChangeResponse.setReturnStatus(RESTAPIGenericReturnCodes.BADGE_NOT_REMOVABLE);
-                   log.info("RAJ K BADGE_NOT_REMOVABLE");
-                 }
-               else
-                 {
-                   //
-                   //  removed
-                   //
-                   
-                   subscriberBadge.setBadgeObjectiveIDs(badge.getBadgeObjectives().stream().map(badgeObj -> badgeObj.getBadgeObjectiveID()).collect(Collectors.toList()));
-                   subscriberBadge.setCustomerBadgeStatus(CustomerBadgeStatus.PENDING);
-                   subscriberBadge.setBadgeRemoveDate(context.now());
-                   badgeChangeResponse.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
-                   log.info("RAJ K removed");
-                   
-                   //
-                   //  triggerBadgeWorflow RemoveWorkflow
-                   //
-                   
-                   triggerBadgeWorflow(badgeChangeRequest, context.getSubscriberState(), badge.getRemoveWorkflowID(), badgeChangeRequest.getFeatureID(), badgeChangeRequest.getOrigin());
-                 }
-               break;
-
-             default:
-               if (log.isErrorEnabled()) log.error("invalid badge actionRequest {}", actionRequest);
-               break;
-           }
-         }
-       else
-         {
-           badgeChangeResponse.setReturnStatus(RESTAPIGenericReturnCodes.BADGE_NOT_FOUND);
-           log.info("RAJ K BADGE_NOT_FOUND");
-         }
        
        //
-       //  add this response - need to sink
+       //  changeSubscriberBadge
        //
        
-       context.getSubscriberState().getBadgeChangeResponses().add(badgeChangeResponse);
+       boolean changed = changeSubscriberBadge(badgeChangeRequest, context.getSubscriberState(), context.now());
        
        //
        //  if badge got deleted (NOT JUST "suspended"), we need to remove to clean it from profile after a while
@@ -2806,7 +2709,7 @@ public class EvolutionEngine
        Collection<GUIManagedObject> deletedBadges = allBadges.stream().filter(bdg -> bdg.getDeleted()).collect(Collectors.toList());
        for (GUIManagedObject deletedBadge : deletedBadges)
          {
-           BadgeState subscriberBadge = subscriberProfile.getBadgeByID(deletedBadge.getGUIManagedObjectID());
+           BadgeState subscriberBadge = context.getSubscriberState().getSubscriberProfile().getBadgeByID(deletedBadge.getGUIManagedObjectID());
            if (subscriberBadge != null && !subscriberBadge.getCustomerBadgeStatus().equals(CustomerBadgeStatus.PENDING))
              {
                subscriberBadge.setCustomerBadgeStatus(CustomerBadgeStatus.PENDING);
@@ -2816,6 +2719,124 @@ public class EvolutionEngine
          }
      }
    return result;
+ }
+ 
+ 
+ private static boolean changeSubscriberBadge(BadgeChange badgeChangeRequest, SubscriberState subscriberState, Date now)
+ {
+
+   boolean changed = true;
+   log.info("RAJ K changeSubscriberBadge");
+   BadgeChange badgeChangeResponse = new BadgeChange(badgeChangeRequest);
+   badgeChangeResponse.changeToBadgeChangeResponse();
+   BadgeAction actionRequest = badgeChangeRequest.getAction();
+   log.info("RAJ K actionRequest {}", actionRequest.getExternalRepresentation());
+   Badge badge = badgeService.getActiveBadge(badgeChangeRequest.getBadgeID(), now);
+   if (badge != null)
+     {
+       SubscriberProfile subscriberProfile = subscriberState.getSubscriberProfile();
+       BadgeState subscriberBadge = subscriberProfile.getBadgeByID(badgeChangeRequest.getBadgeID());
+       switch (actionRequest)
+       {
+         case AWARD:
+           if (subscriberBadge == null)
+             {
+               //
+               //  newBadge
+               //
+               
+               BadgeState newBadge = new BadgeState(badge.getBadgeID(), badge.getBadgeObjectives().stream().map(badgeObj -> badgeObj.getBadgeObjectiveID()).collect(Collectors.toList()), badge.getBadgeType(), CustomerBadgeStatus.AWARDED, now, null);
+               subscriberProfile.getBadges().add(newBadge);
+               badgeChangeResponse.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
+               log.info("RAJ K newBadge {}", newBadge);
+               
+               //
+               //  triggerBadgeWorflow AwardedWorkflow
+               //
+               
+               triggerBadgeWorflow(badgeChangeRequest, subscriberState, badge.getAwardedWorkflowID(), badgeChangeRequest.getFeatureID(), badgeChangeRequest.getOrigin());
+             }
+           else if (subscriberBadge.getCustomerBadgeStatus().equals(CustomerBadgeStatus.PENDING))
+             {
+               //
+               //  re award if removed
+               //
+               
+               subscriberBadge.setBadgeObjectiveIDs(badge.getBadgeObjectives().stream().map(badgeObj -> badgeObj.getBadgeObjectiveID()).collect(Collectors.toList()));
+               subscriberBadge.setCustomerBadgeStatus(CustomerBadgeStatus.AWARDED);
+               subscriberBadge.setBadgeAwardDate(now);
+               subscriberBadge.setBadgeRemoveDate(null);
+               badgeChangeResponse.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
+               log.info("RAJ K re award {}", subscriberBadge);
+               
+               //
+               //  triggerBadgeWorflow AwardedWorkflow
+               //
+               
+               triggerBadgeWorflow(badgeChangeRequest, subscriberState, badge.getAwardedWorkflowID(), badgeChangeRequest.getFeatureID(), badgeChangeRequest.getOrigin());
+             }
+           else
+             {
+               badgeChangeResponse.setReturnStatus(RESTAPIGenericReturnCodes.BADGE_ALREADY_AWARDED);
+               changed = false;
+               log.info("RAJ K BADGE_ALREADY_AWARDED");
+             }
+           break;
+           
+         case REMOVE:
+           if (subscriberBadge == null || subscriberBadge.getCustomerBadgeStatus().equals(CustomerBadgeStatus.PENDING))
+             {
+               badgeChangeResponse.setReturnStatus(RESTAPIGenericReturnCodes.BADGE_NOT_AVAILABLE);
+               changed = false;
+               log.info("RAJ K BADGE_NOT_AVAILABLE");
+             }
+           else if (badge.getBadgeType().equals(BadgeType.PERMANENT))
+             {
+               badgeChangeResponse.setReturnStatus(RESTAPIGenericReturnCodes.BADGE_NOT_REMOVABLE);
+               changed = false;
+               log.info("RAJ K BADGE_NOT_REMOVABLE");
+             }
+           else
+             {
+               //
+               //  removed
+               //
+               
+               subscriberBadge.setBadgeObjectiveIDs(badge.getBadgeObjectives().stream().map(badgeObj -> badgeObj.getBadgeObjectiveID()).collect(Collectors.toList()));
+               subscriberBadge.setCustomerBadgeStatus(CustomerBadgeStatus.PENDING);
+               subscriberBadge.setBadgeRemoveDate(now);
+               badgeChangeResponse.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
+               log.info("RAJ K removed");
+               
+               //
+               //  triggerBadgeWorflow RemoveWorkflow
+               //
+               
+               triggerBadgeWorflow(badgeChangeRequest, subscriberState, badge.getRemoveWorkflowID(), badgeChangeRequest.getFeatureID(), badgeChangeRequest.getOrigin());
+             }
+           break;
+
+         default:
+           if (log.isErrorEnabled()) log.error("invalid badge actionRequest {}", actionRequest);
+           changed = false;
+           break;
+       }
+     }
+   else
+     {
+       badgeChangeResponse.setReturnStatus(RESTAPIGenericReturnCodes.BADGE_NOT_FOUND);
+       changed = false;
+       log.info("RAJ K BADGE_NOT_FOUND");
+     }
+   
+   //
+   //  add this response - need to sink
+   //
+   
+   subscriberState.getBadgeChangeResponses().add(badgeChangeResponse);
+   
+   log.info("RAJ K changeSubscriberBadge changed {}", changed);
+   return changed;
  }
 
   private static void checkRedeemVoucher(VoucherProfileStored voucherStored, VoucherChange voucherChange, boolean redeem)
@@ -7424,7 +7445,7 @@ public class EvolutionEngine
               
             case BadgeChange:
               BadgeChange badgeChange = (BadgeChange) action;
-              subscriberState.getBadgeChangeRequests().add(badgeChange);
+              log.info("RAJ K Nothing to do");
               break;
 
             default:
@@ -9284,6 +9305,89 @@ public class EvolutionEngine
               }
             }
         }
+      return result;
+    }
+  }
+  
+  /*****************************************
+  *
+  *  class BadgeActionManager
+  *
+  *****************************************/
+
+  public static class BadgeActionManager extends ActionManager
+  {
+    /*****************************************
+    *
+    *  data
+    *
+    *****************************************/
+
+    private String moduleID;
+    private String origin;
+    private BadgeAction operation;
+
+    /*****************************************
+    *
+    *  constructor
+    *
+    *****************************************/
+
+    public BadgeActionManager(JSONObject configuration) throws GUIManagerException
+    {
+      super(configuration);
+      this.moduleID = JSONUtilities.decodeString(configuration, "moduleID", true);
+      this.origin = JSONUtilities.decodeString(configuration, "origin", true);
+      this.operation = BadgeAction.fromExternalRepresentation(JSONUtilities.decodeString(configuration, "operation", true));
+    }
+
+    /*****************************************
+    *
+    *  execute
+    *
+    *****************************************/
+
+    @Override public List<Action> executeOnEntry(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
+    {
+      
+      /*****************************************
+      *
+      *  request arguments
+      *
+      *****************************************/
+
+      String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
+      deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, deliveryRequestSource);
+      String badgeID = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.badgeID");
+      subscriberEvaluationRequest.getJourneyState().getBadgeChanges().clear();
+
+      /*****************************************
+      *
+      *  request
+      *
+      *****************************************/
+
+      BadgeChange badgeChangeRequest = new BadgeChange(evolutionEventContext.getSubscriberState().getSubscriberID(), "", SystemTime.getCurrentTime(), "", operation, badgeID, moduleID, deliveryRequestSource, origin, RESTAPIGenericReturnCodes.SUCCESS, evolutionEventContext.getSubscriberState().getSubscriberProfile().getTenantID(), new ParameterMap());
+      boolean changed = changeSubscriberBadge(badgeChangeRequest, evolutionEventContext.getSubscriberState(), evolutionEventContext.now);
+      if (changed)
+        {
+          subscriberEvaluationRequest.getJourneyState().getBadgeChanges().add(badgeChangeRequest);
+        }
+      
+
+      /*****************************************
+      *
+      *  return request
+      *
+      *****************************************/
+
+      return Collections.<Action>singletonList(badgeChangeRequest);
+    }
+    
+    @Override public Map<String, String> getGUIDependencies(List<GUIService> guiServiceList, JourneyNode journeyNode, int tenantID)
+    {
+      Map<String, String> result = new HashMap<String, String>();
+      String badgeID = (String) journeyNode.getNodeParameters().get("node.parameter.badgeID"); // RAJ K
       return result;
     }
   }
