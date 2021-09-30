@@ -66,7 +66,8 @@ public class GrafanaUtils
             int tenantID = tenant.getTenantID();
 
             // check if organization exists
-            String orgName = tenant.getDisplay();
+//            String orgName = tenant.getDisplay();
+            String orgName = "t" + tenantID;
             if(tenantID == 0) 
             { 
               orgName = "Main Org."; 
@@ -314,7 +315,7 @@ public class GrafanaUtils
                         mapDbEs.put("webpath",""); 
                         mapDbEs.put("reportGroup",""); 
                         mapDbEs.put("permissionKey",""); 
-                        mapDbEs.put("tenantid",orgID);  
+                        mapDbEs.put("tenantid",tenantID);  
                         request.doc(mapDbEs);
                         request.docAsUpsert(true);
                         request.retryOnConflict(4);
