@@ -398,11 +398,11 @@ public class GUIManager
     putUCGRule("putUCGRule"),
     removeUCGRule("removeUCGRule"),
     setStatusUCGRule("setStatusUCGRule"),
-    getPredictionOrderList("getPredictionOrderList"),
-    getPredictionOrderSummaryList("getPredictionOrderSummaryList"),
-    getPredictionOrder("getPredictionOrder"),
-    putPredictionOrder("putPredictionOrder"),
-    removePredictionOrder("removePredictionOrder"),
+    getPredictionSettingsList("getPredictionSettingsList"),
+    getPredictionSettingsSummaryList("getPredictionSettingsSummaryList"),
+    getPredictionSettings("getPredictionSettings"),
+    putPredictionSettings("putPredictionSettings"),
+    removePredictionSettings("removePredictionSettings"),
     getDeliverableList("getDeliverableList"),
     putDeliverable("putDeliverable"),
     removeDeliverable("removeDeliverable"),
@@ -730,7 +730,7 @@ public class GUIManager
   protected OfferObjectiveService offerObjectiveService;
   protected ProductTypeService productTypeService;
   protected UCGRuleService ucgRuleService;
-  protected PredictionOrderService predictionOrderService;
+  protected PredictionSettingsService predictionSettingsService;
   protected DeliverableService deliverableService;
   protected TokenTypeService tokenTypeService;
   protected VoucherTypeService voucherTypeService;
@@ -860,7 +860,7 @@ public class GUIManager
     String offerObjectiveTopic = Deployment.getOfferObjectiveTopic();
     String productTypeTopic = Deployment.getProductTypeTopic();
     String ucgRuleTopic = Deployment.getUCGRuleTopic();
-    String predictionOrderTopic = Deployment.getPredictionOrderTopic();
+    String predictionSettingsTopic = Deployment.getPredictionSettingsTopic();
     String deliverableTopic = Deployment.getDeliverableTopic();
     String tokenTypeTopic = Deployment.getTokenTypeTopic();
     String voucherTypeTopic = Deployment.getVoucherTypeTopic();
@@ -1088,7 +1088,7 @@ public class GUIManager
     offerObjectiveService = new OfferObjectiveService(bootstrapServers, "guimanager-offerobjectiveservice-" + apiProcessKey, offerObjectiveTopic, true);
     productTypeService = new ProductTypeService(bootstrapServers, "guimanager-producttypeservice-" + apiProcessKey, productTypeTopic, true);
     ucgRuleService = new UCGRuleService(bootstrapServers,"guimanager-ucgruleservice-"+apiProcessKey,ucgRuleTopic,true);
-    predictionOrderService = new PredictionOrderService(bootstrapServers, predictionOrderTopic,true);
+    predictionSettingsService = new PredictionSettingsService(bootstrapServers, predictionSettingsTopic,true);
     deliverableService = new DeliverableService(bootstrapServers, "guimanager-deliverableservice-" + apiProcessKey, deliverableTopic, true);
     tokenTypeService = new TokenTypeService(bootstrapServers, "guimanager-tokentypeservice-" + apiProcessKey, tokenTypeTopic, true);
     voucherTypeService = new VoucherTypeService(bootstrapServers, "guimanager-vouchertypeservice-" + apiProcessKey, voucherTypeTopic, true);
@@ -1120,7 +1120,7 @@ public class GUIManager
     voucherChangeResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),Deployment.getVoucherChangeResponseTopic(),StringKey.serde(),VoucherChange.serde());
     voucherChangeResponseListenerService.start();
 
-    guiManagerContext = new GUIManagerContext(journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, predictionOrderService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService);
+    guiManagerContext = new GUIManagerContext(journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, predictionSettingsService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService);
 
     guiManagerBaseManagement = new GUIManagerBaseManagement(journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, dnboMatrixService, dynamicCriterionFieldService, dynamicEventDeclarationsService, journeyTemplateService, purchaseResponseListenerService, subscriberGroupSharedIDService, zuks, httpTimeout, kafkaProducer, elasticsearch, subscriberMessageTemplateService, getCustomerAlternateID, guiManagerContext, subscriberGroupEpochReader, renamedProfileCriterionFieldReader);
     guiManagerLoyaltyReporting = new GUIManagerLoyaltyReporting(journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, dnboMatrixService, dynamicCriterionFieldService, dynamicEventDeclarationsService, journeyTemplateService, purchaseResponseListenerService, subscriberGroupSharedIDService, zuks, httpTimeout, kafkaProducer, elasticsearch, subscriberMessageTemplateService, getCustomerAlternateID, guiManagerContext, subscriberGroupEpochReader, renamedProfileCriterionFieldReader);
@@ -1944,7 +1944,7 @@ public class GUIManager
     offerObjectiveService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);
     productTypeService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);
     ucgRuleService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);
-    predictionOrderService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);
+    predictionSettingsService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);
     deliverableService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);
     tokenTypeService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);
     voucherTypeService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);
@@ -2169,11 +2169,11 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/putUCGRule", new APISimpleHandler(API.putUCGRule));
         restServer.createContext("/nglm-guimanager/removeUCGRule", new APISimpleHandler(API.removeUCGRule));
         restServer.createContext("/nglm-guimanager/setStatusUCGRule", new APISimpleHandler(API.setStatusUCGRule));
-        restServer.createContext("/nglm-guimanager/getPredictionOrderList", new APISimpleHandler(API.getPredictionOrderList));
-        restServer.createContext("/nglm-guimanager/getPredictionOrderSummaryList", new APISimpleHandler(API.getPredictionOrderSummaryList));
-        restServer.createContext("/nglm-guimanager/getPredictionOrder", new APISimpleHandler(API.getPredictionOrder));
-        restServer.createContext("/nglm-guimanager/putPredictionOrder", new APISimpleHandler(API.putPredictionOrder));
-        restServer.createContext("/nglm-guimanager/removePredictionOrder", new APISimpleHandler(API.removePredictionOrder));        
+        restServer.createContext("/nglm-guimanager/getPredictionSettingsList", new APISimpleHandler(API.getPredictionSettingsList));
+        restServer.createContext("/nglm-guimanager/getPredictionSettingsSummaryList", new APISimpleHandler(API.getPredictionSettingsSummaryList));
+        restServer.createContext("/nglm-guimanager/getPredictionSettings", new APISimpleHandler(API.getPredictionSettings));
+        restServer.createContext("/nglm-guimanager/putPredictionSettings", new APISimpleHandler(API.putPredictionSettings));
+        restServer.createContext("/nglm-guimanager/removePredictionSettings", new APISimpleHandler(API.removePredictionSettings));
         restServer.createContext("/nglm-guimanager/getDeliverableList", new APISimpleHandler(API.getDeliverableList));
         restServer.createContext("/nglm-guimanager/getDeliverableSummaryList", new APISimpleHandler(API.getDeliverableSummaryList));
         restServer.createContext("/nglm-guimanager/getDeliverable", new APISimpleHandler(API.getDeliverable));
@@ -2418,7 +2418,7 @@ public class GUIManager
     *
     *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, dynamicCriterionFieldService, journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, predictionOrderService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, renamedProfileCriterionFieldReader, reportService, subscriberMessageTemplateService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, dnboMatrixService, segmentContactPolicyService, criterionFieldAvailableValuesService));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, dynamicCriterionFieldService, journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, predictionSettingsService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, renamedProfileCriterionFieldReader, reportService, subscriberMessageTemplateService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, dnboMatrixService, segmentContactPolicyService, criterionFieldAvailableValuesService));
 
     /*****************************************
     *
@@ -2506,7 +2506,7 @@ public class GUIManager
     private OfferObjectiveService offerObjectiveService;
     private ProductTypeService productTypeService;
     private UCGRuleService ucgRuleService;
-    private PredictionOrderService predictionOrderService;
+    private PredictionSettingsService predictionSettingsService;
     private DeliverableService deliverableService;
     private TokenTypeService tokenTypeService;
     private VoucherTypeService voucherTypeService;
@@ -2529,7 +2529,7 @@ public class GUIManager
     //  constructor
     //
     
-    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, DynamicCriterionFieldService dynamicCriterionFieldService, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, PredictionOrderService predictionOrderService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader, ReportService reportService, SubscriberMessageTemplateService subscriberMessageTemplateService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, DNBOMatrixService dnboMatrixService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService)
+    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, DynamicCriterionFieldService dynamicCriterionFieldService, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, PredictionSettingsService predictionSettingsService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader, ReportService reportService, SubscriberMessageTemplateService subscriberMessageTemplateService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, DNBOMatrixService dnboMatrixService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService)
     {
       this.kafkaProducer = kafkaProducer;
       this.restServer = restServer;
@@ -2553,7 +2553,7 @@ public class GUIManager
       this.offerObjectiveService = offerObjectiveService;
       this.productTypeService = productTypeService;
       this.ucgRuleService = ucgRuleService;
-      this.predictionOrderService = predictionOrderService;
+      this.predictionSettingsService = predictionSettingsService;
       this.deliverableService = deliverableService;
       this.tokenTypeService = tokenTypeService;
       this.voucherTypeService = voucherTypeService;
@@ -2604,7 +2604,7 @@ public class GUIManager
       if (offerObjectiveService != null) offerObjectiveService.stop();
       if (productTypeService != null) productTypeService.stop();
       if (ucgRuleService != null) ucgRuleService.stop();
-      if (predictionOrderService != null) predictionOrderService.stop();
+      if (predictionSettingsService != null) predictionSettingsService.stop();
       if (deliverableService != null) deliverableService.stop();
       if (tokenTypeService != null) tokenTypeService.stop();
       if (voucherTypeService != null) voucherTypeService.stop();
@@ -3523,24 +3523,24 @@ public class GUIManager
                   jsonResponse = guiManagerBaseManagement.processSetStatusUCGRule(userID, jsonRoot, tenantID);
                   break;
                   
-                case getPredictionOrderList:
-                  jsonResponse = guiManagerGeneral.processGetPredictionOrderList(userID, jsonRoot, true, includeArchived, tenantID);
+                case getPredictionSettingsList:
+                  jsonResponse = guiManagerGeneral.processGetPredictionSettingsList(userID, jsonRoot, true, includeArchived, tenantID);
                   break;
                   
-                case getPredictionOrderSummaryList:
-                  jsonResponse = guiManagerGeneral.processGetPredictionOrderList(userID, jsonRoot, false, includeArchived, tenantID);
+                case getPredictionSettingsSummaryList:
+                  jsonResponse = guiManagerGeneral.processGetPredictionSettingsList(userID, jsonRoot, false, includeArchived, tenantID);
                   break;
                   
-                case getPredictionOrder:
-                  jsonResponse = guiManagerGeneral.processGetPredictionOrder(userID, jsonRoot, includeArchived, tenantID);
+                case getPredictionSettings:
+                  jsonResponse = guiManagerGeneral.processGetPredictionSettings(userID, jsonRoot, includeArchived, tenantID);
                   break;
                   
-                case putPredictionOrder:
-                  jsonResponse = guiManagerGeneral.processPutPredictionOrder(userID, jsonRoot, tenantID);
+                case putPredictionSettings:
+                  jsonResponse = guiManagerGeneral.processPutPredictionSettings(userID, jsonRoot, tenantID);
                   break;
                   
-                case removePredictionOrder:
-                  jsonResponse = guiManagerGeneral.processRemovePredictionOrder(userID, jsonRoot, tenantID);
+                case removePredictionSettings:
+                  jsonResponse = guiManagerGeneral.processRemovePredictionSettings(userID, jsonRoot, tenantID);
                   break;
 
                 case getDeliverableList:
@@ -26890,17 +26890,17 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           break;
           
 
-        case "predictionorders":
+        case "predictions":
           if (includeDynamic)
           {
-            for (GUIManagedObject predictionOrderUnchecked : predictionOrderService.getStoredPredictionOrders(tenantID) )
+            for (GUIManagedObject predictionSettingsUnchecked : predictionSettingsService.getStoredPredictionSettings(tenantID) )
             {
-              if (predictionOrderUnchecked.getAccepted())
+              if (predictionSettingsUnchecked.getAccepted())
               {
-                PredictionOrder predictionOrder = (PredictionOrder) predictionOrderUnchecked;
+                PredictionSettings predictionSettings = (PredictionSettings) predictionSettingsUnchecked;
                 HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                availableValue.put("id", predictionOrder.getGUIManagedObjectID());
-                availableValue.put("display", predictionOrder.getGUIManagedObjectDisplay());
+                availableValue.put("id", predictionSettings.getGUIManagedObjectID());
+                availableValue.put("display", predictionSettings.getGUIManagedObjectDisplay());
                 result.add(JSONUtilities.encodeObject(availableValue));
               }
             }
@@ -28771,7 +28771,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     private OfferObjectiveService offerObjectiveService;
     private ProductTypeService productTypeService;
     private UCGRuleService ucgRuleService;
-    private PredictionOrderService predictionOrderService;
+    private PredictionSettingsService predictionSettingsService;
     private DeliverableService deliverableService;
     private TokenTypeService tokenTypeService;
     private VoucherTypeService voucherTypeService;
@@ -28814,7 +28814,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     public OfferObjectiveService getOfferObjectiveService() { return offerObjectiveService; }
     public ProductTypeService getProductTypeService() { return productTypeService; }
     public UCGRuleService getUcgRuleService() { return ucgRuleService; }
-    public PredictionOrderService getPredictionOrderService() { return predictionOrderService; }
+    public PredictionSettingsService getPredictionSettingsService() { return predictionSettingsService; }
     public DeliverableService getDeliverableService() { return deliverableService; }
     public TokenTypeService getTokenTypeService() { return tokenTypeService; }
     public VoucherTypeService getVoucherTypeService() { return voucherTypeService; }
@@ -28838,7 +28838,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     *
     *****************************************/
 
-    public GUIManagerContext(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, PredictionOrderService predictionOrderService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService)
+    public GUIManagerContext(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, PredictionSettingsService predictionSettingsService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService)
     {
       this.journeyService = journeyService;
       this.segmentationDimensionService = segmentationDimensionService;
@@ -28860,7 +28860,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
       this.offerObjectiveService = offerObjectiveService;
       this.productTypeService = productTypeService;
       this.ucgRuleService = ucgRuleService;
-      this.predictionOrderService = predictionOrderService;
+      this.predictionSettingsService = predictionSettingsService;
       this.deliverableService = deliverableService;
       this.tokenTypeService = tokenTypeService;
       this.voucherTypeService = voucherTypeService;

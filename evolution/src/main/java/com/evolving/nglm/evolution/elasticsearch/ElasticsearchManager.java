@@ -14,7 +14,7 @@ import com.evolving.nglm.evolution.DynamicCriterionFieldService;
 import com.evolving.nglm.evolution.JobScheduler;
 import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.LoggerInitialization;
-import com.evolving.nglm.evolution.PredictionOrderService;
+import com.evolving.nglm.evolution.PredictionSettingsService;
 import com.evolving.nglm.evolution.PredictionOrganizer;
 import com.evolving.nglm.evolution.ScheduledJob;
 import com.evolving.nglm.evolution.ScheduledJobConfiguration;
@@ -39,7 +39,7 @@ public class ElasticsearchManager
   private static DynamicCriterionFieldService dynamicCriterionFieldService;
   private static VoucherService voucherService;
   private static JourneyService journeyService;
-  private static PredictionOrderService predictionOrderService;
+  private static PredictionSettingsService predictionSettingsService;
   
   //
   // Elasticsearch Client
@@ -104,7 +104,7 @@ public class ElasticsearchManager
     if (dynamicCriterionFieldService != null) dynamicCriterionFieldService.stop();
     if (journeyService != null) journeyService.stop();
     if (voucherService != null) voucherService.stop();
-    if (predictionOrderService != null) predictionOrderService.stop();
+    if (predictionSettingsService != null) predictionSettingsService.stop();
     
     /*****************************************
     *
@@ -155,8 +155,8 @@ public class ElasticsearchManager
     journeyService.start();
     voucherService = new VoucherService(bootstrapServers, "NOT_USED", Deployment.getVoucherTopic(), elasticsearchRestClient);
     voucherService.start();
-    predictionOrderService = new PredictionOrderService(bootstrapServers, Deployment.getPredictionOrderTopic(), false);
-    predictionOrderService.start();
+    predictionSettingsService = new PredictionSettingsService(bootstrapServers, Deployment.getPredictionSettingsTopic(), false);
+    predictionSettingsService.start();
     dynamicCriterionFieldService.start();
     
     //
@@ -198,7 +198,7 @@ public class ElasticsearchManager
     predictionThread = new Thread(new Runnable() {
       @Override public void run()
       {
-        PredictionOrganizer.start(elasticsearchRestClient, predictionOrderService);
+        PredictionOrganizer.start(elasticsearchRestClient, predictionSettingsService);
       }
     });
     predictionThread.start();

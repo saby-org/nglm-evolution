@@ -158,7 +158,7 @@ public abstract class GUIManagedObject
     guiManagedObjectSerdes.add(OfferObjective.serde());
     guiManagedObjectSerdes.add(ProductType.serde());
     guiManagedObjectSerdes.add(UCGRule.serde());
-    guiManagedObjectSerdes.add(PredictionOrder.serde());
+    guiManagedObjectSerdes.add(predictionSettings.serde());
     guiManagedObjectSerdes.add(Deliverable.serde());
     guiManagedObjectSerdes.add(TokenType.serde());
     guiManagedObjectSerdes.add(VoucherType.serde());

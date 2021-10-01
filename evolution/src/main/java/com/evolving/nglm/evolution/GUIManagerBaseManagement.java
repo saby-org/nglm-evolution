@@ -69,7 +69,7 @@ public class GUIManagerBaseManagement extends GUIManager
     super.targetService = targetService;
     super.tokenTypeService = tokenTypeService;
     super.ucgRuleService = ucgRuleService;
-    super.predictionOrderService = guiManagerContext.getPredictionOrderService();
+    super.predictionSettingsService = guiManagerContext.getPredictionSettingsService();
     super.uploadedFileService = uploadedFileService;
     super.voucherService = voucherService;
     super.voucherTypeService = voucherTypeService;

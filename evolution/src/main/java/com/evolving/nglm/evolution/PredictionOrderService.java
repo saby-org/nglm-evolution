@@ -1,6 +1,6 @@
 /****************************************************************************
 *
-*  PredictionOrderService.java
+*  PredictionSettingsService.java
 *
 ****************************************************************************/
 
@@ -9,7 +9,7 @@ package com.evolving.nglm.evolution;
 import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.PredictionOrderMetadata;
+import com.evolving.nglm.evolution.PredictionSettingsMetadata;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import org.json.simple.JSONObject;
@@ -19,52 +19,52 @@ import org.slf4j.LoggerFactory;
 import java.util.Collection;
 import java.util.Date;
 
-public class PredictionOrderService extends GUIService
+public class PredictionSettingsService extends GUIService
 {
-  private static final Logger log = LoggerFactory.getLogger(PredictionOrderService.class);
+  private static final Logger log = LoggerFactory.getLogger(PredictionSettingsService.class);
   
   /*****************************************
   *
   * Properties
   *
   *****************************************/
-  private ReferenceDataReader<String,PredictionOrderMetadata> metadata;
+  private ReferenceDataReader<String,PredictionSettingsMetadata> metadata;
   
   /*****************************************
   *
   * Constructor
   *
   *****************************************/
-  public PredictionOrderService(String bootstrapServers, String predictionOrderTopic, boolean masterService, PredictionOrderListener predictionOrderListener, boolean notifyOnSignificantChange)
+  public PredictionSettingsService(String bootstrapServers, String predictionSettingsTopic, boolean masterService, PredictionSettingsListener predictionSettingsListener, boolean notifyOnSignificantChange)
   {
-    super(bootstrapServers, "PredictionOrderService", predictionOrderTopic, masterService, getSuperListener(predictionOrderListener), "putPredictionOrder", "removePredictionOrder", notifyOnSignificantChange);
+    super(bootstrapServers, "PredictionSettingsService", predictionSettingsTopic, masterService, getSuperListener(predictionSettingsListener), "putPredictionSettings", "removePredictionSettings", notifyOnSignificantChange);
     
     // Init metadata ReferenceDataReader
-    metadata = ReferenceDataReader.<String,PredictionOrderMetadata>startReader("predictionorderservice-predictionordermetadata", Deployment.getBrokerServers(), Deployment.getPredictionOrderMetadataTopic(), PredictionOrderMetadata::unpack);
+    metadata = ReferenceDataReader.<String,PredictionSettingsMetadata>startReader("predictionsettingsservice-predictionsettingsmetadata", Deployment.getBrokerServers(), Deployment.getPredictionSettingsMetadataTopic(), PredictionSettingsMetadata::unpack);
   }
   
-  public PredictionOrderService(String bootstrapServers, String predictionOrderTopic, boolean masterService, PredictionOrderListener predictionOrderListener)
+  public PredictionSettingsService(String bootstrapServers, String predictionSettingsTopic, boolean masterService, PredictionSettingsListener predictionSettingsListener)
   {
-    this(bootstrapServers, predictionOrderTopic, masterService, predictionOrderListener, true);
+    this(bootstrapServers, predictionSettingsTopic, masterService, predictionSettingsListener, true);
   }
 
-  public PredictionOrderService(String bootstrapServers, String predictionOrderTopic, boolean masterService)
+  public PredictionSettingsService(String bootstrapServers, String predictionSettingsTopic, boolean masterService)
   {
-    this(bootstrapServers, predictionOrderTopic, masterService, (PredictionOrderListener) null, true);
+    this(bootstrapServers, predictionSettingsTopic, masterService, (PredictionSettingsListener) null, true);
   }
 
   //
   //  getSuperListener
   //
-  private static GUIManagedObjectListener getSuperListener(PredictionOrderListener predictionOrderListener)
+  private static GUIManagedObjectListener getSuperListener(PredictionSettingsListener predictionSettingsListener)
   {
     GUIManagedObjectListener superListener = null;
-    if (predictionOrderListener != null)
+    if (predictionSettingsListener != null)
       {
         superListener = new GUIManagedObjectListener()
         {
-          @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { predictionOrderListener.predictionOrderActivated((PredictionOrder) guiManagedObject); }
-          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID) { predictionOrderListener.predictionOrderDeactivated(guiManagedObjectID); }
+          @Override public void guiManagedObjectActivated(GUIManagedObject guiManagedObject) { predictionSettingsListener.predictionSettingsActivated((PredictionSettings) guiManagedObject); }
+          @Override public void guiManagedObjectDeactivated(String guiManagedObjectID, int tenantID) { predictionSettingsListener.predictionSettingsDeactivated(guiManagedObjectID); }
         };
       }
     return superListener;
@@ -83,57 +83,57 @@ public class PredictionOrderService extends GUIService
 
   /*****************************************
   *
-  *  getPredictionOrder
+  *  getPredictionSettings
   *
   *****************************************/
-  public String generatePredictionOrderID() { return generateGUIManagedObjectID(); }
-  public GUIManagedObject getStoredPredictionOrder(String predictionOrderID) { return getStoredGUIManagedObject(predictionOrderID); }
-  public GUIManagedObject getStoredPredictionOrder(String predictionOrderID, boolean includeArchived) { return getStoredGUIManagedObject(predictionOrderID, includeArchived); }
-  public Collection<GUIManagedObject> getStoredPredictionOrders(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
-  public Collection<GUIManagedObject> getStoredPredictionOrders(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
-  public boolean isActivePredictionOrder(GUIManagedObject predictionOrderUnchecked, Date date) { return isActiveGUIManagedObject(predictionOrderUnchecked, date); }
-  public PredictionOrder getActivePredictionOrder(String predictionOrderID, Date date) { return (PredictionOrder) getActiveGUIManagedObject(predictionOrderID, date); }
-  public Collection<PredictionOrder> getActivePredictionOrders(Date date, int tenantID) { return (Collection<PredictionOrder>) getActiveGUIManagedObjects(date, tenantID); }
+  public String generatePredictionSettingsID() { return generateGUIManagedObjectID(); }
+  public GUIManagedObject getStoredPredictionSettings(String predictionSettingsID) { return getStoredGUIManagedObject(predictionSettingsID); }
+  public GUIManagedObject getStoredPredictionSettings(String predictionSettingsID, boolean includeArchived) { return getStoredGUIManagedObject(predictionSettingsID, includeArchived); }
+  public Collection<GUIManagedObject> getStoredPredictionSettings(int tenantID) { return getStoredGUIManagedObjects(tenantID); }
+  public Collection<GUIManagedObject> getStoredPredictionSettings(boolean includeArchived, int tenantID) { return getStoredGUIManagedObjects(includeArchived, tenantID); }
+  public boolean isActivePredictionSettings(GUIManagedObject predictionSettingsUnchecked, Date date) { return isActiveGUIManagedObject(predictionSettingsUnchecked, date); }
+  public PredictionSettings getActivePredictionSettings(String predictionSettingsID, Date date) { return (PredictionSettings) getActiveGUIManagedObject(predictionSettingsID, date); }
+  public Collection<PredictionSettings> getActivePredictionSettings(Date date, int tenantID) { return (Collection<PredictionSettings>) getActiveGUIManagedObjects(date, tenantID); }
 
   /*****************************************
   *
-  *  getPredictionOrderMetaData
+  *  getPredictionSettingsMetaData
   *
   *****************************************/
-  public PredictionOrderMetadata getPredictionOrderMetadata(String predictionOrderID)
+  public PredictionSettingsMetadata getPredictionSettingsMetadata(String predictionSettingsID)
   {
-    PredictionOrderMetadata result = metadata.get(predictionOrderID);
+    PredictionSettingsMetadata result = metadata.get(predictionSettingsID);
     if(result == null) {
-      result = new PredictionOrderMetadata(predictionOrderID);
+      result = new PredictionSettingsMetadata(predictionSettingsID);
     }
     return result;
   }
   
   /*****************************************
   *
-  *  putPredictionOrder
+  *  putPredictionSettings
   *
   *****************************************/
-  public void putPredictionOrder(GUIManagedObject predictionOrder, boolean newObject, String userID) throws GUIManagerException
+  public void putPredictionSettings(GUIManagedObject predictionSettings, boolean newObject, String userID) throws GUIManagerException
   {
     Date now = SystemTime.getCurrentTime();
 
     //
     //  validate
     //
-    if (predictionOrder instanceof PredictionOrder)
+    if (predictionSettings instanceof PredictionSettings)
       {
-        ((PredictionOrder) predictionOrder).validate();
+        ((PredictionSettings) predictionSettings).validate();
       }
     
-    putGUIManagedObject(predictionOrder, now, newObject, userID);
+    putGUIManagedObject(predictionSettings, now, newObject, userID);
   }
   
-  public void putPredictionOrder(IncompleteObject predictionOrder, boolean newObject, String userID)
+  public void putPredictionSettings(IncompleteObject predictionSettings, boolean newObject, String userID)
   {
     try
       {
-        putPredictionOrder((GUIManagedObject) predictionOrder, newObject, userID);
+        putPredictionSettings((GUIManagedObject) predictionSettings, newObject, userID);
       }
     catch (GUIManagerException e)
       {
@@ -143,23 +143,23 @@ public class PredictionOrderService extends GUIService
 
   /*****************************************
   *
-  *  removePredictionOrder
+  *  removePredictionSettings
   *
   *****************************************/
-  public void removePredictionOrder(String predictionOrder, String userID, int tenantID) { 
-    removeGUIManagedObject(predictionOrder, SystemTime.getCurrentTime(), userID, tenantID); 
+  public void removePredictionSettings(String predictionSettings, String userID, int tenantID) { 
+    removeGUIManagedObject(predictionSettings, SystemTime.getCurrentTime(), userID, tenantID); 
     
     // TODO: no deletion of Metadata for the moment...
   }
 
   /*****************************************
   *
-  *  interface PredictionOrderListener
+  *  interface PredictionSettingsListener
   *
   *****************************************/
-  public interface PredictionOrderListener
+  public interface PredictionSettingsListener
   {
-    public void predictionOrderActivated(PredictionOrder predictionOrder);
-    public void predictionOrderDeactivated(String guiManagedObjectID);
+    public void predictionSettingsActivated(PredictionSettings predictionSettings);
+    public void predictionSettingsDeactivated(String guiManagedObjectID);
   }
 }

@@ -1,6 +1,6 @@
 /*****************************************************************************
 *
-*  PredictionOrder.java
+*  PredictionSettingsMetadata.java
 *
 *****************************************************************************/
 
@@ -26,20 +26,20 @@ import java.util.Date;
 import java.util.stream.Collectors;
 
 /**
- * Metadata for a GUIManagedObject (PredictionOrder)
+ * Metadata for a GUIManagedObject (PredictionSettings)
  * 
  * Those data will not be filled by GUI. Those are internal data that need to be shared 
  * with Spark, Evolution, (or display to the user in GUI, but in read-only mode). 
  * 
  * Therefore, we cannot store them in the GUIManagedObject because GUIManager (and thus GUI) 
  * is the MASTER of those data.
- * - GUIManager is the only one with the PredictionOrderService (GUIService) in master mode (write)
- * - Otherwise, if GUI modify a PredictionOrder, it will override any internal metadata not provided by the GUI
+ * - GUIManager is the only one with the PredictionSettingsService (GUIService) in master mode (write)
+ * - Otherwise, if GUI modify a PredictionSettings, it will override any internal metadata not provided by the GUI
  *
  * Hence, those metadata are stored in auxiliary Object (this one) in a separate topic.
- * It will be retrieve in the PredictionOrderService through a ReferenceDataReader
+ * It will be retrieve in the PredictionSettingsService through a ReferenceDataReader
  */
-public class PredictionOrderMetadata implements ReferenceDataValue<String>
+public class PredictionSettingsMetadata implements ReferenceDataValue<String>
 {
   /*****************************************
   *
@@ -51,7 +51,7 @@ public class PredictionOrderMetadata implements ReferenceDataValue<String>
   static
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-    schemaBuilder.name("prediction_order_metadata");
+    schemaBuilder.name("prediction_settings_metadata");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(currentSchemaVersion));
     schemaBuilder.field("predictionID",           Schema.STRING_SCHEMA);    // Ref ID to GUIManagedObject
     schemaBuilder.field("lastExecutionID",        Schema.INT32_SCHEMA);     // Updated by scheduler when all requests have been pushed in subscriberpredictionsrequest
@@ -59,10 +59,10 @@ public class PredictionOrderMetadata implements ReferenceDataValue<String>
     schema = schemaBuilder.build();
   };
   
-  private static ConnectSerde<PredictionOrderMetadata> serde = new ConnectSerde<PredictionOrderMetadata>(schema, false, PredictionOrderMetadata.class, PredictionOrderMetadata::pack, PredictionOrderMetadata::unpack);
+  private static ConnectSerde<PredictionSettingsMetadata> serde = new ConnectSerde<PredictionSettingsMetadata>(schema, false, PredictionSettingsMetadata.class, PredictionSettingsMetadata::pack, PredictionSettingsMetadata::unpack);
   
   public static Schema schema() { return schema; }
-  public static ConnectSerde<PredictionOrderMetadata> serde() { return serde; }
+  public static ConnectSerde<PredictionSettingsMetadata> serde() { return serde; }
   
   /*****************************************
   *
@@ -71,7 +71,7 @@ public class PredictionOrderMetadata implements ReferenceDataValue<String>
   *****************************************/
   public static Object pack(Object value)
   {
-    PredictionOrderMetadata t = (PredictionOrderMetadata) value;
+    PredictionSettingsMetadata t = (PredictionSettingsMetadata) value;
     
     Struct struct = new Struct(schema);
     struct.put("predictionID", t.predictionID);
@@ -84,7 +84,7 @@ public class PredictionOrderMetadata implements ReferenceDataValue<String>
   * Unpack
   *
   *****************************************/
-  public static PredictionOrderMetadata unpack(SchemaAndValue schemaAndValue)
+  public static PredictionSettingsMetadata unpack(SchemaAndValue schemaAndValue)
   {
     Schema schema = schemaAndValue.schema();
     Object value = schemaAndValue.value();
@@ -97,7 +97,7 @@ public class PredictionOrderMetadata implements ReferenceDataValue<String>
     String predictionID = valueStruct.getString("predictionID");
     int lastExecutionID = valueStruct.getInt32("lastExecutionID");
     
-    return new PredictionOrderMetadata(predictionID, lastExecutionID);
+    return new PredictionSettingsMetadata(predictionID, lastExecutionID);
   }
   
   /*****************************************
@@ -135,7 +135,7 @@ public class PredictionOrderMetadata implements ReferenceDataValue<String>
   * Constructor
   *
   *****************************************/
-  private PredictionOrderMetadata(String predictionID, int lastExecutionID) 
+  private PredictionSettingsMetadata(String predictionID, int lastExecutionID) 
   {
     this.predictionID = predictionID;
     this.lastExecutionID = lastExecutionID;
@@ -146,7 +146,7 @@ public class PredictionOrderMetadata implements ReferenceDataValue<String>
   * Constructor - empty (for creation, when it does not exist in topic)
   *
   *****************************************/
-  public PredictionOrderMetadata(String predictionID) 
+  public PredictionSettingsMetadata(String predictionID) 
   {
     this(predictionID, 0);
   }

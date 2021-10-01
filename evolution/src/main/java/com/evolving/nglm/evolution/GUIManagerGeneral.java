@@ -152,7 +152,7 @@ public class GUIManagerGeneral extends GUIManager
     super.targetService = targetService;
     super.tokenTypeService = tokenTypeService;
     super.ucgRuleService = ucgRuleService;
-    super.predictionOrderService = guiManagerContext.getPredictionOrderService();
+    super.predictionSettingsService = guiManagerContext.getPredictionSettingsService();
     super.uploadedFileService = uploadedFileService;
     super.voucherService = voucherService;
     super.voucherTypeService = voucherTypeService;
@@ -3371,11 +3371,11 @@ public class GUIManagerGeneral extends GUIManager
 
   /*****************************************
   *
-  *  processGetPredictionOrderList
+  *  processGetPredictionSettingsList
   *
   *****************************************/
 
-  JSONObject processGetPredictionOrderList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived, int tenantID)
+  JSONObject processGetPredictionSettingsList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived, int tenantID)
   {
     //
     // retrieve and convert ucg rules
@@ -3388,24 +3388,24 @@ public class GUIManagerGeneral extends GUIManager
       JSONArray orderIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
       for (int i = 0; i < orderIDs.size(); i++) {
         String orderID = orderIDs.get(i).toString();
-        GUIManagedObject predictionOrder = predictionOrderService.getStoredPredictionOrder(orderID, includeArchived);
-        if (predictionOrder == null)
+        GUIManagedObject predictionSettings = predictionSettingsService.getStoredPredictionSettings(orderID, includeArchived);
+        if (predictionSettings == null)
           {
             HashMap<String, Object> response = new HashMap<String, Object>();
             String responseCode;
-            responseCode = "predictionOrderNotFound";
+            responseCode = "predictionSettingsNotFound";
             response.put("responseCode", responseCode);
             return JSONUtilities.encodeObject(response);
           }
-        orderObjects.add(predictionOrder);
+        orderObjects.add(predictionSettings);
       }
     }
     else {
-      orderObjects = predictionOrderService.getStoredPredictionOrders(includeArchived, tenantID);
+      orderObjects = predictionSettingsService.getStoredPredictionSettings(includeArchived, tenantID);
     }
     
-    for (GUIManagedObject predictionOrder : orderObjects) {
-      orders.add(predictionOrderService.generateResponseJSON(predictionOrder, fullDetails, now));
+    for (GUIManagedObject predictionSettings : orderObjects) {
+      orders.add(predictionSettingsService.generateResponseJSON(predictionSettings, fullDetails, now));
     }
     
     //
@@ -3413,68 +3413,68 @@ public class GUIManagerGeneral extends GUIManager
     //
     HashMap<String,Object> response = new HashMap<String,Object>();;
     response.put("responseCode", "ok");
-    response.put("predictionOrders", JSONUtilities.encodeArray(orders));
+    response.put("predictionSettings", JSONUtilities.encodeArray(orders));
     return JSONUtilities.encodeObject(response);
     
   }
   
   /*****************************************
   *
-  *  processGetPredictionOrder
+  *  processGetPredictionSettings
   *
   *****************************************/
 
-  JSONObject processGetPredictionOrder(String userID, JSONObject jsonRoot, boolean includeArchived, int tenantID)
+  JSONObject processGetPredictionSettings(String userID, JSONObject jsonRoot, boolean includeArchived, int tenantID)
   {
     HashMap<String,Object> response = new HashMap<String,Object>();
-    String predictionOrderID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    String predictionSettingsID = JSONUtilities.decodeString(jsonRoot, "id", true);
 
     //
     // retrieve and decorate ucg rule
     //
-    GUIManagedObject predictionOrder = predictionOrderService.getStoredPredictionOrder(predictionOrderID, includeArchived);
-    JSONObject orderJson = predictionOrderService.generateResponseJSON(predictionOrder, true, SystemTime.getCurrentTime());
+    GUIManagedObject predictionSettings = predictionSettingsService.getStoredPredictionSettings(predictionSettingsID, includeArchived);
+    JSONObject orderJson = predictionSettingsService.generateResponseJSON(predictionSettings, true, SystemTime.getCurrentTime());
 
     //
     // response
     //
-    response.put("responseCode", (predictionOrder != null) ? "ok" : "predictionOrderNotFound");
-    if (predictionOrder != null) response.put("predictionOrder", orderJson);
+    response.put("responseCode", (predictionSettings != null) ? "ok" : "predictionSettingsNotFound");
+    if (predictionSettings != null) response.put("predictionSettings", orderJson);
     return JSONUtilities.encodeObject(response);
   }
   
   /*****************************************
   *
-  *  processPutPredictionOrder
+  *  processPutPredictionSettings
   *
   *****************************************/
 
-  JSONObject processPutPredictionOrder(String userID, JSONObject jsonRoot, int tenantID)
+  JSONObject processPutPredictionSettings(String userID, JSONObject jsonRoot, int tenantID)
   {
 
     Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
     boolean dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", Boolean.FALSE); // false by default
-    String predictionOrderID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    String predictionSettingsID = JSONUtilities.decodeString(jsonRoot, "id", false);
     
-    if (predictionOrderID == null) {
-      predictionOrderID = predictionOrderService.generatePredictionOrderID();
-      jsonRoot.put("id", predictionOrderID);
+    if (predictionSettingsID == null) {
+      predictionSettingsID = predictionSettingsService.generatePredictionSettingsID();
+      jsonRoot.put("id", predictionSettingsID);
     }
     
     //
     // existing ?
     //
-    GUIManagedObject existingPredictionOrder = predictionOrderService.getStoredPredictionOrder(predictionOrderID);
+    GUIManagedObject existingPredictionSettings = predictionSettingsService.getStoredPredictionSettings(predictionSettingsID);
 
     //
     // read-only
     //
-    if (existingPredictionOrder != null && existingPredictionOrder.getReadOnly()) {
-      response.put("id", existingPredictionOrder.getGUIManagedObjectID());
-      response.put("accepted", existingPredictionOrder.getAccepted());
-      response.put("valid", existingPredictionOrder.getAccepted());
-      response.put("processing", predictionOrderService.isActivePredictionOrder(existingPredictionOrder, now));
+    if (existingPredictionSettings != null && existingPredictionSettings.getReadOnly()) {
+      response.put("id", existingPredictionSettings.getGUIManagedObjectID());
+      response.put("accepted", existingPredictionSettings.getAccepted());
+      response.put("valid", existingPredictionSettings.getAccepted());
+      response.put("processing", predictionSettingsService.isActivePredictionSettings(existingPredictionSettings, now));
       response.put("responseCode", "failedReadOnly");
       return JSONUtilities.encodeObject(response);
     }
@@ -3485,22 +3485,22 @@ public class GUIManagerGeneral extends GUIManager
     long epoch = epochServer.getKey();
     try
       {
-        PredictionOrder predictionOrder = new PredictionOrder(jsonRoot, epoch, existingPredictionOrder, tenantID);
+        PredictionSettings predictionSettings = new PredictionSettings(jsonRoot, epoch, existingPredictionSettings, tenantID);
         
         //
         // store
         //
         if (!dryRun) {
-          predictionOrderService.putPredictionOrder(predictionOrder, (existingPredictionOrder == null), userID);
+          predictionSettingsService.putPredictionSettings(predictionSettings, (existingPredictionSettings == null), userID);
         }
 
         //
         // response
         //
-        response.put("id", predictionOrder.getGUIManagedObjectID());
-        response.put("accepted", predictionOrder.getAccepted());
-        response.put("valid", predictionOrder.getAccepted());
-        response.put("processing", predictionOrderService.isActivePredictionOrder(predictionOrder, now));
+        response.put("id", predictionSettings.getGUIManagedObjectID());
+        response.put("accepted", predictionSettings.getAccepted());
+        response.put("valid", predictionSettings.getAccepted());
+        response.put("processing", predictionSettingsService.isActivePredictionSettings(predictionSettings, now));
         response.put("responseCode", "ok");
         return JSONUtilities.encodeObject(response);
       }
@@ -3517,7 +3517,7 @@ public class GUIManagerGeneral extends GUIManager
         //  response
         //
 
-        response.put("responseCode", "predictionOrderNotValid");
+        response.put("responseCode", "predictionSettingsNotValid");
         response.put("responseMessage", e.getMessage());
         response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
         return JSONUtilities.encodeObject(response);
@@ -3526,42 +3526,42 @@ public class GUIManagerGeneral extends GUIManager
   
   /*****************************************
   *
-  *  processRemovePredictionOrder
+  *  processRemovePredictionSettings
   *
   *****************************************/
 
-  JSONObject processRemovePredictionOrder(String userID, JSONObject jsonRoot, int tenantID)
+  JSONObject processRemovePredictionSettings(String userID, JSONObject jsonRoot, int tenantID)
   {
     HashMap<String,Object> response = new HashMap<String,Object>();
     Date now = SystemTime.getCurrentTime();
     boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
-    List<String> predictionOrderIDs = new LinkedList<String>();
+    List<String> predictionSettingsIDs = new LinkedList<String>();
     
     //
     // remove single item
     //
     if (jsonRoot.containsKey("id")) {
-      String predictionOrderID = JSONUtilities.decodeString(jsonRoot, "id", false);
-      predictionOrderIDs.add(predictionOrderID);
+      String predictionSettingsID = JSONUtilities.decodeString(jsonRoot, "id", false);
+      predictionSettingsIDs.add(predictionSettingsID);
     }
     
     //
     // multiple deletion
     //
     if (jsonRoot.containsKey("ids")) {
-      predictionOrderIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false);
+      predictionSettingsIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false);
     }
     
     //
     // check ids
     //
-    for(String predictionOrderID: predictionOrderIDs){
-      GUIManagedObject predictionOrder = predictionOrderService.getStoredPredictionOrder(predictionOrderID);
-      if (predictionOrder == null){
-        response.put("responseCode", "predictionOrderNotFound");
+    for(String predictionSettingsID: predictionSettingsIDs){
+      GUIManagedObject predictionSettings = predictionSettingsService.getStoredPredictionSettings(predictionSettingsID);
+      if (predictionSettings == null){
+        response.put("responseCode", "predictionSettingsNotFound");
         return JSONUtilities.encodeObject(response);
       }
-      else if (predictionOrder != null && !force && predictionOrder.getReadOnly()) {
+      else if (predictionSettings != null && !force && predictionSettings.getReadOnly()) {
         response.put("responseCode", "failedReadOnly");
         return JSONUtilities.encodeObject(response);
       }
@@ -3570,8 +3570,8 @@ public class GUIManagerGeneral extends GUIManager
     //
     // remove
     //
-    for(String predictionOrderID: predictionOrderIDs){
-      predictionOrderService.removePredictionOrder(predictionOrderID, userID, tenantID);
+    for(String predictionSettingsID: predictionSettingsIDs){
+      predictionSettingsService.removePredictionSettings(predictionSettingsID, userID, tenantID);
     }
     
     //

@@ -220,7 +220,7 @@ public class SubscriberPredictions
     public String predictionID;
     public int executionID;       // ExecutionID is here because we never clean manually the topic - (auto cleaned every 48h) 
                                   // It is also here for Spark to know that all requests has been pushed in the topic.
-                                  // It is when PredictionOrderMetadata.executionID switch to this one (at the very end of the push)
+                                  // It is when PredictionSettingsMetadata.executionID switch to this one (at the very end of the push)
     public boolean trainingMode;  // isTraining ? (otherwise prediction mode)
     
     public SubscriberPredictionsRequest(String subscriberID, String predictionID, int executionID, boolean trainingMode) {

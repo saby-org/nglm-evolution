@@ -112,8 +112,8 @@
     <topic.offerobjective>offerobjective</topic.offerobjective>
     <topic.producttype>producttype</topic.producttype>
     <topic.ucgrule>ucgrule</topic.ucgrule>
-    <topic.predictionorder>predictionorder</topic.predictionorder>
-    <topic.predictionordermetadata>predictionordermetadata</topic.predictionordermetadata>
+    <topic.predictionsettings>predictionsettings</topic.predictionsettings>
+    <topic.predictionsettingsmetadata>predictionsettingsmetadata</topic.predictionsettingsmetadata>
     <topic.catalogobjective>catalogobjective</topic.catalogobjective>
     <topic.guiaudit>guiaudit</topic.guiaudit>
     <topic.deliverable>deliverable</topic.deliverable>

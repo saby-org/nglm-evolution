@@ -1,6 +1,6 @@
 /*****************************************************************************
 *
-*  PredictionOrder.java
+*  PredictionSettings.java
 *
 *****************************************************************************/
 
@@ -23,7 +23,7 @@ import java.util.*;
 import java.util.Date;
 import java.util.stream.Collectors;
 
-public class PredictionOrder extends GUIManagedObject
+public class PredictionSettings extends GUIManagedObject
 {
   /*****************************************
   *
@@ -50,7 +50,7 @@ public class PredictionOrder extends GUIManagedObject
   static
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-    schemaBuilder.name("prediction_order");
+    schemaBuilder.name("prediction_settings");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(), currentSchemaVersion));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("description",            Schema.STRING_SCHEMA);
@@ -61,10 +61,10 @@ public class PredictionOrder extends GUIManagedObject
     schema = schemaBuilder.build();
   };
   
-  private static ConnectSerde<PredictionOrder> serde = new ConnectSerde<PredictionOrder>(schema, false, PredictionOrder.class, PredictionOrder::pack, PredictionOrder::unpack);
+  private static ConnectSerde<PredictionSettings> serde = new ConnectSerde<PredictionSettings>(schema, false, PredictionSettings.class, PredictionSettings::pack, PredictionSettings::unpack);
   
   public static Schema schema() { return schema; }
-  public static ConnectSerde<PredictionOrder> serde() { return serde; }
+  public static ConnectSerde<PredictionSettings> serde() { return serde; }
   
   /*****************************************
   *
@@ -73,7 +73,7 @@ public class PredictionOrder extends GUIManagedObject
   *****************************************/
   public static Object pack(Object value)
   {
-    PredictionOrder t = (PredictionOrder) value;
+    PredictionSettings t = (PredictionSettings) value;
     
     Struct struct = new Struct(schema);
     packCommon(struct, t);
@@ -90,7 +90,7 @@ public class PredictionOrder extends GUIManagedObject
   * Unpack
   *
   *****************************************/
-  public static PredictionOrder unpack(SchemaAndValue schemaAndValue)
+  public static PredictionSettings unpack(SchemaAndValue schemaAndValue)
   {
     Schema schema = schemaAndValue.schema();
     Object value = schemaAndValue.value();
@@ -99,7 +99,7 @@ public class PredictionOrder extends GUIManagedObject
     //
     // unpack
     //
-    PredictionOrder result = new PredictionOrder(schemaAndValue);
+    PredictionSettings result = new PredictionSettings(schemaAndValue);
     Struct valueStruct = (Struct) value;
     result.description = valueStruct.getString("description");
     result.algorithm = PredictionAlgorithm.fromExternalRepresentation(valueStruct.getString("algorithm"));
@@ -242,7 +242,7 @@ public class PredictionOrder extends GUIManagedObject
   * Constructor -- empty for unpack (private)
   *
   *****************************************/
-  private PredictionOrder(SchemaAndValue schemaAndValue)
+  private PredictionSettings(SchemaAndValue schemaAndValue)
   {
     super(schemaAndValue);
   }
@@ -252,7 +252,7 @@ public class PredictionOrder extends GUIManagedObject
   * Constructor -- from JSON for GUIManager (public)
   *
   *****************************************/
-  public PredictionOrder(JSONObject jsonRoot, long epoch, GUIManagedObject existingPredictionOrderUnchecked, int tenantID) throws GUIManagerException, JSONUtilitiesException
+  public PredictionSettings(JSONObject jsonRoot, long epoch, GUIManagedObject existingPredictionSettingsUnchecked, int tenantID) throws GUIManagerException, JSONUtilitiesException
   {
     super(jsonRoot, epoch, tenantID);
     
