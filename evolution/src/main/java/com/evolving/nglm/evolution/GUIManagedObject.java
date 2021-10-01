@@ -14,6 +14,7 @@ import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectType;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 import com.evolving.nglm.evolution.otp.OTPType;
 
 import org.json.simple.JSONObject;
@@ -676,7 +677,7 @@ public abstract class GUIManagedObject
   public interface ElasticSearchMapping 
   {
     public String getESDocumentID();
-    public Map<String,Object> getESDocumentMap(JourneyService journeyService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, ContactPolicyService contactPolicyService);
+    public Map<String,Object> getESDocumentMap(final boolean autoUpdate, ElasticsearchClientAPI elasticsearch, JourneyService journeyService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, ContactPolicyService contactPolicyService);
     public String getESIndexName();
   }
 }
