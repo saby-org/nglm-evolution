@@ -1219,17 +1219,6 @@ do
 done
 
 #
-#  CSR mockup
-#
-
-if [ "${GUI_USE_CSR_MOCKUP}" = "true" ]; then
-  EFFECTIVE_CSR_GUIMANAGER_PORT=7082
-else
-  EFFECTIVE_CSR_GUIMANAGER_PORT=${GUIMANAGER_PORT}
-fi
-export EFFECTIVE_CSR_GUIMANAGER_PORT
-
-#
 #  extractmanager -- configuration
 #
 
