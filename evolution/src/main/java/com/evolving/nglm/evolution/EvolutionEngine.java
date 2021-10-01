@@ -5364,7 +5364,7 @@ public class EvolutionEngine
                 subscriberStateUpdated = true;
               }
             Date eventDate = presentationLog.getEventDate();
-            subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), eventDate, context.getEventID(), eventTokenCode, "Allocate", RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode()+"","PresentationLog", moduleID, featureID, callUniqueIdentifier, null, presentationLog.getOfferIDs(), subscriberState.getSegments(), tenantID));
+            subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), eventDate, context.getEventID(), eventTokenCode, "Allocate", RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode()+"","PresentationLog", moduleID, featureID, callUniqueIdentifier, null, presentationLog.getOfferIDs(), tenantID));
             if (subscriberStoredToken.getCreationDate() == null)
               {
                 subscriberStoredToken.setCreationDate(eventDate);
@@ -5418,7 +5418,7 @@ public class EvolutionEngine
             if (subscriberStoredToken.getAcceptedOfferID() != null)
               {
                 log.error("Unexpected acceptance record ("+ acceptanceLog.toString() +") for a token ("+ subscriberStoredToken.toString() +") already redeemed by a previous acceptance record");
-                subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), acceptanceLog.getEventDate(), context.getEventID(), eventTokenCode, TokenChange.REDEEM, RESTAPIGenericReturnCodes.INVALID_TOKEN_CODE.getGenericResponseCode()+"", "AcceptanceLog", moduleID, featureID, callUniqueIdentifier, subscriberState.getSegments(), tenantID));
+                subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberID(), acceptanceLog.getEventDate(), context.getEventID(), eventTokenCode, TokenChange.REDEEM, RESTAPIGenericReturnCodes.INVALID_TOKEN_CODE.getGenericResponseCode()+"", "AcceptanceLog", moduleID, featureID, callUniqueIdentifier, tenantID));
                 return subscriberStateUpdated;
               }
             else
