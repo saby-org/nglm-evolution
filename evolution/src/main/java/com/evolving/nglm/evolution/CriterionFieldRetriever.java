@@ -265,6 +265,7 @@ public abstract class CriterionFieldRetriever
         badges = badges.stream().filter(badge -> badge.getBadgeAwardDate() != null && badge.getBadgeAwardDate().after(startDate) && badge.getBadgeAwardDate().before(endDate)).collect(Collectors.toList());
         result = badges.size();
       }
+    log.info("RAJ K getNumberOfBadgesAwardedForPeriod result {}", result);
     return result;
   }
   
@@ -292,6 +293,7 @@ public abstract class CriterionFieldRetriever
         badges = badges.stream().filter(badge -> badge.getBadgeAwardDate() != null && badge.getBadgeAwardDate().after(startDate) && badge.getBadgeAwardDate().before(endDate)).collect(Collectors.toList());
         result = badges.size();
       }
+    log.info("RAJ K getNumberOfBadgeTypesAwardedForPeriod result {}", result);
     return result;
   }
   
@@ -319,6 +321,7 @@ public abstract class CriterionFieldRetriever
         badges = badges.stream().filter(badge -> badge.getBadgeAwardDate() != null && badge.getBadgeAwardDate().after(startDate) && badge.getBadgeAwardDate().before(endDate)).collect(Collectors.toList());
         result = badges.size();
       }
+    log.info("RAJ K getNumberOfBadgeObjectivesAwardedForPeriod result {}", result);
     return result;
   }
   
@@ -346,7 +349,7 @@ public abstract class CriterionFieldRetriever
         badges = badges.stream().filter(badge -> badge.getBadgeRemoveDate() != null && badge.getBadgeRemoveDate().after(startDate) && badge.getBadgeRemoveDate().before(endDate)).collect(Collectors.toList());
         result = badges.size();
       }
-    
+    log.info("RAJ K getNumberOfBadgesRemovedForPeriod result {}", result);
     return result;
   }
   
@@ -374,7 +377,7 @@ public abstract class CriterionFieldRetriever
         badges = badges.stream().filter(badge -> badge.getBadgeRemoveDate() != null && badge.getBadgeRemoveDate().after(startDate) && badge.getBadgeRemoveDate().before(endDate)).collect(Collectors.toList());
         result = badges.size();
       }
-    
+    log.info("RAJ K getNumberOfBadgeTypesRemovedForPeriod result {}", result);
     return result;
   }
   
@@ -402,7 +405,7 @@ public abstract class CriterionFieldRetriever
         badges = badges.stream().filter(badge -> badge.getBadgeRemoveDate() != null && badge.getBadgeRemoveDate().after(startDate) && badge.getBadgeRemoveDate().before(endDate)).collect(Collectors.toList());
         result = badges.size();
       }
-    
+    log.info("RAJ K getNumberOfBadgesRemovedForPeriod result {}", result);
     return result;
   }
   
@@ -463,7 +466,9 @@ public abstract class CriterionFieldRetriever
       default:
         break;
     }
-    return new Pair<Date, Date>(startDate, endDate);
+    Pair<Date, Date> result = new Pair<Date, Date>(startDate, endDate);
+    log.info("RAJ K result getStartAndEndDate {}", result);
+    return result;
   }
 
   /*****************************************
