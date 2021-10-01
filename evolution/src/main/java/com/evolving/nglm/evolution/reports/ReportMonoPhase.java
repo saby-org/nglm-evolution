@@ -710,7 +710,7 @@ public class ReportMonoPhase
       log.error("Error while concatenating tmp files", e);
     } finally {
       try {
-        if (elasticsearchReaderClient != null) elasticsearchReaderClient.close();
+        if (elasticsearchReaderClient != null) elasticsearchReaderClient.closeCleanly();
       }
       catch (IOException e)
       {
@@ -816,7 +816,7 @@ public class ReportMonoPhase
           writer.flush();
           writer.close();
         }
-        if (localESClient != null) localESClient.close();
+        if (localESClient != null) localESClient.closeCleanly();
       }
       catch (IOException e) {
         log.info("Exception while releasing resources " + e.getLocalizedMessage());
