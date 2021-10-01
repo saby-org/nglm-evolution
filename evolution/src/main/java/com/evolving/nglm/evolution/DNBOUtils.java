@@ -131,7 +131,7 @@ public class DNBOUtils
       PresentationStrategy presentationStrategy = evolutionEventContext.getPresentationStrategyService().getActivePresentationStrategy(strategyID, evolutionEventContext.now());
       if (presentationStrategy == null)
         {
-          String str = "invalid presentation strategy " + strategyID;
+          String str = RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericResponseCode()+"";//"invalid presentation strategy " + strategyID;
           log.error(str);
           return new Object[] {Collections.<Action>singletonList(generateTokenChange(evolutionEventContext, subscriberEvaluationRequest, "", action, str))};
         }
@@ -146,7 +146,7 @@ public class DNBOUtils
       TokenType tokenType = evolutionEventContext.getTokenTypeService().getActiveTokenType(tokenTypeID, evolutionEventContext.now());
       if (tokenType == null)
         {
-          String str = "unknown token type " + tokenTypeID; 
+          String str =  RESTAPIGenericReturnCodes.INVALID_TOKEN_TYPE.getGenericResponseCode()+"";//"unknown token type " + tokenTypeID; 
           log.error(str);
           return new Object[] {Collections.<Action>singletonList(generateTokenChange(evolutionEventContext, subscriberEvaluationRequest, "", action, str))};
         }
@@ -172,7 +172,7 @@ public class DNBOUtils
       DNBOToken token = TokenUtils.generateTokenCode(evolutionEventContext.getSubscriberState().getSubscriberProfile(), tokenType);
       if (token == null)
         {
-          String str = "unable to generate a new token code";
+          String str = RESTAPIGenericReturnCodes.CANNOT_GENERATE_TOKEN_CODE.getGenericResponseCode()+"";             //"unable to generate a new token code";
           if (log.isTraceEnabled()) log.trace(str);
           return new Object[] {Collections.<Action>singletonList(generateTokenChange(evolutionEventContext, subscriberEvaluationRequest, "", action, str))};
         }
@@ -762,7 +762,7 @@ public class DNBOUtils
       Offer offer = evolutionEventContext.getOfferService().getActiveOffer(offerID, evolutionEventContext.now());
       if (offer == null)
         {
-          String str = "invalid offer returned by scoring " + offerID; 
+          String str = RESTAPIGenericReturnCodes.INVALID_TOKEN_CODE.getGenericResponseCode()+"";//"invalid offer returned by scoring " + offerID; 
           log.error(str);
           return Collections.<Action>singletonList(generateTokenChange(evolutionEventContext, subscriberEvaluationRequest, token.getTokenCode(), TokenChange.REDEEM, str));
         }
@@ -770,7 +770,7 @@ public class DNBOUtils
       contextUpdate.getParameters().put("action.accepted.offer", offer.getDisplay());
       result.add(contextUpdate);
       
-      TokenChange tokenChange = generateTokenChange(evolutionEventContext, subscriberEvaluationRequest, token.getTokenCode(), TokenChange.REDEEM, "OK");
+      TokenChange tokenChange = generateTokenChange(evolutionEventContext, subscriberEvaluationRequest, token.getTokenCode(), TokenChange.REDEEM, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode()+"");
       tokenChange.setOrigin("JourneyAccept"); 
       result.add(tokenChange);
       
