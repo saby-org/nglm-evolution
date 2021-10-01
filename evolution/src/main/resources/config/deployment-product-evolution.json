@@ -17,7 +17,7 @@
 
   "guiConfigurationSoftRetentionDays" : 7,
   "guiConfigurationRetentionDays" : 92,
-  "guiConfigurationCleanerThreadPeriodSeconds" : 300,
+  "guiConfigurationCleanerThreadPeriodSeconds" : 3600,
   "guiConfigurationInitialConsumerMaxPollRecords" : 1000,
   "guiConfigurationInitialConsumerMaxFetchBytes": 3145728,
 
