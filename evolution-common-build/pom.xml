@@ -385,7 +385,7 @@
                   <filtering>true</filtering>
                 </resource>
                 <resource>
-                  <directory>src/assembly/resources</directory>
+                  <directory>${project.build.directory}/nglm-evolution-resources</directory>
                   <includes>
                     <include>config/prometheus-application-alert.rules</include>
                   </includes>
