@@ -4,6 +4,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -15,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.DeploymentCommon;
 import com.evolving.nglm.core.RLMDateUtils;
+import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
 import com.evolving.nglm.evolution.MailNotificationManager.MailNotificationManagerRequest;
@@ -45,6 +47,10 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
   
   public static class NotificationSinkConnectorTask extends StreamESSinkTask<MessageDelivery>
   {
+    private static DynamicCriterionFieldService dynamicCriterionFieldService;
+    private static SegmentationDimensionService segmentationDimensionService;
+    private static ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
+
     /*****************************************
     *
     *  start
@@ -58,6 +64,16 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
       //
 
       super.start(taskConfig);
+      
+      subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("odrsinkconnector-subscriberGroupEpoch", Deployment.getBrokerServers(), Deployment.getSubscriberGroupEpochTopic(), SubscriberGroupEpoch::unpack);
+      
+      dynamicCriterionFieldService = new DynamicCriterionFieldService(Deployment.getBrokerServers(), "odrsinkconnector-dynamiccriterionfieldservice-" + getTaskNumber(), Deployment.getDynamicCriterionFieldTopic(), false);
+      CriterionContext.initialize(dynamicCriterionFieldService);
+      dynamicCriterionFieldService.start();      
+      
+      segmentationDimensionService = new SegmentationDimensionService(Deployment.getBrokerServers(), "odrsinkconnector-segmentationDimensionservice-" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getSegmentationDimensionTopic(), false);
+      segmentationDimensionService.start();
+
     }
 
     /*****************************************
@@ -68,6 +84,9 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
 
     @Override public void stop()
     {
+      
+      segmentationDimensionService.stop();
+
       //
       //  super
       //
@@ -175,6 +194,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap.put("contactType", mailNotification.getContactType());
         documentMap.put("destination", mailNotification.getDestination());
         documentMap.put("origin", mailNotification.getMessageDeliveryOrigin());
+        documentMap.put("stratum", mailNotification.getStatisticsSegmentsMap(subscriberGroupEpochReader, segmentationDimensionService));
       }
       else if (notification instanceof SMSNotificationManagerRequest) {
         SMSNotificationManagerRequest smsNotification = (SMSNotificationManagerRequest) notification;
@@ -208,6 +228,8 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap.put("contactType", smsNotification.getContactType());
         documentMap.put("destination", smsNotification.getDestination());
         documentMap.put("origin", smsNotification.getMessageDeliveryOrigin());
+        documentMap.put("stratum", smsNotification.getStatisticsSegmentsMap(subscriberGroupEpochReader, segmentationDimensionService));
+
       }
       else if (notification instanceof NotificationManagerRequest) {
         NotificationManagerRequest notifNotification = (NotificationManagerRequest) notification;
@@ -237,6 +259,8 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap.put("contactType", notifNotification.getContactType());
         documentMap.put("destination", notifNotification.getDestination());
         documentMap.put("origin", notifNotification.getMessageDeliveryOrigin());
+        documentMap.put("stratum", notifNotification.getStatisticsSegmentsMap(subscriberGroupEpochReader, segmentationDimensionService));
+
       }
       else {
         PushNotificationManagerRequest pushNotification = (PushNotificationManagerRequest) notification;
@@ -267,6 +291,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap.put("contactType", pushNotification.getContactType());
         documentMap.put("destination", pushNotification.getDestination());
         documentMap.put("origin", pushNotification.getMessageDeliveryOrigin());
+        documentMap.put("stratum", pushNotification.getStatisticsSegmentsMap(subscriberGroupEpochReader, segmentationDimensionService));
       }
       return documentMap;
     }

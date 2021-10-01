@@ -6,13 +6,21 @@
 
 package com.evolving.nglm.evolution;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.kafka.connect.data.*;
 
 import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.Pair;
+import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.evolution.ActionManager.Action;
@@ -48,8 +56,20 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
   //
 
   private static Schema schema = null;
+  private static Schema groupIDSchema = null;
+
   static
   {
+    //
+    //  groupID schema
+    //
+
+    SchemaBuilder groupIDSchemaBuilder = SchemaBuilder.struct();
+    groupIDSchemaBuilder.name("subscribergroup_groupid");
+    groupIDSchemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
+    groupIDSchemaBuilder.field("subscriberGroupIDs", SchemaBuilder.array(Schema.STRING_SCHEMA).defaultValue(new ArrayList<String>()).schema());
+    groupIDSchema = groupIDSchemaBuilder.build();
+
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("token_change");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),11));
@@ -67,6 +87,7 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
     schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
     schemaBuilder.field("acceptedOfferID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("presentedOfferIDs", SchemaBuilder.array(Schema.STRING_SCHEMA));
+    schemaBuilder.field("segments", SchemaBuilder.map(groupIDSchema, Schema.INT32_SCHEMA).name("tokenchange_segments").schema());
     schema = schemaBuilder.build();
   };
 
@@ -99,6 +120,7 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
   private String moduleID;
   private String featureID;
   private String callUniqueIdentifier;
+  private Map<Pair<String,String>,Integer> segments;
   private int tenantID;
   private String acceptedOfferID;
   private List<String> presentedOfferIDs;
@@ -125,6 +147,7 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
   public String getFeatureID() { return featureID; }
   public ActionType getActionType() { return ActionType.TokenChange; }
   public String getCallUniqueIdentifier() { return callUniqueIdentifier; }
+  public Map<Pair<String, String>, Integer> getSegments(){return segments;}
   public int getTenantID() { return tenantID; }
   public String getAcceptedOfferID() { return acceptedOfferID;}
   public List<String> getPresentedOffersIDs() {return presentedOfferIDs;}
@@ -150,9 +173,9 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
   * constructor (simple)
   *
   *****************************************/
-  public TokenChange(String subscriberID, Date eventDateTime, String eventID, String tokenCode, String action, String returnStatus, String origin, Module module, String featureID, int tenantID)
+  public TokenChange(SubscriberProfile subscriberProfile, Date eventDateTime, String eventID, String tokenCode, String action, String returnStatus, String origin, Module module, String featureID, int tenantID)
   {
-    this(subscriberID, eventDateTime, eventID, tokenCode, action, returnStatus, origin, module.getExternalRepresentation(), featureID, null, tenantID);
+    this(subscriberProfile.getSubscriberID(), eventDateTime, eventID, tokenCode, action, returnStatus, origin, module.getExternalRepresentation(), featureID, null, subscriberProfile.getSegments(), tenantID);
   }
   public TokenChange(String subscriberID, Date eventDateTime, String eventID, String tokenCode, String action, String returnStatus, String origin, Module module, String featureID, int tenantID,String acceptedOfferID,List<String> presentedOfferIDs)
   {
@@ -165,7 +188,7 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
   *
   *****************************************/
 
-  public TokenChange(String subscriberID, Date eventDateTime, String eventID, String tokenCode, String action, String returnStatus, String origin, String moduleID, String featureID, String callUniqueIdentifier, int tenantID)
+  public TokenChange(String subscriberID, Date eventDateTime, String eventID, String tokenCode, String action, String returnStatus, String origin, String moduleID, String featureID, String callUniqueIdentifier, Map<Pair<String, String>, Integer> segments, int tenantID)
   {
     this.subscriberID = subscriberID;
     this.eventDateTime = eventDateTime;
@@ -177,9 +200,10 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
     this.moduleID = moduleID;
     this.featureID = featureID;
     this.callUniqueIdentifier = callUniqueIdentifier;
+    this.segments = segments;
     this.tenantID = tenantID;
   }
-   public TokenChange(String subscriberID, Date eventDateTime, String eventID, String tokenCode, String action, String returnStatus, String origin, String moduleID, String featureID, String callUniqueIdentifier, int tenantID,String acceptedOfferID,List<String> presentedOfferIDs)
+   public TokenChange(String subscriberID, Date eventDateTime, String eventID, String tokenCode, String action, String returnStatus, String origin, String moduleID, String featureID, String callUniqueIdentifier, String acceptedOfferID, List<String> presentedOfferIDs, Map<Pair<String, String>, Integer> segments, int tenantID)
   {
     this.subscriberID = subscriberID;
     this.eventDateTime = eventDateTime;
@@ -191,9 +215,11 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
     this.moduleID = moduleID;
     this.featureID = featureID;
     this.callUniqueIdentifier = callUniqueIdentifier;
-    this.tenantID = tenantID;
     this.acceptedOfferID=acceptedOfferID;
     this.presentedOfferIDs = presentedOfferIDs;
+    this.segments = segments;
+    this.tenantID = tenantID;
+
   }  
 
   /*****************************************
@@ -201,7 +227,7 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
    * constructor unpack
    *
    *****************************************/
-  public TokenChange(SchemaAndValue schemaAndValue, String subscriberID, Date eventDateTime, String eventID, String tokenCode, String action, String returnStatus, String origin, String moduleID, String featureID, String callUniqueIdentifier, int tenantID)
+  public TokenChange(SchemaAndValue schemaAndValue, String subscriberID, Date eventDateTime, String eventID, String tokenCode, String action, String returnStatus, String origin, String moduleID, String featureID, String callUniqueIdentifier, Map<Pair<String, String>, Integer> segments, int tenantID)
   {
     super(schemaAndValue);
     this.subscriberID = subscriberID;
@@ -214,6 +240,7 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
     this.moduleID = moduleID;
     this.featureID = featureID;
     this.tenantID = tenantID;
+    this.segments = segments;
     this.callUniqueIdentifier = callUniqueIdentifier;
   }
 
@@ -256,6 +283,7 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
     struct.put("moduleID", tokenChange.getModuleID());
     struct.put("featureID", tokenChange.getFeatureID());
     if(tokenChange.getCallUniqueIdentifier()!=null) struct.put("callUniqueIdentifier", tokenChange.getCallUniqueIdentifier());
+    struct.put("segments",packSegments(tokenChange.getSegments()));
     struct.put("tenantID", (short) tokenChange.getTenantID());
     struct.put("acceptedOfferID", tokenChange.getAcceptedOfferID()); 
    
@@ -297,6 +325,8 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
     String moduleID = (schemaVersion >=2 ) ? valueStruct.getString("moduleID") : "";
     String featureID = (schemaVersion >=3 ) ? valueStruct.getString("featureID") : "";
     String callUniqueIdentifier = (schemaVersion >=10 && schema.field("callUniqueIdentifier")!=null) ? valueStruct.getString("callUniqueIdentifier") : null;
+    Map<Pair<String,String>, Integer> segments = (schemaVersion >= 11) ? unpackSegments(valueStruct.get("segments")) : unpackSegmentsV1(valueStruct.get("subscriberGroups"));
+
     int tenantID = (schemaVersion >= 9)? valueStruct.getInt16("tenantID") : 1; // for old system, default to tenant 1
     String acceptedOfferID =  (schemaVersion >=11 && schema.field("acceptedOfferID")!=null) ? valueStruct.getString("acceptedOfferID") : null;
     List<String> presentedOfferIDs = (schemaVersion >=11 && schema.field("presentedOfferIDs")!=null) ? (List<String>) valueStruct.get("presentedOfferIDs") : new ArrayList<>();
@@ -305,7 +335,7 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
     // return
     //
 
-    return new TokenChange(schemaAndValue, subscriberID, eventDateTime, eventID, tokenCode, action, returnStatus, origin, moduleID, featureID, callUniqueIdentifier, tenantID,acceptedOfferID,presentedOfferIDs);
+    return new TokenChange(schemaAndValue, subscriberID, eventDateTime, eventID, tokenCode, action, returnStatus, origin, moduleID, featureID, callUniqueIdentifier, acceptedOfferID,presentedOfferIDs, segments, tenantID);
   }
   
   
@@ -332,4 +362,102 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
   {
     return "token change";
   }
+  
+
+  /****************************************
+  *
+  *  packSegments
+  *
+  ****************************************/
+
+  private static Object packSegments(Map<Pair<String,String>, Integer> segments)
+  {
+    Map<Object, Object> result = new HashMap<Object, Object>();
+    for (Pair<String,String> groupID : segments.keySet())
+      {
+        String dimensionID = groupID.getFirstElement();
+        String segmentID = groupID.getSecondElement();
+        Integer epoch = segments.get(groupID);
+        Struct packedGroupID = new Struct(groupIDSchema);
+        packedGroupID.put("subscriberGroupIDs", Arrays.asList(dimensionID, segmentID));
+        result.put(packedGroupID, epoch);
+      }
+    return result;
+  }
+  
+  /*****************************************
+  *
+  *  unpackSegments
+  *
+  *****************************************/
+
+  private static Map<Pair<String,String>, Integer> unpackSegments(Object value)
+  {
+    Map<Pair<String,String>, Integer> result = new HashMap<Pair<String,String>, Integer>();
+    if (value != null)
+      {
+        Map<Object, Integer> valueMap = (Map<Object, Integer>) value;
+        for (Object packedGroupID : valueMap.keySet())
+          {
+            List<String> subscriberGroupIDs = (List<String>) ((Struct) packedGroupID).get("subscriberGroupIDs");
+            Pair<String,String> groupID = new Pair<String,String>(subscriberGroupIDs.get(0), subscriberGroupIDs.get(1));
+            Integer epoch = valueMap.get(packedGroupID);
+            result.put(groupID, epoch);
+          }
+      }
+    return result;
+  }
+
+  /*****************************************
+  *
+  *  unpackSegmentsV1
+  *
+  *****************************************/
+
+  private static Map<Pair<String,String>, Integer> unpackSegmentsV1(Object value)
+  {
+    Map<Pair<String,String>, Integer> result = new HashMap<Pair<String,String>, Integer>();
+    if (value != null)
+      {
+        Map<Object, Integer> valueMap = (Map<Object, Integer>) value;
+        for (Object packedGroupID : valueMap.keySet())
+          {
+            Pair<String,String> groupID = new Pair<String,String>(((Struct) packedGroupID).getString("dimensionID"), ((Struct) packedGroupID).getString("segmentID"));
+            Integer epoch = valueMap.get(packedGroupID);
+            result.put(groupID, epoch);
+          }
+      }
+    return result;
+  }
+
+  public Map<String, String> getStatisticsSegmentsMap(ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, SegmentationDimensionService segmentationDimensionService)
+  {
+    Map<String, String> result = new HashMap<String, String>();
+    if (segments != null) {
+      for (Pair<String, String> groupID : segments.keySet()) {
+        String dimensionID = groupID.getFirstElement();
+        boolean statistics = false;
+        if (dimensionID != null) {
+          GUIManagedObject segmentationDimensionObject = segmentationDimensionService
+              .getStoredSegmentationDimension(dimensionID);
+          if (segmentationDimensionObject != null && segmentationDimensionObject instanceof SegmentationDimension) {
+            SegmentationDimension segmenationDimension = (SegmentationDimension) segmentationDimensionObject;
+            statistics = segmenationDimension.getStatistics();
+          }
+        }
+        if (statistics) {
+          int epoch = segments.get(groupID);
+          if (epoch == (subscriberGroupEpochReader.get(dimensionID) != null
+              ? subscriberGroupEpochReader.get(dimensionID).getEpoch()
+                  : 0)) {
+                    result.put(dimensionID, groupID.getSecondElement());
+            }
+        }
+      }
+    }
+    return result;
+  }
+
+
+  
 }

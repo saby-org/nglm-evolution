@@ -2,6 +2,7 @@ package com.evolving.nglm.evolution;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -10,17 +11,20 @@ import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.DeploymentCommon;
 import com.evolving.nglm.core.RLMDateUtils;
+import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
-import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
-import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 
 
 public class BDRSinkConnector extends SimpleESSinkConnector
 {
-  
+  private static DynamicCriterionFieldService dynamicCriterionFieldService;
+  private static SegmentationDimensionService segmentationDimensionService;
+  private static ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
+
   /****************************************
   *
   *  taskClass
@@ -56,6 +60,15 @@ public class BDRSinkConnector extends SimpleESSinkConnector
 
       super.start(taskConfig);
 
+      subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("odrsinkconnector-subscriberGroupEpoch", Deployment.getBrokerServers(), Deployment.getSubscriberGroupEpochTopic(), SubscriberGroupEpoch::unpack);
+   
+      dynamicCriterionFieldService = new DynamicCriterionFieldService(Deployment.getBrokerServers(), "odrsinkconnector-dynamiccriterionfieldservice-" + getTaskNumber(), Deployment.getDynamicCriterionFieldTopic(), false);
+      CriterionContext.initialize(dynamicCriterionFieldService);
+      dynamicCriterionFieldService.start();      
+      
+      segmentationDimensionService = new SegmentationDimensionService(Deployment.getBrokerServers(), "odrsinkconnector-segmentationDimensionservice-" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getSegmentationDimensionTopic(), false);
+      segmentationDimensionService.start();
+
     }
 
     /*****************************************
@@ -66,6 +79,8 @@ public class BDRSinkConnector extends SimpleESSinkConnector
 
     @Override public void stop()
     {
+      segmentationDimensionService.stop();
+
       //
       //  super
       //
@@ -145,7 +160,7 @@ public class BDRSinkConnector extends SimpleESSinkConnector
       documentMap.put("returnCode", commodityRequest.getBonusDeliveryReturnCode());
       documentMap.put("returnCodeDetails", commodityRequest.getBonusDeliveryReturnCodeDetails());
       documentMap.put("creationDate", commodityRequest.getCreationDate() != null ? RLMDateUtils.formatDateForElasticsearchDefault(commodityRequest.getCreationDate()) : "");
-        
+      documentMap.put("stratum", commodityRequest.getStatisticsSegmentsMap(subscriberGroupEpochReader, segmentationDimensionService));
       if(log.isDebugEnabled()) log.debug("BDRSinkConnector.getDocumentMap: map computed, contents are="+documentMap.toString());
       return documentMap;
     }

@@ -28,6 +28,7 @@ import com.evolving.nglm.evolution.OfferObjectiveService;
 import com.evolving.nglm.evolution.OfferService;
 import com.evolving.nglm.evolution.PaymentMeanService;
 import com.evolving.nglm.evolution.SalesChannelService;
+import com.evolving.nglm.evolution.SegmentationDimensionService;
 import com.evolving.nglm.evolution.SubscriberMessageTemplateService;
 import com.evolving.nglm.evolution.datacubes.DatacubeManager;
 import com.evolving.nglm.evolution.datacubes.DatacubeUtils;
@@ -39,6 +40,7 @@ import com.evolving.nglm.evolution.datacubes.mapping.LoyaltyProgramsMap;
 import com.evolving.nglm.evolution.datacubes.mapping.ModulesMap;
 import com.evolving.nglm.evolution.datacubes.mapping.OffersMap;
 import com.evolving.nglm.evolution.datacubes.mapping.SalesChannelsMap;
+import com.evolving.nglm.evolution.datacubes.mapping.SegmentationDimensionsMap;
 import com.evolving.nglm.evolution.datacubes.mapping.SubscriberMessageTemplatesMap;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
@@ -47,12 +49,14 @@ public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
   private static final String DATACUBE_ES_INDEX_SUFFIX = "_datacube_messages";
   public static final String DATACUBE_ES_INDEX(int tenantID) { return "t" + tenantID + DATACUBE_ES_INDEX_SUFFIX; }
   private static final String DATA_ES_INDEX_PREFIX = "detailedrecords_messages-";
+  private static final String FILTER_STRATUM_PREFIX = "stratum.";
 
   /*****************************************
   *
   * Properties
   *
   *****************************************/
+
   private List<String> filterFields;
   private OffersMap offersMap;
   private ModulesMap modulesMap;
@@ -60,6 +64,7 @@ public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
   private DeliverablesMap deliverablesMap;
   private JourneysMap journeysMap;
   private SubscriberMessageTemplatesMap subscriberMessageTemplatesMap;
+  private SegmentationDimensionsMap segmentationDimensionList;
 
   private boolean hourlyMode;
   private String targetWeek;
@@ -72,9 +77,10 @@ public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
   * Constructors
   *
   *****************************************/
-  public MDRDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, DatacubeWriter datacubeWriter, OfferService offerService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService, int tenantID, String timeZone)  
+  public MDRDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, DatacubeWriter datacubeWriter, SegmentationDimensionService segmentationDimensionService, OfferService offerService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService, int tenantID, String timeZone)  
   {
     super(datacubeName, elasticsearch, datacubeWriter, tenantID, timeZone);
+    this.segmentationDimensionList = new SegmentationDimensionsMap(segmentationDimensionService);
 
     this.offersMap = new OffersMap(offerService);
     this.modulesMap = new ModulesMap();
@@ -102,6 +108,7 @@ public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
     this(datacubeName,
         datacubeManager.getElasticsearchClientAPI(),
         datacubeManager.getDatacubeWriter(),
+        datacubeManager.getSegmentationDimensionService(),
         datacubeManager.getOfferService(),
         datacubeManager.getOfferObjectiveService(),
         datacubeManager.getLoyaltyProgramService(),
@@ -161,7 +168,18 @@ public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
     deliverablesMap.updateFromElasticsearch(elasticsearch);
     journeysMap.update();
     subscriberMessageTemplatesMap.update();
+    segmentationDimensionList.update();
+
+    for(String dimensionID: segmentationDimensionList.keySet())
+      {
+        this.filterFields.add(FILTER_STRATUM_PREFIX + dimensionID);
+      }
     
+    if(this.filterFields.isEmpty()) {
+      log.warn("Found no dimension defined.");
+      return false;
+    }
+
     return true;
   }
   
@@ -189,6 +207,23 @@ public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
       Date date = new Date(time + 3600*1000 - 1);
       filters.put("timestamp", this.printTimestamp(date));
     }
+
+    //
+    // Special dimension with all, for Grafana 
+    //
+    filters.put(FILTER_STRATUM_PREFIX + "Global", " ");
+    
+    //
+    // subscriberStratum dimensions
+    //
+    for(String dimensionID: segmentationDimensionList.keySet())
+      {
+        String fieldName = FILTER_STRATUM_PREFIX + dimensionID;
+        String segmentID = (String) filters.remove(fieldName);
+        
+        String newFieldName = FILTER_STRATUM_PREFIX + segmentationDimensionList.getDimensionDisplay(dimensionID, fieldName);
+        filters.put(newFieldName, segmentationDimensionList.getSegmentDisplay(dimensionID, segmentID, fieldName));
+      }
   }
 
   /*****************************************

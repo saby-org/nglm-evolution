@@ -83,7 +83,7 @@ public class DNBOUtils
     Date date = evolutionEventContext.now();
     String featureID = subscriberEvaluationRequest.getJourneyState().getJourneyID();
     featureID = ActionManager.extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, featureID);
-    return new TokenChange(subscriberID, date, evolutionEventContext.getEventID(), tokenCode, action, str, origin, Module.Journey_Manager, featureID, tenantID);
+    return new TokenChange(evolutionEventContext.getSubscriberState().getSubscriberProfile(), date, evolutionEventContext.getEventID(), tokenCode, action, str, origin, Module.Journey_Manager, featureID, tenantID);
   }
   
   /*****************************************
