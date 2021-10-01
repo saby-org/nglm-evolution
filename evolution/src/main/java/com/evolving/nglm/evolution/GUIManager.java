@@ -8655,7 +8655,7 @@ public class GUIManager
                         GUIManagedObject offerObjectiveObject = offerObjectiveService.getStoredOfferObjective(offerObjectiveID);
                         if (offerObjectiveObject != null)
                           {
-                            String offerObjectiveDisplay = ((OfferObjective) offerObjectiveObject).getDisplay();
+                            String offerObjectiveDisplay = offerObjectiveObject.getGUIManagedObjectDisplay();
                             offerObjective.put("offerObjectiveDisplay", offerObjectiveDisplay);
                             offerObjectivesWithDispaly.add(offerObjective);
                           }
@@ -8875,11 +8875,9 @@ public class GUIManager
                   {
                     jsonRoot.put("simpleOffer", false);
                   }
-
               }
-          
-        
         }
+        
         Offer offer = new Offer(jsonRoot, epoch, existingOffer, catalogCharacteristicService, tenantID);
 
         // if stock update, and no more stock, need to warn it
@@ -8894,8 +8892,7 @@ public class GUIManager
         if (!dryRun)
           {
 
-            offerService.putOffer(offer, callingChannelService, salesChannelService, productService, voucherService,
-                (existingOffer == null), userID);
+            offerService.putOffer(offer, callingChannelService, salesChannelService, productService, voucherService, (existingOffer == null), userID);
           }
         /*****************************************
         *
@@ -8924,8 +8921,7 @@ public class GUIManager
         //
         if (!dryRun)
           {
-            offerService.putOffer(incompleteObject, callingChannelService, salesChannelService, productService,
-                voucherService, (existingOffer == null), userID);
+            offerService.putOffer(incompleteObject, callingChannelService, salesChannelService, productService, voucherService, (existingOffer == null), userID);
           }
         //
         //  log
