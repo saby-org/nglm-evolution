@@ -22,12 +22,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.evolving.nglm.evolution.kafka.EvolutionProductionExceptionHandler;
-import com.evolving.nglm.evolution.otp.OTPInstance;
 import com.evolving.nglm.evolution.otp.OTPInstanceChangeEvent;
-import com.evolving.nglm.evolution.otp.OTPType;
 import com.evolving.nglm.evolution.otp.OTPTypeService;
 import com.evolving.nglm.evolution.otp.OTPUtils;
-import com.evolving.nglm.evolution.notification.NotificationTemplateParameters;
 import com.evolving.nglm.evolution.preprocessor.Preprocessor;
 import com.evolving.nglm.evolution.propensity.PropensityService;
 import com.evolving.nglm.evolution.retention.RetentionService;
@@ -75,7 +72,6 @@ import com.evolving.nglm.core.AutoProvisionSubscriberStreamEvent;
 import com.evolving.nglm.core.CleanupSubscriber;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.Deployment;
-import com.evolving.nglm.core.DeploymentCommon;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.KStreamsUniqueKeyServer;
 import com.evolving.nglm.core.NGLMKafkaClientSupplier;
@@ -96,7 +92,6 @@ import com.evolving.nglm.core.SubscriberStreamEvent.SubscriberAction;
 import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.ActionManager.ActionType;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
-import com.evolving.nglm.evolution.ContactPolicyCommunicationChannels.ContactType;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.DeliveryRequest.DeliveryPriority;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
@@ -107,7 +102,6 @@ import com.evolving.nglm.evolution.Expression.ExpressionEvaluationException;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.MetricHistory.BucketRepresentation;
-import com.evolving.nglm.evolution.NotificationManager.NotificationManagerRequest;
 import com.evolving.nglm.evolution.Journey.ContextUpdate;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatusField;
@@ -253,6 +247,8 @@ public class EvolutionEngine
   //keeps current ucg state for recalculating shift probability after add/remove subs to ucg
   private static UCGState currentUCGState;
   private static HashMap<String,Integer> ucgSegmentEvaluationCount = new HashMap<>();
+  //keeps the count of subscribers eligible for removing in segment not removed in order to gather the right percent of refresh
+  private static HashMap<String,Integer> ucgSegmentsRefreshNotReplacedCount = new HashMap<>();
 
   static
     {
@@ -3743,54 +3739,86 @@ public class EvolutionEngine
             double shiftProbability = 0.0d;
             UCGGroup subscriberUCGGroup = null;
             Iterator<UCGGroup> iterator = currentUCGState.getUCGGroups().iterator();
+            UCGGroup elasticUcgGroup = ucgState.getUCGGroups().stream().filter(p -> p.getSegmentIDs().equals(userStratum)).findFirst().get();
             while(iterator.hasNext()) 
               {
                 UCGGroup g = iterator.next();
                 if(g.getSegmentIDs().equals(userStratum)) 
                   {
-                    //if (g.getShiftProbability() != null)
-                    //  {
-                    //    shiftProbability = g.getShiftProbability();
-                    //  }
-                    // TODO What if shift probability is null ? manually re-compute it ?
                     subscriberUCGGroup = g;
                     break;
                   }
               }
 
+
             if(subscriberUCGGroup !=null && subscriberUCGGroup.getShiftProbability() != null)
             {
               shiftProbability = subscriberUCGGroup.getShiftProbability();
             }
-
-            if(shiftProbability < 0 && isInUCG) 
+            if(isInUCG)
+            {
+              if (shiftProbability < 0)
               {
                 // If there is already too much customers in the Universal Control Group.
+                //this will act to correct anomalies but will be randomly
                 ThreadLocalRandom random = ThreadLocalRandom.current();
                 removeFromUCG = (random.nextDouble() < -shiftProbability);
               }
-            else if(shiftProbability > 0 && !isInUCG && !Deployment.getAddSubscribersToUcgByCounting())
+              //here remove subscribers in order to be replaced with new subscribers based on percent in ucg in the subscribers was not removed randomlly before
+              if(!removeFromUCG)
               {
-                // If there is not enough customers in the Universal Control Group.
-                ThreadLocalRandom random = ThreadLocalRandom.current();
-                addToUCG = (random.nextDouble() < shiftProbability);
-              }
-            else
-            {
-              //will add subscribers based on count. In hash map the key will be segment_id-segment_id foreach strata
-              String key = String.join("-",subscriberUCGGroup.getSegmentIDs());
-              //counting is starting from 1
-              if(ucgSegmentEvaluationCount.getOrDefault(key,1) < 1/ucgState.getTargetRatio())
-              {
-                //increment value of count (or put ititial record if it not exist
-                ucgSegmentEvaluationCount.put(key,ucgSegmentEvaluationCount.getOrDefault(key,1)+1);
-              }else
-              {
-                //mark add to ucg true and reset counter to 1
-                addToUCG = true;
-                ucgSegmentEvaluationCount.put(key,1);
+                //will add subscribers based on count. In hash map the key will be segment_id-segment_id foreach strata
+                String key = String.join("-", subscriberUCGGroup.getSegmentIDs());
+                //counting is starting from 1
+                if (ucgSegmentsRefreshNotReplacedCount.getOrDefault(key, 1) < 100 / ucgState.getUCGRule().getPercentageOfRefresh())
+                {
+                  //increment value of count (or put ititial record if it not exist
+                  ucgSegmentsRefreshNotReplacedCount.put(key, ucgSegmentsRefreshNotReplacedCount.getOrDefault(key, 1) + 1);
+                }
+                else
+                {
+                  //mark add to ucg true and reset counter to 1
+                  removeFromUCG = true;
+                  ucgSegmentsRefreshNotReplacedCount.put(key, 1);
+                }
               }
             }
+            if(!isInUCG)
+            {
+              if (!Deployment.getAddSubscribersToUcgByCounting())
+              {
+                if(shiftProbability > 0)
+                {
+                  // If there is not enough customers in the Universal Control Group.
+                  ThreadLocalRandom random = ThreadLocalRandom.current();
+                  addToUCG = (random.nextDouble() < shiftProbability);
+                }
+              }
+              //if shift probability that is comming from es is negative means that are to much subscribers in ucg
+              //the current shift probability was not used because this one is decremented, and is based on data reeaded that is not conform with currect subscribers comming in evolution
+              else if(elasticUcgGroup.getShiftProbability() > 0)
+              {
+                //will add subscribers based on count. In hash map the key will be segment_id-segment_id foreach strata
+                String key = String.join("-", subscriberUCGGroup.getSegmentIDs());
+                //counting is starting from 1
+                if (ucgSegmentEvaluationCount.getOrDefault(key, 1) < 1 / ucgState.getTargetRatio())
+                {
+                  //increment value of count (or put ititial record if it not exist
+                  ucgSegmentEvaluationCount.put(key, ucgSegmentEvaluationCount.getOrDefault(key, 1) + 1);
+                }
+                else
+                {
+                  //mark add to ucg true and reset counter to 1
+                  addToUCG = true;
+                  ucgSegmentEvaluationCount.put(key, 1);
+                }
+              }
+              else
+              {
+                log.error("Adding subscriber to ucg error. Shift probability from es for strata is negative, thats means to much subscribers in ucg for this strata. This need urgent investigation !!!");
+              }
+            }
+
 
             /*****************************************
             *
