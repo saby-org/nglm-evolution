@@ -1035,6 +1035,7 @@ public abstract class CriterionFieldRetriever
     if (pointBalances == null)
       {
         log.info("Error evaluating " + fieldName + " no pointBalances for subscriber " + evaluationRequest.getSubscriberProfile().getSubscriberID());
+        return null; // so that the calling criteria will return false
       }
     else
       {
@@ -1042,6 +1043,7 @@ public abstract class CriterionFieldRetriever
         if (pointBalance == null)
           {
             log.info("Error evaluating " + fieldName + " no pointBalance for subscriber " + evaluationRequest.getSubscriberProfile().getSubscriberID() + " for point " + pointID);
+            return null; // so that the calling criteria will return false
           }
         else
           {
