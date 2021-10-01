@@ -680,14 +680,25 @@ do
    export HOST_IP=`echo $TUPLE | cut -d: -f3`
    export HOST_EXTERNAL_IP=`echo $TUPLE | cut -d: -f4`
    export PORT=`echo $TUPLE | cut -d: -f5`
+   export HOST_EXTERNAL=`echo $TUPLE | cut -d: -f6`
    export GUI_FWK_WEB_SERVER_HOST_INTERNAL_IP=$HOST_IP
    export GUI_FWK_WEB_SERVER_PORT=$PORT
    if [[ "$GUI_HTTP_PROCOTOL" == "https" ]]; then
-      export GUI_FWK_API_FULL_PATH=$GUI_FWK_API_SERVER_HOST_EXTERNAL_IP"/fwkapi"
-      export FWKSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$GUI_FWK_API_SERVER_HOST_EXTERNAL_IP"/fwk"
+      if [ ${#GUI_FWK_API_SERVER_HOST_EXTERNAL} -ge 2 ]; then
+         export GUI_FWK_API_FULL_PATH=$GUI_FWK_API_SERVER_HOST_EXTERNAL"/fwkapi"
+         export FWKSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL"/fwk"
+      else
+         export GUI_FWK_API_FULL_PATH=$GUI_FWK_API_SERVER_HOST_EXTERNAL_IP"/fwkapi"
+         export FWKSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL_IP"/fwk"
+      fi
    else
-      export GUI_FWK_API_FULL_PATH=$GUI_FWK_API_SERVER_HOST_EXTERNAL_IP":"$GUI_FWK_API_SERVER_PORT"/api"
-      export FWKSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$GUI_FWK_API_SERVER_HOST_EXTERNAL_IP":"$GUI_FWK_WEB_SERVER_PORT"/fwk"
+      if [ ${#GUI_FWK_API_SERVER_HOST_EXTERNAL} -ge 2 ]; then
+         export GUI_FWK_API_FULL_PATH=$GUI_FWK_API_SERVER_HOST_EXTERNAL"/fwkapi"
+         export FWKSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL"/fwk"
+      else
+         export GUI_FWK_API_FULL_PATH=$GUI_FWK_API_SERVER_HOST_EXTERNAL_IP":"$GUI_FWK_API_SERVER_PORT"/api"
+         export FWKSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL_IP":"$GUI_FWK_WEB_SERVER_PORT"/fwk"
+      fi
    fi
    cat $DEPLOY_ROOT/docker/fwk-web.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-gui.yml
    echo >> $DEPLOY_ROOT/stack/stack-gui.yml
@@ -739,12 +750,23 @@ do
    export GUI_CSR_WEB_SERVER_HOST_INTERNAL_IP=$HOST_IP
    export GUI_CSR_WEB_SERVER_PORT=$PORT
    if [[ "$GUI_HTTP_PROCOTOL" == "https" ]]; then
-      export GUI_CSR_API_FULL_PATH=$GUI_CSR_API_SERVER_HOST_EXTERNAL_IP"/csrapi"
-      export CSRSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$GUI_CSR_API_SERVER_HOST_EXTERNAL_IP"/csr"
+      if [ ${#GUI_CSR_API_SERVER_HOST_EXTERNAL} -ge 2 ]; then
+         export GUI_CSR_API_FULL_PATH=$GUI_CSR_API_SERVER_HOST_EXTERNAL"/csrapi"
+         export CSRSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL"/csr"
+      else
+         export GUI_CSR_API_FULL_PATH=$GUI_CSR_API_SERVER_HOST_EXTERNAL_IP"/csrapi"
+         export CSRSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL_IP"/csr"
+      fi
    else
-      export GUI_CSR_API_FULL_PATH=$GUI_CSR_API_SERVER_HOST_EXTERNAL_IP":"$GUI_CSR_API_SERVER_PORT"/api"
-      export CSRSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$GUI_CSR_API_SERVER_HOST_EXTERNAL_IP":"$GUI_CSR_WEB_SERVER_PORT"/csr"
+      if [ ${#GUI_CSR_API_SERVER_HOST_EXTERNAL} -ge 2 ]; then
+         export GUI_CSR_API_FULL_PATH=$GUI_CSR_API_SERVER_HOST_EXTERNAL"/csrapi"
+         export CSRSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL"/csr"
+      else
+         export GUI_CSR_API_FULL_PATH=$GUI_CSR_API_SERVER_HOST_EXTERNAL_IP":"$GUI_CSR_API_SERVER_PORT"/api"
+         export CSRSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL_IP":"$GUI_CSR_WEB_SERVER_PORT"/csr"
+      fi
    fi
+
    cat $DEPLOY_ROOT/docker/csr-web.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-gui.yml
    echo >> $DEPLOY_ROOT/stack/stack-gui.yml
 done
@@ -780,11 +802,21 @@ do
    export GUI_ITM_WEB_SERVER_HOST_INTERNAL_IP=$HOST_IP
    export GUI_ITM_WEB_SERVER_PORT=$PORT
    if [[ "$GUI_HTTP_PROCOTOL" == "https" ]]; then
-      export GUI_ITM_API_FULL_PATH=$GUI_ITM_API_SERVER_HOST_EXTERNAL_IP"/itmapi"
-      export ITMSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$GUI_ITM_API_SERVER_HOST_EXTERNAL_IP"/itm"
+      if [ ${#GUI_ITM_API_SERVER_HOST_EXTERNAL} -ge 2 ]; then
+         export GUI_ITM_API_FULL_PATH=$GUI_ITM_API_SERVER_HOST_EXTERNAL"/itmapi"
+         export ITMSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL"/itm"
+      else
+         export GUI_ITM_API_FULL_PATH=$GUI_ITM_API_SERVER_HOST_EXTERNAL_IP"/itmapi"
+         export ITMSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL_IP"/itm"
+      fi
    else
-      export GUI_ITM_API_FULL_PATH=$GUI_ITM_API_SERVER_HOST_EXTERNAL_IP":"$GUI_ITM_API_SERVER_PORT"/api"
-      export ITMSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$GUI_ITM_API_SERVER_HOST_EXTERNAL_IP":"$GUI_ITM_WEB_SERVER_PORT"/itm"
+      if [ ${#GUI_ITM_API_SERVER_HOST_EXTERNAL} -ge 2 ]; then
+         export GUI_ITM_API_FULL_PATH=$GUI_ITM_API_SERVER_HOST_EXTERNAL"/itmapi"
+         export ITMSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL"/itm"
+      else
+         export GUI_ITM_API_FULL_PATH=$GUI_ITM_API_SERVER_HOST_EXTERNAL_IP":"$GUI_ITM_API_SERVER_PORT"/api"
+         export ITMSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL_IP":"$GUI_ITM_WEB_SERVER_PORT"/itm"
+      fi
    fi
    cat $DEPLOY_ROOT/docker/itm-web.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-gui.yml
    echo >> $DEPLOY_ROOT/stack/stack-gui.yml
@@ -821,11 +853,21 @@ do
    export GUI_JMR_WEB_SERVER_HOST_INTERNAL_IP=$HOST_IP
    export GUI_JMR_WEB_SERVER_PORT=$PORT
    if [[ "$GUI_HTTP_PROCOTOL" == "https" ]]; then
-      export GUI_JMR_API_FULL_PATH=$GUI_JMR_API_SERVER_HOST_EXTERNAL_IP"/jmrapi"
-      export JMRSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$GUI_JMR_API_SERVER_HOST_EXTERNAL_IP"/jmr"
+      if [ ${#GUI_JMR_API_SERVER_HOST_EXTERNAL} -ge 2 ]; then
+         export GUI_JMR_API_FULL_PATH=$GUI_JMR_API_SERVER_HOST_EXTERNAL"/jmrapi"
+         export JMRSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL"/jmr"
+      else
+         export GUI_JMR_API_FULL_PATH=$GUI_JMR_API_SERVER_HOST_EXTERNAL_IP"/jmrapi"
+         export JMRSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL_IP"/jmr"
+      fi
    else
-      export GUI_JMR_API_FULL_PATH=$GUI_JMR_API_SERVER_HOST_EXTERNAL_IP":"$GUI_JMR_API_SERVER_PORT"/api"
-      export JMRSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$GUI_JMR_API_SERVER_HOST_EXTERNAL_IP":"$GUI_JMR_WEB_SERVER_PORT"/jmr"
+      if [ ${#GUI_JMR_API_SERVER_HOST_EXTERNAL} -ge 2 ]; then
+         export GUI_JMR_API_FULL_PATH=$GUI_JMR_API_SERVER_HOST_EXTERNAL"/jmrapi"
+         export JMRSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL"/jmr"
+      else
+         export GUI_JMR_API_FULL_PATH=$GUI_JMR_API_SERVER_HOST_EXTERNAL_IP":"$GUI_JMR_API_SERVER_PORT"/api"
+         export JMRSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL_IP":"$GUI_JMR_WEB_SERVER_PORT"/jmr"
+      fi
    fi
    cat $DEPLOY_ROOT/docker/jmr-web.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-gui.yml
    echo >> $DEPLOY_ROOT/stack/stack-gui.yml
@@ -860,13 +902,23 @@ do
    export HOST_EXTERNAL_IP=`echo $TUPLE | cut -d: -f4`
    export PORT=`echo $TUPLE | cut -d: -f5`
    export GUI_OPC_WEB_SERVER_HOST_INTERNAL_IP=$HOST_IP
-   export GUI_OPC_WEB_SERVER_PORT=$PORT
+   export GUI_OPC_WEB_SERVER_PORT=$PORT   
    if [[ "$GUI_HTTP_PROCOTOL" == "https" ]]; then
-      export GUI_OPC_API_FULL_PATH=$GUI_OPC_API_SERVER_HOST_EXTERNAL_IP"/opcapi"
-      export OPCSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$GUI_OPC_API_SERVER_HOST_EXTERNAL_IP"/opc"
+      if [ ${#GUI_OPC_API_SERVER_HOST_EXTERNAL} -ge 2 ]; then
+         export GUI_OPC_API_FULL_PATH=$GUI_OPC_API_SERVER_HOST_EXTERNAL"/opcapi"
+         export OPCSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL"/opc"
+      else
+         export GUI_OPC_API_FULL_PATH=$GUI_OPC_API_SERVER_HOST_EXTERNAL_IP"/opcapi"
+         export OPCSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL_IP"/opc"
+      fi
    else
-      export GUI_OPC_API_FULL_PATH=$GUI_OPC_API_SERVER_HOST_EXTERNAL_IP":"$GUI_OPC_API_SERVER_PORT"/api"
-      export OPCSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$GUI_OPC_API_SERVER_HOST_EXTERNAL_IP":"$GUI_OPC_WEB_SERVER_PORT"/opc"
+      if [ ${#GUI_OPC_API_SERVER_HOST_EXTERNAL} -ge 2 ]; then
+         export GUI_OPC_API_FULL_PATH=$GUI_OPC_API_SERVER_HOST_EXTERNAL"/opcapi"
+         export OPCSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL"/opc"
+      else
+         export GUI_OPC_API_FULL_PATH=$GUI_OPC_API_SERVER_HOST_EXTERNAL_IP":"$GUI_OPC_API_SERVER_PORT"/api"
+         export OPCSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL_IP":"$GUI_OPC_WEB_SERVER_PORT"/opc"
+      fi
    fi
    cat $DEPLOY_ROOT/docker/opc-web.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-gui.yml
    echo >> $DEPLOY_ROOT/stack/stack-gui.yml
@@ -903,11 +955,21 @@ do
    export GUI_IAR_WEB_SERVER_HOST_INTERNAL_IP=$HOST_IP
    export GUI_IAR_WEB_SERVER_PORT=$PORT
    if [[ "$GUI_HTTP_PROCOTOL" == "https" ]]; then
-      export GUI_IAR_API_FULL_PATH=$GUI_IAR_API_SERVER_HOST_EXTERNAL_IP"/iarapi"
-      export IARSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$GUI_IAR_API_SERVER_HOST_EXTERNAL_IP"/iar"
+      if [ ${#GUI_IAR_API_SERVER_HOST_EXTERNAL} -ge 2 ]; then
+         export GUI_IAR_API_FULL_PATH=$GUI_IAR_API_SERVER_HOST_EXTERNAL"/iarapi"
+         export IARSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL"/iar"
+      else
+         export GUI_IAR_API_FULL_PATH=$GUI_IAR_API_SERVER_HOST_EXTERNAL_IP"/iarapi"
+         export IARSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL_IP"/iar"
+      fi
    else
-      export GUI_IAR_API_FULL_PATH=$GUI_IAR_API_SERVER_HOST_EXTERNAL_IP":"$GUI_IAR_API_SERVER_PORT"/api"
-      export IARSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$GUI_IAR_API_SERVER_HOST_EXTERNAL_IP":"$GUI_IAR_WEB_SERVER_PORT"/iar"
+      if [ ${#GUI_IAR_API_SERVER_HOST_EXTERNAL} -ge 2 ]; then
+         export GUI_IAR_API_FULL_PATH=$GUI_IAR_API_SERVER_HOST_EXTERNAL"/iarapi"
+         export IARSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL"/iar"
+      else
+         export GUI_IAR_API_FULL_PATH=$GUI_IAR_API_SERVER_HOST_EXTERNAL_IP":"$GUI_IAR_API_SERVER_PORT"/api"
+         export IARSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL_IP":"$GUI_IAR_WEB_SERVER_PORT"/iar"
+      fi
    fi
    cat $DEPLOY_ROOT/docker/iar-web.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-gui.yml
    echo >> $DEPLOY_ROOT/stack/stack-gui.yml
@@ -944,11 +1006,21 @@ do
    export GUI_OPR_WEB_SERVER_HOST_INTERNAL_IP=$HOST_IP
    export GUI_OPR_WEB_SERVER_PORT=$PORT
    if [[ "$GUI_HTTP_PROCOTOL" == "https" ]]; then
-      export GUI_OPR_API_FULL_PATH=$GUI_OPC_API_SERVER_HOST_EXTERNAL_IP"/opcapi"
-      export OPRSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$GUI_OPR_API_SERVER_HOST_EXTERNAL_IP"/opc"
+      if [ ${#GUI_OPR_API_SERVER_HOST_EXTERNAL} -ge 2 ]; then
+         export GUI_OPR_API_FULL_PATH=$GUI_OPR_API_SERVER_HOST_EXTERNAL"/oprapi"
+         export OPRSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL"/opr"
+      else
+         export GUI_OPR_API_FULL_PATH=$GUI_OPR_API_SERVER_HOST_EXTERNAL_IP"/oprapi"
+         export OPRSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL_IP"/opr"
+      fi
    else
-      export GUI_OPR_API_FULL_PATH=$GUI_OPC_API_SERVER_HOST_EXTERNAL_IP":"$GUI_OPC_API_SERVER_PORT"/api"
-      export OPRSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$GUI_OPR_API_SERVER_HOST_EXTERNAL_IP":"$GUI_OPR_WEB_SERVER_PORT"/opc"
+      if [ ${#GUI_OPR_API_SERVER_HOST_EXTERNAL} -ge 2 ]; then
+         export GUI_OPR_API_FULL_PATH=$GUI_OPR_API_SERVER_HOST_EXTERNAL"/oprapi"
+         export OPRSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL"/opr"
+      else
+         export GUI_OPR_API_FULL_PATH=$GUI_OPR_API_SERVER_HOST_EXTERNAL_IP":"$GUI_OPR_API_SERVER_PORT"/api"
+         export OPRSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL_IP":"$GUI_OPR_WEB_SERVER_PORT"/opr"
+      fi
    fi
    cat $DEPLOY_ROOT/docker/opr-web.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-gui.yml
    echo >> $DEPLOY_ROOT/stack/stack-gui.yml
@@ -985,11 +1057,21 @@ do
    export GUI_STG_WEB_SERVER_HOST_INTERNAL_IP=$HOST_IP
    export GUI_STG_WEB_SERVER_PORT=$PORT
    if [[ "$GUI_HTTP_PROCOTOL" == "https" ]]; then
-      export GUI_STG_API_FULL_PATH=$GUI_STG_API_SERVER_HOST_EXTERNAL_IP"/stgapi"
-      export STGSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$GUI_STG_API_SERVER_HOST_EXTERNAL_IP"/stg"
+      if [ ${#GUI_STG_API_SERVER_HOST_EXTERNAL} -ge 2 ]; then
+         export GUI_STG_API_FULL_PATH=$GUI_STG_API_SERVER_HOST_EXTERNAL"/stgapi"
+         export STGSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL"/stg"
+      else
+         export GUI_STG_API_FULL_PATH=$GUI_STG_API_SERVER_HOST_EXTERNAL_IP"/stgapi"
+         export STGSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL_IP"/stg"
+      fi
    else
-      export GUI_STG_API_FULL_PATH=$GUI_STG_API_SERVER_HOST_EXTERNAL_IP":"$GUI_STG_API_SERVER_PORT"/api"
-      export STGSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$GUI_STG_API_SERVER_HOST_EXTERNAL_IP":"$GUI_STG_WEB_SERVER_PORT"/stg"
+      if [ ${#GUI_STG_API_SERVER_HOST_EXTERNAL} -ge 2 ]; then
+         export GUI_STG_API_FULL_PATH=$GUI_STG_API_SERVER_HOST_EXTERNAL"/stgapi"
+         export STGSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL"/stg"
+      else
+         export GUI_STG_API_FULL_PATH=$GUI_STG_API_SERVER_HOST_EXTERNAL_IP":"$GUI_STG_API_SERVER_PORT"/api"
+         export STGSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL_IP":"$GUI_STG_WEB_SERVER_PORT"/stg"
+      fi
    fi
    cat $DEPLOY_ROOT/docker/stg-web.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-gui.yml
    echo >> $DEPLOY_ROOT/stack/stack-gui.yml
@@ -1026,11 +1108,21 @@ do
    export GUI_SBM_WEB_SERVER_HOST_INTERNAL_IP=$HOST_IP
    export GUI_SBM_WEB_SERVER_PORT=$PORT
    if [[ "$GUI_HTTP_PROCOTOL" == "https" ]]; then
-      export GUI_SBM_API_FULL_PATH=$GUI_SBM_API_SERVER_HOST_EXTERNAL_IP"/ucgapi"
-      export SBMSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$GUI_SBM_API_SERVER_HOST_EXTERNAL_IP"/ucg"
+      if [ ${#GUI_SBM_API_SERVER_HOST_EXTERNAL} -ge 2 ]; then
+         export GUI_SBM_API_FULL_PATH=$GUI_SBM_API_SERVER_HOST_EXTERNAL"/ucgapi"
+         export SBMSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL"/ucg"
+      else
+         export GUI_SBM_API_FULL_PATH=$GUI_SBM_API_SERVER_HOST_EXTERNAL_IP"/ucgapi"
+         export SBMSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL_IP"/ucg"
+      fi
    else
-      export GUI_SBM_API_FULL_PATH=$GUI_SBM_API_SERVER_HOST_EXTERNAL_IP":"$GUI_SBM_API_SERVER_PORT"/api"
-      export SBMSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$GUI_SBM_API_SERVER_HOST_EXTERNAL_IP":"$GUI_SBM_WEB_SERVER_PORT"/ucg"
+      if [ ${#GUI_SBM_API_SERVER_HOST_EXTERNAL} -ge 2 ]; then
+         export GUI_SBM_API_FULL_PATH=$GUI_SBM_API_SERVER_HOST_EXTERNAL"/ucgapi"
+         export SBMSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL"/ucg"
+      else
+         export GUI_SBM_API_FULL_PATH=$GUI_SBM_API_SERVER_HOST_EXTERNAL_IP":"$GUI_SBM_API_SERVER_PORT"/api"
+         export SBMSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL_IP":"$GUI_SBM_WEB_SERVER_PORT"/ucg"
+      fi
    fi
    cat $DEPLOY_ROOT/docker/sbm-web.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-gui.yml
    echo >> $DEPLOY_ROOT/stack/stack-gui.yml
@@ -1064,14 +1156,25 @@ do
    export HOST_IP=`echo $TUPLE | cut -d: -f3`
    export HOST_EXTERNAL_IP=`echo $TUPLE | cut -d: -f4`
    export PORT=`echo $TUPLE | cut -d: -f5`
+   export HOST_EXTERNAL=`echo $TUPLE | cut -d: -f6`
    export GUI_LPM_WEB_SERVER_HOST_INTERNAL_IP=$HOST_IP
    export GUI_LPM_WEB_SERVER_PORT=$PORT
    if [[ "$GUI_HTTP_PROCOTOL" == "https" ]]; then
-      export GUI_LPM_API_FULL_PATH=$GUI_LPM_API_SERVER_HOST_EXTERNAL_IP"/lpmapi"
-      export LPMSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$GUI_LPM_API_SERVER_HOST_EXTERNAL_IP"/lpm"
+      if [ ${#GUI_LPM_API_SERVER_HOST_EXTERNAL} -ge 2 ]; then
+         export GUI_LPM_API_FULL_PATH=$GUI_LPM_API_SERVER_HOST_EXTERNAL"/lpmapi"
+         export LPMSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL"/lpm"
+      else
+         export GUI_LPM_API_FULL_PATH=$GUI_LPM_API_SERVER_HOST_EXTERNAL_IP"/lpmapi"
+         export LPMSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL_IP"/lpm"
+      fi
    else
-      export GUI_LPM_API_FULL_PATH=$GUI_LPM_API_SERVER_HOST_EXTERNAL_IP":"$GUI_LPM_API_SERVER_PORT"/api"
-      export LPMSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$GUI_LPM_API_SERVER_HOST_EXTERNAL_IP":"$GUI_LPM_WEB_SERVER_PORT"/lpm"
+      if [ ${#GUI_LPM_API_SERVER_HOST_EXTERNAL} -ge 2 ]; then
+         export GUI_LPM_API_FULL_PATH=$GUI_LPM_API_SERVER_HOST_EXTERNAL"/lpmapi"
+         export LPMSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL"/lpm"
+      else
+         export GUI_LPM_API_FULL_PATH=$GUI_LPM_API_SERVER_HOST_EXTERNAL_IP":"$GUI_LPM_API_SERVER_PORT"/api"
+         export LPMSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL_IP":"$GUI_LPM_WEB_SERVER_PORT"/lpm"
+      fi
    fi
    cat $DEPLOY_ROOT/docker/lpm-web.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-gui.yml
    echo >> $DEPLOY_ROOT/stack/stack-gui.yml
