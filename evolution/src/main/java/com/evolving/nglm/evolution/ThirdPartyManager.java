@@ -7446,7 +7446,7 @@ public class ThirdPartyManager
       Serializer<TokenChange> valueSerializer = TokenChange.serde().serializer();
       String featureID = JSONUtilities.decodeString(jsonRoot, "loginName", DEFAULT_FEATURE_ID);
       String origin = JSONUtilities.decodeString(jsonRoot, "origin", false);
-      TokenChange tokenChange = new TokenChange(subscriberProfile, now, "event from ".concat(Module.REST_API.toString()), tokenCode, action, str, origin, Module.REST_API, featureID, tenantID);
+      TokenChange tokenChange = new TokenChange(subscriberProfile, now, "event from ".concat(Module.REST_API.toString()), tokenCode, action, str, origin, Module.REST_API.getExternalRepresentation(), featureID, tenantID);
       kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
           topic,
           keySerializer.serialize(topic, new StringKey(subscriberProfile.getSubscriberID())),
