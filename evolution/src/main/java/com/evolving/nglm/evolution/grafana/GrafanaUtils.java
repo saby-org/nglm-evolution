@@ -243,8 +243,8 @@ public class GrafanaUtils
                         String expectedTitle = (String) dashboardDef.get("title");
                         String existingUID = uidOfExistingDashBoards.get(expectedTitle);
                         String regex = "[ACDEFGHJKMNPQRTWXYacdefghjkmnpqrtwx34679]{15}";
-                        HashMap<String,Object> mapDbEs=new HashMap<String,Object>();
-                        UpdateRequest request = new UpdateRequest();
+//                        HashMap<String,Object> mapDbEs=new HashMap<String,Object>();
+//                        UpdateRequest request = new UpdateRequest();
                         
                         log.info("The dashboard under-study is: === " + expectedTitle + " ===");
                         
@@ -265,9 +265,9 @@ public class GrafanaUtils
                           String newUID = "t"+ tenantID + "-" + TokenUtils.generateFromRegex(regex);
                           s = s.replace("replaceWithUniqueID", newUID );
                           fulldashboardDef = (JSONObject) (new JSONParser()).parse(s);
-                          mapDbEs.put("name",expectedTitle);
-                          mapDbEs.put("reportID",newUID);
-                          request = new UpdateRequest("dashboard_links",newUID);
+//                          mapDbEs.put("name",expectedTitle);
+//                          mapDbEs.put("reportID",newUID);
+//                          request = new UpdateRequest("dashboard_links",newUID);
                           log.info("The new uid of the already existing Dashboard: " + expectedTitle + " is " + newUID);
                         }
                         // 2- The dashboard already exists and its uid starts with t<tenantID>-
@@ -277,9 +277,9 @@ public class GrafanaUtils
                           log.info("GrafanaUtils.prepareGrafanaForTenants: Dashboard " + expectedTitle + " already exists for orgID " + orgID + " for dashboard file name " + currentFileName + " and it'll be overwritten.");
                           s= s.replace("replaceWithUniqueID", existingUID);
                           fulldashboardDef = (JSONObject) (new JSONParser()).parse(s);
-                          mapDbEs.put("name",expectedTitle);
-                          mapDbEs.put("reportID",existingUID);
-                          request = new UpdateRequest("dashboard_links",existingUID);
+//                          mapDbEs.put("name",expectedTitle);
+//                          mapDbEs.put("reportID",existingUID);
+//                          request = new UpdateRequest("dashboard_links",existingUID);
                           log.info("The uid of the already existing Dashboard: " + expectedTitle + " is " + existingUID);
                         }
                         // 3- The dashboard doesn't exist already
@@ -290,9 +290,9 @@ public class GrafanaUtils
                           String newUID = "t"+ tenantID + "-" + TokenUtils.generateFromRegex(regex);
                           s = s.replace("replaceWithUniqueID", newUID );
                           fulldashboardDef = (JSONObject) (new JSONParser()).parse(s);
-                          mapDbEs.put("name",expectedTitle);
-                          mapDbEs.put("reportID",newUID);
-                          request = new UpdateRequest("dashboard_links",newUID);
+//                          mapDbEs.put("name",expectedTitle);
+//                          mapDbEs.put("reportID",newUID);
+//                          request = new UpdateRequest("dashboard_links",newUID);
                           log.info("The uid of the newly created Dashboard: " + expectedTitle + " is " + newUID );
                         }
                         scanner.close();
@@ -307,26 +307,26 @@ public class GrafanaUtils
                           log.warn("GrafanaUtils.prepareGrafanaForTenants: Problem while loading Dashboard " + db.getFirstElement() + " for orgID " + orgID + " for dashboard file name " + currentFileName);
                         }
                         
-                        mapDbEs.put("webguiname","IAR"); 
-                        mapDbEs.put("type","GRAFANA"); 
-                        mapDbEs.put("icon",""); 
-                        mapDbEs.put("iframewidth",1800); 
-                        mapDbEs.put("iframeheight",1600); 
-                        mapDbEs.put("webpath",""); 
-                        mapDbEs.put("reportGroup",""); 
-                        mapDbEs.put("permissionKey",""); 
-                        mapDbEs.put("tenantid",tenantID);  
-                        request.doc(mapDbEs);
-                        request.docAsUpsert(true);
-                        request.retryOnConflict(4);
-
-                        try {
-                          elasticsearch.update(request, RequestOptions.DEFAULT);
-                        } catch (Exception e) {
-                          StringWriter stackTraceWriter = new StringWriter();
-                          e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-                          log.error("Pushing failed: "+stackTraceWriter.toString()+"");
-                        }
+//                        mapDbEs.put("webguiname","IAR"); 
+//                        mapDbEs.put("type","GRAFANA"); 
+//                        mapDbEs.put("icon",""); 
+//                        mapDbEs.put("iframewidth",1800); 
+//                        mapDbEs.put("iframeheight",1600); 
+//                        mapDbEs.put("webpath",""); 
+//                        mapDbEs.put("reportGroup",""); 
+//                        mapDbEs.put("permissionKey",""); 
+//                        mapDbEs.put("tenantid",tenantID);  
+//                        request.doc(mapDbEs);
+//                        request.docAsUpsert(true);
+//                        request.retryOnConflict(4);
+//
+//                        try {
+//                          elasticsearch.update(request, RequestOptions.DEFAULT);
+//                        } catch (Exception e) {
+//                          StringWriter stackTraceWriter = new StringWriter();
+//                          e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+//                          log.error("Pushing failed: "+stackTraceWriter.toString()+"");
+//                        }
                       }
                       catch(Exception e)
                       {
