@@ -490,7 +490,9 @@ public class SimpleSMSSender extends SMSSenderListener {
 			if (!this.support_sar && !this.support_udh) {
 				sendSubmitSM(deliveryRequest, text,source, destination, message, encoding, expiryDateTimeStamp, receipt, dest_addr_subunit, isSendToPayload, flashsms);
 			} else {
-				sendMultipleSubmitSM(deliveryRequest, text,source, destination, message, encoding, expiryDateTimeStamp, receipt, dest_addr_subunit, isSendToPayload, flashsms);
+				int parts = getMessageParts(message);
+				sendMultipleSubmitSM(deliveryRequest, text,source, destination, message, encoding, expiryDateTimeStamp, receipt, dest_addr_subunit, isSendToPayload, flashsms, parts);
+				deliveryRequest.getDiplomaticBriefcase().put(NotificationManagerRequest.lastSentCountBriefcaseKey, String.valueOf(parts));
 			}
 
 			return true;
@@ -580,7 +582,7 @@ public class SimpleSMSSender extends SMSSenderListener {
 	 * <p>These optional arguments are only defined in SMPP 3.4 and this is not supported by all operators' smscs yet.
 	 */
 	protected int sendMultipleSubmitSM(INotificationRequest deliveryRequest, final String text,final Address source, final Address destination, final byte[] message, final MessageEncoding encoding, Date expiryTime, final boolean receipt, final Integer dest_addr_subunit
-										, final boolean isSendToPayload, boolean flashsms) throws IOException, SMPPException, SMPPRuntimeException {
+										, final boolean isSendToPayload, boolean flashsms, int parts) throws IOException, SMPPException, SMPPRuntimeException {
 		boolean trace = logger.isTraceEnabled();
 		// http://www.activexperts.com/xmstoolkit/sms/multipart/
 		// http://www.ashishpaliwal.com/blog/2009/01/smpp-sending-long-sms-through-smpp/
@@ -590,7 +592,6 @@ public class SimpleSMSSender extends SMSSenderListener {
 
 		// The maximum length when using UDH is 153, not 154, since the UDH header
 		// takes 6 or 7 bytes which is more than 6 characters.
-		final int parts = (message.length<MAX_MESSAGE_LENGTH ? 1 : (int)Math.ceil(((double)message.length) / getMaxSegmentLength()));
 		if (trace) logger.trace("SimpleSMSSender.sendMultipleSubmitSM("+text+", "+source+", "+destination+", ..., "+encoding+", "+receipt+", "+dest_addr_subunit+") parts = "+parts+" = ("+message.length+"<"+MAX_MESSAGE_LENGTH+" ? 1 : (int)Math.ceil("+((double)message.length) / getMaxSegmentLength()+"))");
 
 		if (parts == 1) return sendSubmitSM(deliveryRequest, text, source, destination, message, encoding, expiryTime, receipt, dest_addr_subunit, isSendToPayload, flashsms);
@@ -768,6 +769,10 @@ public class SimpleSMSSender extends SMSSenderListener {
 		}
 		if (trace) logger.trace("SimpleSMSSender.sendMultipleSubmitSM("+text+", "+source+", "+destination+", ..., "+encoding+", "+receipt+", "+dest_addr_subunit+") "+parts+" parts were sent for "+message.length+" bytes");
 		return parts;
+	}
+
+	private int getMessageParts(final byte[] message) {
+		return message.length<MAX_MESSAGE_LENGTH ? 1 : (int)Math.ceil(((double)message.length) / getMaxSegmentLength());
 	}
 
 	protected int sendSubmitSM(INotificationRequest deliveryRequest, final String text, final Address source, final Address destination, final byte[] message, final MessageEncoding encoding, Date expiryTime, final boolean receipt,
@@ -980,7 +985,7 @@ public class SimpleSMSSender extends SMSSenderListener {
                 
                 if(receiptRequired == null || receiptRequired.booleanValue() == false) 
                   {
-                    // now DR required, let complete the request now
+                    // no DR required, let complete the request now
                     completeDeliveryRequest(smsCorrelation.getDeliveryRequest(), messageId, MessageStatus.DELIVERED, DeliveryStatus.Acknowledged, PacketStatusUtils.getMessage(packet.getCommandStatus()));
                   }
                 else 

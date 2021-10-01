@@ -85,21 +85,43 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
 
     }
 
+  private static Map<String,CommunicationChannel> channels = null;
+  private static Object channelsSync = new Object();
   private static Map<String,CommunicationChannel> GetCommunicationChannels()
   {
-    Map<String,CommunicationChannel> channels = Deployment.getCommunicationChannels();
-    for (CommunicationChannel staticCommunicationChannel : channels.values())
+    if(channels == null)
+    {
+      synchronized(channelsSync)
       {
-        CommunicationChannel dynamicCommunicationChannel = getCommunicationChannelService().getActiveCommunicationChannel(staticCommunicationChannel.getID(), SystemTime.getCurrentTime());
-        if(dynamicCommunicationChannel != null)
-          {
-            //set DeliveryManagerDeclaration from the static channel - because it is missing from the comm channel schema
-            dynamicCommunicationChannel.setDeliveryManagerDeclaration(staticCommunicationChannel.getDeliveryManagerDeclaration());
-
-            // replace the static communicationChannel
-            channels.replace(staticCommunicationChannel.getID(), dynamicCommunicationChannel);
-          }
+        if(channels == null)
+        {
+          channels = Deployment.getCommunicationChannels();
+          for (CommunicationChannel staticCommunicationChannel : channels.values())
+            {
+              CommunicationChannel dynamicCommunicationChannel = getCommunicationChannelService().getActiveCommunicationChannel(staticCommunicationChannel.getID(), SystemTime.getCurrentTime());
+              if(dynamicCommunicationChannel != null)
+                {
+                  DeliveryManagerDeclaration deliveryManagerDeclaration = staticCommunicationChannel.getDeliveryManagerDeclaration();
+                  try
+                  {
+                    deliveryManagerDeclaration = new DeliveryManagerDeclaration(dynamicCommunicationChannel.getJSONRepresentation());
+                  }
+                  catch (NoSuchMethodException|IllegalAccessException e) 
+                  {
+                    log.error("Error setting the deliveryManagerDeclaration for dynamic communication channel id: {}", dynamicCommunicationChannel.getID());
+                  }
+      
+                  //set DeliveryManagerDeclaration - because it is missing from the comm channel schema, to update it to latest dynamic changes from GUI
+                  dynamicCommunicationChannel.setDeliveryManagerDeclaration(deliveryManagerDeclaration);
+      
+                  // replace the static communicationChannel
+                  channels.replace(staticCommunicationChannel.getID(), dynamicCommunicationChannel);
+                }
+            }
+        }
       }
+    }
+
     return channels;
   }
 
@@ -755,6 +777,16 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       return "NotificationManagerRequest [destination=" + destination + ", language=" + language + ", templateID=" + templateID + ", tags=" + tags + ", restricted=" + restricted + ", status=" + status + ", returnCode=" + returnCode + ", returnCodeDetails=" + returnCodeDetails + ", channelID=" + channelID + "] " + super.toString();
     }
 
+    public static final String lastSentCountBriefcaseKey = "lastSentCount";
+    public int extractLastSentCount() 
+    {
+      if(getDiplomaticBriefcase().containsKey(lastSentCountBriefcaseKey))
+      {
+        return Integer.parseInt(getDiplomaticBriefcase().get(lastSentCountBriefcaseKey));
+      }
+      return 1;
+    }
+
   }
 
   /*****************************************
@@ -989,6 +1021,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
 
   public void run()
   {
+    int lastSentCount = 1; //(only for Smpp) how many sms parts were sent. For checking throttling
     while (true)
       {
         /*****************************************
@@ -997,12 +1030,13 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
          *
          *****************************************/
 
-        DeliveryRequest deliveryRequest = nextRequest();
+        DeliveryRequest deliveryRequest = nextRequest(lastSentCount);
         Date now = SystemTime.getCurrentTime();
 
         if(log.isDebugEnabled()) log.debug("NotificationManagerRequest run deliveryRequest" + deliveryRequest);
 
         NotificationManagerRequest dialogRequest = (NotificationManagerRequest) deliveryRequest;
+        //prometheus status pending
         incrementStats(dialogRequest);
         dialogRequest.resolveFromAddressToSourceAddress(getSourceAddressService());
         DialogTemplate dialogTemplate = (DialogTemplate) getSubscriberMessageTemplateService().getActiveSubscriberMessageTemplate(dialogRequest.getTemplateID(), now);
@@ -1024,6 +1058,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
                   {
                     if(log.isDebugEnabled()) log.debug("NotificationManagerRequest SEND Immediately restricted " + dialogRequest);
                     pluginInstance.send(dialogRequest);
+                    lastSentCount = dialogRequest.extractLastSentCount();
                   }
                 else
                   {
@@ -1039,6 +1074,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
               {
                 if(log.isDebugEnabled()) log.debug("NotificationManagerRequest SEND Immediately NON restricted " + dialogRequest);
                 pluginInstance.send(dialogRequest);
+                lastSentCount = dialogRequest.extractLastSentCount();
               }
             }
           else
@@ -1078,7 +1114,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
   private void incrementStats(NotificationManagerRequest notificationManagerRequest)
   {
     statsCounter.withLabel(StatsBuilders.LABEL.status.name(),notificationManagerRequest.getDeliveryStatus().getExternalRepresentation())
-            .withLabel(StatsBuilders.LABEL.channel.name(),GetCommunicationChannels().get(notificationManagerRequest.getChannelID()).getDisplay())
+            .withLabel(StatsBuilders.LABEL.channel.name(), GetCommunicationChannels().get(notificationManagerRequest.getChannelID()).getDisplay())
             .withLabel(StatsBuilders.LABEL.module.name(), notificationManagerRequest.getModule().name())
             .withLabel(StatsBuilders.LABEL.priority.name(), notificationManagerRequest.getDeliveryPriority().getExternalRepresentation())
             .withLabel(StatsBuilders.LABEL.tenant.name(), String.valueOf(notificationManagerRequest.getTenantID()))
