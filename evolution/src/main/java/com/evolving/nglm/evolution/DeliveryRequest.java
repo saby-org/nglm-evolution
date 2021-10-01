@@ -793,7 +793,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     guiPresentationMap.put(ORIGINATINGDELIVERYREQUESTID, getOriginatingDeliveryRequestID());
     guiPresentationMap.put(EVENTDATE, getDateString(getEventDate()));
     guiPresentationMap.put(EVENTID, getEventID());    
-    guiPresentationMap.put(DELIVERYSTATUS, getDeliveryStatus().getExternalRepresentation()); 
     guiPresentationMap.put(CREATIONDATE, getDateString(getCreationDate()));
     guiPresentationMap.put(DELIVERYDATE, getDateString(getDeliveryDate()));
     guiPresentationMap.put(ACTIVITYTYPE, getActivityType().toString());
