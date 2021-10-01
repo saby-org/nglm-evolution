@@ -2361,7 +2361,8 @@ public class EvolutionEngine
         if(point != null)
           {
             //TODO : what module is best here ?
-            updatePointBalance(context, null, "checkBonusExpiration", Module.Unknown.getExternalRepresentation(), "checkBonusExpiration", subscriberState.getSubscriberProfile(), point, CommodityDeliveryOperation.Expire, 0, now, true, "", tenantID);
+            boolean updated = updatePointBalance(context, null, "checkBonusExpiration", Module.Unknown.getExternalRepresentation(), "checkBonusExpiration", subscriberState.getSubscriberProfile(), point, CommodityDeliveryOperation.Expire, 0, now, true, "", tenantID);
+            if (updated) checkForLoyaltyProgramStateChanges(subscriberState, "checkBonusExpiration", now, null, false);
           }
       }
   }
