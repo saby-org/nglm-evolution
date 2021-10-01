@@ -242,6 +242,7 @@ public class GUIService {
     listenerQueue.clear();
 
     // if master service, start background thread for topic deletion and ES update
+    boolean RAJK_LOG = this instanceof JourneyService;
     if (masterService)
       {
         Timer cleaner = new Timer("GUIService-deleted-object-cleaner", true);
@@ -255,6 +256,7 @@ public class GUIService {
             //  ES update
             //
             
+            if (RAJK_LOG) log.info("RAJ K executing updateElasticSearch");
             for (GUIManagedObject guiManagedObject : getStoredGUIManagedObjects(0))
               {
                 updateElasticSearch(guiManagedObject, true);
