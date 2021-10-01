@@ -4121,7 +4121,7 @@ public class ThirdPartyManager
         {
           log.error(RESTAPIGenericReturnCodes.NO_TOKENS_RETURNED.getGenericDescription());
           response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.NO_TOKENS_RETURNED.getGenericResponseCode());
-          String str = RESTAPIGenericReturnCodes.NO_TOKENS_RETURNED.getGenericResponseMessage();
+          String str = RESTAPIGenericReturnCodes.NO_TOKENS_RETURNED.getGenericResponseCode()+"";
           response.put(GENERIC_RESPONSE_MSG, str);
           generateTokenChange(subscriberID, now, tokenCode, TokenChange.ALLOCATE, str, API.getCustomerNBOs, jsonRoot, tenantID);
           return JSONUtilities.encodeObject(response);
@@ -4130,7 +4130,7 @@ public class ThirdPartyManager
       if (subscriberToken.getTokenExpirationDate().before(now)) {
         log.error(RESTAPIGenericReturnCodes.EXPIRED.getGenericDescription());
         response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.EXPIRED.getGenericResponseCode());
-        String str = RESTAPIGenericReturnCodes.EXPIRED.getGenericResponseMessage();
+        String str = RESTAPIGenericReturnCodes.EXPIRED.getGenericResponseCode()+"";
         response.put(GENERIC_RESPONSE_MSG, str);
         generateTokenChange(subscriberID, now, tokenCode, TokenChange.REFUSE, str, API.getCustomerNBOs, jsonRoot, tenantID);
         return JSONUtilities.encodeObject(response);          
@@ -4140,8 +4140,8 @@ public class ThirdPartyManager
         {
           // TODO can this really happen ?
           log.error(RESTAPIGenericReturnCodes.TOKEN_BAD_TYPE.getGenericDescription());
-          response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.TOKEN_BAD_TYPE.getGenericResponseCode());
-          String str = RESTAPIGenericReturnCodes.TOKEN_BAD_TYPE.getGenericResponseMessage();
+          response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.TOKEN_BAD_TYPE.getGenericResponseCode()+"");
+          String str = RESTAPIGenericReturnCodes.TOKEN_BAD_TYPE.getGenericResponseCode()+"";
           response.put(GENERIC_RESPONSE_MSG, str);
           generateTokenChange(subscriberID, now, tokenCode, TokenChange.ALLOCATE, str, API.getCustomerNBOs, jsonRoot, tenantID);
           return JSONUtilities.encodeObject(response);          
@@ -4153,7 +4153,7 @@ public class ThirdPartyManager
         {
           log.error(RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericDescription()+" null value");
           response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericResponseCode());
-          String str = RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericResponseMessage();
+          String str = RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericResponseCode()+"";
           response.put(GENERIC_RESPONSE_MSG, str);
           generateTokenChange(subscriberID, now, tokenCode, TokenChange.ALLOCATE, str, API.getCustomerNBOs, jsonRoot, tenantID);
           return JSONUtilities.encodeObject(response);                    
@@ -4163,7 +4163,7 @@ public class ThirdPartyManager
         {
           log.error(RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericDescription()+" unknown id : "+presentationStrategyID);
           response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericResponseCode());
-          String str = RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericResponseMessage();
+          String str = RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericResponseCode()+"";
           response.put(GENERIC_RESPONSE_MSG, str);
           generateTokenChange(subscriberID, now, tokenCode, TokenChange.ALLOCATE, str, API.getCustomerNBOs, jsonRoot, tenantID);
           return JSONUtilities.encodeObject(response);          
@@ -4443,7 +4443,7 @@ public class ThirdPartyManager
           // Token has not been assigned to this subscriber
           log.error(RESTAPIGenericReturnCodes.NO_TOKENS_RETURNED.getGenericDescription());
           response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.NO_TOKENS_RETURNED.getGenericResponseCode());
-          String str = RESTAPIGenericReturnCodes.NO_TOKENS_RETURNED.getGenericResponseMessage();
+          String str = RESTAPIGenericReturnCodes.NO_TOKENS_RETURNED.getGenericResponseCode()+"";
           response.put(GENERIC_RESPONSE_MSG, str);
           generateTokenChange(subscriberID, now, tokenCode, TokenChange.REDEEM, str, API.acceptOffer, jsonRoot, tenantID);
           return JSONUtilities.encodeObject(response);
@@ -4454,7 +4454,7 @@ public class ThirdPartyManager
           // TODO can this happen ?
           log.error(RESTAPIGenericReturnCodes.TOKEN_BAD_TYPE.getGenericDescription());
           response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.TOKEN_BAD_TYPE.getGenericResponseCode());
-          String str = RESTAPIGenericReturnCodes.TOKEN_BAD_TYPE.getGenericResponseMessage();
+          String str = RESTAPIGenericReturnCodes.TOKEN_BAD_TYPE.getGenericResponseCode()+"";
           response.put(GENERIC_RESPONSE_MSG, str);
           generateTokenChange(subscriberID, now, tokenCode, TokenChange.REDEEM, str, API.acceptOffer, jsonRoot, tenantID);
           return JSONUtilities.encodeObject(response);          
@@ -4466,7 +4466,7 @@ public class ThirdPartyManager
         {
           log.error(RESTAPIGenericReturnCodes.CONCURRENT_ACCEPT.getGenericDescription());
           response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.CONCURRENT_ACCEPT.getGenericResponseCode());
-          String str = RESTAPIGenericReturnCodes.CONCURRENT_ACCEPT.getGenericResponseMessage();
+          String str = RESTAPIGenericReturnCodes.CONCURRENT_ACCEPT.getGenericResponseCode()+"";
           response.put(GENERIC_RESPONSE_MSG, str);
           generateTokenChange(subscriberID, now, tokenCode, TokenChange.REDEEM, str, API.acceptOffer, jsonRoot, tenantID);
           return JSONUtilities.encodeObject(response);
@@ -4476,7 +4476,7 @@ public class ThirdPartyManager
         {
           log.error(RESTAPIGenericReturnCodes.NO_OFFER_ALLOCATED.getGenericDescription());
           response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.NO_OFFER_ALLOCATED.getGenericResponseCode());
-          String str = RESTAPIGenericReturnCodes.NO_OFFER_ALLOCATED.getGenericResponseMessage();
+          String str = RESTAPIGenericReturnCodes.NO_OFFER_ALLOCATED.getGenericResponseCode()+"";
           response.put(GENERIC_RESPONSE_MSG, str);
           generateTokenChange(subscriberID, now, tokenCode, TokenChange.REDEEM, str, API.acceptOffer, jsonRoot, tenantID);
           return JSONUtilities.encodeObject(response);
@@ -4500,7 +4500,7 @@ public class ThirdPartyManager
         {
           log.error(RESTAPIGenericReturnCodes.OFFER_NOT_PRESENTED.getGenericDescription());
           response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.OFFER_NOT_PRESENTED.getGenericResponseCode());
-          String str = RESTAPIGenericReturnCodes.OFFER_NOT_PRESENTED.getGenericResponseMessage();
+          String str = RESTAPIGenericReturnCodes.OFFER_NOT_PRESENTED.getGenericResponseCode()+"";
           response.put(GENERIC_RESPONSE_MSG, str);
           generateTokenChange(subscriberID, now, tokenCode, TokenChange.REDEEM, str, API.acceptOffer, jsonRoot, tenantID);
           return JSONUtilities.encodeObject(response);          

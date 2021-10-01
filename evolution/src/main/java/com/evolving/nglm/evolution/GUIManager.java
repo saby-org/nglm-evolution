@@ -23888,7 +23888,7 @@ public class GUIManager
             }
 
           if (subscriberToken.getTokenExpirationDate().before(now)) {
-            String str = "Token expired";
+            String str =  RESTAPIGenericReturnCodes.TOKEN_RESEND_NO_ACTIVE_TOKENS.getGenericResponseCode()+"";//"Token expired";
             log.error(str);
             response.put("responseCode", str);
             generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.REFUSE, str, tenantID);
@@ -23917,7 +23917,7 @@ public class GUIManager
           PresentationStrategy presentationStrategy = (PresentationStrategy) presentationStrategyService.getStoredPresentationStrategy(presentationStrategyID);
           if (presentationStrategy == null)
             {
-              String str =RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericResponseCode()+""+presentationStrategyID;
+              String str =RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericResponseCode()+"";//+presentationStrategyID;
               log.error(str);
               response.put("responseCode", str);
               generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.ALLOCATE, str, tenantID);
@@ -24153,7 +24153,12 @@ public class GUIManager
             response.put("responseCode", "ok");
 		  }else{
           	purchaseWaitingResponse.cancel(true);
-            if(redeemResponse!=null) response.put("responseMessage", redeemResponse.getReturnStatus());
+            if(redeemResponse!=null && redeemResponse.getReturnStatus().equals(RESTAPIGenericReturnCodes.INSUFFICIENT_BALANCE.getGenericResponseCode()+"")){
+              handlePurchaseResponse(purchaseWaitingResponse);
+            }
+            else
+            response.put("responseMessage", redeemResponse.getReturnStatus());
+            
             response.put("responseCode", "ko");
             return JSONUtilities.encodeObject(response);
 		  }
@@ -29021,8 +29026,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
   *
   *****************************************/
 
-
-
   private void generateTokenChange(String subscriberID, Date now, String tokenCode, String userID, String action, String str, int tenantID)
   {
     if (tokenCode != null) {
@@ -29037,8 +29040,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           ));
     }
   } 
-  
-
   
  /************************************************************************
  *

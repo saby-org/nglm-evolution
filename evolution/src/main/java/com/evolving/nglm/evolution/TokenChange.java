@@ -52,7 +52,7 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("token_change");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),10));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),11));
     for (Field field : subscriberStreamOutputSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("eventDateTime", Timestamp.builder().schema());
@@ -298,8 +298,8 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
     String featureID = (schemaVersion >=3 ) ? valueStruct.getString("featureID") : "";
     String callUniqueIdentifier = (schemaVersion >=10 && schema.field("callUniqueIdentifier")!=null) ? valueStruct.getString("callUniqueIdentifier") : null;
     int tenantID = (schemaVersion >= 9)? valueStruct.getInt16("tenantID") : 1; // for old system, default to tenant 1
-    String acceptedOfferID = valueStruct.getString("acceptedOfferID");
-    List<String> presentedOfferIDs = (List<String>) valueStruct.get("presentedOfferIDs");
+    String acceptedOfferID =  (schemaVersion >=11 && schema.field("acceptedOfferID")!=null) ? valueStruct.getString("acceptedOfferID") : null;
+    List<String> presentedOfferIDs = (schemaVersion >=11 && schema.field("presentedOfferIDs")!=null) ? (List<String>) valueStruct.get("presentedOfferIDs") : new ArrayList<>();
 
     //
     // return
