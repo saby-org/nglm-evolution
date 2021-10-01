@@ -242,7 +242,6 @@ public class GUIService {
     listenerQueue.clear();
 
     // if master service, start background thread for topic deletion and ES update
-    boolean RAJK_LOG = this instanceof JourneyService;
     if (masterService)
       {
         Timer cleaner = new Timer("GUIService-deleted-object-cleaner", true);
@@ -256,7 +255,6 @@ public class GUIService {
             //  ES update
             //
             
-            if (RAJK_LOG) log.info("RAJ K executing updateElasticSearch");
             for (GUIManagedObject guiManagedObject : getStoredGUIManagedObjects(0))
               {
                 updateElasticSearch(guiManagedObject, true);
@@ -1467,7 +1465,7 @@ public class GUIService {
   *
   *****************************************/
   
-  public void updateElasticSearch(GUIManagedObject guiManagedObject, boolean autoUpdate)
+  public void updateElasticSearch(GUIManagedObject guiManagedObject, final boolean autoUpdate)
   {
     if (guiManagedObject instanceof ElasticSearchMapping && elasticsearch != null /* to ensure it has been started with the good parameters*/ )
       {

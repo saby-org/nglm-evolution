@@ -4520,7 +4520,6 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     documentMap.put("active", this.getActive());
     documentMap.put("timestamp", RLMDateUtils.formatDateForElasticsearchDefault(SystemTime.getCurrentTime()));
     documentMap.put("status", journeyService.getJourneyStatus(this).getExternalRepresentation());
-    log.info("RAJ K documentMap {}", documentMap);
 
     //
     // return
