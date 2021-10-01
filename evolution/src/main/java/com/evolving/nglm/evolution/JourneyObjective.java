@@ -402,7 +402,7 @@ public class JourneyObjective extends GUIManagedObject implements GUIManagedObje
     return this.getJourneyObjectiveID();
   }
   @Override
-  public Map<String, Object> getESDocumentMap(ElasticsearchClientAPI elasticsearch, JourneyService journeyService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, ContactPolicyService contactPolicyService)
+  public Map<String, Object> getESDocumentMap(final boolean autoUpdate, ElasticsearchClientAPI elasticsearch, JourneyService journeyService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, ContactPolicyService contactPolicyService)
   {
     Date now = SystemTime.getCurrentTime();
     Map<String,Object> documentMap = new HashMap<String,Object>();

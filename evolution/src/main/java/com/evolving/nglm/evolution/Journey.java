@@ -4419,7 +4419,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     return "_" + this.getJourneyID().hashCode();
   }
   @Override
-  public Map<String, Object> getESDocumentMap(ElasticsearchClientAPI elasticsearch, JourneyService journeyService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, ContactPolicyService contactPolicyService)
+  public Map<String, Object> getESDocumentMap(boolean autoUpdate, ElasticsearchClientAPI elasticsearch, JourneyService journeyService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, ContactPolicyService contactPolicyService)
   {
     Map<String,Object> documentMap = new HashMap<String,Object>();
     
@@ -4474,16 +4474,14 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     // targetCount 
     //
     
-    long targetCount = 0;
+    long targetCount = autoUpdate ? 0 : JSONUtilities.decodeLong(getJSONRepresentation(), "targetCount", 0L);
     long journeySubsCount = 0;
     JourneyStatus journeyStatus = journeyService.getJourneyStatus(this);
     Date post24HourStartDate = RLMDateUtils.addHours(getEffectiveStartDate(), 24);
-    if (SystemTime.getCurrentTime().before(post24HourStartDate))
+    if (SystemTime.getCurrentTime().before(post24HourStartDate) || !autoUpdate)
       {
         targetCount = TargetingType.FileVariables == getTargetingType() ? JSONUtilities.decodeLong(getJSONRepresentation(), "targetCount", 0L) : this.evaluateTargetCount(elasticsearch, getTenantID());
-      }
-    if (journeyStatus == JourneyStatus.Running || journeyStatus == JourneyStatus.Suspended || journeyStatus == JourneyStatus.Complete)
-      {
+        
         //
         //  recalculate
         //
@@ -4500,8 +4498,9 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
             journeysubsCountMap = new HashMap<String, Long>();
           }
         journeySubsCount = journeysubsCountMap.get(getGUIManagedObjectID()) == null ? new Long(0) : journeysubsCountMap.get(getGUIManagedObjectID());
+        targetCount = targetCount > journeySubsCount ? targetCount : journeySubsCount;
       }
-    targetCount = targetCount > journeySubsCount ? targetCount : journeySubsCount;
+    
     
     //
     // documentMap
@@ -4514,13 +4513,14 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     documentMap.put("type", this.getGUIManagedObjectType().getExternalRepresentation());
     documentMap.put("user", this.getUserName());
     documentMap.put("targets", targets);
-    documentMap.put("targetCount", targetCount);
+    if ((autoUpdate && targetCount > 0) || !autoUpdate) documentMap.put("targetCount", targetCount);
     documentMap.put("objectives", objectives);
     documentMap.put("startDate", RLMDateUtils.formatDateForElasticsearchDefault(this.getEffectiveStartDate()));
     documentMap.put("endDate", RLMDateUtils.formatDateForElasticsearchDefault(this.getEffectiveEndDate()));
     documentMap.put("active", this.getActive());
     documentMap.put("timestamp", RLMDateUtils.formatDateForElasticsearchDefault(SystemTime.getCurrentTime()));
     documentMap.put("status", journeyService.getJourneyStatus(this).getExternalRepresentation());
+    log.info("RAJ K documentMap {}", documentMap);
 
     //
     // return

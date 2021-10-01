@@ -283,7 +283,7 @@ public abstract class SegmentationDimension extends GUIManagedObject implements 
     return this.getSegmentationDimensionID();
   }
   @Override
-  public Map<String, Object> getESDocumentMap(ElasticsearchClientAPI elasticsearch, JourneyService journeyService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, ContactPolicyService contactPolicyService)
+  public Map<String, Object> getESDocumentMap(final boolean autoUpdate, ElasticsearchClientAPI elasticsearch, JourneyService journeyService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, ContactPolicyService contactPolicyService)
   {
     Map<String,Object> documentMap = new HashMap<String,Object>();
     

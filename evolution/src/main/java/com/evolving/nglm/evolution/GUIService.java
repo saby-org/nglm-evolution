@@ -257,7 +257,7 @@ public class GUIService {
             
             for (GUIManagedObject guiManagedObject : getStoredGUIManagedObjects(0))
               {
-                updateElasticSearch(guiManagedObject);
+                updateElasticSearch(guiManagedObject, true);
               }
             
             //
@@ -726,7 +726,7 @@ public class GUIService {
     //
 
     processGUIManagedObject(guiManagedObject.getGUIManagedObjectID(), guiManagedObject, date, guiManagedObject.getTenantID());
-    updateElasticSearch(guiManagedObject);
+    updateElasticSearch(guiManagedObject, false);
   }
 
   /*****************************************
@@ -777,7 +777,7 @@ public class GUIService {
     //
 
     processGUIManagedObject(guiManagedObjectID, existingStoredGUIManagedObject, date, tenantID);
-    updateElasticSearch(existingStoredGUIManagedObject);
+    updateElasticSearch(existingStoredGUIManagedObject, false);
   }
 
   /****************************************
@@ -1402,7 +1402,7 @@ public class GUIService {
    *****************************************/
 
   private void notifyListener(GUIManagedObject guiManagedObject) {
-    updateElasticSearch(guiManagedObject);
+    updateElasticSearch(guiManagedObject, false);
     listenerQueue.add(guiManagedObject);
   }
 
@@ -1465,7 +1465,7 @@ public class GUIService {
   *
   *****************************************/
   
-  public void updateElasticSearch(GUIManagedObject guiManagedObject)
+  public void updateElasticSearch(GUIManagedObject guiManagedObject, boolean autoUpdate)
   {
     if (guiManagedObject instanceof ElasticSearchMapping && elasticsearch != null /* to ensure it has been started with the good parameters*/ )
       {
@@ -1485,7 +1485,7 @@ public class GUIService {
         else
           {
             UpdateRequest request = new UpdateRequest(((ElasticSearchMapping) guiManagedObject).getESIndexName(), ((ElasticSearchMapping) guiManagedObject).getESDocumentID());
-            request.doc(((ElasticSearchMapping) guiManagedObject).getESDocumentMap(elasticsearch, journeyService, targetService, journeyObjectiveService, contactPolicyService));
+            request.doc(((ElasticSearchMapping) guiManagedObject).getESDocumentMap(autoUpdate, elasticsearch, journeyService, targetService, journeyObjectiveService, contactPolicyService));
             request.docAsUpsert(true);
             request.retryOnConflict(4);
             try

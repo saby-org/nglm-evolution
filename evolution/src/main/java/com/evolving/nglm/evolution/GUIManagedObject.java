@@ -677,7 +677,7 @@ public abstract class GUIManagedObject
   public interface ElasticSearchMapping 
   {
     public String getESDocumentID();
-    public Map<String,Object> getESDocumentMap(ElasticsearchClientAPI elasticsearch, JourneyService journeyService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, ContactPolicyService contactPolicyService);
+    public Map<String,Object> getESDocumentMap(final boolean autoUpdate, ElasticsearchClientAPI elasticsearch, JourneyService journeyService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, ContactPolicyService contactPolicyService);
     public String getESIndexName();
   }
 }
