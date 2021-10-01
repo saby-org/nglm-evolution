@@ -4,7 +4,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.data.Schema;
@@ -17,94 +16,24 @@ import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.FileSourceConnector;
 import com.evolving.nglm.core.FileSourceTask;
 import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.SubscriberIDService;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.rii.utilities.JSONUtilities.JSONUtilitiesException;
 
 
 public class TokenRedeemedFileSourceConnector extends FileSourceConnector
 {
-  /****************************************
-  *
-  * attributes
-  *
-  ****************************************/
-
-  private static SubscriberIDService subscriberIDService = null;
 
   @Override public Class<? extends Task> taskClass()
   {
     return TokenRedeemedFileSourceConnectorTask.class;
   }
-  
-  
-  /*****************************************
-  *
-  *  class TokenRedeemedFileSourceConnectorTask
-  *
-  *****************************************/
 
   public static class TokenRedeemedFileSourceConnectorTask extends FileSourceTask
   {
-    
-    /*****************************************
-    *
-    *  config
-    *
-    *****************************************/
-
-    //
-    //  logger
-    //
 
     private static final Logger log = LoggerFactory.getLogger(TokenRedeemedFileSourceConnector.class);
 
-    /*****************************************
-    *
-    *  start
-    *
-    *****************************************/
-
-    @Override public void start(Map<String, String> properties)
-    {
-      super.start(properties);
-      
-      //
-      //  subscriberIDService
-      //
-
-      subscriberIDService = new SubscriberIDService(Deployment.getRedisSentinels(), "TokenRedeemedFileSourceConnector-" + Integer.toString(getTaskNumber()));
-    }
-    
-    /*****************************************
-    *
-    *  stop
-    *
-    *****************************************/
-
-    @Override public void stop()
-    {
-      //
-      //  subscriberIDService
-      //
-
-      if (subscriberIDService != null) subscriberIDService.close();
-
-      //
-      //  super
-      //
-
-      super.stop();
-    }
-
-    /*****************************************
-    *
-    *  processRecord
-    *
-    *****************************************/
-    
-    @Override protected List<KeyValue> processRecord(String jsonRecord) throws FileSourceTaskException
-    {
+    @Override protected List<KeyValue> processRecord(String jsonRecord) throws FileSourceTaskException, InterruptedException {
       List<KeyValue> result = null;
       try
       {
@@ -120,7 +49,7 @@ public class TokenRedeemedFileSourceConnector extends FileSourceConnector
         //  resolve subscriberID
         //
         
-        String subscriberID = resolveSubscriberID(customerID);
+        String subscriberID = resolveSubscriberID(Deployment.getGetCustomerAlternateID(),customerID);
         if (subscriberID != null)
           {
             jsonRoot.put("subscriberID", subscriberID);
@@ -143,46 +72,6 @@ public class TokenRedeemedFileSourceConnector extends FileSourceConnector
       }
       return result;
     }
-    
-    /****************************************
-    *
-    *  resolveSubscriberID
-    *
-    ****************************************/
 
-    private String resolveSubscriberID(String msisdn)
-    {
-      String result = null;
-      while (!getStopRequested())
-        {
-          try
-            {
-              result = subscriberIDService.getSubscriberID(Deployment.getGetCustomerAlternateID(), msisdn);
-              break;
-            }
-          catch (SubscriberIDService.SubscriberIDServiceException e)
-            {
-              //
-              // sleep before retry
-              //
-
-              synchronized (this)
-                {
-                  if (! getStopRequested())
-                    {
-                      try
-                        {
-                          this.wait(10*1000L);
-                        }
-                      catch (InterruptedException e1)
-                        {
-                          // ignore
-                        }
-                    }
-                }
-            }
-        }
-      return result;
-    }
   }
 }
