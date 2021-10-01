@@ -80,6 +80,7 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
   private static final String returnCodeDescription = "returnCodeDescription";
   private static final String source = "source";
   private static final String communicationChannel = "communicationChannel";
+  private static final String origin = "origin";
   
   private static SimpleDateFormat parseSDF1 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");   // TODO EVPRO-99
   private static SimpleDateFormat parseSDF2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX");   // TODO EVPRO-99
@@ -112,6 +113,7 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
     headerFieldsOrder.add(source);
     headerFieldsOrder.add(messageContent);
     headerFieldsOrder.add(communicationChannel);
+    headerFieldsOrder.add(origin);
   }
 
   /****************************************
@@ -383,32 +385,26 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
         if (notifFields.containsKey(templateID))
           {
             String tempID = notifFields.get(templateID).toString();
-            SubscriberMessageTemplate templateObject = subscriberMessageTemplateService
-                .getActiveSubscriberMessageTemplate(tempID, SystemTime.getCurrentTime());
-            
+            SubscriberMessageTemplate templateObject = subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(tempID, SystemTime.getCurrentTime());
+
             if (templateObject instanceof SMSTemplate)
               {
                 notifRecs.put("communicationChannel", "SMS");
-              }
+              } 
             else if (templateObject instanceof MailTemplate)
               {
                 notifRecs.put("communicationChannel", "EMAIL");
-              }
+              } 
             else if (templateObject instanceof PushTemplate)
               {
-                PushTemplate template = (PushTemplate) subscriberMessageTemplateService
-                    .getActiveSubscriberMessageTemplate(tempID, SystemTime.getCurrentTime());
-                notifRecs.put("communicationChannel",
-                    Deployment.getCommunicationChannels().get(template.getCommunicationChannelID()).getDisplay());
-
-              }
+                PushTemplate template = (PushTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(tempID, SystemTime.getCurrentTime());
+                notifRecs.put("communicationChannel", Deployment.getCommunicationChannels().get(template.getCommunicationChannelID()).getDisplay());
+              } 
             else if (templateObject instanceof DialogTemplate)// GenericTemplate
               {
-                DialogTemplate template = (DialogTemplate) subscriberMessageTemplateService
-                    .getActiveSubscriberMessageTemplate(tempID, SystemTime.getCurrentTime());
+                DialogTemplate template = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(tempID, SystemTime.getCurrentTime());
                 String channelID = template.getCommunicationChannelID();
-                notifRecs.put("communicationChannel",
-                    Deployment.getCommunicationChannels().get(channelID).getDisplay());
+                notifRecs.put("communicationChannel", Deployment.getCommunicationChannels().get(channelID).getDisplay());
               }
 
           }
@@ -416,6 +412,7 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
           {
             notifRecs.put("communicationChannel", "");
           }
+        notifRecs.put(origin, notifFields.get(origin));
 
         //
         // result

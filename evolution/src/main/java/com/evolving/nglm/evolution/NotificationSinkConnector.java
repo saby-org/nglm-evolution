@@ -174,6 +174,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap.put("channelID", channelID);
         documentMap.put("contactType", mailNotification.getContactType());
         documentMap.put("destination", mailNotification.getDestination());
+        documentMap.put("origin", mailNotification.getMessageDeliveryOrigin());
       }
       else if (notification instanceof SMSNotificationManagerRequest) {
         SMSNotificationManagerRequest smsNotification = (SMSNotificationManagerRequest) notification;
@@ -206,6 +207,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap.put("channelID", channelID);
         documentMap.put("contactType", smsNotification.getContactType());
         documentMap.put("destination", smsNotification.getDestination());
+        documentMap.put("origin", smsNotification.getMessageDeliveryOrigin());
       }
       else if (notification instanceof NotificationManagerRequest) {
         NotificationManagerRequest notifNotification = (NotificationManagerRequest) notification;
@@ -234,6 +236,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap.put("channelID", channelID);
         documentMap.put("contactType", notifNotification.getContactType());
         documentMap.put("destination", notifNotification.getDestination());
+        documentMap.put("origin", notifNotification.getMessageDeliveryOrigin());
       }
       else {
         PushNotificationManagerRequest pushNotification = (PushNotificationManagerRequest) notification;
@@ -263,6 +266,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap.put("channelID", channelID);
         documentMap.put("contactType", pushNotification.getContactType());
         documentMap.put("destination", pushNotification.getDestination());
+        documentMap.put("origin", pushNotification.getMessageDeliveryOrigin());
       }
       return documentMap;
     }

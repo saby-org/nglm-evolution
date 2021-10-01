@@ -367,7 +367,7 @@ public class EvolutionUtilities
     return result;
   }
   
-  public static boolean sendMessage(EvolutionEventContext context, Map<String, String> specificTags, String templateID, ContactType contactType, String sourceAddress, SubscriberEvaluationRequest subscriberEvaluationRequest, SubscriberState subscriberState, String featureID, Module moduleID)
+  public static boolean sendMessage(EvolutionEventContext context, Map<String, String> specificTags, String templateID, ContactType contactType, String origin, String sourceAddress, SubscriberEvaluationRequest subscriberEvaluationRequest, SubscriberState subscriberState, String featureID, Module moduleID)
   {
     boolean subscriberUpdated;
     /*****************************************
@@ -452,7 +452,7 @@ public class EvolutionUtilities
         NotificationManagerRequest request = null;
         if (destAddress != null)
           {
-            request = new NotificationManagerRequest(context, communicationChannel.getDeliveryType(), "CustomerCare", destAddress, language, template.getDialogTemplateID(), tags, communicationChannel.getID(), notificationParameters, contactType.getExternalRepresentation(), subscriberEvaluationRequest.getTenantID());
+            request = new NotificationManagerRequest(context, communicationChannel.getDeliveryType(), "CustomerCare", destAddress, language, template.getDialogTemplateID(), tags, communicationChannel.getID(), notificationParameters, contactType.getExternalRepresentation(), origin, subscriberEvaluationRequest.getTenantID());
 
             request.forceDeliveryPriority(contactType.getDeliveryPriority());
             request.setRestricted(contactType.getRestricted());
