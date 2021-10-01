@@ -2503,89 +2503,90 @@ public class EvolutionEngine
     }
 
     // check if we have update request
-    if (evolutionEvent instanceof VoucherChange){
-      VoucherChange voucherChange = (VoucherChange)evolutionEvent;
-      if(log.isDebugEnabled()) log.debug("voucher change to process : "+voucherChange);
-      // basics checks for not OK
-      if(voucherChange.getAction()==VoucherChange.VoucherChangeAction.Unknown){
-        voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
-      }else{
-        if(subscriberProfile.getVouchers()!=null && !subscriberProfile.getVouchers().isEmpty()){
-          boolean voucherFound=false;
-          for(VoucherProfileStored voucherStored:subscriberProfile.getVouchers()){
-            // note that this check can still match more than one voucher, but subscriberProfile.getVouchers() should be ordered soonest expiry date first
-            if(voucherStored.getVoucherCode().equals(voucherChange.getVoucherCode()) && voucherStored.getVoucherID().equals(voucherChange.getVoucherID())){
-              voucherFound=true;
-              if(log.isDebugEnabled()) log.debug("need to apply to stored voucher "+voucherStored);
+    if (evolutionEvent instanceof VoucherChange)
+      {
+        VoucherChange voucherChange = (VoucherChange) evolutionEvent;
+        if (log.isDebugEnabled()) log.debug("voucher change to process : " + voucherChange);
+        if (voucherChange.getAction() == VoucherChange.VoucherChangeAction.Unknown)
+          {
+            voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
+          } 
+        else
+          {
+            if (subscriberProfile.getVouchers() != null && !subscriberProfile.getVouchers().isEmpty())
+              {
+                boolean voucherFound = false;
+                for (VoucherProfileStored voucherStored : subscriberProfile.getVouchers())
+                  {
+                    // note that this check can still match more than one voucher, but subscriberProfile.getVouchers() should be ordered soonest expiry date first
+                    if (voucherStored.getVoucherCode().equals(voucherChange.getVoucherCode()) && voucherStored.getVoucherID().equals(voucherChange.getVoucherID()))
+                      {
+                        voucherFound = true;
+                        if (log.isDebugEnabled()) log.debug("need to apply to stored voucher " + voucherStored);
 
-              // redeem
-              if(voucherChange.getAction()==VoucherChange.VoucherChangeAction.Redeem){
-                checkRedeemVoucher(voucherStored, voucherChange, true);
-                if (voucherStored.getVoucherStatus() == VoucherDelivery.VoucherStatus.Redeemed) break;
-                
-                /*
-                 * if(voucherStored.getVoucherStatus()==VoucherDelivery.VoucherStatus.Redeemed){
-                 * // already redeemed voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.
-                 * VOUCHER_ALREADY_REDEEMED); } else
-                 * if(voucherStored.getVoucherStatus()==VoucherDelivery.VoucherStatus.Expired){
-                 * // already expired
-                 * voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_EXPIRED); }
-                 * else
-                 * if(voucherStored.getVoucherStatus()==VoucherDelivery.VoucherStatus.Delivered)
-                 * { // redeem voucher OK
-                 * voucherStored.setVoucherStatus(VoucherDelivery.VoucherStatus.Redeemed);
-                 * voucherStored.setVoucherRedeemDate(now);
-                 * voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS); break; }
-                 * else{ // default KO voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.
-                 * VOUCHER_NON_REDEEMABLE); }
-                 */
+                        // redeem
+                        if (voucherChange.getAction() == VoucherChange.VoucherChangeAction.Redeem)
+                          {
+                            boolean success = checkRedeemVoucher(voucherStored, voucherChange, true);
+                            if (success) break;
+                          }
+
+                        // extend
+                        else if (voucherChange.getAction() == VoucherChange.VoucherChangeAction.Extend)
+                          {
+                            if (voucherStored.getVoucherStatus() == VoucherDelivery.VoucherStatus.Redeemed)
+                              {
+                                // already redeemed
+                                voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED);
+                              } 
+                            else
+                              {
+                                // extend voucher OK
+                                voucherStored.setVoucherExpiryDate(voucherChange.getNewVoucherExpiryDate());
+                                sortVouchersPerExpiryDate(subscriberProfile);
+                                if (voucherStored.getVoucherExpiryDate().after(now)) voucherStored.setVoucherStatus(VoucherDelivery.VoucherStatus.Delivered);
+                                voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
+                                break;
+                              }
+                          }
+
+                        // delete (expire it)
+                        else if (voucherChange.getAction() == VoucherChange.VoucherChangeAction.Expire)
+                          {
+                            if (voucherStored.getVoucherStatus() == VoucherDelivery.VoucherStatus.Redeemed)
+                              {
+                                // already redeemed
+                                voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED);
+                              } 
+                            else if (voucherStored.getVoucherStatus() == VoucherDelivery.VoucherStatus.Expired)
+                              {
+                                // already expired
+                                voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_EXPIRED);
+                              } 
+                            else
+                              {
+                                // expire voucher OK
+                                voucherStored.setVoucherExpiryDate(now);
+                                sortVouchersPerExpiryDate(subscriberProfile);
+                                voucherStored.setVoucherStatus(VoucherDelivery.VoucherStatus.Expired);
+                                voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
+                                break;
+                              }
+                          }
+                      }
+                  }
+                if (!voucherFound) voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_NOT_ASSIGNED);
+              } 
+            else
+              {
+                if (log.isDebugEnabled()) log.debug("no vouchers stored for action " + voucherChange.getAction().getExternalRepresentation() + " in profile for " + subscriberProfile.getSubscriberID());
+                voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_NOT_ASSIGNED);
               }
-
-              // extend
-              if(voucherChange.getAction()==VoucherChange.VoucherChangeAction.Extend){
-                if(voucherStored.getVoucherStatus()==VoucherDelivery.VoucherStatus.Redeemed){
-                  // already redeemed
-                  voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED);
-                } else{
-                  // extend voucher OK
-                  voucherStored.setVoucherExpiryDate(voucherChange.getNewVoucherExpiryDate());
-                  sortVouchersPerExpiryDate(subscriberProfile);
-                  if(voucherStored.getVoucherExpiryDate().after(now)) voucherStored.setVoucherStatus(VoucherDelivery.VoucherStatus.Delivered);
-                  voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
-                  break;
-                }
-              }
-
-              // delete (expire it)
-              if(voucherChange.getAction()==VoucherChange.VoucherChangeAction.Expire){
-                if(voucherStored.getVoucherStatus()==VoucherDelivery.VoucherStatus.Redeemed){
-                  // already redeemed
-                  voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED);
-                } else if(voucherStored.getVoucherStatus()==VoucherDelivery.VoucherStatus.Expired){
-                  // already expired
-                  voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_EXPIRED);
-                } else {
-                  // expire voucher OK
-                  voucherStored.setVoucherExpiryDate(now);
-                  sortVouchersPerExpiryDate(subscriberProfile);
-                  voucherStored.setVoucherStatus(VoucherDelivery.VoucherStatus.Expired);
-                  voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
-                  break;
-                }
-              }
-
-            }
           }
-          if(!voucherFound) voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_NOT_ASSIGNED);
-        }else{
-          if(log.isDebugEnabled()) log.debug("no vouchers stored for action " + voucherChange.getAction().getExternalRepresentation() + " in profile for "+subscriberProfile.getSubscriberID());
-          voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_NOT_ASSIGNED);
-        }
+        // need to respond
+        subscriberState.getVoucherChanges().add(voucherChange);
+        subscriberUpdated = true;
       }
-      //need to respond
-      subscriberState.getVoucherChanges().add(voucherChange);
-      subscriberUpdated=true;
-    }
 
     return subscriberUpdated;
   }
@@ -2652,26 +2653,36 @@ public class EvolutionEngine
    return subscriberUpdated;
  }
 
-  private static void checkRedeemVoucher(VoucherProfileStored voucherStored, VoucherChange voucherChange, boolean redeem)
+  private static boolean checkRedeemVoucher(VoucherProfileStored voucherStored, VoucherChange voucherChange, boolean redeem)
   {
-    if(voucherStored.getVoucherStatus()==VoucherDelivery.VoucherStatus.Redeemed){
-      // already redeemed
-      voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED);
-    } else if(voucherStored.getVoucherStatus()==VoucherDelivery.VoucherStatus.Expired){
-      // already expired
-      voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_EXPIRED);
-    } else if(voucherStored.getVoucherStatus()==VoucherDelivery.VoucherStatus.Delivered){
-      // redeem voucher OK
-      if (redeem)
-        {
-          voucherStored.setVoucherStatus(VoucherDelivery.VoucherStatus.Redeemed);
-          voucherStored.setVoucherRedeemDate(SystemTime.getCurrentTime());
-        }
-      voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
-    } else{
-      // default KO
-      voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_NON_REDEEMABLE);
-    }
+    boolean success = false;
+    if (voucherStored.getVoucherStatus() == VoucherDelivery.VoucherStatus.Redeemed)
+      {
+        // already redeemed
+        voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED);
+      } 
+    else if (voucherStored.getVoucherStatus() == VoucherDelivery.VoucherStatus.Expired)
+      {
+        // already expired
+        voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_EXPIRED);
+      } 
+    else if (voucherStored.getVoucherStatus() == VoucherDelivery.VoucherStatus.Delivered)
+      {
+        // redeem voucher OK
+        if (redeem)
+          {
+            voucherStored.setVoucherStatus(VoucherDelivery.VoucherStatus.Redeemed);
+            voucherStored.setVoucherRedeemDate(SystemTime.getCurrentTime());
+          }
+        voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
+        success = true;
+      } 
+    else
+      {
+        // default KO
+        voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_NON_REDEEMABLE);
+      }
+    return success;
   }
 
 
@@ -9386,8 +9397,8 @@ public class EvolutionEngine
                 {
                   if (voucherStored.getVoucherCode().equals(voucherChange.getVoucherCode()) && voucherStored.getVoucherID().equals(voucherChange.getVoucherID()))
                     {
-                      checkRedeemVoucher(voucherStored, voucherChange, true);
-                      if (voucherChange.getReturnStatus() == RESTAPIGenericReturnCodes.SUCCESS) break;
+                      boolean success = checkRedeemVoucher(voucherStored, voucherChange, true);
+                      if (success) break;
                     }
 
                 }
