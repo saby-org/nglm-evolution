@@ -78,6 +78,11 @@ public class SubscriberManager
 
   private static SubscriberManagerStatistics subscriberManagerStatistics;
   
+  //
+  //  services
+  //
+  
+  private static SubscriberIDService subscriberIDService;
   /****************************************
   *
   *  main
@@ -157,6 +162,9 @@ public class SubscriberManager
     //
 
     subscriberManagerStatistics = new SubscriberManagerStatistics(applicationID);
+    
+    subscriberIDService = new SubscriberIDService(Deployment.getRedisSentinels(), "SubscriberManager");
+    
 
     /*****************************************
     *
@@ -872,9 +880,61 @@ public class SubscriberManager
   private static List<UpdateSubscriberID> getUpdateSubscriberIDsFromAssignSubscriberIDs(AssignSubscriberIDs assignSubscriberIDs)
   {
     List<UpdateSubscriberID> result = new ArrayList<UpdateSubscriberID>();
+    
+    // check if we are in Reassign mode..
+    boolean reassignAlternateIDs = false;
+    Map<String, Pair<String, String>> idsToReassign = new HashMap<>();
     for (String idField : assignSubscriberIDs.getAlternateIDs().keySet())
       {
-        result.add(new UpdateSubscriberID(assignSubscriberIDs.getSubscriberID(), idField, assignSubscriberIDs.getAlternateIDs().get(idField), assignSubscriberIDs.getEventDate(), assignSubscriberIDs.getSubscriberAction(), false, false, assignSubscriberIDs.getTenantID()));
+        if(idField.startsWith(AssignSubscriberIDs.REASSIGN_OLD_ID))
+        {
+          reassignAlternateIDs = true;
+          Pair<String, String> alreadyDefinedReassing = idsToReassign.get(idField.substring(AssignSubscriberIDs.REASSIGN_OLD_ID.length()));
+          if(alreadyDefinedReassing == null)
+            {
+              alreadyDefinedReassing = new Pair<>(assignSubscriberIDs.getAlternateIDs().get(idField), null);
+              idsToReassign.put(idField.substring(AssignSubscriberIDs.REASSIGN_OLD_ID.length()), alreadyDefinedReassing);
+            }
+          else
+            {
+              alreadyDefinedReassing = new Pair<String, String>(assignSubscriberIDs.getAlternateIDs().get(idField), alreadyDefinedReassing.getSecondElement());
+              idsToReassign.put(idField.substring(AssignSubscriberIDs.REASSIGN_OLD_ID.length()), alreadyDefinedReassing);
+            }
+        }
+        else if(idField.startsWith(AssignSubscriberIDs.REASSIGN_NEW_ID))
+        {
+          reassignAlternateIDs = true;
+          Pair<String, String> alreadyDefinedReassing = idsToReassign.get(idField.substring(AssignSubscriberIDs.REASSIGN_NEW_ID.length()));
+          if(alreadyDefinedReassing == null)
+            {
+              alreadyDefinedReassing = new Pair<>(null, assignSubscriberIDs.getAlternateIDs().get(idField));
+              idsToReassign.put(idField.substring(AssignSubscriberIDs.REASSIGN_NEW_ID.length()), alreadyDefinedReassing);
+            }
+          else
+            {
+              alreadyDefinedReassing = new Pair<String, String>(alreadyDefinedReassing.getFirstElement(), assignSubscriberIDs.getAlternateIDs().get(idField));
+              idsToReassign.put(idField.substring(AssignSubscriberIDs.REASSIGN_NEW_ID.length()), alreadyDefinedReassing);
+            }
+        }
+      }
+    if(reassignAlternateIDs)
+      {
+        for(Map.Entry<String, Pair<String, String>> toReassign : idsToReassign.entrySet())
+          {
+//            // set old id to null first !
+//            result.add(new UpdateSubscriberID(assignSubscriberIDs.getSubscriberID(), toReassign.getKey(), null, assignSubscriberIDs.getEventDate(), SubscriberAction.Delete, false, false, assignSubscriberIDs.getTenantID()));
+            subscriberIDService.deleteRedisReverseAlternateID(toReassign.getKey(), assignSubscriberIDs.getSubscriberID());
+            subscriberIDService.deleteRedisStraightAlternateID(toReassign.getKey(), toReassign.getValue().getFirstElement());
+            // set new id then
+            result.add(new UpdateSubscriberID(assignSubscriberIDs.getSubscriberID(), toReassign.getKey(), toReassign.getValue().getSecondElement(), assignSubscriberIDs.getEventDate(), assignSubscriberIDs.getSubscriberAction(), false, false, assignSubscriberIDs.getTenantID()));
+          }
+      }    
+    else
+      {
+        for (String idField : assignSubscriberIDs.getAlternateIDs().keySet())
+          {
+            result.add(new UpdateSubscriberID(assignSubscriberIDs.getSubscriberID(), idField, assignSubscriberIDs.getAlternateIDs().get(idField), assignSubscriberIDs.getEventDate(), assignSubscriberIDs.getSubscriberAction(), false, false, assignSubscriberIDs.getTenantID()));
+          }
       }
     return result;
   }    

@@ -12,6 +12,8 @@ import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -19,6 +21,16 @@ import java.util.Map;
 
 public class AssignSubscriberIDs extends SubscriberStreamOutput implements com.evolving.nglm.core.SubscriberStreamEvent
 {
+  
+  //
+  //  logger
+  //
+
+  private static final Logger log = LoggerFactory.getLogger(AssignSubscriberIDs.class);
+  
+  public static final String REASSIGN_OLD_ID = "REASSING_OLD_ID_";
+  public static final String REASSIGN_NEW_ID = "REASSING_NEW_ID_";
+  
   /*****************************************
   *
   *  schema
@@ -142,7 +154,24 @@ public class AssignSubscriberIDs extends SubscriberStreamOutput implements com.e
   {
     this(subscriberID, eventDate, SubscriberAction.Standard, alternateIDs, tenantID);
   }
-
+  
+  public void reAssignAlternateID(String alternateIDType, String oldAlternateIDValue, String newAlternateIDValue)
+  {
+    if(SubscriberAction.Standard.equals(this.subscriberAction) && (alternateIDs == null || alternateIDs.size() == 0))
+      {
+        // we accept this feature only if action = standard and assignSubscriberIDs already asked
+        if(alternateIDs == null)
+          {
+            alternateIDs = new HashMap<>();            
+          }
+        alternateIDs.put(REASSIGN_OLD_ID + alternateIDType, oldAlternateIDValue);
+        alternateIDs.put(REASSIGN_NEW_ID + alternateIDType, newAlternateIDValue);          
+      }
+    else {
+      log.error("Either SubscriberAction != Standard " + subscriberAction + " or non empty alternateIDs " + alternateIDs);
+    }
+  }
+  
   /*****************************************
   *
   *  constructor (copy)

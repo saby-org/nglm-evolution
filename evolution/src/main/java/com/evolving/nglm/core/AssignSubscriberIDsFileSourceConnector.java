@@ -123,6 +123,17 @@ public class AssignSubscriberIDsFileSourceConnector extends FileSourceConnector
               String assignAlternateSubscriberID = JSONUtilities.decodeString(assignAlternateIDJSON, "alternateSubscriberID", false);
               assignAlternateIDs.put(assignAlternateID, assignAlternateSubscriberID);
             }
+          
+          JSONArray reassignAlternateIDsJSON = JSONUtilities.decodeJSONArray(jsonRoot, "reassignAlternateIDs", new JSONArray());
+          Map<String,Pair<String, String>> reassignAlternateIDs = new HashMap<>();
+          for (int i=0; i<reassignAlternateIDsJSON.size(); i++)
+            {
+              JSONObject reassignAlternateIDJSON = (JSONObject) reassignAlternateIDsJSON.get(i);
+              String reassignAlternateID = JSONUtilities.decodeString(reassignAlternateIDJSON, "alternateID", true);
+              String oldAssignAlternateSubscriberID = JSONUtilities.decodeString(reassignAlternateIDJSON, "oldAlternateSubscriberID", false);
+              String newAssignAlternateSubscriberID = JSONUtilities.decodeString(reassignAlternateIDJSON, "newAlternateSubscriberID", false);              
+              reassignAlternateIDs.put(reassignAlternateID, new Pair<String, String>(oldAssignAlternateSubscriberID, newAssignAlternateSubscriberID));
+            }
 
           /**n***************************************
           *
@@ -204,6 +215,13 @@ public class AssignSubscriberIDsFileSourceConnector extends FileSourceConnector
           ****************************************/
           
           AssignSubscriberIDs assignSubscriberIDs = new AssignSubscriberIDs(effectiveSubscriberID, SystemTime.getCurrentTime(), subscriberAction, assignAlternateIDs, tenantID);
+          if(reassignAlternateIDs != null)
+            {
+              for(Map.Entry<String, Pair<String, String>> current : reassignAlternateIDs.entrySet())
+                {
+                  assignSubscriberIDs.reAssignAlternateID(current.getKey(), current.getValue().getFirstElement(), current.getValue().getSecondElement());
+                }
+            }
           result = Collections.<KeyValue>singletonList(new KeyValue((autoProvision ? "assignexternalsubscriberids" : "assignsubscriberids"), Schema.STRING_SCHEMA, effectiveSubscriberID, AssignSubscriberIDs.schema(), AssignSubscriberIDs.pack(assignSubscriberIDs)));
         }
       catch (org.json.simple.parser.ParseException|JSONUtilitiesException e)
