@@ -20,6 +20,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 import com.evolving.nglm.evolution.kafka.EvolutionProductionExceptionHandler;
 import com.evolving.nglm.evolution.otp.OTPInstance;
@@ -28,6 +30,7 @@ import com.evolving.nglm.evolution.otp.OTPType;
 import com.evolving.nglm.evolution.otp.OTPTypeService;
 import com.evolving.nglm.evolution.otp.OTPUtils;
 import com.evolving.nglm.evolution.notification.NotificationTemplateParameters;
+import com.evolving.nglm.evolution.offeroptimizer.ProposedOfferDetails;
 import com.evolving.nglm.evolution.preprocessor.Preprocessor;
 import com.evolving.nglm.evolution.propensity.PropensityService;
 import com.evolving.nglm.evolution.retention.RetentionService;
@@ -5383,7 +5386,17 @@ public class EvolutionEngine
                 if (boundCount < maxNumberofPlays)
                   {
                     subscriberStoredToken.setBoundCount(boundCount+1); // no concurrency issue as a given subscriber is always handled by the same partition/evolution engine instance, sequentially
-                    subscriberStoredToken.setPresentedOfferIDs(presentationLog.getOfferIDs()); // replace whatever was there
+                    List<ProposedOfferDetails> proposedOfferDetailsList = new ArrayList<ProposedOfferDetails>();
+                    List<String> presentedOfferIDs = presentationLog.getOfferIDs();
+                    List<Double> presentedOfferScores = presentationLog.getOfferScores();
+                    for (int i = 0; i < presentedOfferIDs.size(); i++)
+                      {
+                        String offerID = presentedOfferIDs.get(i);
+                        Double offerScore = presentedOfferScores.size() > i ? presentedOfferScores.get(i) : null;
+                        ProposedOfferDetails proposedOfferDetails = new ProposedOfferDetails(offerID, null, offerScore);
+                        proposedOfferDetailsList.add(proposedOfferDetails);
+                      }
+                    subscriberStoredToken.setPresentedOffers(proposedOfferDetailsList); // replace whatever was there
                     String salesChannelID = presentationLog.getSalesChannelID();
                     subscriberStoredToken.setPresentedOffersSalesChannel(salesChannelID); // replace whatever was there
                   }
@@ -5433,7 +5446,8 @@ public class EvolutionEngine
         // update global propensity information (only if we already acknowledged both Presentation & Acceptance events)
         //
 
-        if (subscriberStoredToken.getPresentedOfferIDs().size() > 0 && subscriberStoredToken.getAcceptedOfferID() != null)
+        List<String> presentedOfferIDs = subscriberStoredToken.getProposedOfferDetails().stream().map(offerDetails -> offerDetails.getOfferId()).collect(Collectors.toList());
+        if (presentedOfferIDs.size() > 0 && subscriberStoredToken.getAcceptedOfferID() != null)
           {
 
             // 
@@ -5442,7 +5456,7 @@ public class EvolutionEngine
 
             if (Deployment.getDeployment(tenantID).getPropensityRule().validate(segmentationDimensionService))
               {
-                for(String offerID: subscriberStoredToken.getPresentedOfferIDs())
+                for(String offerID: presentedOfferIDs)
                   {
                     propensityService.incrementPropensity(offerID,subscriberProfile,true,offerID.equals(subscriberStoredToken.getAcceptedOfferID()));
                   }
