@@ -243,7 +243,6 @@ public abstract class CriterionFieldRetriever
   
   public static Object getNumberOfBadgesAwardedForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
   {
-    log.info("RAJ K getNumberOfBadgesAwardedForPeriod subcriteriaVal {}", subcriteriaVal);
     int result = 0;
     SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
     List<BadgeState> badges = subscriberProfile.getBadges();
@@ -265,13 +264,12 @@ public abstract class CriterionFieldRetriever
         badges = badges.stream().filter(badge -> badge.getBadgeAwardDate() != null && badge.getBadgeAwardDate().after(startDate) && badge.getBadgeAwardDate().before(endDate)).collect(Collectors.toList());
         result = badges.size();
       }
-    log.info("RAJ K getNumberOfBadgesAwardedForPeriod result {}", result);
+    log.info("RAJ K getNumberOfBadgesAwardedForPeriod subcriteriaVal {}, startEndDatePair {}, result {}", subcriteriaVal, startEndDatePair, result);
     return result;
   }
   
   public static Object getNumberOfBadgeTypesAwardedForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
   {
-    log.info("RAJ K getNumberOfBadgeTypesAwardedForPeriod subcriteriaVal {}", subcriteriaVal);
     int result = 0;
     SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
     List<BadgeState> badges = subscriberProfile.getBadges();
@@ -293,13 +291,12 @@ public abstract class CriterionFieldRetriever
         badges = badges.stream().filter(badge -> badge.getBadgeAwardDate() != null && badge.getBadgeAwardDate().after(startDate) && badge.getBadgeAwardDate().before(endDate)).collect(Collectors.toList());
         result = badges.size();
       }
-    log.info("RAJ K getNumberOfBadgeTypesAwardedForPeriod result {}", result);
+    log.info("RAJ K getNumberOfBadgeTypesAwardedForPeriod subcriteriaVal {}, startEndDatePair {}, result {}", subcriteriaVal, startEndDatePair, result);
     return result;
   }
   
   public static Object getNumberOfBadgeObjectivesAwardedForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
   {
-    log.info("RAJ K getNumberOfBadgeObjectivesAwardedForPeriod subcriteriaVal {}", subcriteriaVal);
     int result = 0;
     SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
     List<BadgeState> badges = subscriberProfile.getBadges();
@@ -321,13 +318,12 @@ public abstract class CriterionFieldRetriever
         badges = badges.stream().filter(badge -> badge.getBadgeAwardDate() != null && badge.getBadgeAwardDate().after(startDate) && badge.getBadgeAwardDate().before(endDate)).collect(Collectors.toList());
         result = badges.size();
       }
-    log.info("RAJ K getNumberOfBadgeObjectivesAwardedForPeriod result {}", result);
+    log.info("RAJ K getNumberOfBadgeObjectivesAwardedForPeriod subcriteriaVal {}, startEndDatePair {}, result {}", subcriteriaVal, startEndDatePair, result);
     return result;
   }
   
   public static Object getNumberOfBadgesRemovedForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
   {
-    log.info("RAJ K getNumberOfBadgesRemovedForPeriod subcriteriaVal {}", subcriteriaVal);
     int result = 0;
     SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
     List<BadgeState> badges = subscriberProfile.getBadges();
@@ -349,13 +345,12 @@ public abstract class CriterionFieldRetriever
         badges = badges.stream().filter(badge -> badge.getBadgeRemoveDate() != null && badge.getBadgeRemoveDate().after(startDate) && badge.getBadgeRemoveDate().before(endDate)).collect(Collectors.toList());
         result = badges.size();
       }
-    log.info("RAJ K getNumberOfBadgesRemovedForPeriod result {}", result);
+    log.info("RAJ K getNumberOfBadgesRemovedForPeriod subcriteriaVal {}, startEndDatePair {}, result {}", subcriteriaVal, startEndDatePair, result);
     return result;
   }
   
   public static Object getNumberOfBadgeTypesRemovedForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
   {
-    log.info("RAJ K getNumberOfBadgeTypesRemovedForPeriod subcriteriaVal {}", subcriteriaVal);
     int result = 0;
     SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
     List<BadgeState> badges = subscriberProfile.getBadges();
@@ -377,13 +372,12 @@ public abstract class CriterionFieldRetriever
         badges = badges.stream().filter(badge -> badge.getBadgeRemoveDate() != null && badge.getBadgeRemoveDate().after(startDate) && badge.getBadgeRemoveDate().before(endDate)).collect(Collectors.toList());
         result = badges.size();
       }
-    log.info("RAJ K getNumberOfBadgeTypesRemovedForPeriod result {}", result);
+    log.info("RAJ K getNumberOfBadgeTypesRemovedForPeriod subcriteriaVal {}, startEndDatePair {}, result {}", subcriteriaVal, startEndDatePair, result);
     return result;
   }
   
   public static Object getNumberOfBadgeObjectivesRemovedForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
   {
-    log.info("RAJ K getNumberOfBadgesRemovedForPeriod subcriteriaVal {}", subcriteriaVal);
     int result = 0;
     SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
     List<BadgeState> badges = subscriberProfile.getBadges();
@@ -405,7 +399,7 @@ public abstract class CriterionFieldRetriever
         badges = badges.stream().filter(badge -> badge.getBadgeRemoveDate() != null && badge.getBadgeRemoveDate().after(startDate) && badge.getBadgeRemoveDate().before(endDate)).collect(Collectors.toList());
         result = badges.size();
       }
-    log.info("RAJ K getNumberOfBadgesRemovedForPeriod result {}", result);
+    log.info("RAJ K getNumberOfBadgesRemovedForPeriod subcriteriaVal {}, startEndDatePair {}, result {}", subcriteriaVal, startEndDatePair, result);
     return result;
   }
   
