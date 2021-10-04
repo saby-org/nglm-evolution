@@ -2762,11 +2762,9 @@ public class EvolutionEngine
  {
 
    boolean changed = true;
-   log.info("RAJ K changeSubscriberBadge");
    BadgeChange badgeChangeResponse = new BadgeChange(badgeChangeRequest);
    badgeChangeResponse.changeToBadgeChangeResponse();
    BadgeAction actionRequest = badgeChangeRequest.getAction();
-   log.info("RAJ K actionRequest {}", actionRequest.getExternalRepresentation());
    Badge badge = badgeService.getActiveBadge(badgeChangeRequest.getBadgeID(), now);
    if (badge != null)
      {
@@ -2784,7 +2782,6 @@ public class EvolutionEngine
                BadgeState newBadge = new BadgeState(badge.getBadgeID(), badge.getBadgeObjectives().stream().map(badgeObj -> badgeObj.getBadgeObjectiveID()).collect(Collectors.toList()), badge.getBadgeType(), CustomerBadgeStatus.AWARDED, now, null);
                subscriberProfile.getBadges().add(newBadge);
                badgeChangeResponse.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
-               log.info("RAJ K newBadge {}", newBadge);
                
                //
                //  triggerBadgeWorflow AwardedWorkflow
@@ -2803,7 +2800,6 @@ public class EvolutionEngine
                subscriberBadge.setBadgeAwardDate(now);
                subscriberBadge.setBadgeRemoveDate(null);
                badgeChangeResponse.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
-               log.info("RAJ K re award {}", subscriberBadge);
                
                //
                //  triggerBadgeWorflow AwardedWorkflow
@@ -2815,7 +2811,6 @@ public class EvolutionEngine
              {
                badgeChangeResponse.setReturnStatus(RESTAPIGenericReturnCodes.BADGE_ALREADY_AWARDED);
                changed = false;
-               log.info("RAJ K BADGE_ALREADY_AWARDED");
              }
            break;
            
@@ -2824,13 +2819,11 @@ public class EvolutionEngine
              {
                badgeChangeResponse.setReturnStatus(RESTAPIGenericReturnCodes.BADGE_NOT_AVAILABLE);
                changed = false;
-               log.info("RAJ K BADGE_NOT_AVAILABLE");
              }
            else if (badge.getBadgeType().equals(BadgeType.PERMANENT))
              {
                badgeChangeResponse.setReturnStatus(RESTAPIGenericReturnCodes.BADGE_NOT_REMOVABLE);
                changed = false;
-               log.info("RAJ K BADGE_NOT_REMOVABLE");
              }
            else
              {
@@ -2842,7 +2835,6 @@ public class EvolutionEngine
                subscriberBadge.setCustomerBadgeStatus(CustomerBadgeStatus.PENDING);
                subscriberBadge.setBadgeRemoveDate(now);
                badgeChangeResponse.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
-               log.info("RAJ K removed");
                
                //
                //  triggerBadgeWorflow RemoveWorkflow
@@ -2862,7 +2854,6 @@ public class EvolutionEngine
      {
        badgeChangeResponse.setReturnStatus(RESTAPIGenericReturnCodes.BADGE_NOT_FOUND);
        changed = false;
-       log.info("RAJ K BADGE_NOT_FOUND");
      }
    
    //
@@ -2871,7 +2862,6 @@ public class EvolutionEngine
    
    subscriberState.getBadgeChangeResponses().add(badgeChangeResponse);
    
-   log.info("RAJ K changeSubscriberBadge changed {}", changed);
    return changed;
  }
 
@@ -7526,7 +7516,6 @@ public class EvolutionEngine
               
             case BadgeChange:
               BadgeChange badgeChange = (BadgeChange) action;
-              log.info("RAJ K Nothing to do");
               break;
 
             default:
@@ -9467,7 +9456,7 @@ public class EvolutionEngine
     @Override public Map<String, String> getGUIDependencies(List<GUIService> guiServiceList, JourneyNode journeyNode, int tenantID)
     {
       Map<String, String> result = new HashMap<String, String>();
-      String badgeID = (String) journeyNode.getNodeParameters().get("node.parameter.badgeID"); // RAJ K
+      //String badgeID = (String) journeyNode.getNodeParameters().get("node.parameter.badgeID"); // TO DO
       return result;
     }
   }
