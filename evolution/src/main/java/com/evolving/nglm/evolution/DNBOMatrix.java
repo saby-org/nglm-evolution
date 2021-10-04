@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
@@ -27,7 +28,7 @@ import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
-@GUIDependencyDef(objectType = "dnbomatrix", serviceClass = DNBOMatrixService.class, dependencies = {  "segmentationdimension"})
+@GUIDependencyDef(objectType = "dnbomatrix", serviceClass = DNBOMatrixService.class, dependencies = {  "segmentationdimension", "offer" })
 public class DNBOMatrix extends GUIManagedObject
 {
   /*****************************************
@@ -340,10 +341,27 @@ public class DNBOMatrix extends GUIManagedObject
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
     List<String> segmentationDimensionIDs = new ArrayList<>();
+    List<String> offerIDs = new ArrayList<>();
     segmentationDimensionIDs.add(getDimensionId());
+    if (getRanges() != null && !getRanges().isEmpty())
+      {
+        for (DNBOMatrixRange range : getRanges())
+          {
+            if (range.getSegments() != null && !range.getSegments().isEmpty())
+              {
+                for (DNBOMatrixSegment segment : range.getSegments())
+                  {
+                    if (segment.getOffers() != null && !segment.getOffers().isEmpty())
+                      {
+                        offerIDs.addAll(segment.getOffers().stream().map(ofr -> ofr.getOfferId()).collect(Collectors.toList()));
+                      }
+                  }
+              }
+          }
+      }
    
     result.put("segmentationdimension", segmentationDimensionIDs);
-   
+    result.put("offer", offerIDs);
     return result;
   }
   
