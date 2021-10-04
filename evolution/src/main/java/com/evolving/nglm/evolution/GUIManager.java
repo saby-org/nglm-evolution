@@ -1616,7 +1616,7 @@ public class GUIManager
     //
     //  contactPolicies
     //
-    for(Tenant tenant : Deployment.getTenants())
+    for(Tenant tenant : Deployment.getRealTenants())
       {
         int tenantID = tenant.getTenantID();
         if (contactPolicyService.getStoredContactPolicies(tenantID).size() == 0)
@@ -1627,7 +1627,13 @@ public class GUIManager
                 for (int i=0; i<initialContactPoliciesJSONArray.size(); i++)
                   {
                     JSONObject contactPolicyJSON = (JSONObject) initialContactPoliciesJSONArray.get(i);
-                    processPutContactPolicy("0", contactPolicyJSON, tenantID);
+                    if (contactPolicyJSON.containsKey("id"))
+                      {
+                        log.warn("intial contactPolicy JSON should not have id field - removing it");
+                        contactPolicyJSON.remove("id");
+                      }
+                    JSONObject contactPolicy = (JSONObject) contactPolicyJSON.clone();
+                    processPutContactPolicy("0", contactPolicy, tenantID);
                   }
               }
             catch (JSONUtilitiesException e)
