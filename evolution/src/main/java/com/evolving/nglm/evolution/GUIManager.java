@@ -1629,7 +1629,7 @@ public class GUIManager
                     JSONObject contactPolicyJSON = (JSONObject) initialContactPoliciesJSONArray.get(i);
                     if (contactPolicyJSON.containsKey("id"))
                       {
-                        log.warn("intial contactPolicy JSON should not have id field - removing it");
+                        if (log.isWarnEnabled()) log.warn("intial contactPolicy JSON should not have id field - removing it");
                         contactPolicyJSON.remove("id");
                       }
                     JSONObject contactPolicy = (JSONObject) contactPolicyJSON.clone();
