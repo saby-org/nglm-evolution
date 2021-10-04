@@ -5474,39 +5474,35 @@ public class EvolutionEngine
         PurchaseFulfillmentRequest purchaseResponseEvent = (PurchaseFulfillmentRequest) evolutionEvent;
         for(Token token:subscriberProfile.getTokens())
           {
-            if(!(token instanceof DNBOToken)) continue;
+            if (!(token instanceof DNBOToken)) continue;
             DNBOToken dnboToken = (DNBOToken) token;
-            if(dnboToken.getPurchaseDeliveryRequestID()==null) continue;
-
+            if (dnboToken.getPurchaseDeliveryRequestID()==null) continue;
             boolean failed = false;
-            if(dnboToken.getPurchaseDeliveryRequestID().equals(purchaseResponseEvent.getDeliveryRequestID()))
-              {               
-              String tokenRedeem=TokenChange.REDEEM;
-              String tokenChangeStatus = RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode()+"";
-              String purchaseOfferID = purchaseResponseEvent.getOfferID();
-              dnboToken.setPurchaseStatus(purchaseResponseEvent.getStatus());
-
-              if (!PurchaseFulfillmentManager.PurchaseFulfillmentStatus.PURCHASED.equals(purchaseResponseEvent.getStatus()))
-              {               
-              failed=true;
-              tokenChangeStatus=RESTAPIGenericReturnCodes.INSUFFICIENT_BALANCE.getGenericResponseCode()+"";
-              purchaseOfferID = null;
-              dnboToken.setTokenStatus(TokenStatus.Bound);  
-              dnboToken.setAcceptedOfferID(null);          
-              }   
-              ArrayList<String> presentedOfferIDs = new ArrayList<>();
-              if(dnboToken.getTokenCode() != null)
-                {
-            	  for(ProposedOfferDetails current : dnboToken.getProposedOfferDetails())
-                    {
-                      presentedOfferIDs.add(current.getOfferId());
-                    }
+            if (dnboToken.getPurchaseDeliveryRequestID().equals(purchaseResponseEvent.getDeliveryRequestID())) {               
+                String tokenRedeem=TokenChange.REDEEM;
+                String tokenChangeStatus = RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode()+"";
+                String purchaseOfferID = purchaseResponseEvent.getOfferID();
+                dnboToken.setPurchaseStatus(purchaseResponseEvent.getStatus());
+                if (PurchaseFulfillmentManager.PurchaseFulfillmentStatus.PURCHASED.getReturnCode() != purchaseResponseEvent.getStatus().getReturnCode()) {
+                  log.info("Set purchaseStatus of " + token.getTokenCode() + " from " + dnboToken.getTokenStatus() + " back to Bound " + dnboToken);
+                  failed=true;
+                  dnboToken.setTokenStatus(TokenStatus.Bound);
+                  dnboToken.setRedeemedDate(null);
+                  dnboToken.setAcceptedOfferID(null);
+                  tokenChangeStatus = RESTAPIGenericReturnCodes.fromGenericResponseCode(purchaseResponseEvent.getStatus().getReturnCode())+"";
+                  purchaseOfferID = null;
+                }   
+                ArrayList<String> presentedOfferIDs = new ArrayList<>();
+                if(dnboToken.getTokenCode() != null) {
+                  for(ProposedOfferDetails current : dnboToken.getProposedOfferDetails()) {
+                    presentedOfferIDs.add(current.getOfferId());
+                  }
                 }
-              subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberProfile(), purchaseResponseEvent.getEventDate(),context.getEventID(), dnboToken.getTokenCode(), tokenRedeem, tokenChangeStatus, "AcceptanceLog",dnboToken.getModuleID(), dnboToken.getFeatureID(), purchaseResponseEvent.getDeliveryRequestID(), purchaseOfferID, presentedOfferIDs, tenantID));
-              
-              if((!external) && (!failed)) 
-               subscriberState.getTokenRedeemeds().add(new TokenRedeemed(subscriberState.getSubscriberID(), purchaseResponseEvent.getEventDate(), dnboToken.getTokenTypeID(), dnboToken.getAcceptedOfferID()));
-              break;
+                subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberProfile(), purchaseResponseEvent.getEventDate(),context.getEventID(), dnboToken.getTokenCode(), tokenRedeem, tokenChangeStatus, "AcceptanceLog",dnboToken.getModuleID(), dnboToken.getFeatureID(), purchaseResponseEvent.getDeliveryRequestID(), purchaseOfferID, presentedOfferIDs, tenantID));
+                if ((!external) && (!failed)) { 
+                  subscriberState.getTokenRedeemeds().add(new TokenRedeemed(subscriberState.getSubscriberID(), purchaseResponseEvent.getEventDate(), dnboToken.getTokenTypeID(), dnboToken.getAcceptedOfferID()));
+                }
+                break;
               }
           }
       }
