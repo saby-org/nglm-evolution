@@ -9482,6 +9482,7 @@ public class EvolutionEngine
     {
       Map<String, String> result = new HashMap<String, String>();
       Object nodeParamObj = journeyNode.getNodeParameters().get("node.parameter.voucher.code");
+      Object nodeParamSupplierObj = journeyNode.getNodeParameters().get("node.parameter.supplier");
       if (nodeParamObj instanceof ParameterExpression && ((ParameterExpression) nodeParamObj).getExpression() instanceof ConstantExpression)
         {
           String nodeParam  = (String)  ((ParameterExpression) nodeParamObj).getExpression().evaluateConstant();
@@ -9494,6 +9495,29 @@ public class EvolutionEngine
       else
         {
           log.error("unsupported value/type expression {} - skipping", nodeParamObj);
+        }
+      if (nodeParamSupplierObj instanceof ParameterExpression && ((ParameterExpression) nodeParamSupplierObj).getExpression() instanceof ConstantExpression)
+        {
+          String nodeParamDisplay  = (String)  ((ParameterExpression) nodeParamSupplierObj).getExpression().evaluateConstant();
+          SupplierService supplierService = (SupplierService) guiServiceList.stream().filter(srvc -> srvc.getClass() == SupplierService.class).findFirst().orElse(null);
+          if (supplierService != null && nodeParamDisplay != null)
+            {
+              GUIManagedObject guiObjectSupplier = supplierService.getStoredGUIManagedObjects(tenantID).stream().filter(guiObject -> nodeParamDisplay.equals(guiObject.getGUIManagedObjectDisplay())).findFirst().orElse(null);
+              if (guiObjectSupplier != null) result.put("supplier", guiObjectSupplier.getGUIManagedObjectID());
+            }
+        }
+      else if (nodeParamSupplierObj instanceof String)
+        {
+          SupplierService supplierService = (SupplierService) guiServiceList.stream().filter(srvc -> srvc.getClass() == SupplierService.class).findFirst().orElse(null);
+          if (supplierService != null && nodeParamSupplierObj != null)
+            {
+              GUIManagedObject guiObjectSupplier = supplierService.getStoredGUIManagedObjects(tenantID).stream().filter(guiObject -> nodeParamSupplierObj.equals(guiObject.getGUIManagedObjectDisplay())).findFirst().orElse(null);
+              if (guiObjectSupplier != null) result.put("supplier", guiObjectSupplier.getGUIManagedObjectID());
+            }
+        }
+      else
+        {
+          log.error("unsupported value/type expression {} - skipping", nodeParamSupplierObj);
         }
       return result;
     }
