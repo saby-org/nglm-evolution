@@ -580,7 +580,8 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mdr -u $EL
       "deliveryStatus" : { "type" : "keyword" },
       "returnCodeDetails" : { "type" : "keyword", "index" : "false" },
       "originatingDeliveryRequestID" : { "type" : "keyword" },
-      "contactType" : { "type" : "keyword" }
+      "contactType" : { "type" : "keyword" },
+      "noOfParts" : { "type" : "keyword" }
     }
   }
 }'

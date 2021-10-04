@@ -234,6 +234,7 @@ public class NotificationSinkConnector extends SimpleESSinkConnector
         documentMap.put("channelID", channelID);
         documentMap.put("contactType", notifNotification.getContactType());
         documentMap.put("destination", notifNotification.getDestination());
+        documentMap.put("noOfParts", notifNotification.extractLastSentCount());
       }
       else {
         PushNotificationManagerRequest pushNotification = (PushNotificationManagerRequest) notification;
