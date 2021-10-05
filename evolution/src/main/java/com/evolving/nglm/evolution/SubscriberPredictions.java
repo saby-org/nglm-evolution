@@ -116,7 +116,17 @@ public class SubscriberPredictions
      * Here we are returning the N-cile interval of the prediction score.
      */
     public int getNcileInterval(Integer N) { 
-      return ((int) (position * N)) + 1; // Casting to an int implicitly drops any decimal. No need to call Math.floor()
+      // Why do we need to use ceil function ?
+      // Let's take a sample of 1000 items: from 0.001 (1st one) to 1.000 (last one)
+      // The following 10 items are in the first centile (interval):
+      // - 0.001
+      // - 0.002
+      // - ..
+      // - 0.010
+      // Therefore they should return 1.
+      // But 0.011 is not, and should return 2.
+      // In fact, 0.010 is the 1st centile (value) if defined INCLUSIVE.
+      return (int) Math.ceil(position * N);
     }
 
     
