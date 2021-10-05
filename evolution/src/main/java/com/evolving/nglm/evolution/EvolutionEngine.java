@@ -6350,6 +6350,11 @@ public class EvolutionEngine
           boolean metricsUpdated = journeyState.setJourneyExitDate(now, subscriberState, journey, context); // populate journeyMetrics (during)
           subscriberStateUpdated = subscriberStateUpdated || metricsUpdated;
           boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getCurrentTime(), journeyState, true);
+          // EVPRO-1275 set correct exitDate for ended campaigns
+          GUIManagedObject journeyGMO = journeyService.getStoredGUIManagedObject(journeyState.getJourneyID());
+          if (journeyGMO != null) {
+            journeyState.setJourneyExitDate(journeyGMO.getEffectiveEndDate(), null, null, null);
+          }
           subscriberState.addJourneyStatistic(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, subscriberState.getSubscriberProfile().getStatisticsSegmentsMap(subscriberGroupEpochReader, segmentationDimensionService), subscriberState.getSubscriberProfile(), now));
           inactiveJourneyStates.add(journeyState);
           continue;
