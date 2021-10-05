@@ -4012,6 +4012,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     List<String> presentationstrategiesIDs = new ArrayList<String>();
     List<String> offerIDs = new ArrayList<String>();
     List<String> deliverableIDs = new ArrayList<String>();
+    List<String> customCriteriaIDs = new ArrayList<String>();
     
     switch (getGUIManagedObjectType())
       {
@@ -4053,6 +4054,13 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
                   if (sourceaddressID != null) sourceaddressIDs.add(sourceaddressID);
                   if (presentationstrategyID != null) presentationstrategiesIDs.add(presentationstrategyID);
                   if (deliverableID != null) deliverableIDs.add(deliverableID);
+                  String customCriteriaID = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode, tenantID).get("customcriteria");
+                  // We can depend on multiple customCriteria, they are separated by ','
+                  if (customCriteriaID != null) {
+                    for (String id : customCriteriaID.split(",")) {
+                      customCriteriaIDs.add(id);
+                    }
+                  }
                 }
               if (journeyNode.getNodeName().equals("Profile Selection") || journeyNode.getNodeName().equals("Event Multi-Selection") || journeyNode.getNodeName().equals("Event Selection"))
                 {
@@ -4130,6 +4138,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
           result.put("sourceaddress", sourceaddressIDs);
           result.put("presentationstrategy", presentationstrategiesIDs);
           result.put("deliverable", deliverableIDs);
+          result.put("customcriteria", customCriteriaIDs);
           break;
           
         case Campaign:
@@ -4175,6 +4184,13 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
                   if (tokentypeID != null) tokentypeIDs.add(tokentypeID);
                   if (presentationstrategyID != null) presentationstrategiesIDs.add(presentationstrategyID);
                   if (deliverableID != null) deliverableIDs.add(deliverableID);
+                  String customCriteriaID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("customcriteria");
+                  // We can depend on multiple customCriteria, they are separated by ','
+                  if (customCriteriaID != null) {
+                    for (String id : customCriteriaID.split(",")) {
+                      customCriteriaIDs.add(id);
+                    }
+                  }
                 }
               
               if (offerNode.getNodeName().equals("Profile Selection") || offerNode.getNodeName().equals("Event Multi-Selection") || offerNode.getNodeName().equals("Event Selection"))
@@ -4261,6 +4277,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
           result.put("tokentype", tokentypeIDs);
           result.put("presentationstrategy", presentationstrategiesIDs);
           result.put("deliverable", deliverableIDs);
+          result.put("customcriteria", customCriteriaIDs);
           break;
 
         case BulkCampaign:
