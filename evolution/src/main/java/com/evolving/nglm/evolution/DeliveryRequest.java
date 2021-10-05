@@ -748,7 +748,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     Date rescheduledDate = (schemaVersion >= 4) ? (valueStruct.get("rescheduledDate") != null ? new Date(valueStruct.getInt64("rescheduledDate")) : null) : null;
     MetricHistory notificationHistory = schemaVersion >= 4 ?  MetricHistory.serde().unpackOptional(new SchemaAndValue(schema.field("notificationHistory").schema(),valueStruct.get("notificationHistory"))) : null;
     Map<String,String> subscriberFields = (schemaVersion >= 8 && schema.field("subscriberFields")!=null && valueStruct.get("subscriberFields") != null) ? (Map<String,String>) valueStruct.get("subscriberFields") : new LinkedHashMap<>();
-    Map<Pair<String,String>, Integer> segments = new Map<Pair<String,String>, Integer> ();
+    Map<Pair<String,String>, Integer> segments = new HashMap<Pair<String,String>, Integer> ();
     if( schemaVersion >= 13 ){
     	segments = unpackSegments(valueStruct.get("segments"));
     }else if (valueStruct.schema().field("subscriberGroups") != null){
