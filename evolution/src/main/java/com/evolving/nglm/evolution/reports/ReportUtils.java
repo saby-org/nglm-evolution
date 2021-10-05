@@ -778,7 +778,7 @@ public class ReportUtils {
                   {
                     Arrays.sort(indexOfColsToExtract);
                     List<String> sortedColsNamesInHeader = new ArrayList<>();
-                    for (int j = 0; j < indexOfColsToExtract.length; j++) 
+                    for (int j = 0; j < indexOfColsToExtract.length -1; j++) 
                       {
                         if (indexOfColsToExtract[j] != -1) 
                           {
