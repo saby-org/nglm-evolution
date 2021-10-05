@@ -115,7 +115,7 @@ public class SubscriberPredictions
      * Friendly reminder: there is N-1 N-ciles (values) and N N-cile intervals (group of values).
      * Here we are returning the N-cile interval of the prediction score.
      */
-    private int getNcileInterval(Integer N) { 
+    public int getNcileInterval(Integer N) { 
       return ((int) (position * N)) + 1; // Casting to an int implicitly drops any decimal. No need to call Math.floor()
     }
 

@@ -281,6 +281,28 @@ public abstract class CriterionFieldRetriever
   }
 
   /**
+   * getPredictionCurrentRank
+   * 
+   * @param evaluationRequest
+   * @param fieldName           UNUSED - filled with null in deployment-product-evolution settings (see: evolutionProfileCriterionFields).
+   * @param subcriteriaVal      Here we are expecting a singleton list with predictionID value (String)
+   * @return
+   */
+  public static Object getPredictionCurrentRank(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
+  {
+    SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+    String predictionID = (String) subcriteriaVal.get(0);
+    
+    Prediction prediction = subscriberProfile.getPredictions().getCurrent().get(predictionID);
+    if(prediction != null) {
+      return prediction.getNcileInterval(100);
+    }
+    else {
+      return null;
+    }
+  }
+
+  /**
    * getPredictionCurrentScore
    * 
    * @param evaluationRequest
@@ -303,21 +325,22 @@ public abstract class CriterionFieldRetriever
   }
 
   /**
-   * getPredictionPreviousScore
+   * getPredictionRankEvolution
    * 
    * @param evaluationRequest
    * @param fieldName           UNUSED - filled with null in deployment-product-evolution settings (see: evolutionProfileCriterionFields).
    * @param subcriteriaVal      Here we are expecting a singleton list with predictionID value (String)
    * @return
    */
-  public static Object getPredictionPreviousScore(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
+  public static Object getPredictionRankEvolution(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
   {
     SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
     String predictionID = (String) subcriteriaVal.get(0);
     
-    Prediction prediction = subscriberProfile.getPredictions().getCurrent().get(predictionID);
-    if(prediction != null) {
-      return prediction.score;
+    Prediction current = subscriberProfile.getPredictions().getCurrent().get(predictionID);
+    Prediction previous = subscriberProfile.getPredictions().getPrevious().get(predictionID);
+    if(previous != null && current != null) {
+      return current.getNcileInterval(100) - previous.getNcileInterval(100);
     }
     else {
       return null;
