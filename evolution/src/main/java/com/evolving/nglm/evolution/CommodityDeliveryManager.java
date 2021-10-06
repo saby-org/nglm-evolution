@@ -115,7 +115,7 @@ public class CommodityDeliveryManager
     public static CommodityDeliveryStatus fromReturnCode(Integer externalRepresentation) { for (CommodityDeliveryStatus enumeratedValue : CommodityDeliveryStatus.values()) { if (enumeratedValue.getReturnCode().equals(externalRepresentation)) return enumeratedValue; } return UNKNOWN; }
   }
 
-  public DeliveryManager.DeliveryStatus getDeliveryStatus (CommodityDeliveryStatus status)
+  public static DeliveryManager.DeliveryStatus getDeliveryStatus (CommodityDeliveryStatus status)
   {
     switch(status)
       {
@@ -582,6 +582,7 @@ public class CommodityDeliveryManager
       guiPresentationMap.put(ORIGIN, getOrigin());
       guiPresentationMap.put(RETURNCODE, getCommodityDeliveryStatus().getReturnCode());
       guiPresentationMap.put(RETURNCODEDETAILS, getCommodityDeliveryStatus().toString());
+      guiPresentationMap.put(DELIVERYSTATUS, CommodityDeliveryManager.getDeliveryStatus(getCommodityDeliveryStatus()).toString());
     }
     
     @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService, int tenantID)
@@ -604,6 +605,7 @@ public class CommodityDeliveryManager
       thirdPartyPresentationMap.put(RETURNCODE, getCommodityDeliveryStatus().getReturnCode());
       thirdPartyPresentationMap.put(RETURNCODEDESCRIPTION, RESTAPIGenericReturnCodes.fromGenericResponseCode(getCommodityDeliveryStatus().getReturnCode()).getGenericResponseMessage());
       thirdPartyPresentationMap.put(RETURNCODEDETAILS, getCommodityDeliveryStatus().toString());
+      thirdPartyPresentationMap.put(DELIVERYSTATUS, CommodityDeliveryManager.getDeliveryStatus(getCommodityDeliveryStatus()).toString());
     }
 
     @Override

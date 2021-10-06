@@ -1,0 +1,52 @@
+#
+#  prometheus-application-alert.rules (Evolution)
+#
+
+groups:
+- name: application-alerts
+  rules:
+
+  - alert: evolutionengine_events_processed_count
+    expr: sum(rate(evolving_nglm_evolutionengines_eventprocessed_count[1m])) <= 0
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "evolutionengine events not processing"
+      description: "No evolutionengine events processed for more than 60 seconds."
+
+  - alert: app_down
+    expr: up == 0
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "App alert"
+      description: "App {{$labels.job}} on {{ $labels.instance }} has been down for more than 60 seconds."
+
+  - alert: 3rd_party_traffic_errors
+    expr: sum(increase(com_evolving_nglm_evolution_thirdpartyaccess_count_total{status !="ok"}[5m]))/sum(increase(com_evolving_nglm_evolution_thirdpartyaccess_count_total[5m])) > 0.25
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "failure on 3rd party request"
+      description: "Ratio of failed 3rd party request in the last 5 mins is more than 25%"
+
+  - alert: IN_traffic_errors
+    expr: sum by (process) (increase(com_evolving_nglm_evolution_infulfillmentdelivery_count_total{status!="SUCCESS"}[1h])) / sum by (process) (increase(com_evolving_nglm_evolution_infulfillmentdelivery_count_total[1h])) > 0.5
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "failure on IN request"
+      description: "Ratio of failed IN request in the last 1 hour is more than 50%"
+
+  - alert: Notification_traffic_errors
+    expr: sum by (process) (increase(com_evolving_nglm_evolution_notificationdelivery_count_total{status ="failed"}[1h])) / sum by (process) (increase(com_evolving_nglm_evolution_notificationdelivery_count_total{status=~"failed|delivered"}[1h])) > 0.5
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "failure on notification traffic"
+      description: "Ratio of failed notification request in the last 1 hour is more than 50%"

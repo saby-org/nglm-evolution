@@ -41,7 +41,7 @@ public class LoyaltyMissionCustomerStatesDriver extends ReportDriver
     int defaultReportPeriodQuantity = report.getDefaultReportPeriodQuantity();
     final String SUBSCRIBER_ES_INDEX = getSubscriberProfileIndex(reportGenerationDate);
     if (log.isDebugEnabled()) log.debug("PHASE 1 : read ElasticSearch");
-    LoyaltyMissionCustomerStatesMonoPhase.main(new String[] { elasticSearch, SUBSCRIBER_ES_INDEX, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit }, reportGenerationDate);
+    LoyaltyMissionCustomerStatesMonoPhase.main(new String[] { elasticSearch, SUBSCRIBER_ES_INDEX, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit, tenantID+""  }, reportGenerationDate);
     if (log.isDebugEnabled()) log.debug("Finished with LoyaltyMissionCustomerStates Report");
   }
 

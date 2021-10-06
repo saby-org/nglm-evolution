@@ -15,6 +15,8 @@ import redis.clients.jedis.exceptions.JedisException;
 import com.google.common.primitives.Longs;
 import com.google.common.primitives.Shorts;
 
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,6 +31,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SubscriberIDService
 {
@@ -55,8 +58,6 @@ public class SubscriberIDService
   //
 
   private static final String redisInstance = "subscriberids";
-  private static final int redisIndex = 0;
-
   //
   //  data
   //
@@ -75,7 +76,11 @@ public class SubscriberIDService
   *
   *****************************************/
 
-  public SubscriberIDService(String redisSentinels, String name)
+  public SubscriberIDService(String redisSentinels, String name){
+    this(redisSentinels,name,false);
+  }
+
+  public SubscriberIDService(String redisSentinels, String name, boolean dynamicPool)
   {
     /*****************************************
     *
@@ -89,8 +94,11 @@ public class SubscriberIDService
 
     Set<String> sentinels = new HashSet<String>(Arrays.asList(redisSentinels.split("\\s*,\\s*")));
     JedisPoolConfig jedisPoolConfig = new JedisPoolConfig();
-    jedisPoolConfig.setTestOnBorrow(true);
-    jedisPoolConfig.setTestOnReturn(true);
+    if(dynamicPool){
+      jedisPoolConfig.setMaxTotal(1000);
+      jedisPoolConfig.setMaxIdle(1000);
+      jedisPoolConfig.setMinIdle(50);
+    }
     if (name != null)
       {
         jedisPoolConfig.setJmxNamePrefix("SubscriberIDService");
@@ -137,7 +145,7 @@ public class SubscriberIDService
   *
   ****************************************/
   
-  private Map<String,String> getSubscriberIDs(String alternateIDName, List<String> alternateIDs) throws SubscriberIDServiceException
+  private Map<String/*alternateID*/,Pair<String/*subscriberID*/,Integer/*tenantID*/>> getSubscriberIDs(String alternateIDName, Set<String> alternateIDs) throws SubscriberIDServiceException
   {
     /****************************************
     *
@@ -214,7 +222,7 @@ public class SubscriberIDService
     *
     ****************************************/
 
-    Map<String,String> result = new HashMap<String,String>();
+    Map<String,Pair<String,Integer>> result = new HashMap<>();
     Integer tenantID = null;
     for (int i = 0; i < binaryAlternateIDs.size(); i++)
       {
@@ -222,6 +230,10 @@ public class SubscriberIDService
         String subscriberID = null;        
         if (binarySubscriberIDs.get(i) != null)
           {
+            // [0, 1,                0, 1,                          0, 0, 0, 0, 0, 0, 0, 120]
+
+            // <TenantID 2 bytes>    <1 nb subscriberID, 2 bytes>   <effectiveSubscriberID>      
+            
             int sizeModulo = binarySubscriberIDs.get(i).length % 8;
             // after multitenancy, the length is 4 + 8* n before it was 2 + 8 * n
             int tmpTenantID = sizeModulo == 4 ? /*after mutlitenancy*/ Shorts.fromByteArray(Arrays.copyOfRange(binarySubscriberIDs.get(i), 0, 2)) : 1;
@@ -236,8 +248,7 @@ public class SubscriberIDService
               {
                 log.warn("Different tenantID for " + subscriberID);
               }
-            result.put(alternateID, subscriberID);
-            result.put("tenantID", ""+tenantID);
+            result.put(alternateID, new Pair<>(subscriberID,tenantID));
           }
       }
 
@@ -247,6 +258,340 @@ public class SubscriberIDService
 
     return result;
   }
+  
+  
+  /****************************************
+    {
+      "apiVersion": 1,
+      "straightAlternateIDName": "msisdn",
+      "straightAlternateIDValue": "12125550120",
+      "subscriberIDs": [
+        {
+          "reverseAlternateIDs": {
+            "contractID": {
+              "120": "121"
+            },
+            "msisdn": {
+              "120": "12125550120"
+            }
+          },
+          "subscriberID": "120"
+        }
+      ],
+      
+      "licenseCheck": {
+        "raisedDate": 1632233423472,
+        "level": 0,
+        "context": "system",
+        "source": "licensemanager",
+        "detail": "Expires at Sun Jan 16 00:59:59 CET 2022",
+        "type": "license_timelimit"
+      }      
+    }
+  *
+  ****************************************/
+  
+  public JSONObject getRedisSubscriberIDsForPTTTests(String alternateIDName, String alternateIDValue)
+  {
+    /****************************************
+    *
+    *  redis cache index
+    *
+    ****************************************/
+
+    if (Deployment.getAlternateIDs().get(alternateIDName) == null)
+      {
+        JSONObject result = new JSONObject();
+        result.put("error", "unknown alternateID name '" + alternateIDName + "'");
+        return result;
+      }
+    
+    /****************************************
+    *
+    *  use with sharedIDs not meaningful
+    *
+    ****************************************/
+
+    if (Deployment.getAlternateIDs().get(alternateIDName).getSharedID())
+      {
+        JSONObject result = new JSONObject();
+        result.put("error", "service not available for shared id '" + alternateIDName + "'");
+        return result;
+      }
+    
+    // retrieve Subscriber ID from alternate ID
+    Map<String, String> subscriberIDsFromOneAlternateID =  getMappingValueAlternateIDToSubcriberIDRedisIndex(alternateIDName, alternateIDValue);
+    
+    if(subscriberIDsFromOneAlternateID != null)
+      {
+        JSONObject result = new JSONObject();
+        JSONArray subscriberIDs = new JSONArray();
+        result.put("straightAlternateIDName", alternateIDName);
+        result.put("straightAlternateIDValue", alternateIDValue);
+        result.put("subscriberIDs", subscriberIDs);
+        
+        for(Map.Entry<String, String> current : subscriberIDsFromOneAlternateID.entrySet()) // <msisdn>,<subscriberID>
+          {           
+            if("tenantID".equals(current.getKey())) { continue; }
+            String foundSubscriberID = current.getValue();
+            JSONObject alternateIDsMap = new JSONObject();
+            //Pair<String, Map<String, Map<String, String>>> oneSubscriberID = new Pair<String, Map<String,Map<String,String>>>(foundSubscriberID, alternateIDsMap);
+            for(String alternateID : Deployment.getAlternateIDs().keySet())
+              {
+                // <SubscriberID> => <alternateIDValue>
+                Map<String, String> alternateIdsFromOneSubscriber = getMappingValueSubscriberIDToAlternateIDRedisIndex(alternateID, foundSubscriberID); //
+               
+                if(alternateIdsFromOneSubscriber != null) 
+                  {
+                    JSONObject reverseAlternateID = new JSONObject();
+                    alternateIDsMap.put(alternateID, reverseAlternateID);
+                    JSONObject oneReverse = new JSONObject();
+                    oneReverse.putAll(alternateIdsFromOneSubscriber);
+                    reverseAlternateID.put("reverse", oneReverse);
+                    
+                    Map<String, String> straight = getMappingValueAlternateIDToSubcriberIDRedisIndex(alternateID, alternateIdsFromOneSubscriber.get(foundSubscriberID));
+                    if(straight != null && straight.size() > 0) {
+                      JSONObject straightJSON = new JSONObject();
+                      straightJSON.putAll(straight);
+                      reverseAlternateID.put("straight", straight);                      
+                    }
+                  }
+              }
+            JSONObject arrayElement = new JSONObject();
+            arrayElement.put("subscriberID", foundSubscriberID);
+            arrayElement.put("alternateIDs", alternateIDsMap);
+            subscriberIDs.add(arrayElement);
+          }
+        return result;        
+      }
+    else 
+      {
+        JSONObject result = new JSONObject();
+        result.put("error", "no subscriberID for " + alternateIDName +  " " + alternateIDValue);
+        return result;
+      }
+  }
+
+  private Map<String, String> getMappingValueAlternateIDToSubcriberIDRedisIndex(String alternateIDName, String alternateIDValue)
+  {
+    if(alternateIDValue == null) { return null; }
+    
+    List<byte[]> binaryAlternateIDs = new ArrayList<byte[]>();
+    
+    binaryAlternateIDs.add(alternateIDValue.getBytes(StandardCharsets.UTF_8));
+    int redisCacheIndex = Deployment.getAlternateIDs().get(alternateIDName).getRedisCacheIndex();
+    
+    /****************************************
+    *
+    *  retrieve from redis
+    *
+    ****************************************/
+    
+    BinaryJedis jedis = jedisSentinelPool.getResource();
+    List<byte[]> retrievedBinaryIDs = null;
+    try
+      {
+        jedis.select(redisCacheIndex);
+        retrievedBinaryIDs = jedis.mget(binaryAlternateIDs.toArray(new byte[0][0]));
+      }
+    catch (JedisException e)
+      {
+        //
+        //  log
+        //
+
+        log.error("JEDIS error");
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.error(stackTraceWriter.toString());
+
+        //
+        //  abort
+        //
+
+        return null;
+      }
+    finally
+      {
+        try { jedis.close(); } catch (JedisException e1) { }
+      }
+
+    /****************************************
+    *
+    *  extract from binaries
+    *
+    ****************************************/
+
+    Map<String,String> result = new HashMap<String,String>();
+    for (int i = 0; i < binaryAlternateIDs.size(); i++)
+      {
+        String keyInRedis = new String(binaryAlternateIDs.get(i), StandardCharsets.UTF_8);
+        
+        String valueInRedis = null;        
+        if (retrievedBinaryIDs.get(i) != null)
+          {
+            int sizeModulo = retrievedBinaryIDs.get(i).length % 8;
+            // after multitenancy, the length is 4 + 8* n before it was 2 + 8 * n
+            int tmpTenantID = sizeModulo == 4 ? /*after mutlitenancy*/ Shorts.fromByteArray(Arrays.copyOfRange(retrievedBinaryIDs.get(i), 0, 2)) : 1;
+            short numberOfSubscriberIDs = sizeModulo == 4 ? /* after multitenancy */ Shorts.fromByteArray(Arrays.copyOfRange(retrievedBinaryIDs.get(i), 2, 4)) : Shorts.fromByteArray(Arrays.copyOfRange(retrievedBinaryIDs.get(i), 0, 2));
+            if (numberOfSubscriberIDs > 1) throw new RuntimeException("invariant violated - multiple subscriberIDs");
+            valueInRedis = (numberOfSubscriberIDs == 1) ? (sizeModulo == 4 ? Long.toString(Longs.fromByteArray(Arrays.copyOfRange(retrievedBinaryIDs.get(i), 4, 12))) : Long.toString(Longs.fromByteArray(Arrays.copyOfRange(retrievedBinaryIDs.get(i), 2, 10))) ) : null;
+            result.put(keyInRedis, valueInRedis);
+            result.put("tenantID", ""+tmpTenantID);
+          }
+      }
+    return result;
+  }
+  
+  private Map<String, String> getMappingValueSubscriberIDToAlternateIDRedisIndex(String alternateIDName, String subscriberID)
+  {
+    
+    List<byte[]> binaryAlternateIDs = new ArrayList<byte[]>();
+    
+    binaryAlternateIDs.add(Longs.toByteArray(Long.parseLong(subscriberID)));
+    int redisCacheIndex = Deployment.getAlternateIDs().get(alternateIDName).getReverseRedisCacheIndex();
+
+    /****************************************
+    *
+    *  retrieve from redis
+    *
+    ****************************************/
+    
+    BinaryJedis jedis = jedisSentinelPool.getResource();
+    List<byte[]> retrievedBinaryIDs = null;
+    try
+      {
+        jedis.select(redisCacheIndex);
+        retrievedBinaryIDs = jedis.mget(binaryAlternateIDs.toArray(new byte[0][0]));
+      }
+    catch (JedisException e)
+      {
+        //
+        //  log
+        //
+
+        log.error("JEDIS error");
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.error(stackTraceWriter.toString());
+
+        //
+        //  abort
+        //
+
+        return null;
+      }
+    finally
+      {
+        try { jedis.close(); } catch (JedisException e1) { }
+      }
+
+    /****************************************
+    *
+    *  extract from binaries
+    *
+    ****************************************/
+
+    Map<String,String> result = new HashMap<String,String>();
+    for (int i = 0; i < binaryAlternateIDs.size(); i++)
+      {
+        String keyInRedis = "" + Longs.fromByteArray(binaryAlternateIDs.get(i));
+        
+        String valueInRedis = null;        
+        if (retrievedBinaryIDs.get(i) != null)
+          {
+            valueInRedis = new String(retrievedBinaryIDs.get(i), StandardCharsets.UTF_8);
+            result.put(keyInRedis, valueInRedis);
+          }
+      }
+    return result;
+  }
+  
+  public boolean deleteRedisReverseAlternateID(String alternateIDName, String subscriberID)
+  {
+    List<byte[]> binaryAlternateIDs = new ArrayList<byte[]>();
+    
+    binaryAlternateIDs.add(Longs.toByteArray(Long.parseLong(subscriberID)));
+    int redisCacheIndex = Deployment.getAlternateIDs().get(alternateIDName).getReverseRedisCacheIndex();
+
+    /****************************************
+    *
+    *  retrieve from redis
+    *
+    ****************************************/
+    
+    BinaryJedis jedis = jedisSentinelPool.getResource();
+    try
+      {
+        jedis.select(redisCacheIndex);
+        jedis.del(Longs.toByteArray(Long.parseLong(subscriberID)));
+      }
+    catch (JedisException e)
+      {
+        //
+        //  log
+        //
+
+        log.error("JEDIS error");
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.error(stackTraceWriter.toString());
+
+        return false;
+      }
+    finally
+      {
+        try { jedis.close(); } catch (JedisException e1) { }
+      }
+    return true;
+  }
+
+  
+  public boolean deleteRedisStraightAlternateID(String alternateIDName, String alternateIDValue)
+  {
+    if(alternateIDValue == null) { return false; }
+    
+    List<byte[]> binaryAlternateIDs = new ArrayList<byte[]>();
+    
+    binaryAlternateIDs.add(alternateIDValue.getBytes(StandardCharsets.UTF_8));
+    int redisCacheIndex = Deployment.getAlternateIDs().get(alternateIDName).getRedisCacheIndex();
+    
+    /****************************************
+    *
+    *  retrieve from redis
+    *
+    ****************************************/
+    
+    BinaryJedis jedis = jedisSentinelPool.getResource();
+    try
+      {
+        jedis.select(redisCacheIndex);
+        jedis.del(alternateIDValue.getBytes(StandardCharsets.UTF_8));
+      }
+    catch (JedisException e)
+      {
+        //
+        //  log
+        //
+
+        log.error("JEDIS error");
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.error(stackTraceWriter.toString());
+
+        //
+        //  abort
+        //
+
+        return false;
+      }
+    finally
+      {
+        try { jedis.close(); } catch (JedisException e1) { }
+      }
+    return true;
+  }
+
 
   /****************************************
   *
@@ -256,45 +601,34 @@ public class SubscriberIDService
   
   public String getSubscriberID(String alternateIDName, String alternateID) throws SubscriberIDServiceException
   {
-    Map<String,String> subscriberIDs = getSubscriberIDs(alternateIDName, Collections.<String>singletonList(alternateID));
-    return subscriberIDs.get(alternateID);
+    Pair<String,Integer> subscriberID = getSubscriberIDAndTenantID(alternateIDName,alternateID);
+    if(subscriberID==null) return null;
+    return subscriberID.getFirstElement();
   }
     
   /**
-   * return null if either subscriber ID or tenantID is null...
+   * return null if subscriber ID is null, return tenantID 1 if tenantID is null
    * @param alternateIDName
    * @param alternateID
    * @return
    * @throws SubscriberIDServiceException
    */
   public Pair<String, Integer> getSubscriberIDAndTenantID(String alternateIDName, String alternateID) throws SubscriberIDServiceException {
-    Map<String,String> subscriberIDs = getSubscriberIDs(alternateIDName, Collections.<String>singletonList(alternateID));
-    String tenantIDString = subscriberIDs.get("tenantID");
-    int tenantID = 1; // by default
-    if(tenantIDString != null) 
-      { 
-        tenantID = Integer.parseInt(tenantIDString);
-      }
-    String subscriberID = subscriberIDs.get(alternateID);
-    if(subscriberID != null) 
-      {
-        return new Pair<String, Integer>(subscriberIDs.get(alternateID), tenantID);
-      }
-    else 
-      {
-        return null;
-      }
+    Map<String,Pair<String,Integer>> subscriberIDs = getSubscriberIDs(alternateIDName, Collections.singleton(alternateID));
+    Pair<String,Integer> subscriberID = subscriberIDs.get(alternateID);
+    if(subscriberID==null||subscriberID.getFirstElement()==null) return null;//no mapping entry return null
+    if(subscriberID.getSecondElement()==null) return new Pair<>(subscriberID.getFirstElement(),1);//no tenantID stored, default to 1 (migration to "multi-tenancy" case)
+    return subscriberID;
   }
-  
 
   // same but blocking call if redis issue
-  public String getSubscriberIDBlocking(String alternateIDName, String alternateID) throws SubscriberIDServiceException
+  public Pair<String, Integer> getSubscriberIDAndTenantIDBlocking(String alternateIDName, String alternateID, AtomicBoolean stopRequested) throws SubscriberIDServiceException, InterruptedException
   {
-    while(true)
+    while(!stopRequested.get())
     {
       try
       {
-        return getSubscriberID(alternateIDName,alternateID);
+        return getSubscriberIDAndTenantID(alternateIDName,alternateID);
       }
       catch (SubscriberIDServiceException e)
       {
@@ -302,6 +636,30 @@ public class SubscriberIDService
         log.warn("JEDIS error, will retry",e);
         try { Thread.sleep(1000); } catch (InterruptedException e1) { }
       }
+    }
+    throw new InterruptedException("stopped requested");
+  }
+  // only subsID
+  public String getSubscriberIDBlocking(String alternateIDName, String alternateID, AtomicBoolean stopRequested) throws SubscriberIDServiceException, InterruptedException
+  {
+    Pair<String,Integer> subscriberIDAndTenantID = getSubscriberIDAndTenantIDBlocking(alternateIDName,alternateID,stopRequested);
+    if(subscriberIDAndTenantID==null) return null;
+    return subscriberIDAndTenantID.getFirstElement();
+  }
+  // creating stopRequested on JVM shutdown call
+  public String getSubscriberIDBlocking(String alternateIDName, String alternateID) throws SubscriberIDServiceException
+  {
+    try{
+      return getSubscriberIDBlocking(alternateIDName,alternateID,ShutdownHookHolderForBlockingCall.stopRequested);
+    }catch (InterruptedException e){
+      throw new SubscriberIDServiceException(e);
+    }
+  }
+  // singleton "stopRequested" lazy init
+  private static class ShutdownHookHolderForBlockingCall {
+    private static AtomicBoolean stopRequested = new AtomicBoolean();
+    static {
+      NGLMRuntime.addShutdownHook((normalShutdown -> stopRequested.set(true)));
     }
   }
 
@@ -317,84 +675,4 @@ public class SubscriberIDService
     public SubscriberIDServiceException(Throwable t) { super(t); }
   }
 
-  /*****************************************
-  *
-  *  example main
-  *
-  *****************************************/
-
-  public static void main(String[] args) throws Exception
-  {
-    /*****************************************
-    *
-    *  setup
-    *
-    *****************************************/
-
-    //
-    //  NGLMRuntime
-    //
-
-    NGLMRuntime.initialize();
-
-    //
-    //  arguments
-    //
-
-    String alternateIDName = args[0];
-    List<String> alternateIDs = new ArrayList<String>();
-    for (int i=1; i<args.length; i++)
-      {
-        alternateIDs.add(args[i]);
-      }
-
-    //
-    //  instantiate subscriber id service
-    //
-
-    SubscriberIDService subscriberIDService = new SubscriberIDService(Deployment.getRedisSentinels(), "test-main");
-
-    /*****************************************
-    *
-    *  main loop
-    *
-    *****************************************/
-
-    while (true)
-      {
-        try
-          {
-            //
-            //  retrieve subscriber ids
-            //
-            
-            Map<String,String> ids = subscriberIDService.getSubscriberIDs(alternateIDName, alternateIDs);
-
-            //
-            //  output
-            //
-
-            System.out.println("resolved identifiers from redis cache:");
-            for (String alternateID : ids.keySet())
-              {
-                System.out.println("  " + alternateID + " - " + ids.get(alternateID));
-              }
-
-            //
-            //  sleep
-            //
-            
-            System.out.println("sleeping 10 seconds ...");
-            Thread.sleep(10*1000L);
-          }
-        catch (SubscriberIDServiceException e)
-          {
-            StringWriter stackTraceWriter = new StringWriter();
-            e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-            System.out.println(stackTraceWriter.toString());
-            System.out.println("sleeping 1 second ...");
-            Thread.sleep(1*1000L);
-          }
-      }
-  }
 }
