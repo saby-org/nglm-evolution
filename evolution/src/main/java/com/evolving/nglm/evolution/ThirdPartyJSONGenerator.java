@@ -469,9 +469,9 @@ public class ThirdPartyJSONGenerator
         tokenMap.put("presentationStrategy", JSONUtilities.encodeObject(buildPresentationStrategyElement(presentationStrategyID, presentationStrategyService, now)));
         
         ArrayList<Object> presentedOffersList = new ArrayList<>();
-        for (String offerID : dnboToken.getPresentedOfferIDs())
+        for (ProposedOfferDetails offerDetails : dnboToken.getProposedOfferDetails())
           {
-            presentedOffersList.add(JSONUtilities.encodeObject(buildOfferElement(offerID, offerService, offerObjectiveService, now, callingChannel, presentedOffers, dnboToken, paymentMeanService, tenantID)));
+            presentedOffersList.add(JSONUtilities.encodeObject(buildOfferElement(offerDetails.getOfferId(), offerService, offerObjectiveService, now, callingChannel, presentedOffers, dnboToken, paymentMeanService, tenantID)));
           }
         tokenMap.put("presentedOffers", JSONUtilities.encodeArray(presentedOffersList));
         tokenMap.put("presentedOffersSalesChannel", dnboToken.getPresentedOffersSalesChannel());

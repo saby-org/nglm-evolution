@@ -165,6 +165,8 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
       documentMap.put("targets", subscriberProfile.getTargets(subscriberGroupEpochReader));
       documentMap.put("loyaltyPrograms", subscriberProfile.getLoyaltyProgramsJSON(loyaltyProgramService, pointService));
       documentMap.put("pointFluctuations", subscriberProfile.getPointFluctuationsJSON());
+      documentMap.put("scoreFluctuations", subscriberProfile.getScoreFluctuationsJSON());
+      documentMap.put("progressionFluctuations", subscriberProfile.getProgressionFluctuationsJSON());
       documentMap.put("pointBalances", subscriberProfile.getPointsBalanceJSON());
       documentMap.put("vouchers", subscriberProfile.getVouchersJSON());
       documentMap.put("tokens", subscriberProfile.getTokensJSON());

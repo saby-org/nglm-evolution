@@ -1,4 +1,5 @@
 {
+"dashboard": {
   "annotations": {
     "list": [
       {
@@ -16,13 +17,17 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 76,
-  "iteration": 1623388938915,
+  "id": null,
+  "iteration": 1632918200441,
   "links": [],
   "panels": [
     {
       "columns": [],
       "datasource": "LoyaltyProgramsHistory",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
       "fontSize": "80%",
       "gridPos": {
         "h": 6,
@@ -136,11 +141,15 @@
       "timeShift": null,
       "title": "Customer Count  Evolution per Status for \"$subscrStatus\"",
       "transform": "table",
-      "type": "table"
+      "type": "table-old"
     },
     {
       "columns": [],
       "datasource": "LoyaltyProgramsHistory",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
       "fontSize": "80%",
       "gridPos": {
         "h": 6,
@@ -212,7 +221,7 @@
       "timeShift": null,
       "title": "Customer Daily Count",
       "transform": "timeseries_to_columns",
-      "type": "table"
+      "type": "table-old"
     },
     {
       "aliasColors": {},
@@ -220,6 +229,12 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "LoyaltyProgramsHistory",
+      "fieldConfig": {
+        "defaults": {
+          "links": []
+        },
+        "overrides": []
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -247,9 +262,10 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "options": {
-        "dataLinks": []
+        "alertThreshold": true
       },
       "percentage": false,
+      "pluginVersion": "7.5.2",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -344,6 +360,10 @@
     {
       "columns": [],
       "datasource": "LoyaltyProgramsHistory",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
       "fontSize": "80%",
       "gridPos": {
         "h": 6,
@@ -473,7 +493,7 @@
       "timeShift": null,
       "title": "Customer Daily Count per Tier for \"$subscrStatus\"",
       "transform": "table",
-      "type": "table"
+      "type": "table-old"
     },
     {
       "aliasColors": {},
@@ -481,6 +501,12 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "LoyaltyProgramsHistory",
+      "fieldConfig": {
+        "defaults": {
+          "links": []
+        },
+        "overrides": []
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -508,9 +534,10 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "options": {
-        "dataLinks": []
+        "alertThreshold": true
       },
       "percentage": false,
+      "pluginVersion": "7.5.2",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -606,6 +633,10 @@
     {
       "columns": [],
       "datasource": "LoyaltyProgramsHistory",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
       "fontSize": "80%",
       "gridPos": {
         "h": 6,
@@ -936,11 +967,15 @@
       "timeShift": null,
       "title": "General Report Table KPIS per Tier",
       "transform": "table",
-      "type": "table"
+      "type": "table-old"
     },
     {
       "columns": [],
       "datasource": "LoyaltyProgramsHistory",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
       "fontSize": "80%",
       "gridPos": {
         "h": 6,
@@ -1244,11 +1279,15 @@
       "timeShift": null,
       "title": "General Report Table KPIS per Day",
       "transform": "timeseries_to_columns",
-      "type": "table"
+      "type": "table-old"
     },
     {
       "columns": [],
       "datasource": "LoyaltyProgramsHistory",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
       "fontSize": "80%",
       "gridPos": {
         "h": 7,
@@ -1644,11 +1683,15 @@
       "timeShift": null,
       "title": "General Table Report KPIS by Redeemer",
       "transform": "table",
-      "type": "table"
+      "type": "table-old"
     },
     {
       "columns": [],
       "datasource": "LoyaltyProgramsHistory",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
       "fontSize": "80%",
       "gridPos": {
         "h": 8,
@@ -1912,11 +1955,15 @@
       "timeShift": null,
       "title": "Total Churned Customers among Redeemers/Non Redeemers",
       "transform": "table",
-      "type": "table"
+      "type": "table-old"
     },
     {
       "columns": [],
       "datasource": "LoyaltyProgramsHistory",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
       "fontSize": "80%",
       "gridPos": {
         "h": 8,
@@ -2224,11 +2271,15 @@
       "timeShift": null,
       "title": "Total Churned Customers per Tier among Redeemers/Non Redeemers",
       "transform": "table",
-      "type": "table"
+      "type": "table-old"
     },
     {
       "columns": [],
       "datasource": "LoyaltyProgramsHistory",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
       "fontSize": "80%",
       "gridPos": {
         "h": 8,
@@ -2802,11 +2853,11 @@
       "timeShift": null,
       "title": "New KPIS",
       "transform": "table",
-      "type": "table"
+      "type": "table-old"
     }
   ],
   "refresh": false,
-  "schemaVersion": 22,
+  "schemaVersion": 27,
   "style": "dark",
   "tags": [],
   "templating": {
@@ -2814,16 +2865,20 @@
       {
         "allValue": null,
         "current": {
-          "text": "All",
+          "selected": true,
+          "text": [
+            "All"
+          ],
           "value": [
             "$__all"
           ]
         },
         "datasource": "LoyaltyProgramsHistory",
         "definition": "{\"find\" : \"terms\",\"field\": \"filter.evolutionSubscriberStatus\", \"size\": 10000}",
+        "description": null,
+        "error": null,
         "hide": 0,
         "includeAll": true,
-        "index": -1,
         "label": "Evolution Customer Status",
         "multi": true,
         "name": "subscrStatus",
@@ -2842,16 +2897,20 @@
       {
         "allValue": null,
         "current": {
-          "text": "All",
+          "selected": true,
+          "text": [
+            "All"
+          ],
           "value": [
             "$__all"
           ]
         },
         "datasource": "LoyaltyProgramsHistory",
         "definition": "{\"find\" : \"terms\", \"field\": \"filter.tier\",\"query\": \"filter.evolutionSubscriberStatus:$subscrStatus\"}",
+        "description": null,
+        "error": null,
         "hide": 0,
         "includeAll": true,
-        "index": -1,
         "label": "New Tier",
         "multi": true,
         "name": "tier",
@@ -2889,9 +2948,8 @@
   },
   "timezone": "",
   "title": "New General Dashboard",
-  "uid": "oAOFa81G567",
-  "variables": {
-    "list": []
-  },
-  "version": 2
+  "uid": "replaceWithUniqueID",
+  "version": 1
+},
+  "overwrite": true
 }

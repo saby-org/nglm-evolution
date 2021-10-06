@@ -90,8 +90,7 @@ public class AssignSubscriberIDsFileSourceConnector extends FileSourceConnector
     *
     *****************************************/
 
-    @Override protected List<KeyValue> processRecord(String record) throws FileSourceTaskException
-    {
+    @Override protected List<KeyValue> processRecord(String record) throws FileSourceTaskException, InterruptedException {
       List<KeyValue> result = null;
       try
         {
@@ -123,6 +122,17 @@ public class AssignSubscriberIDsFileSourceConnector extends FileSourceConnector
               String assignAlternateID = JSONUtilities.decodeString(assignAlternateIDJSON, "alternateID", true);
               String assignAlternateSubscriberID = JSONUtilities.decodeString(assignAlternateIDJSON, "alternateSubscriberID", false);
               assignAlternateIDs.put(assignAlternateID, assignAlternateSubscriberID);
+            }
+          
+          JSONArray reassignAlternateIDsJSON = JSONUtilities.decodeJSONArray(jsonRoot, "reassignAlternateIDs", new JSONArray());
+          Map<String,Pair<String, String>> reassignAlternateIDs = new HashMap<>();
+          for (int i=0; i<reassignAlternateIDsJSON.size(); i++)
+            {
+              JSONObject reassignAlternateIDJSON = (JSONObject) reassignAlternateIDsJSON.get(i);
+              String reassignAlternateID = JSONUtilities.decodeString(reassignAlternateIDJSON, "alternateID", true);
+              String oldAssignAlternateSubscriberID = JSONUtilities.decodeString(reassignAlternateIDJSON, "oldAlternateSubscriberID", false);
+              String newAssignAlternateSubscriberID = JSONUtilities.decodeString(reassignAlternateIDJSON, "newAlternateSubscriberID", false);              
+              reassignAlternateIDs.put(reassignAlternateID, new Pair<String, String>(oldAssignAlternateSubscriberID, newAssignAlternateSubscriberID));
             }
 
           /**n***************************************
@@ -182,7 +192,7 @@ public class AssignSubscriberIDsFileSourceConnector extends FileSourceConnector
             }
           else
             {
-              effectiveSubscriberID = resolveSubscriberID(alternateID, alternateSubscriberID);
+              effectiveSubscriberID = resolveSubscriberID(alternateID.getName(), alternateSubscriberID);
               autoProvision = false;
             }
           
@@ -205,6 +215,13 @@ public class AssignSubscriberIDsFileSourceConnector extends FileSourceConnector
           ****************************************/
           
           AssignSubscriberIDs assignSubscriberIDs = new AssignSubscriberIDs(effectiveSubscriberID, SystemTime.getCurrentTime(), subscriberAction, assignAlternateIDs, tenantID);
+          if(reassignAlternateIDs != null)
+            {
+              for(Map.Entry<String, Pair<String, String>> current : reassignAlternateIDs.entrySet())
+                {
+                  assignSubscriberIDs.reAssignAlternateID(current.getKey(), current.getValue().getFirstElement(), current.getValue().getSecondElement());
+                }
+            }
           result = Collections.<KeyValue>singletonList(new KeyValue((autoProvision ? "assignexternalsubscriberids" : "assignsubscriberids"), Schema.STRING_SCHEMA, effectiveSubscriberID, AssignSubscriberIDs.schema(), AssignSubscriberIDs.pack(assignSubscriberIDs)));
         }
       catch (org.json.simple.parser.ParseException|JSONUtilitiesException e)
@@ -219,45 +236,5 @@ public class AssignSubscriberIDsFileSourceConnector extends FileSourceConnector
       return result;
     }
 
-    /****************************************
-    *
-    *  resolveSubscriberID
-    *
-    ****************************************/
-
-    private String resolveSubscriberID(AlternateID alternateID, String alternateSubscriberID)
-    {
-      String subscriberID = null;
-      while (!getStopRequested())
-        {
-          try
-            {
-              subscriberID = subscriberIDService.getSubscriberID(alternateID.getID(), alternateSubscriberID);
-              break;
-            }
-          catch (SubscriberIDService.SubscriberIDServiceException e)
-            {
-              //
-              // sleep before retry
-              //
-
-              synchronized (this)
-                {
-                  if (! getStopRequested())
-                    {
-                      try
-                        {
-                          this.wait(10*1000L);
-                        }
-                      catch (InterruptedException e1)
-                        {
-                          // ignore
-                        }
-                    }
-                }
-            }
-        }
-      return subscriberID;
-    }
   }
 }
