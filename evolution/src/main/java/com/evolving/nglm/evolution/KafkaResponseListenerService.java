@@ -25,6 +25,10 @@ public class KafkaResponseListenerService<K,V> {
   private Thread queueCheckerThread;
   // the consumer of topic listen
   KafkaConsumer<byte[],byte[]> kafkaConsumer;
+  // if null, the queueCheckerThread is waiting for some jobs
+  // application thread adding first job update it to the "end topic position", this to avoid reading topic for nothing
+  Map<TopicPartition, Long> positionToStartAt;
+
   String topic;
   Serde<K> keySerde;
   Serde<V> valueSerde;
@@ -36,15 +40,16 @@ public class KafkaResponseListenerService<K,V> {
       Properties topicConsumerProperties = new Properties();
       topicConsumerProperties.put("bootstrap.servers", broker);
       topicConsumerProperties.put("auto.offset.reset", "latest");
-      topicConsumerProperties.put("enabSle.auto.commit", "false");
+      topicConsumerProperties.put("enable.auto.commit", "false");
       topicConsumerProperties.put("key.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
       topicConsumerProperties.put("value.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
       kafkaConsumer = new KafkaConsumer<>(topicConsumerProperties);
+      this.positionToStartAt = null;
       this.topic=topic;
       this.keySerde = keySerde;
       this.valueSerde = valueSerde;
     }
-    queueCheckerThread=new Thread(this::runResponseCheck);
+    queueCheckerThread=new Thread(this::runResponseCheck,"KafkaResponseListener-"+topic);
 
   }
 
@@ -60,7 +65,11 @@ public class KafkaResponseListenerService<K,V> {
     BlockingResponse blockingResponse = new BlockingResponse(keyValuePredicate);
     synchronized (waitingForResponse){
       waitingForResponse.add(blockingResponse);
-      if(waitingForResponse.size()==1) waitingForResponse.notifyAll(); //notifying runResponseCheck waiting for at least 1 job to process
+      if(waitingForResponse.size()==1 && positionToStartAt==null){
+        // there was no job before, we saved at what position to start consuming topic
+        positionToStartAt = kafkaConsumer.endOffsets(kafkaConsumer.assignment(),Duration.ofSeconds(Integer.MAX_VALUE));
+        waitingForResponse.notifyAll();
+      }
     }
     return blockingResponse;
   }
@@ -108,14 +117,21 @@ public class KafkaResponseListenerService<K,V> {
       synchronized (waitingForResponse){
         if(waitingForResponse.isEmpty()){
           if(log.isDebugEnabled()) log.debug("KafkaResponseListenerService.runResponseCheck : no waiting jobs, not polling records from "+topic);
-          try {
-            waitingForResponse.wait();//wait we got at least one job to process
-          } catch (InterruptedException e) {} //normal notify
-          kafkaConsumer.seekToEnd(kafkaConsumer.assignment());
+          positionToStartAt = null;
+          //wait we got at least one job to process
+          while(positionToStartAt==null){
+            try {
+              waitingForResponse.wait();
+            } catch (InterruptedException e) {} //normal notify
+          }
+          // seek to the position we might have job
+          for(Map.Entry<TopicPartition, Long> entry:positionToStartAt.entrySet()){
+            kafkaConsumer.seek(entry.getKey(),entry.getValue());
+          }
         }
       }
 
-      ConsumerRecords<byte[],byte[]> consumerRecords = kafkaConsumer.poll(5000);
+      ConsumerRecords<byte[],byte[]> consumerRecords = kafkaConsumer.poll(Duration.ofSeconds(5));
 
       for(ConsumerRecord<byte[],byte[]> record:consumerRecords){
 

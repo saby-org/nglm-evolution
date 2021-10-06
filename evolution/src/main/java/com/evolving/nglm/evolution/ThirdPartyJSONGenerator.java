@@ -469,7 +469,7 @@ public class ThirdPartyJSONGenerator
         tokenMap.put("presentationStrategy", JSONUtilities.encodeObject(buildPresentationStrategyElement(presentationStrategyID, presentationStrategyService, now)));
         
         ArrayList<Object> presentedOffersList = new ArrayList<>();
-        for (String offerID : dnboToken.getPresentedOfferIDs())
+        for (ProposedOfferDetails offerDetails : dnboToken.getProposedOfferDetails())
           {
         	boolean isPresentOfferDetails = false;
             presentedOffersList.add(JSONUtilities.encodeObject(buildOfferElement(offerID, offerService, offerObjectiveService, now, callingChannel, isPresentOfferDetails, presentedOffers, dnboToken, paymentMeanService, tenantID)));

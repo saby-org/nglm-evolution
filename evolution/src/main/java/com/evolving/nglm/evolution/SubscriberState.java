@@ -19,6 +19,7 @@ import com.evolving.nglm.core.AssignSubscriberIDs;
 import com.evolving.nglm.core.CleanupSubscriber;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.Deployment;
+import com.evolving.nglm.core.Pair;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SubscriberTrace;
@@ -204,6 +205,7 @@ public class SubscriberState implements StateStore
   public List<TokenRedeemed> getTokenRedeemeds() { return tokenRedeemeds; }
   public List<SubscriberProfileForceUpdateResponse> getSubscriberProfileForceUpdatesResponse() { return subscriberProfileForceUpdatesResponse; }
 
+  public Map<Pair<String, String>, Integer> getSegments() {return (subscriberProfile==null) ? new LinkedHashMap<>() : subscriberProfile.getSegments(); }
   //
   //  kafkaRepresentation
   //

@@ -11,7 +11,10 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
@@ -20,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
+import com.evolving.nglm.evolution.Expression.ConstantExpression;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.Journey.ContextUpdate;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
@@ -79,7 +83,7 @@ public class DNBOUtils
     Date date = evolutionEventContext.now();
     String featureID = subscriberEvaluationRequest.getJourneyState().getJourneyID();
     featureID = ActionManager.extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, featureID);
-    return new TokenChange(subscriberID, date, evolutionEventContext.getEventID(), tokenCode, action, str, origin, Module.Journey_Manager, featureID, tenantID);
+    return new TokenChange(evolutionEventContext.getSubscriberState().getSubscriberProfile(), date, evolutionEventContext.getEventID(), tokenCode, action, str, origin, Module.Journey_Manager.getExternalRepresentation(), featureID, tenantID);
   }
   
   /*****************************************
@@ -128,7 +132,7 @@ public class DNBOUtils
       PresentationStrategy presentationStrategy = evolutionEventContext.getPresentationStrategyService().getActivePresentationStrategy(strategyID, evolutionEventContext.now());
       if (presentationStrategy == null)
         {
-          String str = "invalid presentation strategy " + strategyID;
+          String str = RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericResponseCode()+"";//"invalid presentation strategy " + strategyID;
           log.error(str);
           return new Object[] {Collections.<Action>singletonList(generateTokenChange(evolutionEventContext, subscriberEvaluationRequest, "", action, str))};
         }
@@ -143,7 +147,7 @@ public class DNBOUtils
       TokenType tokenType = evolutionEventContext.getTokenTypeService().getActiveTokenType(tokenTypeID, evolutionEventContext.now());
       if (tokenType == null)
         {
-          String str = "unknown token type " + tokenTypeID; 
+          String str =  RESTAPIGenericReturnCodes.INVALID_TOKEN_TYPE.getGenericResponseCode()+"";//"unknown token type " + tokenTypeID; 
           log.error(str);
           return new Object[] {Collections.<Action>singletonList(generateTokenChange(evolutionEventContext, subscriberEvaluationRequest, "", action, str))};
         }
@@ -169,7 +173,7 @@ public class DNBOUtils
       DNBOToken token = TokenUtils.generateTokenCode(evolutionEventContext.getSubscriberState().getSubscriberProfile(), tokenType);
       if (token == null)
         {
-          String str = "unable to generate a new token code";
+          String str = RESTAPIGenericReturnCodes.CANNOT_GENERATE_TOKEN_CODE.getGenericResponseCode()+"";             //"unable to generate a new token code";
           if (log.isTraceEnabled()) log.trace(str);
           return new Object[] {Collections.<Action>singletonList(generateTokenChange(evolutionEventContext, subscriberEvaluationRequest, "", action, str))};
         }
@@ -304,7 +308,8 @@ public class DNBOUtils
           tokenContextUpdate.getParameters().put("action.presented.offer." + (j+1), "");
         }
       
-      token.setPresentedOfferIDs(presentedOfferIDs);
+      List<ProposedOfferDetails> proposedOfferDetails = presentedOffers.stream().collect(Collectors.toList());
+      token.setPresentedOffers(proposedOfferDetails);
       // TODO token.setPresentedOffersSalesChannel(salesChannelID);
       token.setBoundDate(now);
       // add a new presentation in the token
@@ -388,6 +393,40 @@ public class DNBOUtils
       *****************************************/
       return result;
     }
+    
+    @Override public Map<String, String> getGUIDependencies(List<GUIService> guiServiceList, JourneyNode journeyNode, int tenantID)
+    {
+      Map<String, String> result = new HashMap<String, String>();
+      Object tokentypeNodeParamObj = journeyNode.getNodeParameters().get("node.parameter.tokentype");
+      if (tokentypeNodeParamObj instanceof ParameterExpression && ((ParameterExpression) tokentypeNodeParamObj).getExpression() instanceof ConstantExpression)
+        {
+          String nodeParam  = (String)  ((ParameterExpression) tokentypeNodeParamObj).getExpression().evaluateConstant();
+          if (nodeParam != null) result.put("tokentype", nodeParam);
+        }
+      else if (tokentypeNodeParamObj instanceof String)
+        {
+          result.put("tokentype", (String) tokentypeNodeParamObj);
+        }
+      else
+        {
+          log.error("unsupported value/type expression {} - skipping", tokentypeNodeParamObj);
+        }
+      Object nodeParamObj = journeyNode.getNodeParameters().get("node.parameter.strategy");
+      if (nodeParamObj instanceof ParameterExpression && ((ParameterExpression) nodeParamObj).getExpression() instanceof ConstantExpression)
+        {
+          String nodeParam  = (String)  ((ParameterExpression) nodeParamObj).getExpression().evaluateConstant();
+          if (nodeParam != null) result.put("presentationstrategy", nodeParam);
+        }
+      else if (nodeParamObj instanceof String)
+        {
+          result.put("presentationstrategy", (String) nodeParamObj);
+        }
+      else
+        {
+          log.error("unsupported value/type expression {} - skipping for node.parameter.strategy", nodeParamObj);
+        }
+      return result;
+    }
   }
   
   /*****************************************
@@ -453,6 +492,41 @@ public class DNBOUtils
       *****************************************/
       return result;
     }
+    
+    @Override public Map<String, String> getGUIDependencies(List<GUIService> guiServiceList, JourneyNode journeyNode, int tenantID)
+    {
+      Map<String, String> result = new HashMap<String, String>();
+      Object tokentypeNodeParamObj = journeyNode.getNodeParameters().get("node.parameter.tokentype");
+      if (tokentypeNodeParamObj instanceof ParameterExpression && ((ParameterExpression) tokentypeNodeParamObj).getExpression() instanceof ConstantExpression)
+        {
+          String nodeParam  = (String)  ((ParameterExpression) tokentypeNodeParamObj).getExpression().evaluateConstant();
+          if (nodeParam != null) result.put("tokentype", nodeParam);
+        }
+      else if (tokentypeNodeParamObj instanceof String)
+        {
+          result.put("tokentype", (String) tokentypeNodeParamObj);
+        }
+      else
+        {
+          log.error("unsupported value/type expression {} - skipping", tokentypeNodeParamObj);
+        }
+      Object nodeParamObj = journeyNode.getNodeParameters().get("node.parameter.strategy");
+      if (nodeParamObj instanceof ParameterExpression && ((ParameterExpression) nodeParamObj).getExpression() instanceof ConstantExpression)
+        {
+          String nodeParam  = (String)  ((ParameterExpression) nodeParamObj).getExpression().evaluateConstant();
+          if (nodeParam != null) result.put("presentationstrategy", nodeParam);
+        }
+      else if (nodeParamObj instanceof String)
+        {
+          result.put("presentationstrategy", (String) nodeParamObj);
+        }
+      else
+        {
+          log.error("unsupported value/type expression {} - skipping for node.parameter.strategy", nodeParamObj);
+        }
+      return result;
+    }
+    
   }
 
   
@@ -558,6 +632,40 @@ public class DNBOUtils
       *****************************************/
       return result;
     }
+    
+    @Override public Map<String, String> getGUIDependencies(List<GUIService> guiServiceList, JourneyNode journeyNode, int tenantID)
+    {
+      Map<String, String> result = new HashMap<String, String>();
+      Object tokentypeNodeParamObj = journeyNode.getNodeParameters().get("node.parameter.tokentype");
+      if (tokentypeNodeParamObj instanceof ParameterExpression && ((ParameterExpression) tokentypeNodeParamObj).getExpression() instanceof ConstantExpression)
+        {
+          String nodeParam  = (String)  ((ParameterExpression) tokentypeNodeParamObj).getExpression().evaluateConstant();
+          if (nodeParam != null) result.put("tokentype", nodeParam);
+        }
+      else if (tokentypeNodeParamObj instanceof String)
+        {
+          result.put("tokentype", (String) tokentypeNodeParamObj);
+        }
+      else
+        {
+          log.error("unsupported value/type expression {} - skipping", tokentypeNodeParamObj);
+        }
+      Object nodeParamObj = journeyNode.getNodeParameters().get("node.parameter.strategy");
+      if (nodeParamObj instanceof ParameterExpression && ((ParameterExpression) nodeParamObj).getExpression() instanceof ConstantExpression)
+        {
+          String nodeParam  = (String)  ((ParameterExpression) nodeParamObj).getExpression().evaluateConstant();
+          if (nodeParam != null) result.put("presentationstrategy", nodeParam);
+        }
+      else if (nodeParamObj instanceof String)
+        {
+          result.put("presentationstrategy", (String) nodeParamObj);
+        }
+      else
+        {
+          log.error("unsupported value/type expression {} - skipping for node.parameter.strategy", nodeParamObj);
+        }
+      return result;
+    }
   }
   
   /*****************************************
@@ -630,7 +738,7 @@ public class DNBOUtils
           return invalidPurchase(evolutionEventContext, subscriberEvaluationRequest, null, null, null);
         }
       DNBOToken token = (DNBOToken) lastToken;
-      List<String> presentedOffers = token.getPresentedOfferIDs();
+      List<String> presentedOffers = token.getProposedOfferDetails().stream().map(offerDetails -> offerDetails.getOfferId()).collect(Collectors.toList());
       if (presentedOffers == null)
         {
           String str = "token has no presented offers"; 
@@ -656,7 +764,7 @@ public class DNBOUtils
       Offer offer = evolutionEventContext.getOfferService().getActiveOffer(offerID, evolutionEventContext.now());
       if (offer == null)
         {
-          String str = "invalid offer returned by scoring " + offerID; 
+          String str = RESTAPIGenericReturnCodes.INVALID_TOKEN_CODE.getGenericResponseCode()+"";//"invalid offer returned by scoring " + offerID; 
           log.error(str);
           return Collections.<Action>singletonList(generateTokenChange(evolutionEventContext, subscriberEvaluationRequest, token.getTokenCode(), TokenChange.REDEEM, str));
         }
@@ -664,7 +772,7 @@ public class DNBOUtils
       contextUpdate.getParameters().put("action.accepted.offer", offer.getDisplay());
       result.add(contextUpdate);
       
-      TokenChange tokenChange = generateTokenChange(evolutionEventContext, subscriberEvaluationRequest, token.getTokenCode(), TokenChange.REDEEM, "OK");
+      TokenChange tokenChange = generateTokenChange(evolutionEventContext, subscriberEvaluationRequest, token.getTokenCode(), TokenChange.REDEEM, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode()+"");
       tokenChange.setOrigin("JourneyAccept"); 
       result.add(tokenChange);
       

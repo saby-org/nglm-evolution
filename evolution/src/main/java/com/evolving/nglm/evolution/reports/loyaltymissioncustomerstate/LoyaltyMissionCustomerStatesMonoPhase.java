@@ -52,8 +52,7 @@ public class LoyaltyMissionCustomerStatesMonoPhase implements ReportCsvFactory
     headerFieldsOrder.add(customerID);
     for (AlternateID alternateID : Deployment.getAlternateIDs().values())
     {
-      if(alternateID.getName().equals("msisdn")) {
-      headerFieldsOrder.add(alternateID.getName());}
+      headerFieldsOrder.add(alternateID.getName());
     }
     headerFieldsOrder.add(dateTime);
     headerFieldsOrder.add(programName);
@@ -171,6 +170,10 @@ public class LoyaltyMissionCustomerStatesMonoPhase implements ReportCsvFactory
                         Object alternateId = subscriberFields.get(alternateID.getESField());
                         subscriberComputedFields.put(alternateID.getName(), alternateId);
                       }
+                    else
+                    {
+                      subscriberComputedFields.put(alternateID.getName(), "");
+                    }
                   }
                 subscriberComputedFields.put("dateTime", ReportsCommonCode.getDateString(now));
                 for (int i = 0; i < loyaltyProgramsArray.size(); i++)

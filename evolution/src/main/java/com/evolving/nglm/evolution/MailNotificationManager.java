@@ -155,7 +155,7 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
     {
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("service_mailnotification_request");
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(), 9));
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(), 10));
       for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
       schemaBuilder.field("destination", Schema.STRING_SCHEMA);
       schemaBuilder.field("fromAddress", Schema.STRING_SCHEMA);
@@ -169,6 +169,7 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
       schemaBuilder.field("returnCode", Schema.INT32_SCHEMA);
       schemaBuilder.field("returnCodeDetails", Schema.OPTIONAL_STRING_SCHEMA);
       schemaBuilder.field("contactType", SchemaBuilder.string().defaultValue("unknown").schema());
+      schemaBuilder.field("origin", Schema.OPTIONAL_STRING_SCHEMA);
       schema = schemaBuilder.build();
     };
 
@@ -205,6 +206,7 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
     private int returnCode;
     private String returnCodeDetails;
     private String contactType;
+    private String origin;
 
     //
     //  accessors
@@ -223,6 +225,7 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
     public int getReturnCode() { return returnCode; }
     public String getReturnCodeDetails() { return returnCodeDetails; }
     public String getContactType() { return contactType; }
+    public String getOrigin() { return origin; }
 
     //
     //  abstract
@@ -246,7 +249,7 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
 
     public int getMessageDeliveryReturnCode() { return getReturnCode(); }
     public String getMessageDeliveryReturnCodeDetails() { return getReturnCodeDetails(); }
-    public String getMessageDeliveryOrigin() { return getFromAddress(); }
+    public String getMessageDeliveryOrigin() { return getOrigin(); } //getFromAddress();
     public String getMessageDeliveryMessageId() { return getEventID(); }
 
     /*****************************************
@@ -297,7 +300,7 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
     *
     *****************************************/
 
-    public MailNotificationManagerRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String destination, String fromAddress, String language, String templateID, List<String> subjectTags, List<String> htmlBodyTags, List<String> textBodyTags, String contactType, int tenantID)
+    public MailNotificationManagerRequest(EvolutionEventContext context, String deliveryType, String deliveryRequestSource, String destination, String fromAddress, String language, String templateID, List<String> subjectTags, List<String> htmlBodyTags, List<String> textBodyTags, String contactType, String origin, int tenantID)
     {
       super(context, deliveryType, deliveryRequestSource, tenantID);
       this.destination = destination;
@@ -311,6 +314,7 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
       this.returnCode = status.getReturnCode();
       this.returnCodeDetails = null;
       this.contactType = contactType;
+      this.origin = origin;
     }
 
     /*****************************************
@@ -335,7 +339,7 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
     *
     *****************************************/
 
-    private MailNotificationManagerRequest(SchemaAndValue schemaAndValue, String destination, String fromAddress, String language, String templateID, List<String> subjectTags, List<String> htmlBodyTags, List<String> textBodyTags, boolean confirmationExpected, boolean restricted, MessageStatus status, String returnCodeDetails, String contactType)
+    private MailNotificationManagerRequest(SchemaAndValue schemaAndValue, String destination, String fromAddress, String language, String templateID, List<String> subjectTags, List<String> htmlBodyTags, List<String> textBodyTags, boolean confirmationExpected, boolean restricted, MessageStatus status, String returnCodeDetails, String contactType, String origin)
     {
       super(schemaAndValue);
       this.destination = destination;
@@ -351,6 +355,7 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
       this.returnCode = status.getReturnCode();
       this.returnCodeDetails = returnCodeDetails;
       this.contactType = contactType;
+      this.origin = origin;
     }
 
     /*****************************************
@@ -375,6 +380,7 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
       this.returnCode = mailNotificationManagerRequest.getReturnCode();
       this.returnCodeDetails = mailNotificationManagerRequest.getReturnCodeDetails();
       this.contactType = mailNotificationManagerRequest.getContactType();
+      this.origin = mailNotificationManagerRequest.getOrigin();
     }
 
     /*****************************************
@@ -402,13 +408,15 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
     public MailNotificationManagerRequest(Map<String, Object> esFields)
     {
       super(esFields);
-      try {
-        setCreationDate(RLMDateUtils.parseDateFromElasticsearch((String) esFields.get("creationDate")));
-        setDeliveryDate(RLMDateUtils.parseDateFromElasticsearch((String) esFields.get("deliveryDate")));
-      }
-      catch(java.text.ParseException e) {
-        throw new ServerRuntimeException(e);
-      }
+      try
+        {
+          setCreationDate(RLMDateUtils.parseDateFromElasticsearch((String) esFields.get("creationDate")));
+          setDeliveryDate(RLMDateUtils.parseDateFromElasticsearch((String) esFields.get("deliveryDate")));
+        } 
+      catch (java.text.ParseException e)
+        {
+          throw new ServerRuntimeException(e);
+        }
         
       this.destination = (String) esFields.get("destination");
       this.fromAddress = (String) esFields.get("source");
@@ -423,6 +431,7 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
         }
       this.returnCode = (Integer) esFields.get("returnCode");
       this.returnCodeDetails = (String) esFields.get("returnCodeDetails");
+      this.origin = (String) esFields.get("origin");
     }
     
     /*****************************************
@@ -459,6 +468,7 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
       struct.put("returnCode", notificationRequest.getReturnCode());
       struct.put("returnCodeDetails", notificationRequest.getReturnCodeDetails());
       struct.put("contactType", notificationRequest.getContactType());
+      struct.put("origin", notificationRequest.getOrigin());
       return struct;
     }
     
@@ -502,12 +512,13 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
       String returnCodeDetails = valueStruct.getString("returnCodeDetails");
       MessageStatus status = MessageStatus.fromReturnCode(returnCode);
       String contactType = schemaVersion >= 9 ? valueStruct.getString("contactType") : "unknown";
+      String origin = schemaVersion >= 10 ? valueStruct.getString("origin") : "unknown";
       
       //
       //  return
       //
 
-      return new MailNotificationManagerRequest(schemaAndValue, destination, fromAddress, language, templateID, subjectTags, htmlBodyTags, textBodyTags, confirmationExpected, restricted, status, returnCodeDetails, contactType);
+      return new MailNotificationManagerRequest(schemaAndValue, destination, fromAddress, language, templateID, subjectTags, htmlBodyTags, textBodyTags, confirmationExpected, restricted, status, returnCodeDetails, contactType, origin);
     }
     
     /****************************************
@@ -537,6 +548,7 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
       guiPresentationMap.put(NOTIFICATION_HTML_BODY, getHtmlBody(subscriberMessageTemplateService));
       guiPresentationMap.put(NOTIFICATION_CHANNEL, "EMAIL");
       guiPresentationMap.put("contactType", getContactType());
+      guiPresentationMap.put("origin", getOrigin());
     }
     
     //
@@ -562,6 +574,7 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
       thirdPartyPresentationMap.put(NOTIFICATION_CHANNEL, "EMAIL");
       thirdPartyPresentationMap.put(NOTIFICATION_RECIPIENT, getDestination());
       thirdPartyPresentationMap.put("contactType", getContactType());
+      thirdPartyPresentationMap.put("origin", getOrigin());
     }
     
     @Override
@@ -628,6 +641,7 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
       *
       *****************************************/
 
+      String origin = subscriberEvaluationRequest.getJourneyNode().getNodeName() != null ? subscriberEvaluationRequest.getJourneyNode().getNodeName() : "unknown";
       String journeyID = subscriberEvaluationRequest.getJourneyState().getJourneyID();
       Journey journey = evolutionEventContext.getJourneyService().getActiveJourney(journeyID, evolutionEventContext.now());
       String newModuleID = moduleID;
@@ -640,6 +654,7 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
               if (!(areaAvailability.get(i).equals("realtime")) && !(areaAvailability.get(i).equals("journeymanager")))
                 {
                   newModuleID = Module.Loyalty_Program.getExternalRepresentation();
+                  if (subscriberEvaluationRequest.getJourneyState() != null && subscriberEvaluationRequest.getJourneyState().getsourceOrigin() != null) origin = subscriberEvaluationRequest.getJourneyState().getsourceOrigin();
                   break;
                 }
             }
@@ -660,7 +675,6 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
           }
         }
       String deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, journeyID);
-      
       String email = ((SubscriberProfile) subscriberEvaluationRequest.getSubscriberProfile()).getEmail();
       String language = subscriberEvaluationRequest.getLanguage();
       MailTemplate baseTemplate = (MailTemplate) emailMessage.resolveTemplate(evolutionEventContext);
@@ -696,7 +710,7 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
       MailNotificationManagerRequest request = null;
       if (template != null && email != null)
         {
-          request = new MailNotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, email, fromAddress, language, template.getMailTemplateID(), subjectTags, htmlBodyTags, textBodyTags, contactType.getExternalRepresentation(), subscriberEvaluationRequest.getTenantID());
+          request = new MailNotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, email, fromAddress, language, template.getMailTemplateID(), subjectTags, htmlBodyTags, textBodyTags, contactType.getExternalRepresentation(), origin, subscriberEvaluationRequest.getTenantID());
           request.setModuleID(newModuleID);
           request.setFeatureID(deliveryRequestSource);
           request.setConfirmationExpected(confirmationExpected);
@@ -717,11 +731,13 @@ public class MailNotificationManager extends DeliveryManagerForNotifications imp
       return (request != null) ? Collections.<Action>singletonList(request) : Collections.<Action>emptyList();
     }
     
-    @Override public Map<String, String> getGUIDependencies(JourneyNode journeyNode, int tenantID)
+    @Override public Map<String, String> getGUIDependencies(List<GUIService> guiServiceList, JourneyNode journeyNode, int tenantID)
     {
       Map<String, String> result = new HashMap<String, String>();
       EmailMessage emailMessage = (EmailMessage) journeyNode.getNodeParameters().get("node.parameter.message");
+      String sourceID = (String) journeyNode.getNodeParameters().get("node.parameter.fromaddress");
       if (emailMessage != null) result.put("mailtemplate", emailMessage.getSubscriberMessageTemplateID());
+      if (sourceID != null) result.put("sourceaddress", sourceID);
       return result;
     }
   }

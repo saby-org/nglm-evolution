@@ -440,8 +440,10 @@ public class ElasticsearchUpgrade
     // - from 1.5.2 (1) to 2.0.0 (2):
     //   - INDEX NAME CHANGE                               (tX_)
     //   - filter.tenantID                                 (new)
-    loadPatch("datacube_messages"                 , 1, 2, "t_tmp_datacube_messages", (s) -> "t1_"+s, // Index name change !
-        "ctx._source.tenantID = 1;");
+    // - from 2.0.0 (2) to 2.0.0_5 (3):
+    //   - filter.origin                                   (new)
+    loadPatch("datacube_messages"                 , 1, 3, "t_tmp_datacube_messages", (s) -> "t1_"+s, /* Index name change !*/ "ctx._source.tenantID = 1;");
+    loadPatch("datacube_messages"                 , 2, 3, "t_tmp_datacube_messages", (s) -> s, "");
 
     /*****************************************
     *

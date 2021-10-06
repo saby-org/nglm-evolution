@@ -58,9 +58,9 @@ public class CommunicationChannelBlackoutService extends GUIService
   //
 
   @Deprecated // groupID not used
-  public CommunicationChannelBlackoutService(String bootstrapServers, String groupID, String communicationChannelTopic, boolean masterService, CommunicationChannelBlackoutListener communicationChannelListener)
+  public CommunicationChannelBlackoutService(String bootstrapServers, String groupID, String communicationChannelBlackoutTopic, boolean masterService, CommunicationChannelBlackoutListener communicationChannelListener)
   {
-    this(bootstrapServers, groupID, communicationChannelTopic, masterService, communicationChannelListener, true);
+    this(bootstrapServers, groupID, communicationChannelBlackoutTopic, masterService, communicationChannelListener, true);
   }
 
   //
@@ -68,9 +68,9 @@ public class CommunicationChannelBlackoutService extends GUIService
   //
 
   @Deprecated // groupID not used
-  public CommunicationChannelBlackoutService(String bootstrapServers, String groupID, String communicationChannelTopic, boolean masterService)
+  public CommunicationChannelBlackoutService(String bootstrapServers, String groupID, String communicationChannelBlackoutTopic, boolean masterService)
   {
-    this(bootstrapServers, groupID, communicationChannelTopic, masterService, (CommunicationChannelBlackoutListener) null, true);
+    this(bootstrapServers, groupID, communicationChannelBlackoutTopic, masterService, (CommunicationChannelBlackoutListener) null, true);
   }
 
   //

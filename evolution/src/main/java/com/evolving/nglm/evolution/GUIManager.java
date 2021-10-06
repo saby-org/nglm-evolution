@@ -176,6 +176,7 @@ import com.evolving.nglm.evolution.offeroptimizer.GetOfferException;
 import com.evolving.nglm.evolution.offeroptimizer.ProposedOfferDetails;
 import com.evolving.nglm.evolution.otp.GUIManagerOTP;
 import com.evolving.nglm.evolution.otp.OTPTypeService;
+import com.evolving.nglm.evolution.redisqueryutils.RedisQueryUtils;
 import com.google.gson.JsonArray;
 import com.evolving.nglm.evolution.reports.ReportCsvFactory;
 import com.evolving.nglm.evolution.reports.bdr.BDRReportDriver;
@@ -507,6 +508,7 @@ public class GUIManager
     getCommunicationChannelSummaryList("getCommunicationChannelSummaryList"),
     getCommunicationChannel("getCommunicationChannel"),
     putCommunicationChannel("putCommunicationChannel"),
+    restoreCommunicationChannel("restoreCommunicationChannel"),
     getBlackoutPeriodsList("getBlackoutPeriodsList"),
     getBlackoutPeriodsSummaryList("getBlackoutPeriodsSummaryList"),
     getBlackoutPeriods("getBlackoutPeriods"),
@@ -519,6 +521,7 @@ public class GUIManager
     getTimeWindows("getTimeWindows"),
     putTimeWindows("putTimeWindows"),
     removeTimeWindows("removeTimeWindows"),
+    getDefaultNotificationDailyWindow("getDefaultNotificationDailyWindow"),
 
     getLoyaltyProgramTypeList("getLoyaltyProgramTypeList"),
     getLoyaltyProgramList("getLoyaltyProgramList"),
@@ -608,7 +611,6 @@ public class GUIManager
     configAdaptorScoringStrategy("configAdaptorScoringStrategy"),
     configAdaptorCallingChannel("configAdaptorCallingChannel"),
     configAdaptorSalesChannel("configAdaptorSalesChannel"),
-    configAdaptorCommunicationChannel("configAdaptorCommunicationChannel"),
     configAdaptorBlackoutPeriods("configAdaptorBlackoutPeriods"),
     configAdaptorContactPolicy("configAdaptorContactPolicy"),
     configAdaptorSegmentationDimension("configAdaptorSegmentationDimension"),
@@ -649,6 +651,8 @@ public class GUIManager
     getSoftwareVersions("getSoftwareVersions"),
     
     sendMessage("sendMessage"),
+    
+    getRedisSubscriberIDAndAlternateIDs("getRedisSubscriberIDAndAlternateIDs"), // for PTT testing
 
     
     //
@@ -740,6 +744,7 @@ public class GUIManager
   protected TargetService targetService;
   protected CommunicationChannelBlackoutService communicationChannelBlackoutService;
   protected CommunicationChannelTimeWindowService communicationChannelTimeWindowService;
+  protected CommunicationChannelService communicationChannelService;
   protected LoyaltyProgramService loyaltyProgramService;
   protected ExclusionInclusionTargetService exclusionInclusionTargetService;
   protected ResellerService resellerService;
@@ -1096,6 +1101,7 @@ public class GUIManager
     voucherService = new VoucherService(bootstrapServers, "guimanager-voucherservice-" + apiProcessKey, voucherTopic, true,elasticsearch,uploadedFileService);
     communicationChannelBlackoutService = new CommunicationChannelBlackoutService(bootstrapServers, "guimanager-blackoutservice-" + apiProcessKey, communicationChannelBlackoutTopic, true);
     communicationChannelTimeWindowService = new CommunicationChannelTimeWindowService(bootstrapServers, "guimanager-timewindowservice-" + apiProcessKey, communicationChannelTimeWindowTopic, true);
+    communicationChannelService = new CommunicationChannelService(bootstrapServers, "guimanager-communicationchannelservice-" + apiProcessKey, communicationChannelTopic, true);
     loyaltyProgramService = new LoyaltyProgramService(bootstrapServers, "guimanager-loyaltyprogramservice-"+apiProcessKey, loyaltyProgramTopic, true);
     exclusionInclusionTargetService = new ExclusionInclusionTargetService(bootstrapServers, "guimanager-exclusioninclusiontargetservice-" + apiProcessKey, exclusionInclusionTargetTopic, true);
     resellerService = new ResellerService(bootstrapServers, "guimanager-resellerservice-"+apiProcessKey, resellerTopic, true);
@@ -1453,9 +1459,18 @@ public class GUIManager
                     {
                       if (name.equals(report.getGUIManagedObjectDisplay()))
                         {
-                          // this report already exists (same name), do not create it
-                          create = false;
-                          log.info("Report " + name + " (id " + report.getReportID() + " ) already exists in tenant " + tenantID + " do not create");
+                          // this report already exists (same name), do not create it, just check that the classname is correct (EVPRO-1265)
+                          String existingReportClass = report.getReportClass();
+                          String newReportClass = JSONUtilities.decodeString(reportJSON, "class", false);
+                          if (!Objects.equals(existingReportClass, newReportClass)) {
+                            // class has changed, must update the existing report, preserving all fields except "class" (like "effectiveScheduling")
+                            reportJSON = reportService.generateResponseJSON(report, true, now);
+                            reportJSON.put("class", newReportClass); // just patch this attribute
+                            log.info("Report " + name + " already exists in tenant " + tenantID + " but with a different class ( " + existingReportClass + " != " + newReportClass + " ) let's update it : " + report);
+                          } else {
+                            create = false;
+                            log.info("Report " + name + " (id " + report.getReportID() + " ) already exists in tenant " + tenantID + " do not create");
+                          }
                           break;
                         }
                     }
@@ -2268,6 +2283,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getCommunicationChannelSummaryList", new APISimpleHandler(API.getCommunicationChannelSummaryList));
         restServer.createContext("/nglm-guimanager/getCommunicationChannel", new APISimpleHandler(API.getCommunicationChannel));
         restServer.createContext("/nglm-guimanager/putCommunicationChannel", new APISimpleHandler(API.putCommunicationChannel));
+        restServer.createContext("/nglm-guimanager/restoreCommunicationChannel", new APISimpleHandler(API.restoreCommunicationChannel));
         restServer.createContext("/nglm-guimanager/getBlackoutPeriodsList", new APISimpleHandler(API.getBlackoutPeriodsList));
         restServer.createContext("/nglm-guimanager/getBlackoutPeriodsSummaryList", new APISimpleHandler(API.getBlackoutPeriodsSummaryList));
         restServer.createContext("/nglm-guimanager/getBlackoutPeriods", new APISimpleHandler(API.getBlackoutPeriods));
@@ -2278,6 +2294,9 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getTimeWindowsSummaryList", new APISimpleHandler(API.getTimeWindowsSummaryList));
         restServer.createContext("/nglm-guimanager/getTimeWindows", new APISimpleHandler(API.getTimeWindows));
         restServer.createContext("/nglm-guimanager/putTimeWindows", new APISimpleHandler(API.putTimeWindows));
+        restServer.createContext("/nglm-guimanager/removeTimeWindows", new APISimpleHandler(API.removeTimeWindows));
+        restServer.createContext("/nglm-guimanager/getDefaultNotificationDailyWindow", new APISimpleHandler(API.getDefaultNotificationDailyWindow));
+        
 
         restServer.createContext("/nglm-guimanager/removeBlackoutPeriods", new APISimpleHandler(API.removeBlackoutPeriods));
         restServer.createContext("/nglm-guimanager/getLoyaltyProgramTypeList", new APISimpleHandler(API.getLoyaltyProgramTypeList));
@@ -2326,7 +2345,6 @@ public class GUIManager
         restServer.createContext("/nglm-configadaptor/getScoringStrategy", new APISimpleHandler(API.configAdaptorScoringStrategy));
         restServer.createContext("/nglm-configadaptor/getCallingChannel", new APISimpleHandler(API.configAdaptorCallingChannel));
         restServer.createContext("/nglm-configadaptor/getSalesChannel", new APISimpleHandler(API.configAdaptorSalesChannel));
-        restServer.createContext("/nglm-configadaptor/getCommunicationChannel", new APISimpleHandler(API.configAdaptorCommunicationChannel));
         restServer.createContext("/nglm-configadaptor/getBlackoutPeriods", new APISimpleHandler(API.configAdaptorBlackoutPeriods));
         restServer.createContext("/nglm-configadaptor/getContactPolicy", new APISimpleHandler(API.configAdaptorContactPolicy));
         restServer.createContext("/nglm-configadaptor/getSegmentationDimension", new APISimpleHandler(API.configAdaptorSegmentationDimension));
@@ -2390,7 +2408,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/removeOTPType", new APISimpleHandler(API.removeOTPType));
 
         restServer.createContext("/nglm-guimanager/sendMessage", new APISimpleHandler(API.sendMessage));
-
+        restServer.createContext("/nglm-guimanager/getRedisSubscriberIDAndAlternateIDs", new APISimpleHandler(API.getRedisSubscriberIDAndAlternateIDs));
         
         restServer.setExecutor(Executors.newFixedThreadPool(10));
         restServer.start();
@@ -2450,7 +2468,7 @@ public class GUIManager
       {
         boolean grafanaStarted = false;
         while (!grafanaStarted) {
-          grafanaStarted = GrafanaUtils.prepareGrafanaForTenants();
+          grafanaStarted = GrafanaUtils.prepareGrafanaForTenants(elasticsearch);
         }        
       }
     });
@@ -3908,7 +3926,10 @@ public class GUIManager
                 case putCommunicationChannel:
                   jsonResponse = processPutCommunicationChannel(userID, jsonRoot, tenantID);
                   break;
-
+                                    
+                case restoreCommunicationChannel:
+                jsonResponse = processRestoreCommunicationChannel(userID, jsonRoot, tenantID);
+                break;
 
                 case getBlackoutPeriodsList:
                   jsonResponse = processGetBlackoutPeriodsList(userID, jsonRoot, true, includeArchived, tenantID);
@@ -3930,8 +3951,7 @@ public class GUIManager
                   jsonResponse = processRemoveBlackoutPeriods(userID, jsonRoot, tenantID);
                   break;
                   
-                  
-                  
+      
                 case getTimeWindowsList:
                   jsonResponse = CommunicationChannelTimeWindow.processGetChannelTimeWindowList(userID, jsonRoot, true, includeArchived, communicationChannelTimeWindowService, tenantID);
                   break;
@@ -3950,6 +3970,10 @@ public class GUIManager
 
                 case removeTimeWindows:
                   jsonResponse = CommunicationChannelTimeWindow.processRemoveTimeWindows(userID, jsonRoot, communicationChannelTimeWindowService, tenantID);
+                  break;
+
+                case getDefaultNotificationDailyWindow:
+                  jsonResponse = guiManagerGeneral.processGetDefaultNotificationDailyWindow(userID, jsonRoot, tenantID);
                   break;
 
                 case getLoyaltyProgramTypeList:
@@ -4142,10 +4166,6 @@ public class GUIManager
 
                 case configAdaptorSalesChannel:
                   jsonResponse = processConfigAdaptorSalesChannel(jsonRoot, tenantID);
-                  break;
-
-                case configAdaptorCommunicationChannel:
-                  jsonResponse = processConfigAdaptorCommunicationChannel(jsonRoot, tenantID);
                   break;
 
                 case configAdaptorBlackoutPeriods:
@@ -4346,6 +4366,11 @@ public class GUIManager
                 
                 case sendMessage:
                   jsonResponse = processSendMessage(userID, jsonRoot, tenantID);
+                  break;
+                  
+                case getRedisSubscriberIDAndAlternateIDs:
+                  // jsonResponse = RedisQueryUtils.processGetRedisSubscriberIDAndAlternateIDs(userID, jsonRoot, subscriberIDService, subscriberProfileService, tenantID);
+                  jsonResponse = subscriberIDService.getRedisSubscriberIDsForPTTTests((String)jsonRoot.get("alternateIDName"), (String)jsonRoot.get("alternateIDValue"));
                   break;
 
               }
@@ -8638,7 +8663,7 @@ public class GUIManager
                         GUIManagedObject offerObjectiveObject = offerObjectiveService.getStoredOfferObjective(offerObjectiveID);
                         if (offerObjectiveObject != null)
                           {
-                            String offerObjectiveDisplay = ((OfferObjective) offerObjectiveObject).getDisplay();
+                            String offerObjectiveDisplay = offerObjectiveObject.getGUIManagedObjectDisplay();
                             offerObjective.put("offerObjectiveDisplay", offerObjectiveDisplay);
                             offerObjectivesWithDispaly.add(offerObjective);
                           }
@@ -8858,11 +8883,9 @@ public class GUIManager
                   {
                     jsonRoot.put("simpleOffer", false);
                   }
-
               }
-          
-        
         }
+        
         Offer offer = new Offer(jsonRoot, epoch, existingOffer, catalogCharacteristicService, tenantID);
 
         // if stock update, and no more stock, need to warn it
@@ -8877,8 +8900,7 @@ public class GUIManager
         if (!dryRun)
           {
 
-            offerService.putOffer(offer, callingChannelService, salesChannelService, productService, voucherService,
-                (existingOffer == null), userID);
+            offerService.putOffer(offer, callingChannelService, salesChannelService, productService, voucherService, (existingOffer == null), userID);
           }
         /*****************************************
         *
@@ -8907,8 +8929,7 @@ public class GUIManager
         //
         if (!dryRun)
           {
-            offerService.putOffer(incompleteObject, callingChannelService, salesChannelService, productService,
-                voucherService, (existingOffer == null), userID);
+            offerService.putOffer(incompleteObject, callingChannelService, salesChannelService, productService, voucherService, (existingOffer == null), userID);
           }
         //
         //  log
@@ -16359,13 +16380,26 @@ public class GUIManager
      *  resolve subscriberID
      *
      *****************************************/
-
+    Map<Pair<String, String>, Integer> segments = null;
     String subscriberID = resolveSubscriberID(customerID, tenantID);
     if (subscriberID == null)
     {
       log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
       response.put("responseCode", "CustomerNotFound");
       return JSONUtilities.encodeObject(response);
+    } else {
+      try {
+        SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
+        if (baseSubscriberProfile == null) {
+          response.put("responseCode", "CustomerNotFound");
+          log.debug("SubscriberProfile is null for subscriberID {}" , subscriberID);
+          return JSONUtilities.encodeObject(response);
+        } else {
+          segments = baseSubscriberProfile.getSegments();
+        }
+      } catch (SubscriberProfileServiceException e) {
+        throw new GUIManagerException(e);
+      }
     }
     //build the request to send
     VoucherChange request = new VoucherChange(
@@ -16381,6 +16415,7 @@ public class GUIManager
             (userID != null) ? userID : "1",//for PTT tests, never happens when called by browser
             origin,
             RESTAPIGenericReturnCodes.UNKNOWN,
+            segments,
             tenantID);
 
     // put a listener on the reponse topic
@@ -18748,6 +18783,10 @@ public class GUIManager
                     Map<String, Object> esFields = hit.getSourceAsMap();
                     CommodityDeliveryRequest commodityDeliveryRequest = new CommodityDeliveryRequest(esFields);
                     Map<String, Object> esbdrMap = commodityDeliveryRequest.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, tenantID);
+                    // EVPRO-1249 do not return a pseudo-expiration date (now+1 year) if not set
+                    if (esFields.get("deliverableExpirationDate") == null) {
+                      esbdrMap.put(DeliveryRequest.DELIVERABLEEXPIRATIONDATE, null);
+                    }
                     BDRsJson.add(JSONUtilities.encodeObject(esbdrMap));
                   }
 
@@ -20658,19 +20697,19 @@ public class GUIManager
       {
         communicationChannelObjects = Deployment.getDeployment(tenantID).getCommunicationChannels().values();
       }
-    for (CommunicationChannel communicationChannel : communicationChannelObjects)
+    for (CommunicationChannel staticCommunicationChannel : communicationChannelObjects)
       {
-        JSONObject channel = communicationChannel.generateResponseJSON(fullDetails, now);        
-        
-        CommunicationChannelTimeWindow timeWindow = communicationChannelTimeWindowService.getActiveCommunicationChannelTimeWindow(communicationChannel.getID(), SystemTime.getCurrentTime());
-        
-        if(timeWindow != null) 
+        CommunicationChannel dynamicCommunicationChannel = communicationChannelService.getActiveCommunicationChannel(staticCommunicationChannel.getID(), SystemTime.getCurrentTime());
+        boolean isDefaultChannel = false;
+        if(dynamicCommunicationChannel == null)
           {
-            JSONObject timeWindowJsonRepresentation = timeWindow.getJSONRepresentation(); 
-            timeWindowJsonRepresentation.remove("communicationChannelID");
-            channel.put("notificationDailyWindows", timeWindowJsonRepresentation); 
+            // use the static communicationChannel
+            dynamicCommunicationChannel = staticCommunicationChannel;
+            isDefaultChannel = true;
           }
-        
+
+        JSONObject channel = dynamicCommunicationChannel.generateResponseJSON(fullDetails, now);
+        channel.put("isDefault", isDefaultChannel);
         communicationChannelList.add(channel);
       }
 
@@ -20683,17 +20722,12 @@ public class GUIManager
     HashMap<String,Object> response = new HashMap<String,Object>();
     response.put("responseCode", "ok");
     response.put("communicationChannels", JSONUtilities.encodeArray(communicationChannelList));
-    if(fullDetails) {
-      CommunicationChannelTimeWindow notifWindows = Deployment.getDeployment(tenantID).getDefaultNotificationDailyWindows();
-      if(notifWindows != null)
-        {
-          response.put("defaultNoftificationDailyWindows", notifWindows.getJSONRepresentation());
-        }
-    }
     return JSONUtilities.encodeObject(response);
   }
 
-  /*****************************************
+
+
+  /****************************************
   *
   *  processGetCommunicationChannel
   *
@@ -20723,22 +20757,18 @@ public class GUIManager
     *
     *****************************************/
 
-    CommunicationChannel communicationChannel = Deployment.getDeployment(tenantID).getCommunicationChannels().get(communicationChannelID);
-    JSONObject communicationChannelJSON = communicationChannel.generateResponseJSON(true, SystemTime.getCurrentTime());
-    
-    CommunicationChannelTimeWindow timeWindow = communicationChannelTimeWindowService.getActiveCommunicationChannelTimeWindow(communicationChannelID, SystemTime.getCurrentTime());
-    if(timeWindow == null)
+    CommunicationChannel staticCommunicationChannel = Deployment.getDeployment(tenantID).getCommunicationChannels().get(communicationChannelID);
+
+    CommunicationChannel dynamicCommunicationChannel = communicationChannelService.getActiveCommunicationChannel(communicationChannelID, SystemTime.getCurrentTime());
+    boolean isDefaultChannel = false;
+    if(dynamicCommunicationChannel == null)
       {
-        // use the default timeWindow
-        timeWindow = Deployment.getDeployment(tenantID).getDefaultNotificationDailyWindows();        
+        // use the static communicationChannel
+        dynamicCommunicationChannel = staticCommunicationChannel;
+        isDefaultChannel = true;
       }
-    
-    if(timeWindow != null) 
-      {
-        JSONObject timeWindowJsonRepresentation = timeWindow.getJSONRepresentation(); 
-        timeWindowJsonRepresentation.remove("communicationChannelID");
-        communicationChannelJSON.put("notificationDailyWindows", timeWindowJsonRepresentation); 
-      }
+    JSONObject communicationChannelJSON = dynamicCommunicationChannel.generateResponseJSON(true, SystemTime.getCurrentTime());
+    communicationChannelJSON.put("isDefault", isDefaultChannel);
 
     /*****************************************
     *
@@ -20746,15 +20776,15 @@ public class GUIManager
     *
     *****************************************/
 
-    response.put("responseCode", (communicationChannel != null) ? "ok" : "communicationChannelNotFound");
-    if (communicationChannel != null) response.put("communicationChannel", communicationChannelJSON);
+    response.put("responseCode", (dynamicCommunicationChannel != null) ? "ok" : "communicationChannelNotFound");
+    if (dynamicCommunicationChannel != null) response.put("communicationChannel", communicationChannelJSON);
     return JSONUtilities.encodeObject(response);
   }
   
-    /*****************************************
+  /*****************************************
   *
-  *  processPutCommunicationChannel ==> Deprecated, only for TimeWindow hack
-     * @throws GUIManagerException 
+  *  processPutCommunicationChannel
+  * @throws GUIManagerException 
   *
   *****************************************/
 
@@ -20790,30 +20820,8 @@ public class GUIManager
     long epoch = epochServer.getKey();
     try
       {
-        /*****************************************
-        *
-        *  extract TimeWindow
-        *
-        *****************************************/
-        
-        CommunicationChannelTimeWindow existingCommunicationChannelTimeWindow = communicationChannelTimeWindowService.getActiveCommunicationChannelTimeWindow(communicationChannelID, now);
-        
-        if(jsonRoot.get("notificationDailyWindows") != null) {
-          // let GUIMangedObject This (this is a F$$$ hack)
-          JSONObject json = (JSONObject) jsonRoot.get("notificationDailyWindows");
-          json.put("communicationChannelID", communicationChannelID);
-          json.put("id", "timewindow-" + communicationChannelID);
-          json.put("name", "timewindow-" + communicationChannelID);
-          json.put("display", "timewindow-" + communicationChannelID);
-          json.put("readOnly", false);
-          json.put("internalOnly", false);
-          json.put("active", true);
-          json.put("deleted", false);
-          json.put("userID", jsonRoot.get("userID"));
-          json.put("userName", jsonRoot.get("userName"));
-          json.put("groupID", jsonRoot.get("groupID"));          
-          
-          CommunicationChannelTimeWindow communicationChannelTimeWindow = new CommunicationChannelTimeWindow(json, epoch, existingCommunicationChannelTimeWindow, tenantID);
+          CommunicationChannel existingCommunicationChannel = communicationChannelService.getActiveCommunicationChannel(communicationChannelID, now);
+          CommunicationChannel communicationChannel = new CommunicationChannel(jsonRoot, epoch, existingCommunicationChannel, tenantID);
           
           /*****************************************
           *
@@ -20821,14 +20829,8 @@ public class GUIManager
           *
           *****************************************/
 
-          communicationChannelTimeWindowService.putCommunicationChannelTimeWindow(communicationChannelTimeWindow, (existingCommunicationChannelTimeWindow == null), userID);
-          
-        }else {
-          // delete this time window for the associated channel
-          communicationChannelTimeWindowService.removeCommunicationChannelTimeWindow(communicationChannelID, userID, tenantID);
-        }
+          communicationChannelService.putCommunicationChannel(communicationChannel, (existingCommunicationChannel == null), userID);
         
- 
 
         /*****************************************
         *
@@ -20863,6 +20865,118 @@ public class GUIManager
         response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
         return JSONUtilities.encodeObject(response);
       }
+  }
+
+  private JSONObject processRestoreCommunicationChannel(String userID, JSONObject jsonRoot, int tenantID) throws GUIManagerException
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String responseCode = "";
+    String singleIDresponseCode = "";
+    List<GUIManagedObject> communicationChannels = new ArrayList<>();
+    List<String> validIDs = new ArrayList<>();
+    JSONArray communicationChannelIDs = new JSONArray();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
+    //
+    //remove single communicationChannel
+    //
+    if (jsonRoot.containsKey("id"))
+      {
+        String communicationChannelID = JSONUtilities.decodeString(jsonRoot, "id", false);
+        communicationChannelIDs.add(communicationChannelID);
+        GUIManagedObject communicationChannel = communicationChannelService.getStoredCommunicationChannel(communicationChannelID);
+        if (communicationChannel != null && (force || !communicationChannel.getReadOnly()))
+          singleIDresponseCode = "ok";
+        else if (communicationChannel != null)
+          singleIDresponseCode = "failedReadOnly";
+        else
+          {
+            CommunicationChannel staticCommunicationChannel = Deployment.getDeployment(tenantID).getCommunicationChannels().get(communicationChannelID);
+            if (staticCommunicationChannel == null)
+              singleIDresponseCode = "communicationChannelNotFound";
+            else
+              singleIDresponseCode = "communicationChannelIsDefaultNotFound";
+          }
+      }
+    //
+    // multiple deletion
+    //
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        communicationChannelIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false);
+      }
+    
+    for (int i = 0; i < communicationChannelIDs.size(); i++)
+      {
+        String communicationChannelID = communicationChannelIDs.get(i).toString();
+        GUIManagedObject communicationChannel = communicationChannelService.getStoredCommunicationChannel(communicationChannelID);
+
+        if (communicationChannel != null && (force || !communicationChannel.getReadOnly()))
+          {
+
+            communicationChannels.add(communicationChannel);
+            validIDs.add(communicationChannelID);
+          }
+      }
+        
+
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+    for (int i = 0; i < communicationChannels.size(); i++)
+      {
+        GUIManagedObject communicationChannel = communicationChannels.get(i);
+
+        communicationChannelService.restoreCommunicationChannel(communicationChannel.getGUIManagedObjectID(), userID, tenantID);
+      }
+
+    /*****************************************
+     *
+     * response
+     *
+     *****************************************/
+
+    response.put("restoredCommunicationChannelIDs", JSONUtilities.encodeArray(validIDs));
+
+    /*****************************************
+     *
+     * responseCode
+     *
+     *****************************************/
+    if (jsonRoot.containsKey("id"))
+      {
+        response.put("responseCode", singleIDresponseCode);
+        return JSONUtilities.encodeObject(response);
+      }
+
+    else
+      {
+        response.put("responseCode", "ok");
+      }
+
+    return JSONUtilities.encodeObject(response);
   }
 
   /*****************************************
@@ -23062,68 +23176,6 @@ public class GUIManager
 
   /*****************************************
   *
-  *  processConfigAdaptorCommunicationChannel
-  *
-  *****************************************/
-
-  private JSONObject processConfigAdaptorCommunicationChannel(JSONObject jsonRoot, int tenantID)
-  {
-    /****************************************
-    *
-    *  response
-    *
-    ****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();
-
-    /****************************************
-    *
-    *  argument
-    *
-    ****************************************/
-
-    String communicationChannelID = JSONUtilities.decodeString(jsonRoot, "id", true);
-
-    /*****************************************
-    *
-    *  retrieve and decorate communication channel
-    *
-    *****************************************/
-
-    CommunicationChannel communicationChannel = Deployment.getDeployment(tenantID).getCommunicationChannels().get(communicationChannelID);
-       
-    JSONObject communicationChannelJSON = communicationChannel.generateResponseJSON(true, SystemTime.getCurrentTime());
-    
-    CommunicationChannelTimeWindow timeWindow = communicationChannelTimeWindowService.getActiveCommunicationChannelTimeWindow(communicationChannel.getID(), SystemTime.getCurrentTime());
-    
-    if(timeWindow != null) 
-      {
-        JSONObject timeWindowJsonRepresentation = timeWindow.getJSONRepresentation(); 
-        timeWindowJsonRepresentation.remove("communicationChannelID");
-        communicationChannelJSON.put("notificationDailyWindows", timeWindowJsonRepresentation); 
-      }
-
-    //
-    //  remove gui specific fields
-    //
-    
-    communicationChannelJSON.remove("readOnly");
-    communicationChannelJSON.remove("accepted");
-    communicationChannelJSON.remove("valid");
-    
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    response.put("responseCode", (communicationChannel != null) ? "ok" : "communicationChannelNotFound");
-    if (communicationChannel != null) response.put("communicationChannel", communicationChannelJSON);
-    return JSONUtilities.encodeObject(response);
-  }
-
-  /*****************************************
-  *
   *  processConfigAdaptorBlackoutPeriods
   *
   *****************************************/
@@ -23846,20 +23898,28 @@ public class GUIManager
             }
           if (subscriberToken == null)
             {
-              String str = "No tokens returned";
+              String str = RESTAPIGenericReturnCodes.NO_TOKENS_RETURNED.getGenericResponseCode()+"";  //"No tokens returned";
               log.error(str);
               response.put("responseCode", str);
-              generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.ALLOCATE, str, tenantID);
+              generateTokenChange(subscriberProfile, now, tokenCode, userID, TokenChange.ALLOCATE, str, tenantID);
               return JSONUtilities.encodeObject(response);
             }
+
+          if (subscriberToken.getTokenExpirationDate().before(now)) {
+            String str =  RESTAPIGenericReturnCodes.TOKEN_RESEND_NO_ACTIVE_TOKENS.getGenericResponseCode()+"";//"Token expired";
+            log.error(str);
+            response.put("responseCode", str);
+            generateTokenChange(subscriberProfile, now, tokenCode, userID, TokenChange.REFUSE, str, tenantID);
+            return JSONUtilities.encodeObject(response);
+          }
 
           if (!(subscriberToken instanceof DNBOToken))
             {
               // TODO can this really happen ?
-              String str = "Bad token type";
+              String str = RESTAPIGenericReturnCodes.TOKEN_BAD_TYPE.getGenericResponseCode()+"";   //"Bad token type";
               log.error(str);
               response.put("responseCode", str);
-              generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.ALLOCATE, str, tenantID);
+              generateTokenChange(subscriberProfile, now, tokenCode, userID, TokenChange.ALLOCATE, str, tenantID);
               return JSONUtilities.encodeObject(response);
             }
 
@@ -23867,7 +23927,7 @@ public class GUIManager
           String presentationStrategyID = subscriberStoredToken.getPresentationStrategyID();
           if (presentationStrategyID == null)
             {
-              String str = "Bad strategy : null value";
+              String str = RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericResponseCode()+"";
               log.error(str);
               response.put("responseCode", str);
               return JSONUtilities.encodeObject(response);
@@ -23875,10 +23935,10 @@ public class GUIManager
           PresentationStrategy presentationStrategy = (PresentationStrategy) presentationStrategyService.getStoredPresentationStrategy(presentationStrategyID);
           if (presentationStrategy == null)
             {
-              String str = "Bad strategy : unknown id : "+presentationStrategyID;
+              String str =RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericResponseCode()+"";//+presentationStrategyID;
               log.error(str);
               response.put("responseCode", str);
-              generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.ALLOCATE, str, tenantID);
+              generateTokenChange(subscriberProfile, now, tokenCode, userID, TokenChange.ALLOCATE, str, tenantID);
               return JSONUtilities.encodeObject(response);
             }
 
@@ -23900,7 +23960,7 @@ public class GUIManager
                   supplierService,
                   subscriberGroupEpochReader, tenantID);
               if (list.isEmpty()) {
-                generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.ALLOCATE, "no offers presented", tenantID);
+                generateTokenChange(subscriberProfile, now, tokenCode, userID, TokenChange.ALLOCATE, RESTAPIGenericReturnCodes.NO_OFFER_ALLOCATED.getGenericResponseCode()+"",tenantID);
               }
             }
 
@@ -24004,20 +24064,20 @@ public class GUIManager
             }
           if (subscriberToken == null)
             {
-              String str = "No tokens returned";
+              String str = RESTAPIGenericReturnCodes.NO_TOKENS_RETURNED.getGenericResponseCode()+"";
               log.error(str);
               response.put("responseCode", str);
-              generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.REDEEM, str, tenantID);
+              generateTokenChange(subscriberProfile, now, tokenCode, userID, TokenChange.REDEEM, str, tenantID);
               return JSONUtilities.encodeObject(response);
             }
 
           if (!(subscriberToken instanceof DNBOToken))
             {
               // TODO can this really happen ?
-              String str = "Bad token type";
+              String str = RESTAPIGenericReturnCodes.TOKEN_BAD_TYPE.getGenericResponseCode()+"";
               log.error(str);
               response.put("responseCode", str);
-              generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.REDEEM, str, tenantID);
+              generateTokenChange(subscriberProfile, now, tokenCode, userID, TokenChange.REDEEM, str, tenantID);
               return JSONUtilities.encodeObject(response);
             }
 
@@ -24025,25 +24085,25 @@ public class GUIManager
 
           if (subscriberStoredToken.getTokenStatus() == TokenStatus.Redeemed)
             {
-              String str = "Token already in Redeemed state";
+              String str = RESTAPIGenericReturnCodes.INVALID_TOKEN_CODE.getGenericResponseCode()+"";
               log.error(str);
               response.put("responseCode", str);
-              generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.REDEEM, str, tenantID);
+              generateTokenChange(subscriberProfile, now, tokenCode, userID, TokenChange.REDEEM, str, tenantID);
               return JSONUtilities.encodeObject(response);
             }
 
           if (subscriberStoredToken.getTokenStatus() != TokenStatus.Bound)
             {
-              String str = "No offers allocated for this token";
+              String str =  RESTAPIGenericReturnCodes.NO_OFFER_ALLOCATED.getGenericResponseCode()+"";
               log.error(str);
               response.put("responseCode", str);
-              generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.REDEEM, str, tenantID);
+              generateTokenChange(subscriberProfile, now, tokenCode, userID, TokenChange.REDEEM, str, tenantID);
               return JSONUtilities.encodeObject(response);
             }
 
           // Check that offer has been presented to customer
 
-          List<String> offers = subscriberStoredToken.getPresentedOfferIDs();
+          List<String> offers = subscriberStoredToken.getProposedOfferDetails().stream().map(offerDetails -> offerDetails.getOfferId()).collect(Collectors.toList());
           int position = 0;
           boolean found = false;
           for (String offID : offers)
@@ -24057,10 +24117,10 @@ public class GUIManager
             }
           if (!found)
             {
-              String str = "Offer has not been presented";
+              String str = RESTAPIGenericReturnCodes.NO_OFFERS_RETURNED.getGenericResponseCode()+"";
               log.error(str);
               response.put("responseCode", str);
-              generateTokenChange(subscriberID, now, tokenCode, userID, TokenChange.REDEEM, str, tenantID);
+              generateTokenChange(subscriberProfile, now, tokenCode, userID, TokenChange.REDEEM, str, tenantID);
               return JSONUtilities.encodeObject(response);
             }
           String salesChannelID = subscriberStoredToken.getPresentedOffersSalesChannel();
@@ -24106,12 +24166,17 @@ public class GUIManager
           ));
 
           TokenChange redeemResponse = handleWaitingResponse(tokenChangeWaitingResponse);
-          if(redeemResponse!=null && redeemResponse.getReturnStatus().equals(TokenChange.OK)){
+          if(redeemResponse!=null && redeemResponse.getReturnStatus().equals(RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode()+"")){
             handlePurchaseResponse(purchaseWaitingResponse);
             response.put("responseCode", "ok");
 		  }else{
           	purchaseWaitingResponse.cancel(true);
-            if(redeemResponse!=null) response.put("responseMessage", redeemResponse.getReturnStatus());
+            if(redeemResponse!=null && redeemResponse.getReturnStatus().equals(RESTAPIGenericReturnCodes.INSUFFICIENT_BALANCE.getGenericResponseCode()+"")){
+              handlePurchaseResponse(purchaseWaitingResponse);
+            }
+            else
+            response.put("responseMessage", redeemResponse.getReturnStatus());
+            
             response.put("responseCode", "ko");
             return JSONUtilities.encodeObject(response);
 		  }
@@ -28979,16 +29044,16 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
   *
   *****************************************/
 
-  private void generateTokenChange(String subscriberID, Date now, String tokenCode, String userID, String action, String str, int tenantID)
+  private void generateTokenChange(SubscriberProfile subscriberProfile, Date now, String tokenCode, String userID, String action, String str, int tenantID)
   {
     if (tokenCode != null) {
       String topic = Deployment.getTokenChangeTopic();
       Serializer<StringKey> keySerializer = StringKey.serde().serializer();
       Serializer<TokenChange> valueSerializer = TokenChange.serde().serializer();
-      TokenChange tokenChange = new TokenChange(subscriberID, now, "event from ".concat(Module.Customer_Care.toString()), tokenCode, action, str, "CC", Module.Customer_Care, userID, tenantID);
+      TokenChange tokenChange = new TokenChange(subscriberProfile, now, "event from ".concat(Module.Customer_Care.toString()), tokenCode, action, str, "CC", Module.Customer_Care.getExternalRepresentation(), userID, tenantID);
       kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
           topic,
-          keySerializer.serialize(topic, new StringKey(subscriberID)),
+          keySerializer.serialize(topic, new StringKey(subscriberProfile.getSubscriberID())),
           valueSerializer.serialize(topic, tokenChange)
           ));
     }
@@ -30824,7 +30889,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
             String topic = Deployment.getNotificationEventTopic();
             Serializer<StringKey> keySerializer = StringKey.serde().serializer();
             Serializer<NotificationEvent> valueSerializer = NotificationEvent.serde().serializer();
-            NotificationEvent notificationEvent = new NotificationEvent(subscriberID, now, "eventID", templateID, tagValue, communicationChannelID, contactType, source, featureID, moduleID); 
+            NotificationEvent notificationEvent = new NotificationEvent(subscriberID, now, "eventID", templateID, tagValue, communicationChannelID, contactType, "CC", source, featureID, moduleID); 
             
             kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
                 topic,

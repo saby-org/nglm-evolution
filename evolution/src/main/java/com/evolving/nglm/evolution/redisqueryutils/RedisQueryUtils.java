@@ -12,8 +12,11 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
+import org.json.simple.JSONObject;
+
 import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.Deployment;
+import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.Pair;
 import com.evolving.nglm.core.ReferenceDataReader;
@@ -21,6 +24,7 @@ import com.evolving.nglm.core.SubscriberIDService;
 import com.evolving.nglm.core.SubscriberManager;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.CriterionField;
+import com.evolving.nglm.evolution.RESTAPIGenericReturnCodes;
 import com.evolving.nglm.evolution.SubscriberEvaluationRequest;
 import com.evolving.nglm.evolution.SubscriberGroupEpoch;
 import com.evolving.nglm.evolution.SubscriberProfile;
@@ -39,11 +43,11 @@ public class RedisQueryUtils
   *
   *****************************************/
 
-  private static JedisSentinelPool jedisSentinelPool = null;
-  private static String redisInstance = "subscriberids";
-  private static Set<String> redisSentinels;
-  private static SubscriberIDService subscriberIDService = null;
-  private static SubscriberProfileService subscriberProfileService = null;
+//  private static JedisSentinelPool jedisSentinelPool = null;
+//  private static String redisInstance = "subscriberids";
+//  private static Set<String> redisSentinels;
+//  private static SubscriberIDService subscriberIDService = null;
+//  private static SubscriberProfileService subscriberProfileService = null;
 
   /*****************************************
   *
@@ -51,72 +55,72 @@ public class RedisQueryUtils
   *
   *****************************************/
 
-  public static void main(String[] args) throws Exception
-  {
-    String alternateIDName = args[0];
-    String alternateIDValue = args[1];
-   
-    subscriberProfileService = new EngineSubscriberProfileService(Deployment.getSubscriberProfileEndpoints(), 10);
-    subscriberProfileService.start();
-    
-    String zk = System.getProperty("zookeeper.connect");
-
-    subscriberIDService = new SubscriberIDService(Deployment.getRedisSentinels(), "AssignSubscriberIDsFileSourceConnector-Connector");
-    
-    NGLMRuntime.initialize(true);
-    
-    // retrieve the subscriber profile
-    Pair<String, Integer> pair = subscriberIDService.getSubscriberIDAndTenantID(alternateIDName, alternateIDValue);
-    if(pair == null)
-      {
-        System.out.println("Can't find subscriberID " + alternateIDValue + " through " + alternateIDName);
-        return;
-      }
-    
-    String subscriberID = pair.getFirstElement();
-    SubscriberProfile profile = subscriberProfileService.getSubscriberProfile(subscriberID);
-    
-    if(profile == null)
-      {
-        System.out.println("Can't retrieve profile " + subscriberID);
-      }
-    
-    Map<String, String> profileAlternateIDs = buildAlternateIDs(profile, profile.getTenantID());
-    profileAlternateIDs.put("subscriberID", subscriberID);
-    profileAlternateIDs.put("tenantID", ""+pair.getSecondElement());
-   
-    for(Map.Entry<String, String> entry : profileAlternateIDs.entrySet())
-      {
-        System.out.println(entry.getKey() + " : " + entry.getValue());
-      }
-    
-//    /*****************************************
-//    *
-//    *  initialize jedis client
-//    *
-//    *****************************************/
+//  public static void main(String[] args) throws Exception
+//  {
+//    String alternateIDName = args[0];
+//    String alternateIDValue = args[1];
+//   
+//    subscriberProfileService = new EngineSubscriberProfileService(Deployment.getSubscriberProfileEndpoints(), 10);
+//    subscriberProfileService.start();
+//    
+//    String zk = System.getProperty("zookeeper.connect");
 //
-//    JedisPoolConfig jedisPoolConfig = new JedisPoolConfig();
-//    jedisPoolConfig.setTestOnBorrow(true);
-//    jedisPoolConfig.setTestOnReturn(false);
-//    jedisPoolConfig.setMaxTotal(2);
-//    jedisPoolConfig.setJmxNamePrefix("SimpleRedisSinkConnector");
-//    jedisPoolConfig.setJmxNameBase("AA");
+//    subscriberIDService = new SubscriberIDService(Deployment.getRedisSentinels(), "AssignSubscriberIDsFileSourceConnector-Connector");
 //    
-//    redisSentinels = new HashSet<String>();
-//    redisSentinels.add(args[0]);
+//    NGLMRuntime.initialize(true);
 //    
-//    String password = System.getProperty("redis.password");
-//    if(password != null && !password.trim().equals("") && !password.trim().equals("none")) {
-//      System.out.println("SimpleRedisSinkConnector() Use Redis Password " + password);
-//      jedisSentinelPool = new JedisSentinelPool(redisInstance, redisSentinels, jedisPoolConfig, Protocol.DEFAULT_TIMEOUT, Protocol.DEFAULT_TIMEOUT, null, password, 0, null,
-//          Protocol.DEFAULT_TIMEOUT, Protocol.DEFAULT_TIMEOUT, null, password, null);        
-//    }
-//    else {
-//      System.out.println("SimpleRedisSinkConnector() No Redis Password");
-//      jedisSentinelPool = new JedisSentinelPool(redisInstance, redisSentinels, jedisPoolConfig);
-//    }  
-  }
+//    // retrieve the subscriber profile
+//    Pair<String, Integer> pair = subscriberIDService.getSubscriberIDAndTenantID(alternateIDName, alternateIDValue);
+//    if(pair == null)
+//      {
+//        System.out.println("Can't find subscriberID " + alternateIDValue + " through " + alternateIDName);
+//        return;
+//      }
+//    
+//    String subscriberID = pair.getFirstElement();
+//    SubscriberProfile profile = subscriberProfileService.getSubscriberProfile(subscriberID);
+//    
+//    if(profile == null)
+//      {
+//        System.out.println("Can't retrieve profile " + subscriberID);
+//      }
+//    
+//    Map<String, String> profileAlternateIDs = buildAlternateIDs(profile, profile.getTenantID());
+//    profileAlternateIDs.put("subscriberID", subscriberID);
+//    profileAlternateIDs.put("tenantID", ""+pair.getSecondElement());
+//   
+//    for(Map.Entry<String, String> entry : profileAlternateIDs.entrySet())
+//      {
+//        System.out.println(entry.getKey() + " : " + entry.getValue());
+//      }
+//    
+////    /*****************************************
+////    *
+////    *  initialize jedis client
+////    *
+////    *****************************************/
+////
+////    JedisPoolConfig jedisPoolConfig = new JedisPoolConfig();
+////    jedisPoolConfig.setTestOnBorrow(true);
+////    jedisPoolConfig.setTestOnReturn(false);
+////    jedisPoolConfig.setMaxTotal(2);
+////    jedisPoolConfig.setJmxNamePrefix("SimpleRedisSinkConnector");
+////    jedisPoolConfig.setJmxNameBase("AA");
+////    
+////    redisSentinels = new HashSet<String>();
+////    redisSentinels.add(args[0]);
+////    
+////    String password = System.getProperty("redis.password");
+////    if(password != null && !password.trim().equals("") && !password.trim().equals("none")) {
+////      System.out.println("SimpleRedisSinkConnector() Use Redis Password " + password);
+////      jedisSentinelPool = new JedisSentinelPool(redisInstance, redisSentinels, jedisPoolConfig, Protocol.DEFAULT_TIMEOUT, Protocol.DEFAULT_TIMEOUT, null, password, 0, null,
+////          Protocol.DEFAULT_TIMEOUT, Protocol.DEFAULT_TIMEOUT, null, password, null);        
+////    }
+////    else {
+////      System.out.println("SimpleRedisSinkConnector() No Redis Password");
+////      jedisSentinelPool = new JedisSentinelPool(redisInstance, redisSentinels, jedisPoolConfig);
+////    }  
+//  }
   
   private static Map<String,String> buildAlternateIDs(SubscriberProfile subscriberProfile, int tenantID) {
     ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("redisQueryUtils-subscribergroupepoch", Deployment.getBrokerServers(), Deployment.getSubscriberGroupEpochTopic(), SubscriberGroupEpoch::unpack);
@@ -136,6 +140,67 @@ public class RedisQueryUtils
       alternateIDs.put(entry.getKey(), criterionFieldValue);
     }
     return alternateIDs;
+  }
+
+  public static JSONObject processGetRedisSubscriberIDAndAlternateIDs(String userID, JSONObject jsonRoot, SubscriberIDService subscriberIDService, SubscriberProfileService subscriberProfileService, Integer tenantID)
+  {    
+    Map<String, Object> response = new LinkedHashMap<String, Object>();
+    
+    String alternateIDName = JSONUtilities.decodeString(jsonRoot, "alternateIDName", true);
+    String alternateIDValue = JSONUtilities.decodeString(jsonRoot, "alternateIDValue", true);
+    
+    // retrieve the subscriber profile
+    
+    Pair<String, Integer> pair = null;
+    
+    try
+    {
+      pair = subscriberIDService.getSubscriberIDAndTenantID(alternateIDName, alternateIDValue);
+    }
+    catch(Exception e)
+    {
+      response.put("responseCode", RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
+      response.put("responseMessage", "Exception " + e.getClass().getName() + " " + e.getMessage());
+      return JSONUtilities.encodeObject(response);
+    }
+    if(pair == null)
+      {
+        response.put("responseCode", RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
+        response.put("responseMessage", "No Subscriber in Redis for " + alternateIDName + " and " + alternateIDValue);
+        return JSONUtilities.encodeObject(response);
+      }
+    
+    String subscriberID = pair.getFirstElement();
+    SubscriberProfile profile = null;
+    try
+    {
+      profile = subscriberProfileService.getSubscriberProfile(subscriberID);
+    }
+    catch(Exception e)
+    {
+      response.put("responseCode", RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
+      response.put("responseMessage", "Exception while getting Subscriber Profile for Subscriber ID from Redis " + subscriberID + " from " + alternateIDName + " and " + alternateIDValue + " " + e.getClass().getName() + " " + e.getMessage());
+      return JSONUtilities.encodeObject(response);
+    }
+    
+    if(profile == null)
+      {
+        response.put("responseCode", RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode());
+        response.put("responseMessage", "Could not get Subscriber Profile for Subscriber ID from Redis " + subscriberID + " from " + alternateIDName + " and " + alternateIDValue);
+        return JSONUtilities.encodeObject(response);
+      }
+    
+    Map<String, String> profileAlternateIDs = buildAlternateIDs(profile, profile.getTenantID());
+    profileAlternateIDs.put("subscriberID", subscriberID);
+    profileAlternateIDs.put("tenantID", ""+pair.getSecondElement());
+   
+    response.put("subscriberID", subscriberID);
+    response.put("alternateIDs", profileAlternateIDs);
+    response.put("responseCode", RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
+    response.put("responseMessage", RESTAPIGenericReturnCodes.SUCCESS.getGenericDescription());
+
+    return JSONUtilities.encodeObject(response);
+
   }
 
 }

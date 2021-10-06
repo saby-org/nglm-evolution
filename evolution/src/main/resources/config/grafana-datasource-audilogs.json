@@ -15,7 +15,7 @@
         "basicAuthPassword": "<_ELASTICSEARCH_ADMIN_PASSWORD_>"
       },
       "jsonData": {
-        "timeField": "timestamp",
+        "timeField": "@timestamp",
         "esVersion": 70
       }
     }

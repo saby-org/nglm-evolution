@@ -6,10 +6,13 @@
 
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionOperator;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
+import com.evolving.nglm.evolution.Expression.ConstantExpression;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.OfferCharacteristics.OfferCharacteristicsLanguageProperty;
 import com.evolving.nglm.evolution.OfferCharacteristics.OfferCharacteristicsProperty;
 import com.evolving.nglm.evolution.StockMonitor.StockableItem;
@@ -27,6 +30,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.kafka.connect.data.Field;
@@ -42,7 +47,7 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.JSONUtilities;
 
-@GUIDependencyDef(objectType = "offer", serviceClass = OfferService.class, dependencies = { "product" , "voucher", "saleschannel" , "offerobjective", "target"})
+@GUIDependencyDef(objectType = "offer", serviceClass = OfferService.class, dependencies = { "offer", "product" , "voucher", "saleschannel" , "offerobjective", "target", "catalogcharacteristic", "loyaltyProgramPoints", "loyaltyprogramchallenge", "loyaltyprogrammission"})
 public class Offer extends GUIManagedObject implements StockableItem
 {  
   //
@@ -926,7 +931,7 @@ public class Offer extends GUIManagedObject implements StockableItem
    * 
    *******************************/
   
-  @Override public Map<String, List<String>> getGUIDependencies(int tenantID)
+  @Override public Map<String, List<String>> getGUIDependencies(List<GUIService> guiServiceList, int tenantID)
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
     List<String> productIDs = getOfferProducts().stream().map(product -> product.getProductID()).collect(Collectors.toList());
@@ -934,36 +939,68 @@ public class Offer extends GUIManagedObject implements StockableItem
     List<String> saleschannelIDs = new ArrayList<String>();
     List<String> offerObjectiveIDs = getOfferObjectives().stream().map(offerObjective -> offerObjective.getOfferObjectiveID()).collect(Collectors.toList());
     List<String> targetIDs = new ArrayList<String>();
-     
+    List<String> offerCharacteristicsLanguagePropertyIDs = new ArrayList<String>();
+    List<String> offerIDs = new ArrayList<String>();
+    List<String> loyaltyProgramPointsIDs = new ArrayList<String>();
+    List<String> loyaltyprogramchallengeIDs = new ArrayList<String>();
+    List<String> loyaltyprogrammissionIDs = new ArrayList<String>();
+
     for (OfferSalesChannelsAndPrice offerSalesChannelsAndPrice : getOfferSalesChannelsAndPrices())
       {
         saleschannelIDs.addAll(offerSalesChannelsAndPrice.getSalesChannelIDs());
       }
-  
-	 List<EvaluationCriterion> internalTargets=getProfileCriteria();
-		for (EvaluationCriterion internalTarget : internalTargets) {
-			if (internalTarget != null && internalTarget.getCriterionField() != null
-					&& internalTarget.getCriterionField().getESField() != null
-					&& internalTarget.getCriterionField().getESField().equals("internal.targets")) {
-				if (internalTarget.getCriterionOperator() == CriterionOperator.ContainsOperator
-						|| internalTarget.getCriterionOperator() == CriterionOperator.DoesNotContainOperator)
-					targetIDs.add(internalTarget.getArgumentExpression().replace("'", ""));
-				else if (internalTarget.getCriterionOperator() == CriterionOperator.NonEmptyIntersectionOperator
-						|| internalTarget.getCriterionOperator() == CriterionOperator.EmptyIntersectionOperator)
-					targetIDs.addAll(Arrays.asList(internalTarget.getArgumentExpression().replace("[", "")
-							.replace("]", "").replace("'", "").split(",")));
 
-			}
-		}
+    List<EvaluationCriterion> profileCriterias = getProfileCriteria();
+    offerIDs.addAll(getSubcriteriaFieldArgumentValues(profileCriterias, "offer.id"));
+    offerIDs = offerIDs.stream().filter(ofrID -> !ofrID.equals(getGUIManagedObjectID())).collect(Collectors.toList()); // cycle
     
-	result.put("target", targetIDs);
+    voucherIDs.addAll(getSubcriteriaFieldArgumentValues(profileCriterias, "voucher.id"));
+    
+    for (EvaluationCriterion profileCrt : profileCriterias)
+      {
+        String loyaltyProgramPointsID = getGUIManagedObjectIDFromDynamicCriterion(profileCrt, "loyaltyprogrampoints", guiServiceList);
+        String loyaltyprogramchallengeID = getGUIManagedObjectIDFromDynamicCriterion(profileCrt, "loyaltyprogramchallenge", guiServiceList);
+        String loyaltyprogrammissionID = getGUIManagedObjectIDFromDynamicCriterion(profileCrt, "loyaltyprogrammission", guiServiceList);
+        
+        if (loyaltyProgramPointsID != null) loyaltyProgramPointsIDs.add(loyaltyProgramPointsID);
+        if (loyaltyprogramchallengeID != null) loyaltyprogramchallengeIDs.add(loyaltyprogramchallengeID);
+        if (loyaltyprogrammissionID != null) loyaltyprogrammissionIDs.add(loyaltyprogrammissionID);
+        
+        if (profileCrt != null && profileCrt.getCriterionField() != null && profileCrt.getCriterionField().getESField() != null && profileCrt.getCriterionField().getESField().equals("internal.targets"))
+          {
+            if (profileCrt.getCriterionOperator() == CriterionOperator.ContainsOperator || profileCrt.getCriterionOperator() == CriterionOperator.DoesNotContainOperator)
+              targetIDs.add(profileCrt.getArgumentExpression().replace("'", ""));
+            else if (profileCrt.getCriterionOperator() == CriterionOperator.NonEmptyIntersectionOperator || profileCrt.getCriterionOperator() == CriterionOperator.EmptyIntersectionOperator)
+              targetIDs.addAll(Arrays.asList(profileCrt.getArgumentExpression().replace("[", "").replace("]", "").replace("'", "").split(",")));
+
+          }
+      }
+    
+    if (getOfferCharacteristics() != null && getOfferCharacteristics().getOfferCharacteristicProperties() != null && !getOfferCharacteristics().getOfferCharacteristicProperties().isEmpty())
+      {
+        for (OfferCharacteristicsLanguageProperty offerCharacteristicsLanguageProperty : getOfferCharacteristics().getOfferCharacteristicProperties())
+          {
+            if (offerCharacteristicsLanguageProperty.getProperties() != null && !offerCharacteristicsLanguageProperty.getProperties().isEmpty())
+              {
+                for (OfferCharacteristicsProperty characteristicsProperty : offerCharacteristicsLanguageProperty.getProperties())
+                  {
+                    offerCharacteristicsLanguagePropertyIDs.add(characteristicsProperty.getCatalogCharacteristicID());
+                  }
+              }
+          }
+      }
+
+    result.put("offer", offerIDs);
+    result.put("target", targetIDs);
     result.put("product", productIDs);
     result.put("voucher", voucherIDs);
     result.put("saleschannel", saleschannelIDs);
     result.put("offerobjective", offerObjectiveIDs);
-   // result.put("CatalogCharacteristic", getCatalogCharacteristics());
-    
-    
+    result.put("catalogcharacteristic", offerCharacteristicsLanguagePropertyIDs);
+    result.put("loyaltyprogrampoints", loyaltyProgramPointsIDs);
+    result.put("loyaltyprogramchallenge", loyaltyprogramchallengeIDs);
+    result.put("loyaltyprogrammission", loyaltyprogrammissionIDs);
+
     return result;
   }
   
@@ -1020,6 +1057,90 @@ public class Offer extends GUIManagedObject implements StockableItem
               }
           }
       }
+    return result;
+  }
+  
+  public List<String> getSubcriteriaFieldArgumentValues(List<EvaluationCriterion> allCriterions, String fieldID)
+  {
+    List<String> result = new ArrayList<String>();
+    if (allCriterions != null && !allCriterions.isEmpty())
+      {
+        for (EvaluationCriterion criterion : allCriterions)
+          {
+            if (criterion.getSubcriteriaExpressions() != null && !criterion.getSubcriteriaExpressions().isEmpty())
+              {
+                for (String field : criterion.getSubcriteriaExpressions().keySet())
+                  {
+                    if (field.equals(fieldID))
+                      {
+                        Expression expression = criterion.getSubcriteriaExpressions().get(field);
+                        if (expression != null && expression instanceof ConstantExpression)
+                          {
+                            ConstantExpression consExpression = (ConstantExpression) expression;
+                            String fieldIDArgVal  = (String) consExpression.evaluateConstant();
+                            result.add(fieldIDArgVal);
+                          }
+                      }
+                  }
+              }
+          }
+      }
+    return result;
+  }
+  
+  private String getGUIManagedObjectIDFromDynamicCriterion(EvaluationCriterion criteria, String objectType, List<GUIService> guiServiceList)
+  {
+    String result = null;
+    switch (objectType.toLowerCase())
+    {
+      case "loyaltyprogrampoints":
+        Pattern fieldNamePattern = Pattern.compile("^loyaltyprogram\\.([^.]+)\\.(.+)$");
+        Matcher fieldNameMatcher = fieldNamePattern.matcher(criteria.getCriterionField().getID());
+        if (fieldNameMatcher.find())
+          {
+            String loyaltyProgramID = fieldNameMatcher.group(1);
+            LoyaltyProgramService loyaltyProgramService = (LoyaltyProgramService) guiServiceList.stream().filter(srvc -> srvc.getClass() == LoyaltyProgramService.class).findFirst().orElse(null);
+            if (loyaltyProgramService != null)
+              {
+                GUIManagedObject uncheckedLoyalty = loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID);
+                if (uncheckedLoyalty !=  null && uncheckedLoyalty.getAccepted() && ((LoyaltyProgram) uncheckedLoyalty).getLoyaltyProgramType() == LoyaltyProgramType.POINTS) result = uncheckedLoyalty.getGUIManagedObjectID();
+              }
+          }
+        break;
+        
+      case "loyaltyprogramchallenge":
+        fieldNamePattern = Pattern.compile("^loyaltyprogram\\.([^.]+)\\.(.+)$");
+        fieldNameMatcher = fieldNamePattern.matcher(criteria.getCriterionField().getID());
+        if (fieldNameMatcher.find())
+          {
+            String loyaltyProgramID = fieldNameMatcher.group(1);
+            LoyaltyProgramService loyaltyProgramService = (LoyaltyProgramService) guiServiceList.stream().filter(srvc -> srvc.getClass() == LoyaltyProgramService.class).findFirst().orElse(null);
+            if (loyaltyProgramService != null)
+              {
+                GUIManagedObject uncheckedLoyalty = loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID);
+                if (uncheckedLoyalty !=  null && uncheckedLoyalty.getAccepted() && ((LoyaltyProgram) uncheckedLoyalty).getLoyaltyProgramType() == LoyaltyProgramType.CHALLENGE) result = uncheckedLoyalty.getGUIManagedObjectID();
+              }
+          }
+        break;
+        
+      case "loyaltyprogrammission":
+        fieldNamePattern = Pattern.compile("^loyaltyprogram\\.([^.]+)\\.(.+)$");
+        fieldNameMatcher = fieldNamePattern.matcher(criteria.getCriterionField().getID());
+        if (fieldNameMatcher.find())
+          {
+            String loyaltyProgramID = fieldNameMatcher.group(1);
+            LoyaltyProgramService loyaltyProgramService = (LoyaltyProgramService) guiServiceList.stream().filter(srvc -> srvc.getClass() == LoyaltyProgramService.class).findFirst().orElse(null);
+            if (loyaltyProgramService != null)
+              {
+                GUIManagedObject uncheckedLoyalty = loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID);
+                if (uncheckedLoyalty !=  null && uncheckedLoyalty.getAccepted() && ((LoyaltyProgram) uncheckedLoyalty).getLoyaltyProgramType() == LoyaltyProgramType.MISSION) result = uncheckedLoyalty.getGUIManagedObjectID();
+              }
+          }
+        break;
+
+      default:
+        break;
+    }
     return result;
   }
 }

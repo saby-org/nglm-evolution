@@ -47,7 +47,7 @@ public abstract class ESObjectList<T>
   {
     this.mappingEsIndex = mappingEsIndex;
     this.mapping = Collections.emptyMap();
-    this.warnings = Collections.emptySet();
+    this.warnings = new HashSet<>();
   }
 
   /*****************************************

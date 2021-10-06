@@ -6,8 +6,10 @@
 
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.DeploymentCommon;
 import com.evolving.nglm.core.RLMDateUtils;
+import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
@@ -19,10 +21,13 @@ import org.apache.kafka.connect.sink.SinkRecord;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 public class VDRSinkConnector extends SimpleESSinkConnector
 {
-  
+  private static SegmentationDimensionService segmentationDimensionService;
+  private static ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
+
   /****************************************
   *
   *  taskClass
@@ -45,6 +50,53 @@ public class VDRSinkConnector extends SimpleESSinkConnector
     public static final String ES_FIELD_SUBSCRIBER_ID = "subscriberID";
     public static final String ES_FIELD_VOUCHER_CODE = "voucherCode";
     
+
+    /*****************************************
+    *
+    *  start
+    *
+    *****************************************/
+
+    @Override public void start(Map<String, String> taskConfig)
+    {
+      //
+      //  super
+      //
+
+      super.start(taskConfig);
+    
+      //
+      //  services
+      //
+
+      subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("vdrsinkconnector-subscriberGroupEpoch", Deployment.getBrokerServers(), Deployment.getSubscriberGroupEpochTopic(), SubscriberGroupEpoch::unpack);
+   
+      segmentationDimensionService = new SegmentationDimensionService(Deployment.getBrokerServers(), "vdrsinkconnector-segmentationDimensionservice-" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getSegmentationDimensionTopic(), false);
+      segmentationDimensionService.start();
+    }
+
+    /*****************************************
+    *
+    *  stop
+    *
+    *****************************************/
+
+    @Override public void stop()
+    {
+      //
+      //  services
+      //
+
+      segmentationDimensionService.stop();
+      
+      //
+      //  super
+      //
+
+      super.stop();
+    }
+
+
     @Override public VoucherChange unpackRecord(SinkRecord sinkRecord) 
     {
       Object voucherChangeValue = sinkRecord.value();
@@ -77,7 +129,8 @@ public class VDRSinkConnector extends SimpleESSinkConnector
       documentMap.put("moduleID", voucherChange.getModuleID());
       documentMap.put("featureID", voucherChange.getFeatureID()); 
       documentMap.put("expiryDate", RLMDateUtils.formatDateForElasticsearchDefault(voucherChange.getNewVoucherExpiryDate())); 
-      
+      documentMap.put("stratum", voucherChange.getStatisticsSegmentsMap(subscriberGroupEpochReader, segmentationDimensionService));
+
       return documentMap;
     }
   }
