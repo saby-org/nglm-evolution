@@ -137,7 +137,7 @@ public abstract class DeliveryManager
   //
 
   private volatile ManagerStatus managerStatus = ManagerStatus.Created;
-  private Date lastSubmitDate = NGLMRuntime.BEGINNING_OF_TIME;
+  private Date nextSubmitDate = NGLMRuntime.BEGINNING_OF_TIME;
 
   //
   //  serdes
@@ -205,7 +205,11 @@ public abstract class DeliveryManager
   *
   *****************************************/
 
-  protected DeliveryRequest nextRequest()
+  protected DeliveryRequest nextRequest(){
+    return nextRequest(1);
+  }
+
+  protected DeliveryRequest nextRequest(int lastSentCount)
   {
     DeliveryRequest result = null;
     while (result == null)
@@ -213,6 +217,9 @@ public abstract class DeliveryManager
         try
           {
             result = submitRequestQueue.take();
+
+            throttle(lastSentCount);
+
             if(Deployment.getDeployment(result.getTenantID()).getEnableContactPolicyProcessing())
               {
                 //if DeliveryStatus is BlockedByContactPolicy make result null and the next request from queue will be taken
@@ -224,6 +231,37 @@ public abstract class DeliveryManager
           }
       }
     return (result != null) ? result.copy() : null;
+  }
+
+  private synchronized void throttle(int lastSentCount) 
+  {
+    /****************************************
+    *
+    *  throttle
+    *
+    ****************************************/
+
+    //
+    //  wait
+    //
+
+    NGLMRuntime.registerSystemTimeDependency(this);
+    while (SystemTime.getCurrentTime().before(nextSubmitDate))
+      {
+        try
+          {
+            //guard just in case systemTime advances faster than threads release lock
+            long timeToSleep = nextSubmitDate.getTime() - SystemTime.getCurrentTime().getTime();
+            if(timeToSleep > 0)
+            {
+              this.wait(timeToSleep);
+            }
+          }
+        catch (InterruptedException e)
+          {
+          }
+      }
+    nextSubmitDate = RLMDateUtils.addMilliseconds(SystemTime.getCurrentTime(), millisecondsPerDelivery * lastSentCount);
   }
 
   /*****************************************
@@ -605,35 +643,6 @@ public abstract class DeliveryManager
           }
 
       }
-
-    /****************************************
-    *
-    *  throttle
-    *
-    ****************************************/
-
-    //
-    //  wait
-    //
-
-    NGLMRuntime.registerSystemTimeDependency(this);
-    Date now = SystemTime.getCurrentTime();
-    Date nextSubmitDate = RLMDateUtils.addMilliseconds(lastSubmitDate, millisecondsPerDelivery);
-    while (now.before(nextSubmitDate))
-      {
-        synchronized (this)
-          {
-            try
-              {
-                this.wait(nextSubmitDate.getTime() - now.getTime());
-              }
-            catch (InterruptedException e)
-              {
-              }
-          }
-        now = SystemTime.getCurrentTime();
-      }
-    lastSubmitDate = now;
 
     /*****************************************
     *
@@ -1415,6 +1424,6 @@ public abstract class DeliveryManager
     try { Thread.sleep(4000); } catch (InterruptedException e) { log.warn("DeliveryManager.shutdownDeliveryManager() : issue while peacefully sleeping",e); }
     kafkaProducer.close();// finally close it
 
-	log.info("DeliveryManager.shutdownDeliveryManager() : stopped "+applicationID);
+	  log.info("DeliveryManager.shutdownDeliveryManager() : stopped "+applicationID);
   }
 }

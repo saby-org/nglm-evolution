@@ -122,7 +122,7 @@ public enum RESTAPIGenericReturnCodes
 //  RESET_YOUR_PASSWORD(999,"RESET_YOUR_PASSWORD","Reset Your Password"),
   NO_MESSAGE_TEMPLATE_FOR_AREA_AVAILABILITY(800, "NO_MESSAGE_TEMPLATE_FOR_AREA_AVAILABILITY", "no message template has been found for requested area availability"),
   UNKNOWN(-1, "UNKNOWN", "UNKNOWN");
-  
+
   private int genericResponseCode;
   private String genericResponseMessage;
   private String genericDescription;

@@ -220,12 +220,12 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
   *
   *****************************************/
   
-  public LoyaltyProgramLevelChange update(long loyaltyProgramEpoch, LoyaltyProgramOperation operation, String loyaltyProgramName, String toLevel, Date enrollmentDate, String deliveryRequestID, LoyaltyProgramService loyaltyProgramService)
+  public LoyaltyProgramLevelChange update(long loyaltyProgramEpoch, LoyaltyProgramOperation operation, String loyaltyProgramName, String toLevel, Date enrollmentDate, String deliveryRequestID, LoyaltyProgramService loyaltyProgramService, SubscriberProfile subscriberProfile)
   {
-    return update(loyaltyProgramEpoch, operation, loyaltyProgramName, toLevel, enrollmentDate, deliveryRequestID, loyaltyProgramService, false, null);
+    return update(loyaltyProgramEpoch, operation, loyaltyProgramName, toLevel, enrollmentDate, deliveryRequestID, loyaltyProgramService, false, null, subscriberProfile);
   }
 
-  public LoyaltyProgramLevelChange update(long loyaltyProgramEpoch, LoyaltyProgramOperation operation, String loyaltyProgramName, String toLevel, Date enrollmentDate, String deliveryRequestID, LoyaltyProgramService loyaltyProgramService, boolean isPeriodChange, Integer previousScore)
+  public LoyaltyProgramLevelChange update(long loyaltyProgramEpoch, LoyaltyProgramOperation operation, String loyaltyProgramName, String toLevel, Date enrollmentDate, String deliveryRequestID, LoyaltyProgramService loyaltyProgramService, boolean isPeriodChange, Integer previousScore, SubscriberProfile subscriberProfile)
   {
     Date now = SystemTime.getCurrentTime();
     LevelHistory lastLevelEntered = null;
@@ -338,6 +338,10 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
         this.previousLevelName = fromLevel;
         this.levelName = null;
         this.levelEnrollmentDate = enrollmentDate;
+        // update scoreBalance : currentScore -> 0
+        if (loyaltyProgramChallengeHistory != null) {
+          updateScoreBalance(subscriberProfile, -this.currentScore, loyaltyProgramChallengeHistory.getLoyaltyProgramID(), now);
+        }
         this.currentScore = 0;
 
         //
@@ -361,6 +365,16 @@ public class LoyaltyProgramChallengeState extends LoyaltyProgramState
       default:
         break;
     }
+    
     return loyaltyProgramLevelChange;
   }
+  
+  public static void updateScoreBalance(SubscriberProfile subscriberProfile, int deltaScore, String loyaltyProgramID, Date now) {
+    MetricHistory scoreBalance = subscriberProfile.getScoreBalances().get(loyaltyProgramID);
+    if (scoreBalance == null) scoreBalance = new MetricHistory(0, 0, subscriberProfile.getTenantID());
+    scoreBalance = new MetricHistory(scoreBalance);
+    scoreBalance.update(now, deltaScore);
+    subscriberProfile.getScoreBalances().put(loyaltyProgramID, scoreBalance);
+  }
+    
 }

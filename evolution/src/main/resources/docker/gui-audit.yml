@@ -1,4 +1,4 @@
-gui-audit-logstash-<_KEY_>:
+gui-audit-<_KEY_>:
   image: ${env.DOCKER_REGISTRY}ev-gui.auditlogstash:${gui-audit.version}
   environment:
     ELASTICSEARCH: '<_MASTER_ESROUTER_HOST_>:<_MASTER_ESROUTER_PORT_>'

@@ -47,7 +47,7 @@ public class SMPPGenericPlugin implements NotificationInterface
   private EvaluationCriterion[] criterionArray;
   private boolean useCriteriaMode;
   private boolean connectionFailover = false;
-  private int[] deliveryRatePerMinuteArray;
+  private int[] deliveryRatioArray;
   private double[] thruputMin, thruputMax; // defines interval for each connection, length proportional to connection thruput
   //     0................................................1
   //   min[0]   max[0]
@@ -72,7 +72,7 @@ public class SMPPGenericPlugin implements NotificationInterface
     JSONArray connections = JSONUtilities.decodeJSONArray(notificationPluginConfigurationGlobal, "connections", true);
     senderArray = new SimpleSMSSender[connections.size()];
     criterionArray = new EvaluationCriterion[connections.size()];
-    deliveryRatePerMinuteArray = new int[connections.size()];
+    deliveryRatioArray = new int[connections.size()];
     thruputMin = new double[connections.size()];
     thruputMax = new double[connections.size()];
     int thruputSum = 0;
@@ -210,14 +210,14 @@ public class SMPPGenericPlugin implements NotificationInterface
             log.info("error in notificationPluginConfiguration criteria for " + connection_name + " connection : " + e.getLocalizedMessage());
           }
         }
-        deliveryRatePerMinuteArray[i] = JSONUtilities.decodeInteger(notificationPluginConfiguration, "deliveryRatePerMinute", Integer.MAX_VALUE);
-        thruputSum += deliveryRatePerMinuteArray[i];
+        deliveryRatioArray[i] = JSONUtilities.decodeInteger(notificationPluginConfiguration, "deliveryRatio", Integer.MAX_VALUE);
+        thruputSum += deliveryRatioArray[i];
       }
     // compute percentage per connection, for load balancing
     double currentMin = 0.0;
     for (int i=0; i<connections.size(); i++) {
       thruputMin[i] = currentMin;
-      currentMin += (double) deliveryRatePerMinuteArray[i] / (double) thruputSum;
+      currentMin += (double) deliveryRatioArray[i] / (double) thruputSum;
       thruputMax[i] = currentMin; 
     }
   }

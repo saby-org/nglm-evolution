@@ -80,6 +80,7 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
           return DeliveryStatus.Delivered;
         case SYSTEM_ERROR:
         case THIRD_PARTY_ERROR:
+        	return DeliveryStatus.Failed;
         case CUSTOMER_NOT_FOUND:
         case BONUS_NOT_FOUND:
           return DeliveryStatus.BonusNotFound;
