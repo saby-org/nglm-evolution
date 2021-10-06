@@ -778,7 +778,7 @@ public class ReportUtils {
                   {
                     Arrays.sort(indexOfColsToExtract);
                     List<String> sortedColsNamesInHeader = new ArrayList<>();
-                    for (int j = 0; j < indexOfColsToExtract.length -1; j++) 
+                    for (int j = 0; j < indexOfColsToExtract.length; j++) 
                       {
                         if (indexOfColsToExtract[j] != -1) 
                           {
@@ -803,7 +803,7 @@ public class ReportUtils {
                               + fieldSurrounder + "]*\\" + fieldSurrounder + ")*[^\\" + fieldSurrounder + "]*$)";
                           String[] cols = line.split(regex, -1);
 
-                          for (int cpt = 0; cpt < indexOfColsToExtract.length; cpt++) 
+                          for (int cpt = 0; cpt < indexOfColsToExtract.length -1; cpt++) 
                             {
                               if (indexOfColsToExtract[cpt] != -1) 
                                 {
