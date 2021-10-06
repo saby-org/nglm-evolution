@@ -9,6 +9,7 @@ package com.evolving.nglm.evolution;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
@@ -205,7 +206,7 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
   *
   *****************************************/
 
-  public LoyaltyProgramStepChange update(long loyaltyProgramEpoch, LoyaltyProgramOperation operation, String loyaltyProgramName, String toStep, Date enrollmentDate, String deliveryRequestID, LoyaltyProgramService loyaltyProgramService)
+  public LoyaltyProgramStepChange update(long loyaltyProgramEpoch, LoyaltyProgramOperation operation, String loyaltyProgramName, String toStep, Date enrollmentDate, String deliveryRequestID, LoyaltyProgramService loyaltyProgramService, SubscriberProfile subscriberProfile)
   {
     Date now = SystemTime.getCurrentTime();
     StepHistory lastStepEntered = null;
@@ -255,7 +256,11 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
         this.previousStepName = fromStep;
         this.stepName = toStep;
         this.stepEnrollmentDate = enrollmentDate;
+        
+        Double oldProgression = this.currentProgression; 
         this.currentProgression = calculateCurrentProgression(toStep, loyaltyProgramService.getActiveLoyaltyProgram(loyaltyProgramID, now));
+        
+        updateProgressionBalance(subscriberProfile, oldProgression, now);
         
         //
         // isOptInAfterOptOut
@@ -296,6 +301,7 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
         this.previousStepName = fromStep;
         this.stepName = null;
         this.stepEnrollmentDate = enrollmentDate;
+        oldProgression = this.currentProgression; 
         this.currentProgression = Double.valueOf(0.0);
         this.isMissionCompleted = false;
 
@@ -309,7 +315,20 @@ public class LoyaltyProgramMissionState extends LoyaltyProgramState
       default:
         break;
     }
+    
     return loyaltyProgramStepChange;
+  }
+
+  private void updateProgressionBalance(SubscriberProfile subscriberProfile, Double oldProgression, Date now) {
+    if (loyaltyProgramMissionHistory != null) {
+      String programID = loyaltyProgramMissionHistory.getLoyaltyProgramID();
+      MetricHistory progressionBalance = subscriberProfile.getProgressionBalances().get(programID);
+      if (progressionBalance == null) progressionBalance = new MetricHistory(0, 0, subscriberProfile.getTenantID());
+      progressionBalance = new MetricHistory(progressionBalance);
+      long progressionLong = (this.currentProgression != null && oldProgression != null) ? (this.currentProgression.longValue()-oldProgression.longValue()) : 0;
+      progressionBalance.update(now, progressionLong);
+      subscriberProfile.getProgressionBalances().put(programID, progressionBalance);
+    }
   }
   
   

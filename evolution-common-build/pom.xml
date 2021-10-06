@@ -3,7 +3,7 @@
   <groupId>com.evolving.nglm</groupId>
   <artifactId>nglm-evolution-common-build</artifactId>
   <packaging>pom</packaging>
-  <version>EVPRO-1273-2.0.0_6-SNAPSHOT</version>
+  <version>EVPRO-1273-2.0.0_7-SNAPSHOT</version>
   <name>evolution-common-build</name>
 
   <repositories> 
@@ -37,7 +37,7 @@
 
     <!-- dependencies -->
     <flyway.version>qaveon-dnbo-2.5.0.10.4.6</flyway.version>
-    <flyway.gui.version>1.0.71</flyway.gui.version>
+    <flyway.gui.version>1.0.72</flyway.gui.version>
     
     <!-- evolution-common-build -->
     <common.build.phase.generate-evolution-scripts>none</common.build.phase.generate-evolution-scripts>
@@ -385,7 +385,7 @@
                   <filtering>true</filtering>
                 </resource>
                 <resource>
-                  <directory>src/assembly/resources</directory>
+                  <directory>${project.build.directory}/nglm-evolution-resources</directory>
                   <includes>
                     <include>config/prometheus-application-alert.rules</include>
                   </includes>

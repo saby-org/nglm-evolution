@@ -15,11 +15,13 @@ import org.apache.kafka.connect.sink.SinkRecord;
 import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.DeploymentCommon;
 import com.evolving.nglm.core.RLMDateUtils;
+import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentStatus;
+import com.evolving.nglm.evolution.complexobjects.ComplexObjectTypeService;
 
 public class ODRSinkConnector extends SimpleESSinkConnector
 {
@@ -28,6 +30,8 @@ public class ODRSinkConnector extends SimpleESSinkConnector
   private static ProductService productService;
   private static VoucherService voucherService;
   private static PaymentMeanService paymentMeanService;
+  private static SegmentationDimensionService segmentationDimensionService;
+  private static ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
   
   /****************************************
   *
@@ -65,6 +69,8 @@ public class ODRSinkConnector extends SimpleESSinkConnector
       //
       //  services
       //
+
+      subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("odrsinkconnector-subscriberGroupEpoch", Deployment.getBrokerServers(), Deployment.getSubscriberGroupEpochTopic(), SubscriberGroupEpoch::unpack);
    
       dynamicCriterionFieldService = new DynamicCriterionFieldService(Deployment.getBrokerServers(), "odrsinkconnector-dynamiccriterionfieldservice-" + getTaskNumber(), Deployment.getDynamicCriterionFieldTopic(), false);
       CriterionContext.initialize(dynamicCriterionFieldService);
@@ -81,6 +87,9 @@ public class ODRSinkConnector extends SimpleESSinkConnector
 
       paymentMeanService = new PaymentMeanService(Deployment.getBrokerServers(), "odrsinkconnector-paymentmeanservice-" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getPaymentMeanTopic(), false);
       paymentMeanService.start();
+      
+      segmentationDimensionService = new SegmentationDimensionService(Deployment.getBrokerServers(), "odrsinkconnector-segmentationDimensionservice-" + Integer.toHexString((new Random()).nextInt(1000000000)), Deployment.getSegmentationDimensionTopic(), false);
+      segmentationDimensionService.start();
     }
 
     /*****************************************
@@ -99,6 +108,7 @@ public class ODRSinkConnector extends SimpleESSinkConnector
       productService.stop();
       voucherService.stop();
       paymentMeanService.stop();
+      segmentationDimensionService.stop();
       
       //
       //  super
@@ -245,7 +255,8 @@ public class ODRSinkConnector extends SimpleESSinkConnector
       documentMap.put("returnCodeDetails", purchaseManager.getOfferDeliveryReturnCodeDetails());
       documentMap.put("vouchers", voucherList);
       documentMap.put("creationDate", purchaseManager.getCreationDate() != null ? RLMDateUtils.formatDateForElasticsearchDefault(purchaseManager.getCreationDate()):"");
-      
+      documentMap.put("stratum", purchaseManager.getStatisticsSegmentsMap(subscriberGroupEpochReader, segmentationDimensionService));
+
       return documentMap;
     }
   }

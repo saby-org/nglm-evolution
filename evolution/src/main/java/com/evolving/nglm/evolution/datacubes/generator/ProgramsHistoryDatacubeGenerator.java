@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
@@ -42,6 +43,7 @@ import com.evolving.nglm.core.Pair;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIManagedObject;
+import com.evolving.nglm.evolution.LoyaltyProgram;
 import com.evolving.nglm.evolution.LoyaltyProgramService;
 import com.evolving.nglm.evolution.SegmentationDimension;
 import com.evolving.nglm.evolution.SegmentationDimensionService;
@@ -150,7 +152,8 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
         .gte(this.printTimestamp(metricTargetDayStart))
         .lt(this.printTimestamp(metricTargetTwoDaysAfterStart)));
     query.filter().add(QueryBuilders.termQuery("tenantID", this.tenantID)); // filter to keep only tenant related items !
-    
+    query.filter().add(QueryBuilders.nestedQuery("loyaltyPrograms", QueryBuilders.boolQuery().filter(QueryBuilders.termQuery("loyaltyPrograms.loyaltyProgramType", LoyaltyProgram.LoyaltyProgramType.POINTS.getExternalRepresentation())), ScoreMode.Total));
+
     //
     // Aggregations
     //
@@ -182,7 +185,7 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
    
     for (String dimensionID : segmentationDimensionList.keySet())  {
       GUIManagedObject segmentationObject = segmentationDimensionList.get(dimensionID);
-      if (segmentationObject != null && segmentationObject instanceof SegmentationDimension && ((SegmentationDimension) segmentationObject).getStatistics()) {
+      if (segmentationObject != null && SegmentationDimension.class.isAssignableFrom(segmentationObject.getClass()) && ((SegmentationDimension) segmentationObject).getStatistics()) {
         if (termStratumBuilder != null) {
           TermsAggregationBuilder temp = AggregationBuilders.terms(DATA_FILTER_STRATUM_PREFIX + dimensionID)
               .field(DATA_FILTER_STRATUM_PREFIX + dimensionID).missing("undefined");

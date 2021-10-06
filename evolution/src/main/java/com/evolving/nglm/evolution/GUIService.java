@@ -816,6 +816,12 @@ public class GUIService {
         return;
       }
 
+      //remove previous delete commands for recreated objects
+      if(forFullDeletionObjects.containsKey(guiManagedObjectID))
+      {
+        forFullDeletionObjects.remove(guiManagedObjectID);
+      }
+
       //
       // accepted?
       //

@@ -23,10 +23,10 @@ public class VDRReportDriver extends ReportDriver
   @Override public void produceReport(Report report, final Date reportGenerationDate, String zookeeper, String kafka, String elasticSearch, String csvFilename, String[] params, int tenantID)
   {
     log.debug("Processing " + report.getName());
-    String esIndexVDR = "detailedrecords_vouchers-";
+    String esIndexVDR =  "detailedrecords_vouchers-";
     String defaultReportPeriodUnit = report.getDefaultReportPeriodUnit();
     int defaultReportPeriodQuantity = report.getDefaultReportPeriodQuantity();
-    VDRReportMonoPhase.main(new String[] { elasticSearch, esIndexVDR, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit, tenantID+"" }, reportGenerationDate);
+    VDRReportMonoPhase.main(new String[] { elasticSearch, esIndexVDR, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit, tenantID+""}, reportGenerationDate);
     log.debug("Finished with VDR Report");
   }
 
