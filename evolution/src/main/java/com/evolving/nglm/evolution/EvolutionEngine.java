@@ -2457,7 +2457,8 @@ public class EvolutionEngine
                 purchaseFulfillmentRequest.getOrigin(),
                 RESTAPIGenericReturnCodes.fromGenericResponseCode(returnCode),
                 purchaseFulfillmentRequest.getSegments(),
-                tenantID);
+                tenantID,
+                purchaseFulfillmentRequest.getOfferID());
             subscriberProfile.getVouchers().add(voucherToStore);
             subscriberState.getVoucherChanges().add(voucherChange);
             // we keep voucher ordered by expiry data, this is important when we will apply change
@@ -2497,7 +2498,8 @@ public class EvolutionEngine
               voucherStored.getOrigin(),
               RESTAPIGenericReturnCodes.SUCCESS,
               subscriberProfile.getSegments(),
-              tenantID);
+              tenantID,
+              voucherStored.getOfferID());
           subscriberState.getVoucherChanges().add(voucherChange);
           subscriberUpdated=true;
         }
@@ -9433,7 +9435,7 @@ public class EvolutionEngine
           try
             {
               VoucherProfileStored voucherProfileStored = getStoredVoucher(voucherCode, supplierDisplay, subscriberProfile);
-              VoucherChange voucherChange = new VoucherChange(subscriberProfile.getSubscriberID(), now, null, evolutionEventContext.getEventID(), VoucherChangeAction.Redeem, voucherProfileStored.getVoucherCode(), voucherProfileStored.getVoucherID(), voucherProfileStored.getFileID(), moduleID, journeyID, origin, RESTAPIGenericReturnCodes.UNKNOWN, subscriberProfile.getSegments(), tenantID);
+              VoucherChange voucherChange = new VoucherChange(subscriberProfile.getSubscriberID(), now, null, evolutionEventContext.getEventID(), VoucherChangeAction.Redeem, voucherProfileStored.getVoucherCode(), voucherProfileStored.getVoucherID(), voucherProfileStored.getFileID(), moduleID, journeyID, origin, RESTAPIGenericReturnCodes.UNKNOWN, subscriberProfile.getSegments(), tenantID, voucherProfileStored.getOfferID());
               for (VoucherProfileStored voucherStored : subscriberProfile.getVouchers())
                 {
                   if (voucherStored.getVoucherCode().equals(voucherChange.getVoucherCode()) && voucherStored.getVoucherID().equals(voucherChange.getVoucherID()))
@@ -9460,7 +9462,7 @@ public class EvolutionEngine
           try
             {
               VoucherProfileStored voucherProfileStored = getStoredVoucher(voucherCode, supplierDisplay, subscriberProfile);
-              VoucherChange voucherChange = new VoucherChange(subscriberProfile.getSubscriberID(), now, null, "", VoucherChangeAction.Unknown, voucherProfileStored.getVoucherCode(), voucherProfileStored.getVoucherID(), voucherProfileStored.getFileID(), moduleID, journeyID, origin, RESTAPIGenericReturnCodes.SUCCESS, subscriberProfile.getSegments(), tenantID);
+              VoucherChange voucherChange = new VoucherChange(subscriberProfile.getSubscriberID(), now, null, "", VoucherChangeAction.Unknown, voucherProfileStored.getVoucherCode(), voucherProfileStored.getVoucherID(), voucherProfileStored.getFileID(), moduleID, journeyID, origin, RESTAPIGenericReturnCodes.SUCCESS, subscriberProfile.getSegments(), tenantID, voucherProfileStored.getOfferID());
               subscriberEvaluationRequest.getJourneyState().getVoucherChanges().add(voucherChange);
               voucherActionEvent.setActionStatus(voucherChange.getReturnStatus().getGenericResponseMessage());
               voucherActionEvent.setActionStatusCode(voucherChange.getReturnStatus().getGenericResponseCode());

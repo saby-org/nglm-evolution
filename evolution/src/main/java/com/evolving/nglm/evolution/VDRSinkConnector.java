@@ -130,7 +130,9 @@ public class VDRSinkConnector extends SimpleESSinkConnector
       documentMap.put("featureID", voucherChange.getFeatureID()); 
       documentMap.put("expiryDate", RLMDateUtils.formatDateForElasticsearchDefault(voucherChange.getNewVoucherExpiryDate())); 
       documentMap.put("stratum", voucherChange.getStatisticsSegmentsMap(subscriberGroupEpochReader, segmentationDimensionService));
-
+      documentMap.put("fileID", voucherChange.getFileID());
+      documentMap.put("offerID", voucherChange.getOfferID());
+      
       return documentMap;
     }
   }

@@ -88,6 +88,8 @@ import com.evolving.nglm.evolution.reports.notification.NotificationReportDriver
 import com.evolving.nglm.evolution.reports.notification.NotificationReportMonoPhase;
 import com.evolving.nglm.evolution.reports.odr.ODRReportDriver;
 import com.evolving.nglm.evolution.reports.odr.ODRReportMonoPhase;
+import com.evolving.nglm.evolution.reports.vdr.VDRReportDriver;
+import com.evolving.nglm.evolution.reports.vdr.VDRReportMonoPhase;
 
 public class ElasticsearchClientAPI extends RestHighLevelClient
 {
@@ -1199,6 +1201,27 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
             index = ODRReportMonoPhase.getESAllIndices(ODRReportDriver.ES_INDEX_ODR_INITIAL);
           }
         break;
+      
+      case getCustomerVDRs:
+          if (startDate != null)
+            {
+              if (indexFilterDate.before(startDate))
+                {
+                  Set<String> esIndexWks = ReportCsvFactory.getEsIndexWeeks(startDate, SystemTime.getCurrentTime(), true);
+                  String indexCSV = ODRReportMonoPhase.getESIndices(VDRReportDriver.ES_INDEX_VDR_INITIAL, esIndexWks);
+                  index = getExistingIndices(indexCSV, ODRReportMonoPhase.getESAllIndices(VDRReportDriver.ES_INDEX_VDR_INITIAL));
+                }
+              else
+                {
+                  index = ODRReportMonoPhase.getESAllIndices(VDRReportDriver.ES_INDEX_VDR_INITIAL);
+                }
+              query = query.filter(QueryBuilders.rangeQuery("eventDatetime").gte(RLMDateUtils.formatDateForElasticsearchDefault(startDate)));
+            }
+          else
+            {
+              index = ODRReportMonoPhase.getESAllIndices(VDRReportDriver.ES_INDEX_VDR_INITIAL);
+            }
+          break;
         
       case getCustomerMessages:
         if (startDate != null)
@@ -1254,6 +1277,8 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
         return getSearchRequest(GUIManager.API.getCustomerEDRs, subscriberId, startDate, filters, tenantID);
       case getCustomerODRs:
         return getSearchRequest(GUIManager.API.getCustomerODRs, subscriberId, startDate, filters, tenantID);
+      case getCustomerVDRs:
+          return getSearchRequest(GUIManager.API.getCustomerVDRs, subscriberId, startDate, filters, tenantID);
       case getCustomerMessages:
         return getSearchRequest(GUIManager.API.getCustomerMessages, subscriberId, startDate, filters, tenantID);
       case getCustomerCampaigns:

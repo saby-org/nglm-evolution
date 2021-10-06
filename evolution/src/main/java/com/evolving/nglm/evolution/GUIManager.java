@@ -482,6 +482,7 @@ public class GUIManager
     getCustomerBDRs("getCustomerBDRs"),
     getCustomerEDRs("getCustomerEDRs"),
     getCustomerODRs("getCustomerODRs"),
+    getCustomerVDRs("getCustomerVDRs"),
     getCustomerMessages("getCustomerMessages"),
     getCustomerJourneys("getCustomerJourneys"),
     getCustomerCampaigns("getCustomerCamapigns"),
@@ -2257,6 +2258,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getCustomerBDRs", new APISimpleHandler(API.getCustomerBDRs));
         restServer.createContext("/nglm-guimanager/getCustomerEDRs", new APISimpleHandler(API.getCustomerEDRs));
         restServer.createContext("/nglm-guimanager/getCustomerODRs", new APISimpleHandler(API.getCustomerODRs));
+        restServer.createContext("/nglm-guimanager/getCustomerVDRs", new APISimpleHandler(API.getCustomerVDRs));
         restServer.createContext("/nglm-guimanager/getCustomerMessages", new APISimpleHandler(API.getCustomerMessages));
         restServer.createContext("/nglm-guimanager/getCustomerJourneys", new APISimpleHandler(API.getCustomerJourneys));
         restServer.createContext("/nglm-guimanager/getCustomerCampaigns", new APISimpleHandler(API.getCustomerCampaigns));
@@ -3831,6 +3833,10 @@ public class GUIManager
                   jsonResponse = processGetCustomerODRs(userID, jsonRoot, tenantID);
                   break;
 
+                case getCustomerVDRs:
+                  jsonResponse = processGetCustomerVDRs(userID, jsonRoot, tenantID);
+                  break;
+                
                 case getCustomerMessages:
                   jsonResponse = processGetCustomerMessages(userID, jsonRoot, tenantID);
                   break;
@@ -16416,7 +16422,8 @@ public class GUIManager
             origin,
             RESTAPIGenericReturnCodes.UNKNOWN,
             segments,
-            tenantID);
+            tenantID,
+            "");
 
     // put a listener on the reponse topic
     Future<VoucherChange> waitingResponse=voucherChangeResponseListenerService.addWithOnValueFilter((value)->value.getEventID().equals(request.getEventID())&&value.getReturnStatus()!=RESTAPIGenericReturnCodes.UNKNOWN);
@@ -19158,6 +19165,143 @@ public class GUIManager
                 //
 
                 response.put("messages", JSONUtilities.encodeArray(messagesJson));
+                response.put("responseCode", "ok");
+              }
+          }
+        catch (SubscriberProfileServiceException | java.text.ParseException e)
+          {
+            throw new GUIManagerException(e);
+          }
+      }
+
+    /*****************************************
+    *
+    *  return
+    *
+    *****************************************/
+
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  * processGetCustomerVDRs
+  *
+  *****************************************/
+
+  private JSONObject processGetCustomerVDRs(String userID, JSONObject jsonRoot, int tenantID) throws GUIManagerException
+  {
+
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    Map<String, Object> response = new HashMap<String, Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+    String startDateReq = JSONUtilities.decodeString(jsonRoot, "startDate", false);
+
+    List<QueryBuilder> filters = new ArrayList<QueryBuilder>();
+    
+    /*****************************************
+    *
+    *  resolve subscriberID
+    *
+    *****************************************/
+
+    String subscriberID = resolveSubscriberID(customerID, tenantID);
+    if (subscriberID == null)
+      {
+        log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
+        response.put("responseCode", "CustomerNotFound");
+      }
+    else
+      {
+        /*****************************************
+        *
+        *  getSubscriberProfile - include history
+        *
+        *****************************************/
+        try
+          {
+            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
+            if (baseSubscriberProfile == null)
+              {
+                response.put("responseCode", "CustomerNotFound");
+                log.debug("SubscriberProfile is null for subscriberID {}" , subscriberID);
+              }
+            else
+              {
+                List<JSONObject> VDRsJson = new ArrayList<JSONObject>();
+                ArrayList<JSONObject> VDRs = new ArrayList<JSONObject>();
+                                
+                SearchRequest searchRequest = this.elasticsearch.getSearchRequest(API.getCustomerVDRs, subscriberID, startDateReq == null ? null : RLMDateUtils.parseDateFromDay(startDateReq, Deployment.getDeployment(tenantID).getTimeZone()), filters, tenantID);
+                List<SearchHit> hits = this.elasticsearch.getESHits(searchRequest);
+                for (SearchHit hit : hits)
+                  {
+                	Map<String, Object> esMap = new HashMap<String, Object>();
+                	String fileID = (String) hit.getSourceAsMap().get("fileID");
+                	String voucherID = (String) hit.getSourceAsMap().get("voucherID");
+                	String voucherFormat = "";
+                	Date expiryDate = null;
+                	String offerID = "";
+                	Voucher voucher = (Voucher) voucherService.getStoredVoucher(voucherID);
+                	if(voucher instanceof VoucherShared){
+                  	  	voucherFormat = ((VoucherShared)voucher).getCodeFormatId();
+	                    List<JSONObject> vouchersJsonArray = new ArrayList<>();
+	                    for(VoucherProfileStored voucherProfileStored:baseSubscriberProfile.getVouchers())
+	                    {
+	                    	if(voucherProfileStored.getVoucherID().equals(voucherID)) {
+	                    		expiryDate = voucherProfileStored.getVoucherExpiryDate()!=null?voucherProfileStored.getVoucherExpiryDate():null;
+	                    		offerID = voucherProfileStored.getOfferID();
+	                    		break;
+	                    	}
+	                    }
+                   
+                	} else if (voucher instanceof VoucherPersonal){
+                      	for(VoucherProfileStored voucherProfileStored:baseSubscriberProfile.getVouchers())
+	                    {
+	                    	if(voucherProfileStored.getVoucherID().equals(voucherID)) {
+	                    		offerID = voucherProfileStored.getOfferID();
+	                    		if(fileID==null) {
+	                    			fileID = voucherProfileStored.getFileID();
+	                    		}
+	                    		break;
+	                    	}
+	                    }
+                      	for(VoucherFile voucherFile:((VoucherPersonal)voucher).getVoucherFiles()){
+                      		if(voucherFile.getFileId().equals(fileID)) {
+                      			voucherFormat = voucherFile.getCodeFormatId();
+                      			expiryDate = voucherFile.getExpiryDate()!=null?voucherFile.getExpiryDate():null;
+                      			break;
+                      		}
+                      	}
+                      }
+                	esMap.put("voucherCode", hit.getSourceAsMap().get("voucherCode"));
+                	esMap.put("voucherID", voucher.getVoucherID());
+                	esMap.put("voucherFormat", voucherFormat);
+                	esMap.put("voucherExpiryDate", hit.getSourceAsMap().get("action").equals(VoucherChange.VoucherChangeAction.Extend.name())?getDateString(RLMDateUtils.parseDateFromElasticsearch((String)hit.getSourceAsMap().get("expiryDate")),tenantID):getDateString(expiryDate,tenantID));
+                	esMap.put("operation", hit.getSourceAsMap().get("action"));
+                    esMap.put("offerDisplayName", offerID.equals("")? "": offerService.getStoredOffer(offerID).getJSONRepresentation().get("display"));
+                    esMap.put("offerID", offerID);
+                    
+                    
+                	VDRsJson.add(JSONUtilities.encodeObject(esMap));
+                  }
+                
+                //
+                // prepare response
+                //
+
+                response.put("VDRs", JSONUtilities.encodeArray(VDRsJson));
                 response.put("responseCode", "ok");
               }
           }
