@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class UCGState implements ReferenceDataValue<String>
 {
@@ -179,6 +180,16 @@ public class UCGState implements ReferenceDataValue<String>
   {
     this(ucgRule,ucgGroups,evaluationDate);
     this.targetRatio = targetRatio;
+  }
+
+  //copy constructor
+  public UCGState(UCGState ucgState)
+  {
+    this.ucgRule =  new UCGRule(ucgState.ucgRule);
+    this.ucgGroups = new HashSet<>();
+    ucgState.ucgGroups.stream().forEach(p -> this.ucgGroups.add(new UCGGroup(p)));
+    this.targetRatio = ucgState.targetRatio;
+    this.evaluationDate = ucgState.evaluationDate;
   }
 
   private double calculateTargetRatio()
@@ -447,6 +458,20 @@ public class UCGState implements ReferenceDataValue<String>
       this.ucgSubscribers = ucgSubscribers;
       this.totalSubscribers = totalSubscribers;
       this.shiftProbability = null;
+    }
+
+    /*****************************************
+     *
+     *  copy constructor
+     *
+     *****************************************/
+
+    public UCGGroup(UCGGroup ucgGroup)
+    {
+      this.segmentIDs = ucgGroup.segmentIDs;
+      this.ucgSubscribers = ucgGroup.ucgSubscribers;
+      this.totalSubscribers = ucgGroup.totalSubscribers;
+      this.shiftProbability = ucgGroup.shiftProbability;
     }
     
     /*****************************************

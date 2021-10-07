@@ -34,6 +34,7 @@ import com.evolving.nglm.evolution.statistics.StatBuilder;
 import com.evolving.nglm.evolution.statistics.StatsBuilders;
 import io.confluent.kafka.formatter.AvroMessageFormatter;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.SerializationUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
@@ -3674,13 +3675,12 @@ public class EvolutionEngine
     *  ucg evaluation
     *
     *****************************************/
-
     UCGState ucgState = ucgStateReader.get(UCGState.getSingletonKey());
     //at start or when a new state were calculated the current ucg state is replaced
 
     if(currentUCGState == null || currentUCGState.getEvaluationDate().compareTo(ucgState.getEvaluationDate()) < 0)
     {
-      currentUCGState = ucgState;
+      currentUCGState = (ucgState != null) ? new UCGState(ucgState) : null;
     }
     if (currentUCGState != null && currentUCGState.getRefreshEpoch() != null)
       {
@@ -3738,8 +3738,8 @@ public class EvolutionEngine
             
             double shiftProbability = 0.0d;
             UCGGroup subscriberUCGGroup = null;
-            Iterator<UCGGroup> iterator = currentUCGState.getUCGGroups().iterator();
             UCGGroup elasticUcgGroup = ucgState.getUCGGroups().stream().filter(p -> p.getSegmentIDs().equals(userStratum)).findFirst().get();
+            Iterator<UCGGroup> iterator = currentUCGState.getUCGGroups().iterator();
             while(iterator.hasNext()) 
               {
                 UCGGroup g = iterator.next();
@@ -3783,6 +3783,8 @@ public class EvolutionEngine
                 }
               }
             }
+            log.info("--->>>elastic shift probability "+elasticUcgGroup.getShiftProbability());
+            log.info("--->>>internal shift probability "+shiftProbability);
             if(!isInUCG)
             {
               if (!Deployment.getAddSubscribersToUcgByCounting())
@@ -3798,6 +3800,7 @@ public class EvolutionEngine
               //the current shift probability was not used because this one is decremented, and is based on data reeaded that is not conform with currect subscribers comming in evolution
               else if(elasticUcgGroup.getShiftProbability() > 0)
               {
+
                 //will add subscribers based on count. In hash map the key will be segment_id-segment_id foreach strata
                 String key = String.join("-", subscriberUCGGroup.getSegmentIDs());
                 //counting is starting from 1
@@ -3815,7 +3818,7 @@ public class EvolutionEngine
               }
               else
               {
-                log.error("Adding subscriber to ucg error. Shift probability from es for strata is negative, thats means to much subscribers in ucg for this strata. This need urgent investigation !!!");
+                log.error("Adding subscriber to ucg error. Shift probability from es for strata is negative, ("+elasticUcgGroup.getShiftProbability()+") thats means to much subscribers in ucg for this strata. This need urgent investigation !!!"+String.join(" ",elasticUcgGroup.getSegmentIDs()));
               }
             }
 
