@@ -47,7 +47,7 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.JSONUtilities;
 
-@GUIDependencyDef(objectType = "offer", serviceClass = OfferService.class, dependencies = { "offer", "product" , "voucher", "saleschannel" , "offerobjective", "target", "catalogcharacteristic", "loyaltyProgramPoints", "loyaltyprogramchallenge", "loyaltyprogrammission"})
+@GUIDependencyDef(objectType = "offer", serviceClass = OfferService.class, dependencies = { "offer", "product" , "voucher", "saleschannel" , "callingchannel", "offerobjective", "target", "catalogcharacteristic", "loyaltyProgramPoints", "loyaltyprogramchallenge", "loyaltyprogrammission"})
 public class Offer extends GUIManagedObject implements StockableItem
 {  
   //
@@ -944,6 +944,7 @@ public class Offer extends GUIManagedObject implements StockableItem
     List<String> loyaltyProgramPointsIDs = new ArrayList<String>();
     List<String> loyaltyprogramchallengeIDs = new ArrayList<String>();
     List<String> loyaltyprogrammissionIDs = new ArrayList<String>();
+    List<String> callingchannelIDs = new ArrayList<String>();
 
     for (OfferSalesChannelsAndPrice offerSalesChannelsAndPrice : getOfferSalesChannelsAndPrices())
       {
@@ -978,13 +979,29 @@ public class Offer extends GUIManagedObject implements StockableItem
     
     if (getOfferCharacteristics() != null && getOfferCharacteristics().getOfferCharacteristicProperties() != null && !getOfferCharacteristics().getOfferCharacteristicProperties().isEmpty())
       {
+        CallingChannelService callingChannelService = (CallingChannelService) guiServiceList.stream().filter(srvc -> srvc.getClass() == CallingChannelService.class).findFirst().orElse(null);
+        Set<String> callingChannelChars = new HashSet<String>();
+        if (callingChannelService != null)
+          {
+            for (GUIManagedObject callingChannelUnchecked : callingChannelService.getStoredCallingChannels(tenantID))
+              {
+                if (callingChannelUnchecked.getAccepted())
+                  {
+                    CallingChannel callingChannel = (CallingChannel) callingChannelUnchecked;
+                    callingChannelChars.addAll(callingChannel.getCatalogCharacteristics());
+                  }
+                
+              }
+          }
         for (OfferCharacteristicsLanguageProperty offerCharacteristicsLanguageProperty : getOfferCharacteristics().getOfferCharacteristicProperties())
           {
             if (offerCharacteristicsLanguageProperty.getProperties() != null && !offerCharacteristicsLanguageProperty.getProperties().isEmpty())
               {
                 for (OfferCharacteristicsProperty characteristicsProperty : offerCharacteristicsLanguageProperty.getProperties())
                   {
-                    offerCharacteristicsLanguagePropertyIDs.add(characteristicsProperty.getCatalogCharacteristicID());
+                    String catalogCharacteristicID = characteristicsProperty.getCatalogCharacteristicID();
+                    offerCharacteristicsLanguagePropertyIDs.add(catalogCharacteristicID);
+                    if (callingChannelChars.contains(catalogCharacteristicID)) callingchannelIDs.add(catalogCharacteristicID);
                   }
               }
           }
@@ -995,6 +1012,7 @@ public class Offer extends GUIManagedObject implements StockableItem
     result.put("product", productIDs);
     result.put("voucher", voucherIDs);
     result.put("saleschannel", saleschannelIDs);
+    result.put("callingchannel", callingchannelIDs);
     result.put("offerobjective", offerObjectiveIDs);
     result.put("catalogcharacteristic", offerCharacteristicsLanguagePropertyIDs);
     result.put("loyaltyprogrampoints", loyaltyProgramPointsIDs);
