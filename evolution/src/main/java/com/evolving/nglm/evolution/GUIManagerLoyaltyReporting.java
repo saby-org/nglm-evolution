@@ -1472,7 +1472,6 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     *
     ****************************************/
    
-   log.info("RAJ K processSetStatusBadgeObjective jsonRoot {}", jsonRoot);
    Date now = SystemTime.getCurrentTime();
    HashMap<String, Object> response = new HashMap<String, Object>();
    JSONArray badgeObjectiveIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
@@ -1569,7 +1568,6 @@ protected JSONObject processSetStatusBadge(String userID, JSONObject jsonRoot, i
    *
    ****************************************/
   
-  log.info("RAJ K processSetStatusBadge jsonRoot {}", jsonRoot);
   Date now = SystemTime.getCurrentTime();
   HashMap<String, Object> response = new HashMap<String, Object>();
   JSONArray badgeIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
