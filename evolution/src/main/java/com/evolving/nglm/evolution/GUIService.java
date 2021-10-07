@@ -250,6 +250,7 @@ public class GUIService {
           @Override
           public void run()
           {
+            Date now = SystemTime.getCurrentTime();
             
             //
             //  ES update
@@ -257,7 +258,7 @@ public class GUIService {
             
             for (GUIManagedObject guiManagedObject : getStoredGUIManagedObjects(0))
               {
-                updateElasticSearch(guiManagedObject, true);
+                if (guiManagedObject.getEffectiveEndDate().after(now)) updateElasticSearch(guiManagedObject, true);
               }
             
             //
