@@ -3008,6 +3008,7 @@ public class GUIManagerGeneral extends GUIManager
             // implementing however I think should logically have
             revalidateVoucherTypes(now, tenantID);
             revalidateVouchers(now, tenantID);
+            revalidateBadgeObjectives(now, tenantID); // internaly calls revalidateBadge
           }
 
         /*****************************************

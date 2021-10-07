@@ -27997,6 +27997,55 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
         subscriberMessageTemplateService.putGUIManagedObject(modifiedSubscriberMessageTemplate, date, false, null);
       }
   }
+  
+  /*****************************************
+  *
+  *  revalidateBadges
+  *
+  *****************************************/
+  protected void revalidateBadges(Date date, int tenantID)
+  {
+    /****************************************
+    *
+    *  identify
+    *
+    ****************************************/
+    Set<GUIManagedObject> modifiedBadges = new HashSet<GUIManagedObject>();
+    for (GUIManagedObject existingBadge : badgeService.getStoredBadges(tenantID))
+      {
+        //
+        //  modifiedBadge
+        //
+        long epoch = epochServer.getKey();
+        GUIManagedObject modifiedBadge;
+        try
+          {
+            Badge badge = new Badge(existingBadge.getJSONRepresentation(), epoch, existingBadge, catalogCharacteristicService, tenantID);
+            //badge.validate(callingChannelService, salesChannelService, productService, voucherService, date);
+            modifiedBadge = badge;
+          }
+        catch (JSONUtilitiesException|GUIManagerException e)
+          {
+            modifiedBadge = new IncompleteObject(existingBadge.getJSONRepresentation(), epoch, tenantID);
+          }
+        //
+        //  changed?
+        //
+        if (existingBadge.getAccepted() != modifiedBadge.getAccepted())
+          {
+            modifiedBadges.add(modifiedBadge);
+          }
+      }
+    /****************************************
+    *
+    *  update
+    *
+    ****************************************/
+    for (GUIManagedObject modifiedBadge : modifiedBadges)
+      {
+        badgeService.putGUIManagedObject(modifiedBadge, date, false, null);
+      }
+  }
 
   /*****************************************
   *
@@ -28116,6 +28165,62 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     ****************************************/
 
     revalidateOffers(date, tenantID);
+  }
+  
+  /*****************************************
+  *
+  *  revalidateBadgeObjectives
+  *
+  *****************************************/
+  
+  protected void revalidateBadgeObjectives(Date date, int tenantID)
+  {
+    /****************************************
+    *
+    *  identify
+    *
+    ****************************************/
+    Set<GUIManagedObject> modifiedBadgeObjectives = new HashSet<GUIManagedObject>();
+    for (GUIManagedObject existingBadgeObjective : badgeObjectiveService.getStoredBadgeObjectives(tenantID))
+      {
+        //
+        //  modifiedBadgeObjective
+        //
+        long epoch = epochServer.getKey();
+        GUIManagedObject modifiedBadgeObjective;
+        try
+          {
+            BadgeObjective badgeObjective = new BadgeObjective(existingBadgeObjective.getJSONRepresentation(), epoch, existingBadgeObjective, tenantID);
+            badgeObjective.validate(catalogCharacteristicService, date);
+            modifiedBadgeObjective = badgeObjective;
+          }
+        catch (JSONUtilitiesException|GUIManagerException e)
+          {
+            modifiedBadgeObjective = new IncompleteObject(existingBadgeObjective.getJSONRepresentation(), epoch, tenantID);
+          }
+        //
+        //  changed?
+        //
+        if (existingBadgeObjective.getAccepted() != modifiedBadgeObjective.getAccepted())
+          {
+            modifiedBadgeObjectives.add(modifiedBadgeObjective);
+          }
+      }
+    /****************************************
+    *
+    *  update
+    *
+    ****************************************/
+    for (GUIManagedObject modifiedBadgeObjective : modifiedBadgeObjectives)
+      {
+        badgeObjectiveService.putGUIManagedObject(modifiedBadgeObjective, date, false, null);
+      }
+    /****************************************
+    *
+    *  revalidate dependent objects
+    *
+    ****************************************/
+    revalidateBadges(date, tenantID);
   }
 
   /*****************************************
