@@ -1674,7 +1674,7 @@ public class GUIManager
       }
         
     //
-    //  journeyTemplates do not change the ID
+    //  journeyTemplates do not change the ID - still this is a bug, how two different tenant have the obj with sameID
     //
     
     for(Tenant tenant : Deployment.getTenants())
