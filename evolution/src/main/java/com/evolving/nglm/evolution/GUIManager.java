@@ -1674,10 +1674,10 @@ public class GUIManager
       }
         
     //
-    //  journeyTemplates
+    //  journeyTemplates do not change the ID
     //
     
-    for(Tenant tenant : Deployment.getRealTenants())
+    for(Tenant tenant : Deployment.getTenants())
       {
         int tenantID = tenant.getTenantID();
         if (journeyTemplateService.getStoredJourneyTemplates(tenantID).size() == 0)
@@ -1688,13 +1688,7 @@ public class GUIManager
               for (int i=0; i<initialJourneyTemplatesJSONArray.size(); i++)
                 {
                   JSONObject journeyTemplateJSON = (JSONObject) initialJourneyTemplatesJSONArray.get(i);
-                  if (journeyTemplateJSON.containsKey("id"))
-                    {
-                      if (log.isWarnEnabled()) log.warn("initial journeyTemplate JSON should not have id field - removing it");
-                      journeyTemplateJSON.remove("id");
-                    }
-                  JSONObject journeyTemplate = (JSONObject) journeyTemplateJSON.clone();
-                  processPutJourneyTemplate("0", journeyTemplate, tenantID);
+                  processPutJourneyTemplate("0", journeyTemplateJSON, tenantID);
                 }
             }
           catch (JSONUtilitiesException e)
