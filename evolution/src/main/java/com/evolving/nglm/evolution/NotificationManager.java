@@ -1017,7 +1017,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
     	      Object param = paramMap.get(paramKey);
     	      customCriteria += ",toto";
     	    }
-    	    result.put("customcriteria", customCriteria.substring(1)); // remove leading ','
+    	    if (customCriteria.length() > 0) result.put("customcriteria", customCriteria.substring(1)); // remove leading ','
     	  }
       }
       return result;
