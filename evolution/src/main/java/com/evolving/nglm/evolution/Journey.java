@@ -4054,7 +4054,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
                   if (sourceaddressID != null) sourceaddressIDs.add(sourceaddressID);
                   if (presentationstrategyID != null) presentationstrategiesIDs.add(presentationstrategyID);
                   if (deliverableID != null) deliverableIDs.add(deliverableID);
-                  String customCriteriaID = journeyNode.getNodeType().getActionManager().getGUIDependencies(journeyNode, tenantID).get("customcriteria");
+                  String customCriteriaID = journeyNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, journeyNode, tenantID).get("customcriteria");
                   // We can depend on multiple customCriteria, they are separated by ','
                   if (customCriteriaID != null) {
                     for (String id : customCriteriaID.split(",")) {
@@ -4184,7 +4184,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
                   if (tokentypeID != null) tokentypeIDs.add(tokentypeID);
                   if (presentationstrategyID != null) presentationstrategiesIDs.add(presentationstrategyID);
                   if (deliverableID != null) deliverableIDs.add(deliverableID);
-                  String customCriteriaID = offerNode.getNodeType().getActionManager().getGUIDependencies(offerNode, tenantID).get("customcriteria");
+                  String customCriteriaID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("customcriteria");
                   // We can depend on multiple customCriteria, they are separated by ','
                   if (customCriteriaID != null) {
                     for (String id : customCriteriaID.split(",")) {
