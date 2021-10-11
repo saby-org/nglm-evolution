@@ -1038,6 +1038,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
         NotificationManagerRequest dialogRequest = (NotificationManagerRequest) deliveryRequest;
         //prometheus status pending
         incrementStats(dialogRequest);
+        incrementPartsStats(dialogRequest);
         dialogRequest.resolveFromAddressToSourceAddress(getSourceAddressService());
         DialogTemplate dialogTemplate = (DialogTemplate) getSubscriberMessageTemplateService().getActiveSubscriberMessageTemplate(dialogRequest.getTemplateID(), now);
         
@@ -1119,6 +1120,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
     if(log.isDebugEnabled()) log.debug("NotificationManager.completeDeliveryRequest(deliveryRequest=" + deliveryRequest + ")");
     completeRequest((DeliveryRequest)deliveryRequest);
     incrementStats((NotificationManagerRequest) deliveryRequest);
+    incrementPartsStats((NotificationManagerRequest) deliveryRequest);
   }
 
   private void incrementStats(NotificationManagerRequest notificationManagerRequest)
@@ -1128,8 +1130,17 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
             .withLabel(StatsBuilders.LABEL.module.name(), notificationManagerRequest.getModule().name())
             .withLabel(StatsBuilders.LABEL.priority.name(), notificationManagerRequest.getDeliveryPriority().getExternalRepresentation())
             .withLabel(StatsBuilders.LABEL.tenant.name(), String.valueOf(notificationManagerRequest.getTenantID()))
-            .withLabel(StatsBuilders.LABEL.noOfParts.name(), String.valueOf(notificationManagerRequest.extractLastSentCount()))
             .getStats().increment();
+  }
+
+  private void incrementPartsStats(NotificationManagerRequest notificationManagerRequest)
+  {
+    statsCounter.withLabel(StatsBuilders.LABEL.status.name(), "noOfParts")
+            .withLabel(StatsBuilders.LABEL.channel.name(), GetCommunicationChannels().get(notificationManagerRequest.getChannelID()).getDisplay())
+            .withLabel(StatsBuilders.LABEL.module.name(), notificationManagerRequest.getModule().name())
+            .withLabel(StatsBuilders.LABEL.priority.name(), notificationManagerRequest.getDeliveryPriority().getExternalRepresentation())
+            .withLabel(StatsBuilders.LABEL.tenant.name(), String.valueOf(notificationManagerRequest.getTenantID()))
+            .getStats().add(notificationManagerRequest.extractLastSentCount());
   }
 
   /*****************************************

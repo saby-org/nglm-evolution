@@ -15,8 +15,7 @@ public class StatsBuilders {
     module,
     channel,
     priority,
-    tenant,
-    noOfParts
+    tenant
   }
   // keep different status used at one place
   public enum STATUS{
