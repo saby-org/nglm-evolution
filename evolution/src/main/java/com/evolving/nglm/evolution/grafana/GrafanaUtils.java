@@ -108,14 +108,21 @@ public class GrafanaUtils
               orgName = "Main Org."; 
             }
             if (!existingOrgs.containsKey(orgName))
+            {
+              // create this org.
+              try 
               {
-                // create this org.
                 Integer orgID = createGrafanaOrg(orgName);
                 if (orgID != null)
-                  {
-                    existingOrgs.put(orgName, orgID);
-                  }
+                {
+                  existingOrgs.put(orgName, orgID);
+                }
+              }catch (Exception e) 
+              {
+                log.warn("Problem while creating the organization " + orgName, e);
               }
+            }
+              
             if (existingOrgs.containsKey(orgName))
               {
                 // Switch to the org
