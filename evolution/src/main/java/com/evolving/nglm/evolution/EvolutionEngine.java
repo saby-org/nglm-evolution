@@ -237,6 +237,7 @@ public class EvolutionEngine
   private static PaymentMeanService paymentMeanService;
   private static ResellerService resellerService;
   private static SupplierService supplierService;
+  private static CustomCriteriaService customCriteriaService;
 
   private static KafkaStreams streams = null;
   private static ReadOnlyKeyValueStore<StringKey, SubscriberState> subscriberStateStore = null;
@@ -426,6 +427,10 @@ public class EvolutionEngine
 
     supplierService = new SupplierService(bootstrapServers, "evolutionengine-supplierservice-" + evolutionEngineKey, Deployment.getSupplierTopic(), false);
     supplierService.start();
+    
+    customCriteriaService = new CustomCriteriaService(bootstrapServers, "evolutionengine-customcriteriaservice-" + evolutionEngineKey, Deployment.getCustomCriteriaTopic(), false);
+    customCriteriaService.start();
+    
 
     //
     //  scoringStrategyService
@@ -569,13 +574,6 @@ public class EvolutionEngine
     resellerService.start();
 
     //
-    //  supplierService
-    //
-
-    supplierService = new SupplierService(bootstrapServers, "evolutionengine-supplierservice-" + evolutionEngineKey, Deployment.getSupplierTopic(), false);
-    supplierService.start();
-
-    //
     //  subscriberGroupEpochReader
     //
 
@@ -593,13 +591,6 @@ public class EvolutionEngine
     //EVPRO-574
     retentionService = new RetentionService(journeyService,targetService);
     
-    //
-    // supplierService
-    //
-    
-    supplierService = new SupplierService(Deployment.getBrokerServers(), "evolutionengine-supplierservice-" + evolutionEngineKey, Deployment.getSupplierTopic(), false);
-    supplierService.start();
-
     //
     //  ucgStateReader
     //
@@ -1844,7 +1835,7 @@ public class EvolutionEngine
 
     SubscriberProfile subscriberProfile = subscriberState.getSubscriberProfile();
     ExtendedSubscriberProfile extendedSubscriberProfile = (evolutionEvent instanceof TimedEvaluation) ? ((TimedEvaluation) evolutionEvent).getExtendedSubscriberProfile() : null;
-    EvolutionEventContext context = new EvolutionEventContext(subscriberState, evolutionEvent, extendedSubscriberProfile, subscriberGroupEpochReader, journeyService, subscriberMessageTemplateService, deliverableService, segmentationDimensionService, presentationStrategyService, scoringStrategyService, offerService, salesChannelService, tokenTypeService, segmentContactPolicyService, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, dnboMatrixService, paymentMeanService, uniqueKeyServer, resellerService, supplierService, SystemTime.getCurrentTime());
+    EvolutionEventContext context = new EvolutionEventContext(subscriberState, evolutionEvent, extendedSubscriberProfile, subscriberGroupEpochReader, journeyService, subscriberMessageTemplateService, deliverableService, segmentationDimensionService, presentationStrategyService, scoringStrategyService, offerService, salesChannelService, tokenTypeService, segmentContactPolicyService, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, dnboMatrixService, paymentMeanService, uniqueKeyServer, resellerService, supplierService, customCriteriaService, SystemTime.getCurrentTime());
 
     if(log.isTraceEnabled()) log.trace("updateSubscriberState on event "+evolutionEvent.getClass().getSimpleName()+ " for "+evolutionEvent.getSubscriberID());
 
@@ -6491,7 +6482,7 @@ public class EvolutionEngine
                 //  evaluationRequest (including link)
                 //
 
-                SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), (ExtendedSubscriberProfile) null, subscriberGroupEpochReader, journeyState, journeyNode, journeyLink, evolutionEvent, now, tenantID);
+                SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(context, subscriberState.getSubscriberProfile(), (ExtendedSubscriberProfile) null, subscriberGroupEpochReader, journeyState, journeyNode, journeyLink, evolutionEvent, now, tenantID);
 
                 //
                 //  evaluate
@@ -6723,7 +6714,7 @@ public class EvolutionEngine
                       {
 
                         List<Action> actions = new ArrayList<>();
-                        SubscriberEvaluationRequest entryActionEvaluationRequest = new SubscriberEvaluationRequest(subscriberState.getSubscriberProfile(), (ExtendedSubscriberProfile) null, subscriberGroupEpochReader, journeyState, journeyNode, null, null, now, tenantID);
+                        SubscriberEvaluationRequest entryActionEvaluationRequest = new SubscriberEvaluationRequest(context, subscriberState.getSubscriberProfile(), (ExtendedSubscriberProfile) null, subscriberGroupEpochReader, journeyState, journeyNode, null, null, now, tenantID);
                         String hierarchyRelationship = (String) CriterionFieldRetriever.getJourneyNodeParameter(entryActionEvaluationRequest, "node.parameter.relationship");
                         if (hierarchyRelationship != null && hierarchyRelationship.trim().equals(INTERNAL_ID_SUPPLIER))
                           {
@@ -7971,6 +7962,7 @@ public class EvolutionEngine
     private SegmentContactPolicyService segmentContactPolicyService;
     private ResellerService resellerService;
     private SupplierService supplierService;
+    private CustomCriteriaService customCriteriaService;
     private KStreamsUniqueKeyServer uniqueKeyServer;
     private Date now;
     private List<String> subscriberTraceDetails;
@@ -7982,7 +7974,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    public EvolutionEventContext(SubscriberState subscriberState, SubscriberStreamEvent event, ExtendedSubscriberProfile extendedSubscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService, DeliverableService deliverableService, SegmentationDimensionService segmentationDimensionService, PresentationStrategyService presentationStrategyService, ScoringStrategyService scoringStrategyService, OfferService offerService, SalesChannelService salesChannelService, TokenTypeService tokenTypeService, SegmentContactPolicyService segmentContactPolicyService, ProductService productService, ProductTypeService productTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService, CatalogCharacteristicService catalogCharacteristicService, DNBOMatrixService dnboMatrixService, PaymentMeanService paymentMeanService, KStreamsUniqueKeyServer uniqueKeyServer, ResellerService resellerService, SupplierService supplierService, Date now)
+    public EvolutionEventContext(SubscriberState subscriberState, SubscriberStreamEvent event, ExtendedSubscriberProfile extendedSubscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService, DeliverableService deliverableService, SegmentationDimensionService segmentationDimensionService, PresentationStrategyService presentationStrategyService, ScoringStrategyService scoringStrategyService, OfferService offerService, SalesChannelService salesChannelService, TokenTypeService tokenTypeService, SegmentContactPolicyService segmentContactPolicyService, ProductService productService, ProductTypeService productTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService, CatalogCharacteristicService catalogCharacteristicService, DNBOMatrixService dnboMatrixService, PaymentMeanService paymentMeanService, KStreamsUniqueKeyServer uniqueKeyServer, ResellerService resellerService, SupplierService supplierService, CustomCriteriaService customCriteriaService, Date now)
     {
       this.subscriberState = subscriberState;
       this.event = event;
@@ -8008,6 +8000,7 @@ public class EvolutionEngine
       this.paymentMeanService = paymentMeanService;
       this.resellerService = resellerService;
       this.supplierService = supplierService;
+      this.customCriteriaService = customCriteriaService;
       this.uniqueKeyServer = uniqueKeyServer;
       this.now = now;
       this.subscriberTraceDetails = new ArrayList<String>();
@@ -8085,6 +8078,7 @@ public class EvolutionEngine
     public SegmentContactPolicyService getSegmentContactPolicyService() { return segmentContactPolicyService; }
     public ResellerService getResellerService() { return resellerService; }
     public SupplierService getSupplierService() { return supplierService; }
+    public CustomCriteriaService getCustomCriteriaService() { return customCriteriaService; }
 
     public KStreamsUniqueKeyServer getUniqueKeyServer() { return uniqueKeyServer; }
     public List<String> getSubscriberTraceDetails() { return subscriberTraceDetails; }
