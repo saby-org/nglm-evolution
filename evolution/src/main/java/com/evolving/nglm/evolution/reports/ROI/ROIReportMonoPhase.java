@@ -29,6 +29,7 @@ import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.DeliveryRequest;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
+import com.evolving.nglm.evolution.datacubes.SubscriberProfileDatacubeMetric;
 import com.evolving.nglm.evolution.GUIManagedObject;
 import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.LoyaltyProgramService;
@@ -50,9 +51,6 @@ public class ROIReportMonoPhase implements ReportCsvFactory
   private static final String dateTime = "dateTime";
   private static final String nbCustomerUCG = "nbCustomerUCG";
   private static final String nbCustomerTarget = "nbCustomerTarget";
-  private static final String average_metric_UCG = "average_metric_UCG";
-  private static final String average_metric_Target = "average_metric_Target";
-  private static final String metric_ROI = "metric_ROI";
   private static final String nbRetainedCustomers = "nbRetainedCustomers";
   private static final String churnRate = "churnRate";
   private static final String churnROI = "churnROI";
@@ -66,9 +64,15 @@ public class ROIReportMonoPhase implements ReportCsvFactory
     headerFieldsOrder.add(dateTime);
     headerFieldsOrder.add(nbCustomerUCG);
     headerFieldsOrder.add(nbCustomerTarget);
-    headerFieldsOrder.add(average_metric_UCG);
-    headerFieldsOrder.add(average_metric_Target);
-    headerFieldsOrder.add(metric_ROI);
+    Map<String, SubscriberProfileDatacubeMetric> customMetrics = Deployment.getSubscriberProfileDatacubeMetrics();
+    for(String metricID: customMetrics.keySet()) {
+      SubscriberProfileDatacubeMetric customMetric = customMetrics.get(metricID);
+      if(customMetric.isMetricROI()) {
+    	  headerFieldsOrder.add("average_"+metricID+"_UCG");
+    	  headerFieldsOrder.add("average_"+metricID+"_Target");
+    	  headerFieldsOrder.add(metricID+"_ROI");
+      }
+    }
     headerFieldsOrder.add(nbRetainedCustomers);
     headerFieldsOrder.add(churnRate);
     headerFieldsOrder.add(churnROI);
@@ -93,102 +97,6 @@ public class ROIReportMonoPhase implements ReportCsvFactory
       else
         tenantID = 0;
       
-      if (elasticFields.containsKey("activationDate") && elasticFields.get("activationDate") != null)
-      {
-        Object activationDateObj = elasticFields.get("activationDate");
-        if (activationDateObj instanceof String)
-        {
-          String activationDateStr = (String) activationDateObj;
-          // TEMP fix for BLK : reformat date with correct template.
-          // current format comes from ES and is : 2020-04-20T09:51:38.953Z
-          try
-          {
-            Date date = parseSDF1.parse(activationDateStr);
-            // replace with new value
-            result.put(activationDate, ReportsCommonCode.getDateString(date)); 
-          }
-          catch (ParseException e1)
-          {
-            // Could also be 2019-11-27 15:39:30.276+0100
-            try
-            {
-              Date date = parseSDF2.parse(activationDateStr);
-              // replace with new value
-              result.put(activationDate, ReportsCommonCode.getDateString(date));
-            }
-            catch (ParseException e2)
-            {
-              log.info("Unable to parse " + activationDateStr);
-            }
-          }
-        }
-        else
-        {
-          log.info("activationDate is of wrong type : " + activationDateObj.getClass().getName());
-        }
-      }
-      else
-      {
-        result.put(activationDate, "");
-      }
-      for (String field : allProfileFields)
-      {
-        if (!field.equals(segments))
-        {
-          result.put(field, elasticFields.get(field));
-        }
-        else if (field.equals(evolutionSubscriberStatusChangeDate))
-        {
-
-          // TEMP fix for BLK : reformat date with correct template.
-
-          result.put(evolutionSubscriberStatusChangeDate, ReportsCommonCode.parseDate((String) elasticFields.get(evolutionSubscriberStatusChangeDate)));
-
-          // END TEMP fix for BLK
-        }
-      }
-      if (elasticFields.containsKey("relationships"))
-      {
-        if (elasticFields.get("relationships") != null)
-        {
-          Object relationshipObject = elasticFields.get("relationships");
-          result.put(relationships, relationshipObject);
-        }
-        else
-        {
-          result.put(relationships, "");
-        }
-      }
-      else
-      {
-        result.put(relationships, "");
-      }
-      result.putAll(allDimensionsMapPerTenant.get(tenantID)); // all dimensions have empty segments
-      for (String field : allProfileFields)
-      {
-        if (elasticFields.containsKey(segments))
-        {
-          String s = "" + elasticFields.get(segments);
-          String removeBrackets = s.substring(1, s.length() - 1); // "[ seg1, seg2, ...]"
-          String segmentIDs[] = removeBrackets.split(",");
-          Arrays.stream(segmentIDs).forEach(
-              segmentID -> {
-                String[] couple = segmentsNamesPerTenant.get(tenantID).get(segmentID.trim());
-                if (couple != null)
-                {
-                  String dimName = couple[INDEX_DIMENSION_NAME];
-                  String dimDisplay = dimNameDisplayMappingPerTenant.get(tenantID).get(dimName);
-                  if (dimDisplay == null || dimDisplay.isEmpty()) dimDisplay = dimName;
-                  result.put(dimDisplay, couple[INDEX_SEGMENT_NAME]);
-                }
-                else
-                {
-                  log.trace("Unknown segment ID : " + segmentID);
-                }
-              });
-        }
-      }
-
       if (addHeaders)
       {
         addHeaders(writer, result.keySet(), 1);
@@ -199,7 +107,8 @@ public class ROIReportMonoPhase implements ReportCsvFactory
       writer.write(line.getBytes());
     }
     return addHeaders;
- 
+    }
+    
     /****************************************
     *
     *  addHeaders
@@ -267,8 +176,19 @@ public class ROIReportMonoPhase implements ReportCsvFactory
             csvfile
             );
     
+    try {
+    	if (!reportMonoPhase.startOneToOne())
+        {
+          log.warn("An error occured, the report might be corrupted");
+          throw new RuntimeException("An error occurred, report must be restarted");
+        }
+    } 
+  finally
+    {
+      log.info("Finished LoyaltyMissionESReader");
+    }
     
-    
+  
   }
 
 }
