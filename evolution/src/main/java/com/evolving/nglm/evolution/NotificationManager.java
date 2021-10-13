@@ -1038,7 +1038,9 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
         NotificationManagerRequest dialogRequest = (NotificationManagerRequest) deliveryRequest;
         //prometheus status pending
         incrementStats(dialogRequest);
-        incrementPartsStats(dialogRequest);
+        if(((NotificationManagerRequest) dialogRequest).extractLastSentCount() > 1){
+          incrementPartsStats((NotificationManagerRequest) dialogRequest);
+        }
         dialogRequest.resolveFromAddressToSourceAddress(getSourceAddressService());
         DialogTemplate dialogTemplate = (DialogTemplate) getSubscriberMessageTemplateService().getActiveSubscriberMessageTemplate(dialogRequest.getTemplateID(), now);
         
@@ -1119,8 +1121,11 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
   {
     if(log.isDebugEnabled()) log.debug("NotificationManager.completeDeliveryRequest(deliveryRequest=" + deliveryRequest + ")");
     completeRequest((DeliveryRequest)deliveryRequest);
+
+    if(((NotificationManagerRequest) deliveryRequest).extractLastSentCount() > 1){
+      incrementPartsStats((NotificationManagerRequest) deliveryRequest);
+    }
     incrementStats((NotificationManagerRequest) deliveryRequest);
-    incrementPartsStats((NotificationManagerRequest) deliveryRequest);
   }
 
   private void incrementStats(NotificationManagerRequest notificationManagerRequest)
