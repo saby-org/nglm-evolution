@@ -60,7 +60,42 @@ public class GrafanaUtils
         Set<Tenant> tenants = Deployment.getTenants();
 
         HashMap<String, Integer> existingOrgs = getExistingGrafanaOrgs();
-
+        log.info("existingOrgs: " + existingOrgs);
+        
+        // Iterate the existingOrgs and delete those that are neither Main Org.nor t<tenantID>
+        for (Map.Entry<String, Integer> orgUnderStudy : existingOrgs.entrySet()) 
+        {
+          log.info("orgUnderStudy: " + orgUnderStudy.getKey());
+          if(!orgUnderStudy.getKey().equals("Main Org.")) 
+          {
+            boolean isOrgNameTtenantID = false; 
+            for (Tenant tenant : tenants)
+            {
+              int tenantID = tenant.getTenantID();
+              log.info("tenantID under-study: " +tenantID);
+              if (orgUnderStudy.getKey().equals("t"+tenantID))
+                {
+                isOrgNameTtenantID = true;
+                break;
+                }
+            }
+            
+            if (!isOrgNameTtenantID) 
+            {
+              log.info(orgUnderStudy.getKey() + " should be deleted");
+              HttpResponse response = sendGrafanaCurl(null, "/api/orgs/" + orgUnderStudy.getValue(), "DELETE");
+              if (response == null) {
+                log.warn("Could not get a non null response while loading organization " + orgUnderStudy.getKey() + " with OrgID "  + orgUnderStudy.getValue());
+              }
+              if (response.getStatusLine().getStatusCode() != 200) {
+                log.warn("Problem while deleting org " + orgUnderStudy.getKey() + " for orgID, " + orgUnderStudy.getValue() + " error code " + response.getStatusLine().getStatusCode() + " response message " + response.getStatusLine().getReasonPhrase());
+              }
+              if(response.getStatusLine().getStatusCode() == 200) {
+                log.info(orgUnderStudy.getKey() + " is deleted");
+              }
+            }
+          }
+        }
         for (Tenant tenant : tenants)
           {
             int tenantID = tenant.getTenantID();
