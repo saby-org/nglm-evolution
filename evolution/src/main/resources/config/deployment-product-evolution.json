@@ -1136,6 +1136,13 @@
       "description"         : "Description of personal vouchers uploaded into solutions",
       "class"               : "com.evolving.nglm.evolution.reports.voucherUploaded.VoucherUploadedReportDriver",
       "availableScheduling" : [ "none","daily", "weekly", "monthly" ]
+    },
+    {
+      "name"                : "ROIReport",
+      "display"             : "ROI Report",
+      "description"         : "Return On Investment.",
+      "class"               : "com.evolving.nglm.evolution.reports.ROI.ROIReportDriver",
+      "availableScheduling" : [ "none","daily", "weekly", "monthly" ]
     }
   ],
 

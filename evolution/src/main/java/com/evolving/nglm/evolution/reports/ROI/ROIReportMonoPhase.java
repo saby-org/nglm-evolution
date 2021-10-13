@@ -7,13 +7,16 @@
 package com.evolving.nglm.evolution.reports.ROI;
 
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.Map.Entry;
 import java.util.zip.ZipOutputStream;
 
 import org.elasticsearch.index.query.QueryBuilder;
@@ -43,7 +46,7 @@ public class ROIReportMonoPhase implements ReportCsvFactory
 {
   private static final Logger log = LoggerFactory.getLogger(ROIReportMonoPhase.class);
   final private static String CSV_SEPARATOR = ReportUtils.getSeparator();
-
+  
   private static final String dateTime = "dateTime";
   private static final String nbCustomerUCG = "nbCustomerUCG";
   private static final String nbCustomerTarget = "nbCustomerTarget";
@@ -71,67 +74,156 @@ public class ROIReportMonoPhase implements ReportCsvFactory
     headerFieldsOrder.add(churnROI);
   }
 
-  private OfferService offerService = null;
-  private TokenTypeService tokenTypeService = null;
-  private PresentationStrategyService presentationStrategyService = null;
-  private ScoringStrategyService scoringStrategyService = null;
-  private JourneyService journeyService = null;
-  private LoyaltyProgramService loyaltyProgramService = null;
   private int tenantID = 0;
 
   /****************************************
-   *
-   * dumpElementToCsv
-   *
-   ****************************************/
-
- 
+  *
+  * dumpElementToCsv
+  *
+    ****************************************/
   public boolean dumpElementToCsvMono(Map<String,Object> map, ZipOutputStream writer, boolean addHeaders) throws IOException
   {
+    final int tenantID;
     LinkedHashMap<String, Object> result = new LinkedHashMap<>();
-    LinkedHashMap<String, Object> commonFields = new LinkedHashMap<>();
-    Map<String, Object> subscriberFields = map;
-
-    if (subscriberFields != null)
+    Map<String, Object> elasticFields = map;
+    if (elasticFields != null)
+    {
+      if (elasticFields.get("tenantID") != null)
+        tenantID = (Integer) elasticFields.get("tenantID");
+      else
+        tenantID = 0;
+      
+      if (elasticFields.containsKey("activationDate") && elasticFields.get("activationDate") != null)
       {
-        String subscriberID = Objects.toString(subscriberFields.get("subscriberID"));
-        Date now = SystemTime.getCurrentTime();
-        if (subscriberID != null)
+        Object activationDateObj = elasticFields.get("activationDate");
+        if (activationDateObj instanceof String)
+        {
+          String activationDateStr = (String) activationDateObj;
+          // TEMP fix for BLK : reformat date with correct template.
+          // current format comes from ES and is : 2020-04-20T09:51:38.953Z
+          try
           {
-        	
+            Date date = parseSDF1.parse(activationDateStr);
+            // replace with new value
+            result.put(activationDate, ReportsCommonCode.getDateString(date)); 
           }
+          catch (ParseException e1)
+          {
+            // Could also be 2019-11-27 15:39:30.276+0100
+            try
+            {
+              Date date = parseSDF2.parse(activationDateStr);
+              // replace with new value
+              result.put(activationDate, ReportsCommonCode.getDateString(date));
+            }
+            catch (ParseException e2)
+            {
+              log.info("Unable to parse " + activationDateStr);
+            }
+          }
+        }
+        else
+        {
+          log.info("activationDate is of wrong type : " + activationDateObj.getClass().getName());
+        }
       }
+      else
+      {
+        result.put(activationDate, "");
+      }
+      for (String field : allProfileFields)
+      {
+        if (!field.equals(segments))
+        {
+          result.put(field, elasticFields.get(field));
+        }
+        else if (field.equals(evolutionSubscriberStatusChangeDate))
+        {
+
+          // TEMP fix for BLK : reformat date with correct template.
+
+          result.put(evolutionSubscriberStatusChangeDate, ReportsCommonCode.parseDate((String) elasticFields.get(evolutionSubscriberStatusChangeDate)));
+
+          // END TEMP fix for BLK
+        }
+      }
+      if (elasticFields.containsKey("relationships"))
+      {
+        if (elasticFields.get("relationships") != null)
+        {
+          Object relationshipObject = elasticFields.get("relationships");
+          result.put(relationships, relationshipObject);
+        }
+        else
+        {
+          result.put(relationships, "");
+        }
+      }
+      else
+      {
+        result.put(relationships, "");
+      }
+      result.putAll(allDimensionsMapPerTenant.get(tenantID)); // all dimensions have empty segments
+      for (String field : allProfileFields)
+      {
+        if (elasticFields.containsKey(segments))
+        {
+          String s = "" + elasticFields.get(segments);
+          String removeBrackets = s.substring(1, s.length() - 1); // "[ seg1, seg2, ...]"
+          String segmentIDs[] = removeBrackets.split(",");
+          Arrays.stream(segmentIDs).forEach(
+              segmentID -> {
+                String[] couple = segmentsNamesPerTenant.get(tenantID).get(segmentID.trim());
+                if (couple != null)
+                {
+                  String dimName = couple[INDEX_DIMENSION_NAME];
+                  String dimDisplay = dimNameDisplayMappingPerTenant.get(tenantID).get(dimName);
+                  if (dimDisplay == null || dimDisplay.isEmpty()) dimDisplay = dimName;
+                  result.put(dimDisplay, couple[INDEX_SEGMENT_NAME]);
+                }
+                else
+                {
+                  log.trace("Unknown segment ID : " + segmentID);
+                }
+              });
+        }
+      }
+
+      if (addHeaders)
+      {
+        addHeaders(writer, result.keySet(), 1);
+        addHeaders = false;
+      }
+      String line = ReportUtils.formatResult(result);
+      if (log.isTraceEnabled()) log.trace("Writing to csv file : " + line);
+      writer.write(line.getBytes());
+    }
     return addHeaders;
-  }
+ 
+    /****************************************
+    *
+    *  addHeaders
+    *
+    ****************************************/
 
-  private String dateOrEmptyString(Object time)
-  {
-    return (time == null) ? "" : ReportsCommonCode.getDateString(new Date((long) time));
-  }
-  
-  /****************************************
-   *
-   * addHeaders
-   *
-   ****************************************/
+    private void addHeaders(ZipOutputStream writer, Set<String> headers, int offset) throws IOException
+    {
+      if (headers != null && !headers.isEmpty())
+        {
+          String header = "";
+          for (String field : headers)
+            {
+              header += field + CSV_SEPARATOR;
+            }
+          header = header.substring(0, header.length() - offset);
+          writer.write(header.getBytes());
+          if (offset == 1)
+            {
+              writer.write("\n".getBytes());
+            }
+        }
+    }
 
-  private void addHeaders(ZipOutputStream writer, Set<String> headers, int offset) throws IOException
-  {
-    if (headers != null && !headers.isEmpty())
-      {
-        String header = "";
-        for (String field : headers)
-          {
-            header += field + CSV_SEPARATOR;
-          }
-        header = header.substring(0, header.length() - offset);
-        writer.write(header.getBytes());
-        if (offset == 1)
-          {
-            writer.write("\n".getBytes());
-          }
-      }
-  }
 
   /****************************************
    *
@@ -141,8 +233,8 @@ public class ROIReportMonoPhase implements ReportCsvFactory
 
   public static void main(String[] args, final Date reportGenerationDate)
   {
-    ROIReportMonoPhase tokenReportMonoPhase = new ROIReportMonoPhase();
-    tokenReportMonoPhase.start(args, reportGenerationDate);
+    ROIReportMonoPhase roiReportMonoPhase = new ROIReportMonoPhase();
+    roiReportMonoPhase.start(args, reportGenerationDate);
   }
   
   private void start(String[] args, final Date reportGenerationDate)
@@ -150,12 +242,12 @@ public class ROIReportMonoPhase implements ReportCsvFactory
     log.info("received " + args.length + " args");
     for (String arg : args)
       {
-        log.info("TokenReportESReader: arg " + arg);
+        log.info("ROIReportESReader: arg " + arg);
       }
 
     if (args.length < 3) {
       log.warn(
-          "Usage : TokenReportMonoPhase <ESNode> <ES customer index> <csvfile>");
+          "Usage : ROIReportMonoPhase <ESNode> <ES customer index> <csvfile>");
       return;
     }
     String esNode          = args[0];
@@ -169,40 +261,14 @@ public class ROIReportMonoPhase implements ReportCsvFactory
     esIndexWithQuery.put(esIndexCustomer, QueryBuilders.boolQuery().filter(QueryBuilders.termQuery("tenantID", tenantID)));
       
     ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
-              esNode,
-              esIndexWithQuery,
-              this,
-              csvfile
-          );
-
-    offerService = new OfferService(Deployment.getBrokerServers(), "report-offerService-tokenReportMonoPhase", Deployment.getOfferTopic(), false);
-    scoringStrategyService = new ScoringStrategyService(Deployment.getBrokerServers(), "report-scoringstrategyservice-tokenReportMonoPhase", Deployment.getScoringStrategyTopic(), false);
-    presentationStrategyService = new PresentationStrategyService(Deployment.getBrokerServers(), "report-presentationstrategyservice-tokenReportMonoPhase", Deployment.getPresentationStrategyTopic(), false);
-    tokenTypeService = new TokenTypeService(Deployment.getBrokerServers(), "report-tokentypeservice-tokenReportMonoPhase", Deployment.getTokenTypeTopic(), false);
-    journeyService = new JourneyService(Deployment.getBrokerServers(), "report-journeyservice-tokenReportMonoPhase",Deployment.getJourneyTopic(), false);
-    loyaltyProgramService = new LoyaltyProgramService(Deployment.getBrokerServers(), "report-loyaltyprogramservice-tokenReportMonoPhase", Deployment.getLoyaltyProgramTopic(), false);
-
-    offerService.start();
-    scoringStrategyService.start();
-    presentationStrategyService.start();
-    tokenTypeService.start();
-    journeyService.start();
-    loyaltyProgramService.start();
-
-    try {
-      if (!reportMonoPhase.startOneToOne())
-        {
-          log.warn("An error occured, the report might be corrupted");
-          throw new RuntimeException("An error occurred, report must be restarted");
-        }
-    } finally {
-      offerService.stop();
-      scoringStrategyService.stop();
-      presentationStrategyService.stop();
-      tokenTypeService.stop();
-      journeyService.stop();
-      loyaltyProgramService.stop();
-    }
+            esNode,
+            esIndexWithQuery,
+            this,
+            csvfile
+            );
+    
+    
+    
   }
 
 }

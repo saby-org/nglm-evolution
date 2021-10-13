@@ -31,8 +31,6 @@ public class ROIReportDriver extends ReportDriver
     log.debug("Processing ROI Report with " + report.getName());
 
     String esIndexSubscriber = getSubscriberProfileIndex(reportGenerationDate);
-    String defaultReportPeriodUnit = report.getDefaultReportPeriodUnit();
-    int defaultReportPeriodQuantity = report.getDefaultReportPeriodQuantity();
 
     ROIReportMonoPhase.main(new String[] { elasticSearch, esIndexSubscriber, csvFilename, tenantID+"" }, reportGenerationDate);
 
