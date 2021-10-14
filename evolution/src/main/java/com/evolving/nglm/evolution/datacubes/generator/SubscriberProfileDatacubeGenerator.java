@@ -162,7 +162,7 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
     
     List<AggregationBuilder> metricAggregations = new ArrayList<AggregationBuilder>();
     
-    Map<String, SubscriberProfileDatacubeMetric> customMetrics = Deployment.getSubscriberProfileDatacubeMetrics();
+    Map<String, SubscriberProfileDatacubeMetric> customMetrics = Deployment.getSubscriberProfileDatacubeConfiguration().getMetrics();
     for(String metricID: customMetrics.keySet()) {
       SubscriberProfileDatacubeMetric customMetric = customMetrics.get(metricID);
       AggregationBuilder customMetricAgg = AggregationBuilders.sum(METRIC_PREFIX+metricID)
@@ -189,7 +189,7 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
       return metrics;
     }
 
-    Map<String, SubscriberProfileDatacubeMetric> customMetrics = Deployment.getSubscriberProfileDatacubeMetrics();
+    Map<String, SubscriberProfileDatacubeMetric> customMetrics = Deployment.getSubscriberProfileDatacubeConfiguration().getMetrics();
     for(String metricID: customMetrics.keySet()) {
       SubscriberProfileDatacubeMetric customMetric = customMetrics.get(metricID);
       

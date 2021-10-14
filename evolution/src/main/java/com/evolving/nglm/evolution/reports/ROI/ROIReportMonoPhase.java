@@ -64,7 +64,7 @@ public class ROIReportMonoPhase implements ReportCsvFactory
     headerFieldsOrder.add(dateTime);
     headerFieldsOrder.add(nbCustomerUCG);
     headerFieldsOrder.add(nbCustomerTarget);
-    Map<String, SubscriberProfileDatacubeMetric> customMetrics = Deployment.getSubscriberProfileDatacubeMetrics();
+    Map<String, SubscriberProfileDatacubeMetric> customMetrics = Deployment.getSubscriberProfileDatacubeConfiguration().getMetrics();
     for(String metricID: customMetrics.keySet()) {
       SubscriberProfileDatacubeMetric customMetric = customMetrics.get(metricID);
       if(customMetric.isMetricROI()) {

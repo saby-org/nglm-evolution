@@ -125,7 +125,7 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
   {
     loyaltyProgramsMap.update();
     this.segmentationDimensionList.update();
-    this.customMetrics = Deployment.getSubscriberProfileDatacubeMetrics();
+    this.customMetrics = Deployment.getSubscriberProfileDatacubeConfiguration().getMetrics();
     //TODO: subscriberStatusDisplayMapping.updateFromElasticsearch(elasticsearch);
     return true;
   }
