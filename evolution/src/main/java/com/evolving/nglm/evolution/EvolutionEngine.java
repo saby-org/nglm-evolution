@@ -1841,104 +1841,112 @@ public class EvolutionEngine
 
     Date now = context.now();
 
-	/*****************************************
-	 *
-	 * cleanup
-	 * 
-	 * If the event contains Cleanup, then tag the subscriber to be cleaned. When
-	 * the time to clean is reached, then generate an event with subscriber action
-	 * cleanup immediately.
-	 *
-	 *****************************************/
+  /*****************************************
+   *
+   * cleanup
+   * 
+   * If the event contains Cleanup, then tag the subscriber to be cleaned. When
+   * the time to clean is reached, then generate an event with subscriber action
+   * cleanup immediately.
+   *
+   *****************************************/
 
-	switch (evolutionEvent.getSubscriberAction()) {
-	case Cleanup:
-	case CleanupImmediate:
-	  // check if the cleanup date has already been set before
-	  // - if no, the current cleanup / cleanupImmediate is the first one so 
-	  //    * compute the end date (in the future for cleanup and now for cleanupimmediate) and schedule a timeout
-	  //    * set the Terminated status 
-	  //    * Trig a schedule for the good date...
-	  // 
-	  
-	  if(subscriberState.getCleanupDate() == null)
-	    {
-	      Date nowDate = SystemTime.getCurrentTime();
-	      if(evolutionEvent.getSubscriberAction() == SubscriberAction.Cleanup)
-	        {
-	          subscriberState.setCleanupDate(EvolutionUtilities.addTime(nowDate,
-	              Deployment.getDeployment(tenantID).getSubscriberDeletionTimeUnitNumber(),
-	              Deployment.getDeployment(tenantID).getSubscriberDeletionTimeUnit(),
-	              Deployment.getDeployment(tenantID).getTimeZone(), EvolutionUtilities.RoundingSelection.NoRound));
-	          
-	        }
-	      else // cleanupImmediate
-	        {
-	          subscriberState.setCleanupDate(nowDate);	          
-	        }
-	      TimedEvaluation timed = new TimedEvaluation(
-	          subscriberState.getSubscriberID(), 
-            subscriberState.getCleanupDate(), "cleanup-1-" + subscriberProfile.getSubscriberID());
-	      subscriberState.getScheduledEvaluations().add(timed);
-	      updateScheduledEvaluations(scheduledEvaluationsBefore, subscriberState.getScheduledEvaluations());
-	      subscriberState.getSubscriberProfile().setEvolutionSubscriberStatus(EvolutionSubscriberStatus.Terminated);
-	    }
-	  else if(subscriberState.getCleanupDate().before(SystemTime.getCurrentTime()))
-	    {
-	      // reschedule
-	      TimedEvaluation timed = new TimedEvaluation(
-            subscriberState.getSubscriberID(), 
-            subscriberState.getCleanupDate(), "cleanup-2-" + subscriberProfile.getSubscriberID());
-	      subscriberState.getScheduledEvaluations().add(timed);
-	      updateScheduledEvaluations(scheduledEvaluationsBefore, subscriberState.getScheduledEvaluations());     
-	    }
-	  SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(),
-        subscriberState);
-    return subscriberState;
+  switch (evolutionEvent.getSubscriberAction()) 
+  {
+    case Cleanup:
+    case CleanupImmediate:
+      // check if the cleanup date has already been set before
+      // - if no, the current cleanup / cleanupImmediate is the first one so 
+      //    * compute the end date (in the future for cleanup and now for cleanupimmediate) and schedule a timeout
+      //    * set the Terminated status 
+      //    * Trig a schedule for the good date...
+      // 
+      
+      if(subscriberState.getCleanupDate() == null)
+        {
+          Date nowDate = SystemTime.getCurrentTime();
+          if(evolutionEvent.getSubscriberAction() == SubscriberAction.Cleanup)
+            {
+              subscriberState.setCleanupDate(EvolutionUtilities.addTime(nowDate,
+                  Deployment.getDeployment(tenantID).getSubscriberDeletionTimeUnitNumber(),
+                  Deployment.getDeployment(tenantID).getSubscriberDeletionTimeUnit(),
+                  Deployment.getDeployment(tenantID).getTimeZone(), EvolutionUtilities.RoundingSelection.NoRound));
+              
+            }
+          else // cleanupImmediate
+            {
+              subscriberState.setCleanupDate(nowDate);            
+            }
+          TimedEvaluation timed = new TimedEvaluation(subscriberState.getSubscriberID(), subscriberState.getCleanupDate(), "cleanup-1-" + subscriberProfile.getSubscriberID());
+          subscriberState.getScheduledEvaluations().add(timed);
+          updateScheduledEvaluations(scheduledEvaluationsBefore, subscriberState.getScheduledEvaluations());
+          subscriberState.getSubscriberProfile().setEvolutionSubscriberStatus(EvolutionSubscriberStatus.Terminated);
+        }
+      SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(),
+          subscriberState);
+      return subscriberState;
+  
+    case Delete: // Delete is useful for SubscriberManager, not really for Evolution Engine
+    case DeleteImmediate: // DeleteImmediate is useful for SubscriberManager, not really for Evolution
+                // Engine
+      if (previousSubscriberState == null) { return null; }
+      SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(),
+          subscriberState);
+      return subscriberState;
+  }
+  
+  // on any event make effective clean if needed...
+  if(subscriberState.getCleanupDate() != null && subscriberState.getCleanupDate().before(SystemTime.getCurrentTime()))
+    {
+      if (Boolean.TRUE.equals(subscriberState.getCleanupESAlreadyTriggered()))
+          {
+            // All ok: ready to clean as the request for ES has already be triggered
+            updateScheduledEvaluations(scheduledEvaluationsBefore, Collections.<TimedEvaluation>emptySet());
+            return null;
+          }
+      else 
+        {            
+          // ready to clean ES : trig a cleanupEvent to inform ES and mark the subscriber as already tagged for ES cleaup
+          subscriberState.setCleanupESAlreadyTriggered(true);
+          CleanupSubscriber cleanupEvent = new CleanupSubscriber(subscriberState.getSubscriberID(), SystemTime.getCurrentTime(), SubscriberAction.DeleteImmediate);
+          cleanupEvent.setCleanExtESReady(true);
+          subscriberState.getImmediateCleanupActions().add(cleanupEvent);
+        }
+    }
+  /*****************************************
+  *
+  * End cleanup section
+  *
+  *****************************************/
+  
+  SubscriberEvaluationRequest subscriberEvaluationRequest = new SubscriberEvaluationRequest(subscriberProfile,
+      extendedSubscriberProfile, subscriberGroupEpochReader, now, tenantID);
 
-	case Delete: // Delete is useful for SubscriberManager, not really for Evolution Engine
-	case DeleteImmediate: // DeleteImmediate is useful for SubscriberManager, not really for Evolution
-							// Engine
-		if (previousSubscriberState == null) { return null; }
-		SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(),
-				subscriberState);
-		return subscriberState;
-	}
-	// on any event make effective clean if needed...
-	if (subscriberState.getCleanupDate() != null && subscriberState.getCleanupDate().before(SystemTime.getCurrentTime())) {
-	  // cleanup the subscriber now... just return null...
-    updateScheduledEvaluations(scheduledEvaluationsBefore, Collections.<TimedEvaluation>emptySet());
-    return null;
-	}
+  /*****************************************
+   *
+   * handle One Time Password (OTP)
+   *
+   *****************************************/
+  if (evolutionEvent instanceof TimedEvaluation && ((TimedEvaluation) evolutionEvent).getPeriodicEvaluation()) {
+    OTPUtils.clearOldOTPs(subscriberProfile, otpTypeService, tenantID);
+  }
+  if (evolutionEvent instanceof OTPInstanceChangeEvent) {
+    subscriberState.getOTPInstanceChangeEvent()
+        .add(OTPUtils.handleOTPEvent((OTPInstanceChangeEvent) evolutionEvent, subscriberState, otpTypeService,
+            subscriberMessageTemplateService, sourceAddressService, subscriberEvaluationRequest, context,
+            tenantID));
+    subscriberStateUpdated = true;
+  }
 
-	SubscriberEvaluationRequest subscriberEvaluationRequest = new SubscriberEvaluationRequest(subscriberProfile,
-			extendedSubscriberProfile, subscriberGroupEpochReader, now, tenantID);
+  /*****************************************
+   *
+   * update subscriber hierarchy
+   *
+   *****************************************/
 
-	/*****************************************
-	 *
-	 * handle One Time Password (OTP)
-	 *
-	 *****************************************/
-	if (evolutionEvent instanceof TimedEvaluation && ((TimedEvaluation) evolutionEvent).getPeriodicEvaluation()) {
-		OTPUtils.clearOldOTPs(subscriberProfile, otpTypeService, tenantID);
-	}
-	if (evolutionEvent instanceof OTPInstanceChangeEvent) {
-		subscriberState.getOTPInstanceChangeEvent()
-				.add(OTPUtils.handleOTPEvent((OTPInstanceChangeEvent) evolutionEvent, subscriberState, otpTypeService,
-						subscriberMessageTemplateService, sourceAddressService, subscriberEvaluationRequest, context,
-						tenantID));
-		subscriberStateUpdated = true;
-	}
-
-	/*****************************************
-	 *
-	 * update subscriber hierarchy
-	 *
-	 *****************************************/
-
-	if (evolutionEvent instanceof UpdateParentRelationshipEvent
-			&& ((UpdateParentRelationshipEvent) evolutionEvent).getNewParent() != null
-			&& ((UpdateParentRelationshipEvent) evolutionEvent).getRelationshipDisplay() != null) {
+  if (evolutionEvent instanceof UpdateParentRelationshipEvent
+      && ((UpdateParentRelationshipEvent) evolutionEvent).getNewParent() != null
+      && ((UpdateParentRelationshipEvent) evolutionEvent).getRelationshipDisplay() != null) {
         UpdateParentRelationshipEvent updateParentRelationshipEvent = (UpdateParentRelationshipEvent)evolutionEvent;
         // This is the children that set or unset a parent for a given type of relation
         String relationshipDisplay = updateParentRelationshipEvent.getRelationshipDisplay();
@@ -3930,18 +3938,18 @@ public class EvolutionEngine
             evolutionEventContext.setExecuteActionOtherSubscriberDeliveryRequestID(executeActionOtherSubscriber.getOutstandingDeliveryRequestID());
             evolutionEventContext.setExecuteActionOtherUserOriginalSubscriberID(executeActionOtherSubscriber.getOriginatingSubscriberID());
 
-	        // build new SubscriberEvaluationRequest
-	        SubscriberEvaluationRequest subscriberEvaluationRequest = new SubscriberEvaluationRequest(
-	            evolutionEventContext.getSubscriberState().getSubscriberProfile(),
-	            (ExtendedSubscriberProfile) null,
-	            subscriberGroupEpochReader,
-	            originalJourneyState,
-	            originalJourneyNode,
-	            null,
-	            null,
-	            evolutionEventContext.now, tenantID);
-	        List<Action> actions = actionManager.executeOnEntry(evolutionEventContext, subscriberEvaluationRequest);
-	        handleExecuteOnEntryActions(evolutionEventContext.getSubscriberState(), originalJourneyState, originalJourney, actions, subscriberEvaluationRequest, evolutionEventContext.getEventID());
+          // build new SubscriberEvaluationRequest
+          SubscriberEvaluationRequest subscriberEvaluationRequest = new SubscriberEvaluationRequest(
+              evolutionEventContext.getSubscriberState().getSubscriberProfile(),
+              (ExtendedSubscriberProfile) null,
+              subscriberGroupEpochReader,
+              originalJourneyState,
+              originalJourneyNode,
+              null,
+              null,
+              evolutionEventContext.now, tenantID);
+          List<Action> actions = actionManager.executeOnEntry(evolutionEventContext, subscriberEvaluationRequest);
+          handleExecuteOnEntryActions(evolutionEventContext.getSubscriberState(), originalJourneyState, originalJourney, actions, subscriberEvaluationRequest, evolutionEventContext.getEventID());
 
             // clean temporary data to avoid next nodes considering this event
             evolutionEventContext.setExecuteActionOtherSubscriberDeliveryRequestID(null);
@@ -5488,7 +5496,7 @@ public class EvolutionEngine
               ArrayList<String> presentedOfferIDs = new ArrayList<>();
               if(dnboToken.getTokenCode() != null)
                 {
-            	  for(ProposedOfferDetails current : dnboToken.getProposedOfferDetails())
+                for(ProposedOfferDetails current : dnboToken.getProposedOfferDetails())
                     {
                       presentedOfferIDs.add(current.getOfferId());
                     }
@@ -7324,7 +7332,8 @@ public class EvolutionEngine
     *  get (or create) entry
     *
     ****************************************/
-
+    log.info(SystemTime.getCurrentTime() + " updateExtendedSubscriberProfile event " + evolutionEvent);
+    
     ExtendedSubscriberProfile extendedSubscriberProfile = (currentExtendedSubscriberProfile != null) ? ExtendedSubscriberProfile.copy(currentExtendedSubscriberProfile) : ExtendedSubscriberProfile.create(evolutionEvent.getSubscriberID());
     ExtendedProfileContext context = new ExtendedProfileContext(extendedSubscriberProfile, subscriberGroupEpochReader, uniqueKeyServer, SystemTime.getCurrentTime());
     boolean extendedSubscriberProfileUpdated = (currentExtendedSubscriberProfile != null) ? false : true;
@@ -7350,24 +7359,60 @@ public class EvolutionEngine
     *  cleanup
     *
     *****************************************/
-
-    switch (evolutionEvent.getSubscriberAction())
+    if(currentExtendedSubscriberProfile == null && evolutionEvent instanceof TimedEvaluation && ((TimedEvaluation)evolutionEvent).getPeriodicEvaluation()) {
+      // this is a periodic evaluation when the subscriber does not exist, don't create it for the moment, this may be a side effect when cleaning the subscriber...
+      return null;
+    }
+    if(evolutionEvent instanceof CleanupSubscriber)
       {
-        
-        case Cleanup:
-          // nothing to do
-          break;
-        
-        case CleanupImmediate:
-          // cleanup the subscriber now... just return null...
-          return null;          
-          
-        case Delete: // Delete is useful for SubscriberManager, not really for Evolution Engine
-        case DeleteImmediate: // DeleteImmediate is useful for SubscriberManager, not really for Evolution Engine
-          cleanExtendedSubscriberProfile(currentExtendedSubscriberProfile, now);
-          ExtendedSubscriberProfile.stateStoreSerde().setKafkaRepresentation(Deployment.getExtendedSubscriberProfileChangeLogTopic(), currentExtendedSubscriberProfile);
-          return currentExtendedSubscriberProfile;
+        log.info("CleanupSubscriber " + evolutionEvent);
+        if(Boolean.TRUE.equals(((CleanupSubscriber)evolutionEvent).getCleanExtESReady())) 
+          { 
+            return null;
+          }
+        else {
+          extendedSubscriberProfile.setTerminationDate(SystemTime.getCurrentTime());
+          extendedSubscriberProfileUpdated = true;
+        }
       }
+//    
+//    switch (evolutionEvent.getSubscriberAction())
+//      {
+//        
+//      case Cleanup:
+//      case CleanupImmediate:
+//        if(currentExtendedSubscriberProfile.getTerminationDate() == null)
+//          {
+//            Date nowDate = SystemTime.getCurrentTime();
+//            if(evolutionEvent.getSubscriberAction() == SubscriberAction.Cleanup)
+//              {
+//                currentExtendedSubscriberProfile.setTerminationDate(EvolutionUtilities.addTime(nowDate,
+//                    Deployment.getDeployment(currentExtendedSubscriberProfile.getTenantID()).getSubscriberDeletionTimeUnitNumber(),
+//                    Deployment.getDeployment(currentExtendedSubscriberProfile.getTenantID()).getSubscriberDeletionTimeUnit(),
+//                    Deployment.getDeployment(currentExtendedSubscriberProfile.getTenantID()).getTimeZone(), EvolutionUtilities.RoundingSelection.NoRound));
+//              }
+//            else // cleanupImmediate
+//              {
+//                currentExtendedSubscriberProfile.setTerminationDate(nowDate);            
+//              }
+//          }
+//          cleanExtendedSubscriberProfile(currentExtendedSubscriberProfile, now);
+//          ExtendedSubscriberProfile.stateStoreSerde().setKafkaRepresentation(Deployment.getExtendedSubscriberProfileChangeLogTopic(), currentExtendedSubscriberProfile);
+//          return currentExtendedSubscriberProfile;
+//          
+//      case Delete: // Delete is useful for SubscriberManager, not really for Evolution Engine
+//      case DeleteImmediate: // DeleteImmediate is useful for SubscriberManager, not really for Evolution Engine
+//        cleanExtendedSubscriberProfile(currentExtendedSubscriberProfile, now);
+//        ExtendedSubscriberProfile.stateStoreSerde().setKafkaRepresentation(Deployment.getExtendedSubscriberProfileChangeLogTopic(), currentExtendedSubscriberProfile);
+//        return currentExtendedSubscriberProfile;
+//      }
+//    
+//        
+//      // on any event make effective clean if needed...
+//      if(currentExtendedSubscriberProfile.getTerminationDate() != null && currentExtendedSubscriberProfile.getTerminationDate().before(SystemTime.getCurrentTime()))
+//        {
+//          return null;
+//        }
     
     /*****************************************
     *

@@ -460,16 +460,21 @@ public class CleanupSubscriberESSinkConnector extends SinkConnector
       ****************************************/
 
       if (sinkRecords.size() > 0)
-        log.info("{} -- Task.put() - {} records.", connectorName, sinkRecords.size());
+        log.debug("Cleanup {} -- Task.put() - {} records.", connectorName, sinkRecords.size());
       else
         log.trace("{} -- Task.put() - {} records.", connectorName, sinkRecords.size());
       List<String> subscriberIDs = new ArrayList<String>();
       for (SinkRecord sinkRecord : sinkRecords)
         {
+          log.debug("Cleanup  -- Task.put() - records. 1");
           Object cleanupSubscriberValue = sinkRecord.value();
           Schema cleanupSubscriberValueSchema = sinkRecord.valueSchema();
           CleanupSubscriber cleanupSubscriber = CleanupSubscriber.unpack(new SchemaAndValue(cleanupSubscriberValueSchema, cleanupSubscriberValue));
-          subscriberIDs.add(cleanupSubscriber.getSubscriberID());
+          log.debug("Cleanup  -- Task.put() - records. 1 addd " + cleanupSubscriber.getSubscriberID() + " Cleanup " + cleanupSubscriber.toString());
+          if(Boolean.TRUE.equals(cleanupSubscriber.getCleanExtESReady()))
+            {
+              subscriberIDs.add(cleanupSubscriber.getSubscriberID());
+            }
         }
 
       /****************************************
@@ -480,6 +485,7 @@ public class CleanupSubscriberESSinkConnector extends SinkConnector
 
       if (Deployment.getCleanupSubscriberElasticsearchIndexes().size() > 0)
         {
+          log.debug("Cleanup  -- Task.put() - records. 2");
           int processed = 0;
           while (processed < subscriberIDs.size())
             {
@@ -491,6 +497,7 @@ public class CleanupSubscriberESSinkConnector extends SinkConnector
               int end = Math.min(processed + maxSubscribersPerRequest, subscriberIDs.size());
               String[] currentSubscriberIDs = subscriberIDs.subList(start, end).toArray(new String[0]);
               processed = end;
+              log.debug("Cleanup  -- Task.put() - records. 3");
 
               //
               //  delete - retrying on failures
@@ -501,14 +508,14 @@ public class CleanupSubscriberESSinkConnector extends SinkConnector
                   //
                   //  delete
                   //
-
+                  log.debug("Cleanup  -- Task.put() - records. 4");
                   DeleteByQueryRequest deleteByQueryRequest = new DeleteByQueryRequest(Deployment.getCleanupSubscriberElasticsearchIndexes().toArray(new String[0]));
                   deleteByQueryRequest.setQuery(QueryBuilders.termsQuery("subscriberID", currentSubscriberIDs));
                   deleteByQueryRequest.setConflicts("proceed");
                   deleteByQueryRequest.setSlices(DeleteByQueryRequest.AUTO_SLICES);
                   deleteByQueryRequest.setScroll(TimeValue.timeValueMinutes(5));
                   BulkByScrollResponse response = client.deleteByQuery(deleteByQueryRequest, RequestOptions.DEFAULT);
-
+                  log.debug("Cleanup  -- Task.put() - records. 5");
                   //
                   //  abort (and retry) on failures
                   //
@@ -538,9 +545,9 @@ public class CleanupSubscriberESSinkConnector extends SinkConnector
       *  update statistics
       *
       ****************************************/
-
+      log.info("Cleanup  -- Task.put() - records. 6");
       updatePutCount(connectorName, taskNumber, 1);
-      updateRecordCount(connectorName, taskNumber, subscriberIDs.size());
+      updateRecordCount(connectorName, taskNumber, (subscriberIDs.size() > 0 ? subscriberIDs.size() : 1)); // to avoid reading the same event if subscriberIDs is empty...
     }
 
     /*****************************************

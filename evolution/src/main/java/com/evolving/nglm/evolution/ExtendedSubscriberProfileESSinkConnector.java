@@ -78,7 +78,16 @@ public abstract class ExtendedSubscriberProfileESSinkConnector extends SimpleESS
     {
       Object extendedSubscriberProfileValue = sinkRecord.value();
       Schema extendedSubscriberProfileValueSchema = sinkRecord.valueSchema();
-      return ExtendedSubscriberProfile.getExtendedSubscriberProfileSerde().unpack(new SchemaAndValue(extendedSubscriberProfileValueSchema, extendedSubscriberProfileValue));
+      ExtendedSubscriberProfile extendedSubscriberProfile = ExtendedSubscriberProfile.getExtendedSubscriberProfileSerde().unpack(new SchemaAndValue(extendedSubscriberProfileValueSchema, extendedSubscriberProfileValue));
+      if(extendedSubscriberProfile.getTerminationDate() == null)
+        {
+          return ExtendedSubscriberProfile.getExtendedSubscriberProfileSerde().unpack(new SchemaAndValue(extendedSubscriberProfileValueSchema, extendedSubscriberProfileValue));
+        }
+      else 
+        {
+          // don't record on ES
+          return null;
+        }
     }
     
     /*****************************************

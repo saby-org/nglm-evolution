@@ -34,11 +34,12 @@ public class CleanupSubscriber extends SubscriberStreamOutput implements com.evo
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("cleanup_subscriber");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(), 3));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(), 4));
     for (Field field : subscriberStreamOutputSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("eventDate", Timestamp.SCHEMA);
     schemaBuilder.field("subscriberAction", SchemaBuilder.string().defaultValue("standard").schema());
+    schemaBuilder.field("cleanExtESReady", Schema.OPTIONAL_BOOLEAN_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -65,6 +66,7 @@ public class CleanupSubscriber extends SubscriberStreamOutput implements com.evo
   private String subscriberID;
   private Date eventDate;
   private SubscriberAction subscriberAction;
+  private Boolean cleanExtESReady;
 
   /****************************************
   *
@@ -76,6 +78,8 @@ public class CleanupSubscriber extends SubscriberStreamOutput implements com.evo
   @Override public Date getEventDate() { return eventDate; }
   @Override public SubscriberAction getSubscriberAction() { return subscriberAction; }
   @Override public DeliveryRequest.DeliveryPriority getDeliveryPriority(){return DeliveryRequest.DeliveryPriority.Low; }
+  public Boolean getCleanExtESReady() { return cleanExtESReady; }
+  public void setCleanExtESReady(Boolean cleanExtESReady) { this.cleanExtESReady = cleanExtESReady; }
 
   /*****************************************
   *
@@ -88,6 +92,7 @@ public class CleanupSubscriber extends SubscriberStreamOutput implements com.evo
     this.subscriberID = subscriberID;
     this.eventDate = eventDate;
     this.subscriberAction = subscriberAction;
+    this.cleanExtESReady = null;
   }
   
   /*****************************************
@@ -96,12 +101,13 @@ public class CleanupSubscriber extends SubscriberStreamOutput implements com.evo
   *
   *****************************************/
 
-  public CleanupSubscriber(SchemaAndValue schemaAndValue, String subscriberID, Date eventDate, SubscriberAction subscriberAction)
+  public CleanupSubscriber(SchemaAndValue schemaAndValue, String subscriberID, Date eventDate, SubscriberAction subscriberAction, Boolean cleanExtESReady)
   {
     super(schemaAndValue);
     this.subscriberID = subscriberID;
     this.eventDate = eventDate;
     this.subscriberAction = subscriberAction;
+    this.cleanExtESReady = cleanExtESReady;
   }
 
   /*****************************************
@@ -115,6 +121,7 @@ public class CleanupSubscriber extends SubscriberStreamOutput implements com.evo
     this.subscriberID = cleanupSubscriber.getSubscriberID();
     this.eventDate = cleanupSubscriber.getEventDate();
     this.subscriberAction = cleanupSubscriber.getSubscriberAction();
+    this.cleanExtESReady = cleanupSubscriber.getCleanExtESReady();
   }
 
   /*****************************************
@@ -131,6 +138,7 @@ public class CleanupSubscriber extends SubscriberStreamOutput implements com.evo
     struct.put("subscriberID", cleanupSubscriber.getSubscriberID());
     struct.put("eventDate", cleanupSubscriber.getEventDate());
     struct.put("subscriberAction", cleanupSubscriber.getSubscriberAction().getExternalRepresentation());
+    struct.put("cleanExtESReady", cleanupSubscriber.getCleanExtESReady());
     return struct;
   }
 
@@ -165,11 +173,20 @@ public class CleanupSubscriber extends SubscriberStreamOutput implements com.evo
     Date eventDate = (Date) valueStruct.get("eventDate");
     
     SubscriberAction subscriberAction = schema.field("subscriberAction") != null ? SubscriberAction.fromExternalRepresentation(valueStruct.getString("subscriberAction")) : SubscriberAction.Cleanup;
+    
+    Boolean cleanExtESReady = schema.field("cleanExtESReady") != null ? valueStruct.getBoolean("cleanExtESReady") : null;
 
     //
     //  return
     //
 
-    return new CleanupSubscriber(schemaAndValue, subscriberID, eventDate, subscriberAction);
+    return new CleanupSubscriber(schemaAndValue, subscriberID, eventDate, subscriberAction, cleanExtESReady);
   }
+  @Override
+  public String toString()
+  {
+    return "CleanupSubscriber [subscriberID=" + subscriberID + ", eventDate=" + eventDate + ", subscriberAction=" + subscriberAction + ", cleanExtESReady=" + cleanExtESReady + "]";
+  }
+  
+  
 }

@@ -60,7 +60,7 @@ public class SubscriberState implements StateStore
 
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("subscriber_state");
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(13));
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(14));
       schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
       schemaBuilder.field("subscriberProfile", SubscriberProfile.getSubscriberProfileSerde().schema());
       schemaBuilder.field("journeyStates", SchemaBuilder.array(JourneyState.schema()).schema());
@@ -75,6 +75,7 @@ public class SubscriberState implements StateStore
       schemaBuilder.field("trackingID", Schema.OPTIONAL_BYTES_SCHEMA);
       schemaBuilder.field("notificationHistory",SchemaBuilder.array(notificationHistorySchema).optional());
       schemaBuilder.field("cleanupDate", Timestamp.builder().optional().schema());
+      schemaBuilder.field("cleanupESAlreadyTriggered", Schema.OPTIONAL_BOOLEAN_SCHEMA);
 
       schema = schemaBuilder.build();
     };
@@ -113,6 +114,7 @@ public class SubscriberState implements StateStore
   private Date lastEvaluationDate;
   private List<UUID> trackingIDs;
   private Date cleanupDate; // define the date after which the subscriber must effectively be cleaned...
+  private Boolean cleanupESAlreadyTriggered;
 
   
   //
@@ -174,6 +176,7 @@ public class SubscriberState implements StateStore
   public Date getUCGRefreshDay() { return ucgRefreshDay; }
   public Date getLastEvaluationDate() { return lastEvaluationDate; }
   public Date getCleanupDate() { return cleanupDate; }
+  public Boolean getCleanupESAlreadyTriggered() { return cleanupESAlreadyTriggered; }
   
   public List<JourneyRequest> getJourneyRequests() { return journeyRequests; }
   public List<JourneyRequest> getJourneyResponses() { return journeyResponses; }
@@ -264,6 +267,7 @@ public class SubscriberState implements StateStore
   }
   
   public void setCleanupDate(Date cleanupDate) { this.cleanupDate = cleanupDate; }
+  public void setCleanupESAlreadyTriggered(Boolean cleanupESAlreadyTriggered) { this.cleanupESAlreadyTriggered = cleanupESAlreadyTriggered; }
 
   /*****************************************
    *
@@ -314,6 +318,7 @@ public class SubscriberState implements StateStore
         this.immediateCleanupActions = new ArrayList<>();
         this.deleteActions = new ArrayList<>();
         this.cleanupDate = null;
+        this.cleanupESAlreadyTriggered = null;
         this.tokenRedeemeds = new ArrayList<>();
         this.subscriberProfileForceUpdatesResponse = new ArrayList<>();
       }
@@ -333,7 +338,7 @@ public class SubscriberState implements StateStore
    *
    *****************************************/
 
-  private SubscriberState(String subscriberID, SubscriberProfile subscriberProfile, Set<JourneyState> journeyStates, Set<JourneyEndedState> journeyEndedStates, Set<JourneyState> oldRecentJourneyStates, SortedSet<TimedEvaluation> scheduledEvaluations, Set<ReScheduledDeliveryRequest> reScheduledDeliveryRequests, List<String> workflowTriggering, String ucgRuleID, Integer ucgEpoch, Date ucgRefreshDay, Date lastEvaluationDate, List<UUID> trackingIDs, Map<String,MetricHistory> notificationHistory, Date cleanupDate)
+  private SubscriberState(String subscriberID, SubscriberProfile subscriberProfile, Set<JourneyState> journeyStates, Set<JourneyEndedState> journeyEndedStates, Set<JourneyState> oldRecentJourneyStates, SortedSet<TimedEvaluation> scheduledEvaluations, Set<ReScheduledDeliveryRequest> reScheduledDeliveryRequests, List<String> workflowTriggering, String ucgRuleID, Integer ucgEpoch, Date ucgRefreshDay, Date lastEvaluationDate, List<UUID> trackingIDs, Map<String,MetricHistory> notificationHistory, Date cleanupDate, Boolean cleanupESAlreadyTriggered)
   {
     // stored
     this.subscriberID = subscriberID;
@@ -375,6 +380,7 @@ public class SubscriberState implements StateStore
     this.immediateCleanupActions = new ArrayList<>();
     this.deleteActions = new ArrayList<>();
     this.cleanupDate = cleanupDate;
+    this.cleanupESAlreadyTriggered = cleanupESAlreadyTriggered;
     this.tokenRedeemeds = new ArrayList<>();
     // for data migration purpose only, can be removed once all market run EVPRO-885
     this.recentJourneyStates = oldRecentJourneyStates;
@@ -405,6 +411,7 @@ public class SubscriberState implements StateStore
     struct.put("trackingID", EvolutionUtilities.getBytesFromUUIDs(subscriberState.getTrackingIDs()));
     struct.put("notificationHistory", packNotificationHistory(subscriberState.getNotificationHistory()));
     struct.put("cleanupDate", subscriberState.getCleanupDate());
+    struct.put("cleanupESAlreadyTriggered", subscriberState.getCleanupESAlreadyTriggered());
     return struct;
   }
 
@@ -546,12 +553,13 @@ public class SubscriberState implements StateStore
       }
     }
     Date cleanupDate = schema.field("cleanupDate") != null ? (Date) valueStruct.get("cleanupDate") : null;
+    Boolean cleanupESAlreadyTriggered = schema.field("cleanupESAlreadyTriggered") != null ? (Boolean)valueStruct.getBoolean("cleanupESAlreadyTriggered") : null;
     
     //
     //  return
     //
 
-    return new SubscriberState(subscriberID, subscriberProfile, journeyStates, journeyEndedStates, oldRecentJourneyStates, scheduledEvaluations, reScheduledDeliveryRequest, workflowTriggering, ucgRuleID, ucgEpoch, ucgRefreshDay, lastEvaluationDate, trackingIDs, notificationHistory, cleanupDate);
+    return new SubscriberState(subscriberID, subscriberProfile, journeyStates, journeyEndedStates, oldRecentJourneyStates, scheduledEvaluations, reScheduledDeliveryRequest, workflowTriggering, ucgRuleID, ucgEpoch, ucgRefreshDay, lastEvaluationDate, trackingIDs, notificationHistory, cleanupDate, cleanupESAlreadyTriggered);
   }
 
   /*****************************************
@@ -718,7 +726,7 @@ public class SubscriberState implements StateStore
         + (journeyRequests != null ? "journeyRequests=" + journeyRequests + ", " : "") + (journeyResponses != null ? "journeyResponses=" + journeyResponses + ", " : "") + (loyaltyProgramRequests != null ? "loyaltyProgramRequests=" + loyaltyProgramRequests + ", " : "") + (loyaltyProgramResponses != null ? "loyaltyProgramResponses=" + loyaltyProgramResponses + ", " : "") + (pointFulfillmentResponses != null ? "pointFulfillmentResponses=" + pointFulfillmentResponses + ", " : "")
         + (deliveryRequests != null ? "deliveryRequests=" + deliveryRequests + ", " : "") + (journeyStatisticWrappers != null ? "journeyStatisticWrappers=" + journeyStatisticWrappers + ", " : "") + (journeyMetrics != null ? "journeyMetrics=" + journeyMetrics + ", " : "") + (profileChangeEvents != null ? "profileChangeEvents=" + profileChangeEvents + ", " : "") + (profileSegmentChangeEvents != null ? "profileSegmentChangeEvents=" + profileSegmentChangeEvents + ", " : "")
         + (profileLoyaltyProgramChangeEvents != null ? "profileLoyaltyProgramChangeEvents=" + profileLoyaltyProgramChangeEvents + ", " : "") + (subscriberTrace != null ? "subscriberTrace=" + subscriberTrace + ", " : "") + (externalAPIOutput != null ? "externalAPIOutput=" + externalAPIOutput + ", " : "") + (tokenChanges != null ? "tokenChanges=" + tokenChanges + ", " : "") + (notificationHistory != null ? "notificationHistory=" + notificationHistory + ", " : "")
-        + (voucherChanges != null ? "voucherChanges=" + voucherChanges : "") + ",cleanupDate" + cleanupDate+ "]";
+        + (voucherChanges != null ? "voucherChanges=" + voucherChanges : "") + ",cleanupDate=" + cleanupDate+ ",cleanupESAlreadyTriggered=" + cleanupESAlreadyTriggered + "]";
   }
 
 
