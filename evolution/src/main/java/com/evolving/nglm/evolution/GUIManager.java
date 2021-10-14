@@ -160,6 +160,7 @@ import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmen
 import com.evolving.nglm.evolution.PushNotificationManager.PushNotificationManagerRequest;
 import com.evolving.nglm.evolution.SMSNotificationManager.SMSNotificationManagerRequest;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
+import com.evolving.nglm.evolution.SubscriberProfile.EvolutionSubscriberStatus;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
 import com.evolving.nglm.evolution.ThirdPartyManager.API;
@@ -27287,6 +27288,19 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           }
         break;
 
+        case "supportedStatuses":
+          if (includeDynamic)
+            {
+              for (EvolutionSubscriberStatus returnCode : EvolutionSubscriberStatus.values())
+                {
+                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                  availableValue.put("id", returnCode.getExternalRepresentation());
+                  availableValue.put("display", returnCode.getExternalRepresentation());
+                  result.add(JSONUtilities.encodeObject(availableValue));
+              }
+          }
+        break;
+        
         case "supportedRelationships":
           HashMap<String, Object> availableValue = new HashMap<String, Object>();
           availableValue.put("id", "customer");
