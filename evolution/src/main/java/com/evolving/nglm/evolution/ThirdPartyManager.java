@@ -5642,7 +5642,7 @@ public class ThirdPartyManager
       subscriberID=voucherES.getSubscriberId();
       String voucherId = voucherES.getVoucherId();
       Boolean isTransferable = (boolean) voucherTypeService.getStoredVoucherType(voucherId).getJSONRepresentation().get("transferable");
-      if(isTransferable) {
+      if(!isTransferable) {
     	  throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_NOT_TRANSFERABLE);
       }
     }
