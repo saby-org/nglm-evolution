@@ -1158,12 +1158,14 @@ public class DeploymentCommon
     } else {
       int periodROI = subscriberProfileDatacubeMetricConfigurationJsonReader.decodeInteger("periodROI");
       if(periodROI < 1) {
-        throw new ServerRuntimeException("ERROR: Bad 'subscriberProfileDatacubeMetric' settings. 'periodROI' field cannot be negative or zero.");
+    	log.warn("Bad 'subscriberProfileDatacubeMetric' settings. 'periodROI' field cannot be negative or zero. Put default value = 4");
+        periodROI = 4;
       }
       
       String timeUnitROI = subscriberProfileDatacubeMetricConfigurationJsonReader.decodeString("timeUnitROI");
       if(timeUnitROI.isEmpty()) {
-        throw new ServerRuntimeException("ERROR: Bad 'subscriberProfileDatacubeMetric' settings. 'timeUnitROI' field cannot be empty.");
+    	log.warn("Bad 'subscriberProfileDatacubeMetric' settings. 'timeUnitROI' field is empty. Put default value = week");
+    	timeUnitROI="week"; //default value="week"
       }
       Map<String,SubscriberProfileDatacubeMetric> subscriberProfileDatacubeMetricDeclarations = subscriberProfileDatacubeMetricConfigurationJsonReader.decodeMapFromArray(SubscriberProfileDatacubeMetric.class, "metrics");
       if(subscriberProfileDatacubeMetricDeclarations.isEmpty()) { // subscriberProfileDatacubeMetric are therefore disabled

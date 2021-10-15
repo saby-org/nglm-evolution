@@ -34,8 +34,8 @@ public class SubscriberProfileDatacubeMetricConfiguration
   public SubscriberProfileDatacubeMetricConfiguration()
   {
     this.enabled = false;
-    this.periodROI = 0;
-    this.timeUnitROI = "";
+    this.periodROI = 4;
+    this.timeUnitROI = "week";
     this.metrics = Collections.emptyMap();
   }
   

@@ -37,6 +37,8 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
   private static final String DATA_ES_INDEX = "subscriberprofile";
   private static final String FILTER_STRATUM_PREFIX = "stratum.";
   private static final String METRIC_PREFIX = "metric_";
+  private static final String STATUS_PREVIOUS = "status.previous.";
+  private static final String UCG_PREVIOUS = "ucg.previous.";
 
   /*****************************************
   *
@@ -111,14 +113,20 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
   @Override
   protected boolean runPreGenerationPhase() throws ElasticsearchException, IOException, ClassCastException
   {
+    //EVPRO-1172: add filter.status.previous and filter.ucg.previous
+    this.filterFields.add(STATUS_PREVIOUS);
+    this.filterFields.add(UCG_PREVIOUS);
+	    
     this.segmentationDimensionList.update();
     this.filterFields = new ArrayList<String>();
+    boolean hasDimension = false;
     for(String dimensionID: segmentationDimensionList.keySet())
       {
         this.filterFields.add(FILTER_STRATUM_PREFIX + dimensionID);
+        hasDimension = true;
       }
     
-    if(this.filterFields.isEmpty()) {
+    if(!hasDimension) {
       log.warn("Found no dimension defined.");
       return false;
     }
@@ -145,6 +153,12 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
         String newFieldName = FILTER_STRATUM_PREFIX + segmentationDimensionList.getDimensionDisplay(dimensionID, fieldName);
         filters.put(newFieldName, segmentationDimensionList.getSegmentDisplay(dimensionID, segmentID, fieldName));
       }
+    
+    //
+    // subscriber previous status
+    //
+    filters.put(STATUS_PREVIOUS, STATUS_PREVIOUS);
+    filters.put(UCG_PREVIOUS, UCG_PREVIOUS);
   }
 
   /*****************************************
@@ -175,6 +189,13 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
           + " } return left;", Collections.emptyMap()));
       metricAggregations.add(customMetricAgg);
     }
+    
+    //Add status.previous and ucg.previous
+    int periodROI = Deployment.getSubscriberProfileDatacubeConfiguration().getPeriodROI();
+    String unitTimeROI = Deployment.getSubscriberProfileDatacubeConfiguration().getTimeUnitROI();
+    //diff = currentDate-period
+    Date now = SystemTime.getCurrentTime();
+    Date diff = RLMDateUtils.addDays(now, -1, this.getTimeZone());
         
     return metricAggregations;
   }
