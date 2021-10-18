@@ -26,7 +26,7 @@ public class DatacubeUtils
     Object returnCode = filters.remove("returnCode");
     try {
 
-      returnCodeInt =  (Integer) returnCodeInt;
+        returnCodeInt =  Integer.parseInt(String.valueOf(returnCode));
 
     } catch (NumberFormatException e) {
       log.info("Invalid value found for return code : " + returnCode.toString() );

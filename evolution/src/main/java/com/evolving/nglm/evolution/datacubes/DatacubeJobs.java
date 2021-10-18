@@ -45,14 +45,14 @@ public class DatacubeJobs
         return BDRHourlyPreview(config, datacubeManager);
       case BDRHourlyDefinitive:
         return BDRHourlyDefinitive(config, datacubeManager);
-    /*case TDRDailyPreview:
+      case TDRDailyPreview:
         return TDRDailyPreview(config, datacubeManager);
       case TDRDailyDefinitive:
         return TDRDailyDefinitive(config, datacubeManager);
       case TDRHourlyPreview:
         return TDRHourlyPreview(config, datacubeManager);
       case TDRHourlyDefinitive:
-        return TDRHourlyDefinitive(config, datacubeManager);*/
+        return TDRHourlyDefinitive(config, datacubeManager);
       case MDRDailyPreview:
         return MDRDailyPreview(config, datacubeManager);
       case MDRDailyDefinitive:
