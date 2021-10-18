@@ -980,19 +980,8 @@ public class Offer extends GUIManagedObject implements StockableItem
     if (getOfferCharacteristics() != null && getOfferCharacteristics().getOfferCharacteristicProperties() != null && !getOfferCharacteristics().getOfferCharacteristicProperties().isEmpty())
       {
         CallingChannelService callingChannelService = (CallingChannelService) guiServiceList.stream().filter(srvc -> srvc.getClass() == CallingChannelService.class).findFirst().orElse(null);
-        Set<String> callingChannelChars = new HashSet<String>();
-        if (callingChannelService != null)
-          {
-            for (GUIManagedObject callingChannelUnchecked : callingChannelService.getStoredCallingChannels(tenantID))
-              {
-                if (callingChannelUnchecked.getAccepted())
-                  {
-                    CallingChannel callingChannel = (CallingChannel) callingChannelUnchecked;
-                    callingChannelChars.addAll(callingChannel.getCatalogCharacteristics());
-                  }
-                
-              }
-          }
+        List<GUIManagedObject> callingChannels = new ArrayList<GUIManagedObject>();
+        if (callingChannelService != null) callingChannels = callingChannelService.getStoredCallingChannels(tenantID).stream().filter(callingChannelUnchecked -> callingChannelUnchecked.getAccepted()).collect(Collectors.toList());
         for (OfferCharacteristicsLanguageProperty offerCharacteristicsLanguageProperty : getOfferCharacteristics().getOfferCharacteristicProperties())
           {
             if (offerCharacteristicsLanguageProperty.getProperties() != null && !offerCharacteristicsLanguageProperty.getProperties().isEmpty())
@@ -1001,7 +990,8 @@ public class Offer extends GUIManagedObject implements StockableItem
                   {
                     String catalogCharacteristicID = characteristicsProperty.getCatalogCharacteristicID();
                     offerCharacteristicsLanguagePropertyIDs.add(catalogCharacteristicID);
-                    if (callingChannelChars.contains(catalogCharacteristicID)) callingchannelIDs.add(catalogCharacteristicID);
+                    CallingChannel callingChannel = (CallingChannel) callingChannels.stream().filter(callingChannelObj -> ((CallingChannel) callingChannelObj).getCatalogCharacteristics().contains(catalogCharacteristicID)).findFirst().orElse(null);
+                    if (callingChannel != null) callingchannelIDs.add(callingChannel.getGUIManagedObjectID());
                   }
               }
           }
