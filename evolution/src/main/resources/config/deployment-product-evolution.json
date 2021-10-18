@@ -262,6 +262,7 @@
   "workflowEventTopic"                                   : "${topic.workflowEvent}",
   "subscriberProfileForceUpdateResponseTopic"            : "${topic.subscriberProfileForceUpdateResponse}",
   "notificationEventTopic"                               : "${topic.notificationEvent}",
+  "customCriteriaTopic"                                  : "${topic.customcriteria}",
 
   "supportedDataTypes" :
     [

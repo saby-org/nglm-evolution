@@ -9,6 +9,7 @@ package com.evolving.nglm.evolution;
 import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.SubscriberStreamEvent;
+import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -39,6 +40,7 @@ public class SubscriberEvaluationRequest
   private ParameterMap evaluationVariables;
   private List<String> traceDetails;
   private HashMap<String, String> miscData = new HashMap(); // for data provided in special cases (like tags...)
+  private EvolutionEventContext evolutionEventContext;
   private int tenantID;
 
   /*****************************************
@@ -46,13 +48,18 @@ public class SubscriberEvaluationRequest
   *  constructors
   *
   *****************************************/
+  public SubscriberEvaluationRequest(SubscriberProfile subscriberProfile, ExtendedSubscriberProfile extendedSubscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JourneyState journeyState, JourneyNode journeyNode, JourneyLink journeyLink, SubscriberStreamEvent subscriberStreamEvent, Date evaluationDate, int tenantID)
+  {
+    this(null, subscriberProfile, extendedSubscriberProfile, subscriberGroupEpochReader, journeyState, journeyNode, journeyLink, subscriberStreamEvent, evaluationDate, tenantID);
+  }
 
   //
   //  constructor -- complete
   //  
 
-  public SubscriberEvaluationRequest(SubscriberProfile subscriberProfile, ExtendedSubscriberProfile extendedSubscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JourneyState journeyState, JourneyNode journeyNode, JourneyLink journeyLink, SubscriberStreamEvent subscriberStreamEvent, Date evaluationDate, int tenantID)
+  public SubscriberEvaluationRequest(EvolutionEventContext evolutionEventContext, SubscriberProfile subscriberProfile, ExtendedSubscriberProfile extendedSubscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JourneyState journeyState, JourneyNode journeyNode, JourneyLink journeyLink, SubscriberStreamEvent subscriberStreamEvent, Date evaluationDate, int tenantID)
   {
+    this.evolutionEventContext = evolutionEventContext;
     this.subscriberProfile = subscriberProfile;
     this.extendedSubscriberProfile = extendedSubscriberProfile;
     this.subscriberGroupEpochReader = subscriberGroupEpochReader;
@@ -113,6 +120,8 @@ public class SubscriberEvaluationRequest
   public boolean getSubscriberTraceEnabled() { return subscriberProfile.getSubscriberTraceEnabled(); }
   public Map<String, String> getMiscData() { return miscData; }
   public int getTenantID() { return tenantID; }
+  public EvolutionEventContext geEvolutionEventContext() {return evolutionEventContext; }
+
   
   /*****************************************
   *

@@ -165,6 +165,7 @@
     <topic.workflowEvent>workflowEvent</topic.workflowEvent>
     <topic.subscriberProfileForceUpdateResponse>subscriberProfileForceUpdateResponse</topic.subscriberProfileForceUpdateResponse>
     <topic.notificationEvent>notificationEvent</topic.notificationEvent>
+    <topic.customcriteria>customcriteria</topic.customcriteria>
 
     <!-- evolutionengine -->
     <changelog.evolutionengine.subscriberstate>subscriberstate</changelog.evolutionengine.subscriberstate>
