@@ -315,14 +315,30 @@ public class GrafanaUtils
                         // 2- The dashboard already exists and its uid starts with t<tenantID>-
                         else if (exisitingDashBoards.containsKey(expectedTitle) && existingUID.substring(0, 3).equals("t" + tenantID + "-") == true)
                         {
-                          // overwrite it using the same existing uid
-                          log.info("GrafanaUtils.prepareGrafanaForTenants: Dashboard " + expectedTitle + " already exists for orgID " + orgID + " for dashboard file name " + currentFileName + " and it'll be overwritten.");
-                          s= s.replace("replaceWithUniqueID", existingUID);
-                          fulldashboardDef = (JSONObject) (new JSONParser()).parse(s);
-//                          mapDbEs.put("name",expectedTitle);
-//                          mapDbEs.put("reportID",existingUID);
-//                          request = new UpdateRequest("dashboard_links",existingUID);
-                          log.info("The uid of the already existing Dashboard: " + expectedTitle + " is " + existingUID);
+                          // Delete the dashboard if it is the "New General Dashboard" or the "Business - Campaign Dashboard"
+                          // TODO -this verification is no longer needed when all clients are up-to-date-
+                          if (expectedTitle.equals("New General Dashboard") || expectedTitle.contentEquals("Business - Campaign Dashboard")) 
+                          {
+                            HttpResponse response = sendGrafanaCurl(null, "/api/dashboards/uid/" + existingUID, "DELETE");
+                            log.info("Dashboard titled " + expectedTitle + " with uid " + existingUID + " is DELETED");
+                            if (response == null) {
+                              log.warn("Could not get a non null response while loading dashboard " + expectedTitle + " for organisation "  + orgID);
+                            }
+                            if (response.getStatusLine().getStatusCode() != 200) {
+                              log.warn("Problem while deleting dashboard " + expectedTitle + " for organisation orgID, " + orgID + " error code " + response.getStatusLine().getStatusCode() + " response message " + response.getStatusLine().getReasonPhrase());
+                            }
+                          } 
+                          else
+                          {
+                            // overwrite it using the same existing uid
+                            log.info("GrafanaUtils.prepareGrafanaForTenants: Dashboard " + expectedTitle + " already exists for orgID " + orgID + " for dashboard file name " + currentFileName + " and it'll be overwritten.");
+                            s= s.replace("replaceWithUniqueID", existingUID);
+                            fulldashboardDef = (JSONObject) (new JSONParser()).parse(s);
+                            //                          mapDbEs.put("name",expectedTitle);
+                            //                          mapDbEs.put("reportID",existingUID);
+                            //                          request = new UpdateRequest("dashboard_links",existingUID);
+                            log.info("The uid of the already existing Dashboard: " + expectedTitle + " is " + existingUID);
+                          }
                         }
                         // 3- The dashboard doesn't exist already
                         else 
