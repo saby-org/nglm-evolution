@@ -25,8 +25,8 @@ public class DatacubeUtils
     Integer returnCodeInt = -1; // will translate to UNKNOWN(-1, "UNKNOWN", "UNKNOWN")
     Object returnCode = filters.remove("returnCode");
     try {
-
-        returnCodeInt =  Integer.parseInt(String.valueOf(returnCode));
+        //in detailedrecord_tokens returnCode is of type string(but value integer); in other detailedrecords indexes returnCode is integer  
+        returnCodeInt = (returnCode != null ? Integer.parseInt(String.valueOf(returnCode)) : -1);
 
     } catch (NumberFormatException e) {
       log.info("Invalid value found for return code : " + returnCode.toString() );

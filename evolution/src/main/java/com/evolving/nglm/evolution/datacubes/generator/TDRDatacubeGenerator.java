@@ -40,12 +40,16 @@ import com.evolving.nglm.evolution.datacubes.mapping.LoyaltyProgramsMap;
 import com.evolving.nglm.evolution.datacubes.mapping.ModulesMap;
 import com.evolving.nglm.evolution.datacubes.mapping.OffersMap;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
+import com.evolving.nglm.evolution.datacubes.mapping.SegmentationDimensionsMap;
+import com.evolving.nglm.evolution.SegmentationDimensionService;
 
 public class TDRDatacubeGenerator extends SimpleDatacubeGenerator
 {
   private static final String DATACUBE_ES_INDEX_SUFFIX = "_datacube_tdr";
   public static final String DATACUBE_ES_INDEX(int tenantID) { return "t" + tenantID + DATACUBE_ES_INDEX_SUFFIX; }
   private static final String DATA_ES_INDEX_PREFIX = "detailedrecords_tokens-";
+  private static final String FILTER_STRATUM_PREFIX = "stratum.";
+  private static final String METRIC_COUNT = "count";
 
   /*****************************************
   *
@@ -59,6 +63,7 @@ public class TDRDatacubeGenerator extends SimpleDatacubeGenerator
   private LoyaltyProgramsMap loyaltyProgramsMap;
   private DeliverablesMap deliverablesMap;
   private JourneysMap journeysMap;
+  private SegmentationDimensionsMap segmentationDimensionList;
 
   private boolean hourlyMode;
   private String targetWeek;
@@ -71,10 +76,10 @@ public class TDRDatacubeGenerator extends SimpleDatacubeGenerator
   * Constructors
   *
   *****************************************/
-  public TDRDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, DatacubeWriter datacubeWriter, OfferService offerService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, JourneyService journeyService, int tenantID, String timeZone)  
+  public TDRDatacubeGenerator(String datacubeName, ElasticsearchClientAPI elasticsearch, DatacubeWriter datacubeWriter, SegmentationDimensionService segmentationDimensionService, OfferService offerService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, JourneyService journeyService, int tenantID, String timeZone)  
   {
     super(datacubeName, elasticsearch, datacubeWriter, tenantID, timeZone);
-
+    this.segmentationDimensionList = new SegmentationDimensionsMap(segmentationDimensionService);
     this.offersMap = new OffersMap(offerService);
     this.modulesMap = new ModulesMap();
     this.loyaltyProgramsMap = new LoyaltyProgramsMap(loyaltyProgramService);
@@ -87,17 +92,26 @@ public class TDRDatacubeGenerator extends SimpleDatacubeGenerator
     this.filterFields = new ArrayList<String>();
     this.filterFields.add("moduleID");
     this.filterFields.add("featureID");
-    this.filterFields.add("origin");
-    this.filterFields.add("returnCode");
     this.filterFields.add("action");
     this.filterFields.add("acceptedOfferID");
+    this.filterFields.add("returnCode");
+    this.filterFields.add("origin");
 
+     //
+    // Data Aggregations
+    // - totalAmount
+    //
+    this.metricAggregations = new ArrayList<AggregationBuilder>();
+    
+    AggregationBuilder totalCount = AggregationBuilders.sum(METRIC_COUNT).field("count");
+    metricAggregations.add(totalCount);
   }
   
   public TDRDatacubeGenerator(String datacubeName, int tenantID, DatacubeManager datacubeManager) {
     this(datacubeName,
         datacubeManager.getElasticsearchClientAPI(),
         datacubeManager.getDatacubeWriter(),
+        datacubeManager.getSegmentationDimensionService(),
         datacubeManager.getOfferService(),
         datacubeManager.getOfferObjectiveService(),
         datacubeManager.getLoyaltyProgramService(),
@@ -156,7 +170,17 @@ public class TDRDatacubeGenerator extends SimpleDatacubeGenerator
     loyaltyProgramsMap.update();
     deliverablesMap.updateFromElasticsearch(elasticsearch);
     journeysMap.update();
+    segmentationDimensionList.update();
     
+    for(String dimensionID: segmentationDimensionList.keySet())
+      {
+        this.filterFields.add(FILTER_STRATUM_PREFIX + dimensionID);
+      }
+    
+    if(this.filterFields.isEmpty()) {
+      log.warn("Found no dimension defined.");
+      return false;
+    }
     return true;
   }
   
@@ -170,7 +194,7 @@ public class TDRDatacubeGenerator extends SimpleDatacubeGenerator
     filters.put("acceptedOffer",offersMap.getDisplay(acceptedOfferID,"acceptedOffer"));
     
     DatacubeUtils.embelishFeature(filters, moduleID, modulesMap, loyaltyProgramsMap, deliverablesMap, offersMap, journeysMap);
-
+    
     DatacubeUtils.embelishReturnCode(filters);
     
     // Specials for timestamp (will not be display in filter but extracted later in DatacubeGenerator)
@@ -181,6 +205,23 @@ public class TDRDatacubeGenerator extends SimpleDatacubeGenerator
       Date date = new Date(time + 3600*1000 - 1);
       filters.put("timestamp", this.printTimestamp(date));
     }
+
+     //
+    // Special dimension with all, for Grafana 
+    //
+    filters.put(FILTER_STRATUM_PREFIX + "Global", " ");
+    
+    //
+    // subscriberStratum dimensions
+    //
+    for(String dimensionID: segmentationDimensionList.keySet())
+      {
+        String fieldName = FILTER_STRATUM_PREFIX + dimensionID;
+        String segmentID = (String) filters.remove(fieldName);
+        
+        String newFieldName = FILTER_STRATUM_PREFIX + segmentationDimensionList.getDimensionDisplay(dimensionID, fieldName);
+        filters.put(newFieldName, segmentationDimensionList.getSegmentDisplay(dimensionID, segmentID, fieldName));
+      }
   }
 
   /*****************************************
@@ -188,9 +229,10 @@ public class TDRDatacubeGenerator extends SimpleDatacubeGenerator
   * Metrics settings
   *
   *****************************************/
-  @Override protected List<AggregationBuilder> getMetricAggregations()  { return Collections.emptyList(); }
+  @Override protected List<AggregationBuilder> getMetricAggregations()  { return  this.metricAggregations; }
     
-  @Override protected Map<String, Long> extractMetrics(ParsedBucket compositeBucket) throws ClassCastException { return Collections.emptyMap(); }
+  @Override
+  protected Map<String, Long> extractMetrics(ParsedBucket compositeBucket) throws ClassCastException { return Collections.emptyMap(); }
   
   /*****************************************
   *
