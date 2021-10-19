@@ -5527,14 +5527,17 @@ public class GUIManager
       }
     }
     
-    // Add DNBOMatrix Algorithm for gui
-    Date now = SystemTime.getCurrentTime();
-    for (GUIManagedObject dnboMatrix : dnboMatrixService.getStoredDNBOMatrixes(includeArchived, tenantID))
-    {
-      JSONObject matrixObject = presentationStrategyService.generateResponseJSON(dnboMatrix, false, now);
-      matrixObject.replace("id", "DNBO" + JSONUtilities.decodeString(matrixObject, "id", true));
-      offerOptimizationAlgorithms.add(matrixObject);
-    }
+    if (Deployment.getOfferOptimizationAlgorithms().get("matrix-algorithm") != null)
+      {
+        // Add DNBOMatrix Algorithm for gui if matrix-algorithm configured
+        Date now = SystemTime.getCurrentTime();
+        for (GUIManagedObject dnboMatrix : dnboMatrixService.getStoredDNBOMatrixes(includeArchived, tenantID))
+        {
+          JSONObject matrixObject = presentationStrategyService.generateResponseJSON(dnboMatrix, false, now);
+          matrixObject.replace("id", "DNBO" + JSONUtilities.decodeString(matrixObject, "id", true));
+          offerOptimizationAlgorithms.add(matrixObject);
+        }
+      }
 
     /*****************************************
     *
