@@ -5465,39 +5465,69 @@ public class EvolutionEngine
         PurchaseFulfillmentRequest purchaseResponseEvent = (PurchaseFulfillmentRequest) evolutionEvent;
         for(Token token:subscriberProfile.getTokens())
           {
-            if(!(token instanceof DNBOToken)) continue;
+            if (!(token instanceof DNBOToken)) continue;
             DNBOToken dnboToken = (DNBOToken) token;
             if(dnboToken.getPurchaseDeliveryRequestID()==null) continue;
-
             boolean failed = false;
             if(dnboToken.getPurchaseDeliveryRequestID().equals(purchaseResponseEvent.getDeliveryRequestID()))
               {               
-              String tokenRedeem=TokenChange.REDEEM;
-              String tokenChangeStatus = RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode()+"";
-              String purchaseOfferID = purchaseResponseEvent.getOfferID();
-              dnboToken.setPurchaseStatus(purchaseResponseEvent.getStatus());
+                String tokenRedeem=TokenChange.REDEEM;
+                String tokenChangeStatus = RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode()+"";
+                String purchaseOfferID = purchaseResponseEvent.getOfferID();
+                dnboToken.setPurchaseStatus(purchaseResponseEvent.getStatus());
 
-              if (!PurchaseFulfillmentManager.PurchaseFulfillmentStatus.PURCHASED.equals(purchaseResponseEvent.getStatus()))
-              {               
-              failed=true;
-              tokenChangeStatus=RESTAPIGenericReturnCodes.INSUFFICIENT_BALANCE.getGenericResponseCode()+"";
-              purchaseOfferID = null;
-              dnboToken.setTokenStatus(TokenStatus.Bound);  
-              dnboToken.setAcceptedOfferID(null);          
-              }   
-              ArrayList<String> presentedOfferIDs = new ArrayList<>();
-              if(dnboToken.getTokenCode() != null)
-                {
-            	  for(ProposedOfferDetails current : dnboToken.getProposedOfferDetails())
-                    {
-                      presentedOfferIDs.add(current.getOfferId());
+                if (!PurchaseFulfillmentManager.PurchaseFulfillmentStatus.PURCHASED.equals(purchaseResponseEvent.getStatus())) {               
+                    // EVPRO-1351 do not make this offer purchase count towards daily/monthly limit
+                    int quantityToRemove = purchaseResponseEvent.getQuantity();
+                    Map<String, List<Pair<String, Date>>> fullPurchaseHistory = subscriberProfile.getOfferPurchaseSalesChannelHistory();
+                    String salesChannelID = purchaseResponseEvent.getSalesChannelID();
+                    List<Pair<String, Date>> purchaseHistory = fullPurchaseHistory.get(purchaseOfferID);
+                    List<Pair<String, Date>> cleanPurchaseHistory = new ArrayList<Pair<String, Date>>();
+                    cleanPurchaseHistory.addAll(purchaseHistory);
+                    if (purchaseHistory != null) {
+                      // // EVPRO-1351 remove last elements (related to the correct salesChannelID), that were added when preparing this purchase
+                      int totalRemoved = 0;
+                      log.info("MK need to remove " + quantityToRemove + " elements from list of size " + purchaseHistory.size());
+                      if (purchaseHistory.size() < quantityToRemove) {
+                        log.info("MK problem : list too small");
+                      } else {
+                        for (int i=purchaseHistory.size()-1; i>=0; i--) {
+                          if (purchaseHistory.get(i).getFirstElement().equals(salesChannelID)) {
+                            log.info("MK removing element " + i + " : " + salesChannelID + " " + purchaseHistory.get(i).getSecondElement());
+                            cleanPurchaseHistory.remove(i);
+                            totalRemoved++;
+                            if (totalRemoved == quantityToRemove) {
+                              log.info("MK removed " + quantityToRemove + " elements");
+                              break;
+                            }
+                          }
+                        }
+                        if (cleanPurchaseHistory.size() != purchaseHistory.size()-quantityToRemove) {
+                          log.info("MK problem : did not remove all elements");
+                        } else {
+                          fullPurchaseHistory.put(purchaseOfferID, cleanPurchaseHistory);
+                        }
+                      }
                     }
-                }
-              subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberProfile(), purchaseResponseEvent.getEventDate(),context.getEventID(), dnboToken.getTokenCode(), tokenRedeem, tokenChangeStatus, "AcceptanceLog",dnboToken.getModuleID(), dnboToken.getFeatureID(), purchaseResponseEvent.getDeliveryRequestID(), purchaseOfferID, presentedOfferIDs, tenantID));
-              
-              if((!external) && (!failed)) 
-               subscriberState.getTokenRedeemeds().add(new TokenRedeemed(subscriberState.getSubscriberID(), purchaseResponseEvent.getEventDate(), dnboToken.getTokenTypeID(), dnboToken.getAcceptedOfferID()));
-              break;
+                    failed=true;
+                    tokenChangeStatus=RESTAPIGenericReturnCodes.INSUFFICIENT_BALANCE.getGenericResponseCode()+"";
+                    purchaseOfferID = null;
+                    dnboToken.setTokenStatus(TokenStatus.Bound);  
+                    dnboToken.setAcceptedOfferID(null);
+                  }   
+                ArrayList<String> presentedOfferIDs = new ArrayList<>();
+                if(dnboToken.getTokenCode() != null)
+                  {
+                    for(ProposedOfferDetails current : dnboToken.getProposedOfferDetails())
+                      {
+                        presentedOfferIDs.add(current.getOfferId());
+                      }
+                  }
+                subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberProfile(), purchaseResponseEvent.getEventDate(),context.getEventID(), dnboToken.getTokenCode(), tokenRedeem, tokenChangeStatus, "AcceptanceLog",dnboToken.getModuleID(), dnboToken.getFeatureID(), purchaseResponseEvent.getDeliveryRequestID(), purchaseOfferID, presentedOfferIDs, tenantID));
+
+                if((!external) && (!failed)) 
+                  subscriberState.getTokenRedeemeds().add(new TokenRedeemed(subscriberState.getSubscriberID(), purchaseResponseEvent.getEventDate(), dnboToken.getTokenTypeID(), dnboToken.getAcceptedOfferID()));
+                break;
               }
           }
       }
