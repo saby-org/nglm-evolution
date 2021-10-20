@@ -83,10 +83,9 @@ public class WorkflowEvent extends SubscriberStreamOutput implements EvolutionEn
   // accessor
   //
 
-  @Override
-  public String getSubscriberID() { return subscriberID; }
+  @Override public String getSubscriberID() { return subscriberID; }
   public Date geteventDateTime() { return eventDateTime; }
-  public String getEventID() { return eventID; }
+  @Override public String getEventID() { return eventID; }
   public String getWorkflowID() { return workflowID; }
   public String getModuleID() { return moduleID; }
   public String getFeatureID() { return featureID; }

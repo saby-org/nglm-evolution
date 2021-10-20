@@ -2433,7 +2433,7 @@ public class EvolutionEngine
               purchaseFulfillmentRequest.getOrigin()
             );
             int returnCode = purchaseFulfillmentRequest.getReturnCode();
-         // storing the voucherChange
+            // exporting result
             VoucherChange voucherChange = new VoucherChange(
                 purchaseFulfillmentRequest.getSubscriberID(),
                 purchaseFulfillmentRequest.getEventDate(),
@@ -2448,6 +2448,7 @@ public class EvolutionEngine
                 purchaseFulfillmentRequest.getOrigin(),
                 RESTAPIGenericReturnCodes.fromGenericResponseCode(returnCode),
                 purchaseFulfillmentRequest.getSegments(),
+                uniqueKeyServer.getKey(),
                 tenantID);
             subscriberProfile.getVouchers().add(voucherToStore);
             subscriberState.getVoucherChanges().add(voucherChange);
@@ -2488,6 +2489,7 @@ public class EvolutionEngine
               voucherStored.getOrigin(),
               RESTAPIGenericReturnCodes.SUCCESS,
               subscriberProfile.getSegments(),
+              uniqueKeyServer.getKey(),
               tenantID);
           subscriberState.getVoucherChanges().add(voucherChange);
           subscriberUpdated=true;
@@ -8002,47 +8004,15 @@ public class EvolutionEngine
       this.uniqueKeyServer = uniqueKeyServer;
       this.now = now;
       this.subscriberTraceDetails = new ArrayList<String>();
-      this.eventID = generateEventID(event);
+      this.eventID = generateEventID();
     }
 
-    private String generateEventID(SubscriberStreamEvent event)
+    private String generateEventID()
     {
-      String result = null;
-      String className = event.getClass().getSimpleName();
-      if (event instanceof EvolutionEngineEvent)
-        {
-          EvolutionEngineEvent engineEvent = (EvolutionEngineEvent) event;
-          EvolutionEngineEventDeclaration declaration = Deployment.getEvolutionEngineEvents().get(engineEvent.getEventName());
-          if (declaration != null && declaration.getEdrCriterionFieldsMapping() != null && !declaration.getEdrCriterionFieldsMapping().isEmpty())
-            {
-              result = getUniqueKey();
-            }
-          else if (event instanceof DeliveryRequest)
-            {
-              //
-              //  propagate the eventID as long as we can track - if campaign is configureID like chain of bonus/message
-              //
-              
-              DeliveryRequest deliveryRes = (DeliveryRequest) event;
-              if (deliveryRes.getEventID() != null)
-                {
-                  result = deliveryRes.getEventID(); //deliveryRes.getEventName() != null ? deliveryRes.getEventName().concat("-").concat(deliveryRes.getEventID()) : className.concat("-").concat(deliveryRes.getEventID());
-                } 
-              else
-                {
-                  result = deliveryRes.getEventName() != null ? deliveryRes.getEventName() : className;
-                } 
-            }
-          else
-            {
-              result = engineEvent.getEventName();
-            }
-        }
-      else
-        {
-          result = className;
-        }
-      return result;
+      //  propagate the eventID as long as we can track - if campaign is configureID like chain of bonus/message
+      if(this.event.getEventID() != null) return this.event.getEventID();
+      // or create one
+      return getUniqueKey();
     }
 
     /*****************************************
@@ -9427,7 +9397,7 @@ public class EvolutionEngine
           try
             {
               VoucherProfileStored voucherProfileStored = getStoredVoucher(voucherCode, supplierDisplay, subscriberProfile);
-              VoucherChange voucherChange = new VoucherChange(subscriberProfile.getSubscriberID(), now, null, evolutionEventContext.getEventID(), VoucherChangeAction.Redeem, voucherProfileStored.getVoucherCode(), voucherProfileStored.getVoucherID(), voucherProfileStored.getFileID(), moduleID, journeyID, origin, RESTAPIGenericReturnCodes.UNKNOWN, subscriberProfile.getSegments(), tenantID);
+              VoucherChange voucherChange = new VoucherChange(subscriberProfile.getSubscriberID(), now, null, evolutionEventContext.getEventID(), VoucherChangeAction.Redeem, voucherProfileStored.getVoucherCode(), voucherProfileStored.getVoucherID(), voucherProfileStored.getFileID(), moduleID, journeyID, origin, RESTAPIGenericReturnCodes.UNKNOWN, subscriberProfile.getSegments(), uniqueKeyServer.getKey(), tenantID);
               for (VoucherProfileStored voucherStored : subscriberProfile.getVouchers())
                 {
                   if (voucherStored.getVoucherCode().equals(voucherChange.getVoucherCode()) && voucherStored.getVoucherID().equals(voucherChange.getVoucherID()))
@@ -9454,7 +9424,7 @@ public class EvolutionEngine
           try
             {
               VoucherProfileStored voucherProfileStored = getStoredVoucher(voucherCode, supplierDisplay, subscriberProfile);
-              VoucherChange voucherChange = new VoucherChange(subscriberProfile.getSubscriberID(), now, null, "", VoucherChangeAction.Unknown, voucherProfileStored.getVoucherCode(), voucherProfileStored.getVoucherID(), voucherProfileStored.getFileID(), moduleID, journeyID, origin, RESTAPIGenericReturnCodes.SUCCESS, subscriberProfile.getSegments(), tenantID);
+              VoucherChange voucherChange = new VoucherChange(subscriberProfile.getSubscriberID(), now, null, "", VoucherChangeAction.Unknown, voucherProfileStored.getVoucherCode(), voucherProfileStored.getVoucherID(), voucherProfileStored.getFileID(), moduleID, journeyID, origin, RESTAPIGenericReturnCodes.SUCCESS, subscriberProfile.getSegments(), uniqueKeyServer.getKey(), tenantID);
               subscriberEvaluationRequest.getJourneyState().getVoucherChanges().add(voucherChange);
               voucherActionEvent.setActionStatus(voucherChange.getReturnStatus().getGenericResponseMessage());
               voucherActionEvent.setActionStatusCode(voucherChange.getReturnStatus().getGenericResponseCode());
