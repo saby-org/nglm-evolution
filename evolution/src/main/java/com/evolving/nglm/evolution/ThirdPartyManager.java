@@ -2978,6 +2978,11 @@ public class ThirdPartyManager
     String endDateString = readString(jsonRoot, "endDate", false);
     String offerObjective = readString(jsonRoot, "objective", false);
     String supplier = readString(jsonRoot, "supplier", false);
+    //EVPRO-1260: add filtering parameters
+    boolean outOfStock = JSONUtilities.decodeBoolean(jsonRoot, "outOfStock", Boolean.FALSE);
+    boolean notEligible = JSONUtilities.decodeBoolean(jsonRoot, "notEligible", Boolean.FALSE);
+    boolean limitsReached = JSONUtilities.decodeBoolean(jsonRoot, "limitsReached", Boolean.FALSE);
+    
     JSONObject offerObjectivesCharacteristicsJSON = JSONUtilities.decodeJSONObject(jsonRoot, "offerObjectivesCharacteristics", false);
     JSONObject offerCharacteristicsJSON = JSONUtilities.decodeJSONObject(jsonRoot, "offerCharacteristics", false);
     final OfferObjectiveInstance objectiveInstanceReq = offerObjectivesCharacteristicsJSON != null ? decodeOfferObjectiveInstance(offerObjectivesCharacteristicsJSON, offerObjectiveService, catalogCharacteristicService, tenantID) : null;
@@ -3061,7 +3066,15 @@ public class ThirdPartyManager
           if (subscriberID != null)
             {
               SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, SystemTime.getCurrentTime(), tenantID);
-              offers = offers.stream().filter(offer -> offer.evaluateProfileCriteria(evaluationRequest)).collect(Collectors.toList());
+              if(!notEligible) {
+            	  offers = offers.stream().filter(offer -> offer.evaluateProfileCriteria(evaluationRequest)).collect(Collectors.toList());
+              } else {
+            	  for(Offer offer: offers) {
+            		  if(!offer.evaluateProfileCriteria(evaluationRequest)){
+            			  offer.setEligibility("Criteria of offer not valid for subscriber + Criteria name à ajouter");
+            		  }
+            	  }
+              }
             }
 
           //
@@ -3127,6 +3140,87 @@ public class ThirdPartyManager
               
               offers = offers.stream().filter(offer -> offer.hasThisOfferCharacteristics(offerCharacteristicsReq)).collect(Collectors.toList());
             }
+          
+          if (outOfStock)
+          {
+            //
+            //  filter on remaningStock
+            //
+            
+            offers = offers.stream().filter(offer -> (offer.getApproximateRemainingStock()!=null && offer.getApproximateRemainingStock()>0)).collect(Collectors.toList());
+          }
+          
+          if (limitsReached)
+          {
+            //
+            //  filter on limitsReached
+            //
+            for (Offer offer: offers) {
+            	Date earliestDateToKeepForCriteria = EvolutionEngine.computeEarliestDateForAdvanceCriteria(now, tenantID);
+                Date earliestDateToKeep = EvolutionEngine.computeEarliestDateToKeep(now, offer, tenantID);
+                Date earliestDateToKeepInHistory = earliestDateToKeep.after(earliestDateToKeepForCriteria) ? earliestDateToKeepForCriteria : earliestDateToKeep; // this is advance criteria - we must have data for 4months EVPRO-1066
+                List<Pair<String, Date>> cleanPurchaseHistory = new ArrayList<Pair<String, Date>>();
+                
+               //TODO: before EVPRO-1066 all the purchase were kept like Map<String,List<Date>, now it is Map<String, List<Pair<String, Date>>> <saleschnl, Date>
+                // so it is important to migrate data, but once all customer run over this version, this should be removed
+                // ------ START DATA MIGRATION COULD BE REMOVED
+                Map<String,List<Date>> oldFullPurchaseHistory = subscriberProfile.getOfferPurchaseHistory();
+                List<Date> oldPurchaseHistory = oldFullPurchaseHistory.get(offer.getOfferID());
+                
+                //
+                //  oldPurchaseHistory migration TO BE removed
+                //
+                
+                if (oldPurchaseHistory != null)
+                  {
+                    String salesChannelIDMigration = "migrating-ActualWasntAvlbl";
+                    // only keep earliestDateToKeepInHistory purchase dates (discard dates that are too old)
+                    for (Date purchaseDate : oldPurchaseHistory)
+                      {
+                        if (purchaseDate.after(earliestDateToKeepInHistory))
+                          {
+                            cleanPurchaseHistory.add(new Pair<String, Date>(salesChannelIDMigration, purchaseDate));
+                          }
+                      }
+                    oldFullPurchaseHistory.put(offer.getOfferID(), new ArrayList<Date>()); // old will be blank - will be removed future
+                  }
+                // ------ END DATA MIGRATION COULD BE REMOVED
+                
+                //
+                //  newPurchaseHistory
+                //
+                
+                Map<String, List<Pair<String, Date>>> newFullPurchaseHistory = subscriberProfile.getOfferPurchaseSalesChannelHistory();
+                List<Pair<String, Date>> newPurchaseHistory = newFullPurchaseHistory.get(offer.getOfferID());
+                if (newPurchaseHistory != null)
+                  {
+                    for (Pair<String, Date> purchaseDatePair : newPurchaseHistory)
+                      {
+                        Date purchaseDate = purchaseDatePair.getSecondElement();
+                        if (purchaseDate.after(earliestDateToKeepInHistory))
+                          {
+                            cleanPurchaseHistory.add(new Pair<String, Date>(purchaseDatePair.getFirstElement(), purchaseDatePair.getSecondElement()));
+                          }
+                      }
+                  }
+                
+                //
+                //  filter on earliestDateToKeep (this is for offer purchase limitation - not adv criteria)
+                //
+                
+                long previousPurchseCount = cleanPurchaseHistory.stream().filter(history -> history.getSecondElement().after(earliestDateToKeep)).count();
+                int totalPurchased = (int) (previousPurchseCount) + 1; //put +1 to check if possible to purchase now a new offer
+                
+                if (EvolutionEngine.isPurchaseLimitReached(offer, totalPurchased))
+                  {
+                    if (log.isTraceEnabled()) log.trace("maximumAcceptances : " + offer.getMaximumAcceptances() + " of offer " + offer.getOfferID() + " exceeded for subscriber " + subscriberProfile.getSubscriberID() + " as totalPurchased = " + totalPurchased + " (" + cleanPurchaseHistory.size() + "+1) earliestDateToKeep : " + earliestDateToKeep);
+                    offer.setLimitsReached("purchases limit reached");
+                  }
+                
+            }
+          }  
+          
+
           
           //
           //filter using supplier
@@ -3220,6 +3314,8 @@ public class ThirdPartyManager
                   .collect(Collectors.toList());
 
             } 
+          
+          
           //
           // filter the offers based on the product supplier parent ID
           //
@@ -3240,7 +3336,7 @@ public class ThirdPartyManager
            *
            *****************************************/
 
-          List<JSONObject> offersJson = offers.stream().map(offer -> ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService, offerObjectiveService, productService, voucherService, salesChannelService, catalogCharacteristicService)).collect(Collectors.toList());
+          List<JSONObject> offersJson = offers.stream().map(offer -> ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService, offerObjectiveService, productService, voucherService, salesChannelService, catalogCharacteristicService,notEligible,limitsReached)).collect(Collectors.toList());
           response.put("offers", JSONUtilities.encodeArray(offersJson));
           updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
         }
@@ -5459,7 +5555,7 @@ public class ThirdPartyManager
     GUIManagedObject offerObject = offerService.getStoredOffer(offerID);
     if (offerObject instanceof Offer) {
       Offer offer = (Offer) offerObject;
-      offerJSON = ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService, offerObjectiveService, productService, voucherService, salesChannelService, catalogCharacteristicService);
+      offerJSON = ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService, offerObjectiveService, productService, voucherService, salesChannelService, catalogCharacteristicService,false,false);
     }
     response.put("offerDetails",offerJSON);
     return constructThirdPartyResponse(RESTAPIGenericReturnCodes.SUCCESS,response);
@@ -5478,7 +5574,7 @@ public class ThirdPartyManager
     GUIManagedObject offerObject = offerService.getStoredOffer(offerID);
     if (offerObject instanceof Offer) {
       Offer offer = (Offer) offerObject;
-      offerJSON = ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService, offerObjectiveService, productService, voucherService, salesChannelService, catalogCharacteristicService);
+      offerJSON = ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService, offerObjectiveService, productService, voucherService, salesChannelService, catalogCharacteristicService,false,false);
     }
     Map<String,Object> offerResponse = new HashMap<>();
     offerResponse.put("offerDetails", offerJSON);

@@ -19,6 +19,7 @@ import com.evolving.nglm.evolution.StockMonitor.StockableItem;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.core.SystemTime;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -140,6 +141,8 @@ public class Offer extends GUIManagedObject implements StockableItem
   private Integer maximumAcceptances;
   private Integer maximumAcceptancesPeriodDays;
   private Integer maximumAcceptancesPeriodMonths;
+  private String eligibility;
+  private String limitsReached;
 
   //
   //  derived
@@ -1038,6 +1041,34 @@ public class Offer extends GUIManagedObject implements StockableItem
   
   /*****************************************
   *
+  *  hasThisOfferSalesChannel
+  *
+  *****************************************/
+  
+  public boolean hasThisOfferSalesChannel(String salesChannelID)
+  {
+    boolean result = false;
+    if(getOfferSalesChannelsAndPrices() != null)
+    {
+      for(OfferSalesChannelsAndPrice channel : getOfferSalesChannelsAndPrices())
+        {
+          if(channel.getSalesChannelIDs() != null) 
+            {
+              for(String scID : channel.getSalesChannelIDs()) 
+                {
+                  if(scID.equals(salesChannelID))
+                    {
+                      result = true;
+                    }
+                }
+            }
+        }
+    }
+    return result;
+  }
+  
+  /*****************************************
+  *
   *  hasThisOfferCharacteristics
   *
   *****************************************/
@@ -1060,6 +1091,7 @@ public class Offer extends GUIManagedObject implements StockableItem
     return result;
   }
   
+ 
   public List<String> getSubcriteriaFieldArgumentValues(List<EvaluationCriterion> allCriterions, String fieldID)
   {
     List<String> result = new ArrayList<String>();
@@ -1143,4 +1175,16 @@ public class Offer extends GUIManagedObject implements StockableItem
     }
     return result;
   }
+public String getEligibility() {
+	return eligibility;
+}
+public void setEligibility(String eligibility) {
+	this.eligibility = eligibility;
+}
+public String getLimitsReached() {
+	return limitsReached;
+}
+public void setLimitsReached(String limitsReached) {
+	this.limitsReached = limitsReached;
+}
 }
