@@ -309,7 +309,7 @@ public class ElasticsearchUpgrade
     loadPatch("detailedrecords_messages"          , 1, 3, "detailedrecords_messages-_tmp", (s) -> s,
         "ctx._source.tenantID = 1;");
     loadPatch("detailedrecords_messages"          , 2, 3, "detailedrecords_messages-_tmp", (s) -> s, "");
-
+    
     /*****************************************
     *
     * journeystatistic template
@@ -331,6 +331,14 @@ public class ElasticsearchUpgrade
       + "DateTimeFormatter outputFormat = DateTimeFormatter.ofPattern(\\\"yyyy-MM-dd HH:mm:ss.SSSZZ\\\");"
       + "ZonedDateTime zdt = ZonedDateTime.parse(dateString, inputFormat);"
       + "ctx._source.transitionDate = zdt.format(outputFormat);");
+    
+    /*****************************************
+    *
+    * workflowarchive template
+    *
+    *****************************************/
+    // Changes: 
+    // - 2.0.0_7 (1): creation
 
     /*****************************************
     *

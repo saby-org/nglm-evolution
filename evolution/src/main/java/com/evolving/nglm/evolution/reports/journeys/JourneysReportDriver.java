@@ -141,7 +141,7 @@ public class JourneysReportDriver extends ReportDriver
                 Journey journey = (Journey) guiManagedObject;
 
                 Map<String, Object> journeyInfo = new LinkedHashMap<String, Object>(); // to preserve order
-                if (journey != null) {
+                if (journey != null && !journey.isWorkflow()) { // EVPRO-1318 do not generate report for Workflow, the journeystatistic does not contain all data. Plus it is not needed.
                   StringBuilder sbJourneyObjectives = new StringBuilder();
 
                   String journeyID = journey.getJourneyID();
@@ -174,7 +174,7 @@ public class JourneysReportDriver extends ReportDriver
                   }
                   journeyStatus = sbStatus.toString().substring(0, sbStatus.toString().length()-1);
 
-                  Map<String, Long> nodeSubscribersCount = elasticsearchReaderClient.getJourneyNodeCount(journeyID);
+                  Map<String, Long> nodeSubscribersCount = elasticsearchReaderClient.getJourneyNodeCount(journeyID, journey.isWorkflow()); // isWorkflow? will always be false but it is more consistent than putting false directly
                   for (JourneyNode journeyNode : journey.getJourneyNodes().values()) {
                     Long count = nodeSubscribersCount.get(journeyNode.getNodeID());
                     String countStr = (count == null) ? "0" : count.toString();

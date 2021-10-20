@@ -572,6 +572,7 @@ public class DeploymentCommon
   public static Long getElasticsearchMdrTemplateVersion() { return elasticsearchTemplatesVersion.get("detailedrecords_messages"); }
   public static Long getElasticsearchEdrTemplateVersion() { return elasticsearchTemplatesVersion.get("detailedrecords_events"); }
   public static Long getElasticsearcJourneystatisticTemplateVersion() { return elasticsearchTemplatesVersion.get("journeystatistic"); }
+  public static Long getElasticsearcWorkflowarchiveTemplateVersion() { return elasticsearchTemplatesVersion.get("workflowarchive"); }
   public static Long getElasticsearchDatacubeSubscriberprofileTemplateVersion() { return elasticsearchTemplatesVersion.get("datacube_subscriberprofile"); }
   public static Long getElasticsearchDatacubeLoyaltyprogramshistoryTemplateVersion() { return elasticsearchTemplatesVersion.get("datacube_loyaltyprogramshistory"); }
   public static Long getElasticsearchDatacubeLoyaltyprogramschangesTemplateVersion() { return elasticsearchTemplatesVersion.get("datacube_loyaltyprogramschanges"); }

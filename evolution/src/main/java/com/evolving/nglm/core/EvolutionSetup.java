@@ -435,6 +435,7 @@ public class EvolutionSetup
     // refresh=true force ES to refresh the shard to make the result of the operation visible to search 
     // instantaneously (without waiting for the next refresh to happen)
     // See https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-reindex.html#docs-reindex-api-query-params
+    // Here refresh=true is needed because otherwise the second _reindex call that happen directly after the first one will _reindex nothing
     executeCurl(rootHttpCmd.url + "_reindex?refresh=true", jsonBody, "-XPOST", rootHttpCmd.username, rootHttpCmd.password, httpResponseCode, responseBody);
     if(httpResponseCode.getValue() != 200) {
       System.out.println("[DEBUG] Transform="+patch.script);

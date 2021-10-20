@@ -663,7 +663,7 @@ echo
 
 # -------------------------------------------------------------------------------
 #
-# journeystatistic
+# journeystatistic & workflowarchive
 #
 # -------------------------------------------------------------------------------
 #
@@ -694,7 +694,24 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/journeysta
       "statusControlGroup" : { "type" : "boolean" },
       "statusUniversalControlGroup" : { "type" : "boolean" },
       "journeyComplete" : { "type" : "boolean" },
+      "status" : { "type" : "keyword" },
       "journeyExitDate" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" }
+    }
+  }
+}'
+echo
+
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/workflowarchive -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
+{
+  "index_patterns": ["workflowarchive*"],
+  "mappings" : {
+    "_meta": { "workflowarchive" : { "version": Deployment.getElasticsearcWorkflowarchiveTemplateVersion() } },
+    "properties" : {
+      "journeyID" : { "type" : "keyword" },
+      "tenantID" : { "type" : "integer" },
+      "nodeID" : { "type" : "keyword" },
+      "status" : { "type" : "keyword" },
+      "count" : { "type" : "long" }
     }
   }
 }'

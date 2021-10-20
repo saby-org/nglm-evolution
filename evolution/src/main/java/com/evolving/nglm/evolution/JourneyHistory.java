@@ -523,9 +523,10 @@ public class JourneyHistory
   *
   *****************************************/
   
-  public void addNodeInformation(String fromNodeID, String toNodeID, String deliveryRequestID, String linkID) 
+  public void addNodeInformation(String fromNodeID, String toNodeID, Date transitionDate, String linkID) 
   {
-    NodeHistory nodeHistory = new NodeHistory(fromNodeID, toNodeID, SystemTime.getCurrentTime(), deliveryRequestID, linkID);
+    // DeliveryRequestID is always null at this point - it will be filled later.
+    NodeHistory nodeHistory = new NodeHistory(fromNodeID, toNodeID, transitionDate, null, linkID);
     this.nodeHistory.add(nodeHistory);
 
   }
@@ -945,6 +946,14 @@ public class JourneyHistory
     public Date getTransitionDate() { return transitionDate; }
     public String getDeliveryRequestID() { return deliveryRequestID; }
     public String getLinkID() { return linkID; }
+    
+    /*****************************************
+    *
+    *  setters
+    *
+    *****************************************/
+    
+    public void setDeliveryRequestID(String requestID) { this.deliveryRequestID = requestID; }
     
     /*****************************************
     *

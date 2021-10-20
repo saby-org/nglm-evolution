@@ -118,6 +118,7 @@
     "detailedrecords_messages":         3,
     "detailedrecords_events":           2,
     "journeystatistic":                 2,
+    "workflowarchive":                  1,
     "datacube_subscriberprofile":       2,
     "datacube_loyaltyprogramshistory":  2,
     "datacube_loyaltyprogramschanges":  2,

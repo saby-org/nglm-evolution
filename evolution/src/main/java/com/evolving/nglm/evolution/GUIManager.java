@@ -8778,13 +8778,11 @@ public class GUIManager
         //
         //  retrieve from Elasticsearch 
         //
-         try {
-          Map<String, Long> esMap = this.elasticsearch.getJourneyNodeCount(journeyID);
+        try {
+          Map<String, Long> esMap = this.elasticsearch.getJourneyNodeCount(journeyID, ((Journey) journey).isWorkflow());
           for (String key : nodeIDs) {
-        	  Long count = esMap.get(key);
-              if(key.trim().equalsIgnoreCase(((Journey) journey).getEndNodeID().trim()) && esMap.get(key)!=null)
-            	  count=esMap.get(key)-elasticsearch.getSpecialExitCount(journeyID);
-              result.put(key, (count != null)? count : 0);
+            Long count = esMap.get(key);
+            result.put(key, (count != null)? count : 0);
           }
         }
         catch (ElasticsearchClientException e) {
@@ -20041,7 +20039,7 @@ public class GUIManager
 
                     SubscriberJourneyStatus customerStatusInJourney = Journey.getSubscriberJourneyStatus(statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
                     SubscriberJourneyStatus profilejourneyStatus = baseSubscriberProfile.getSubscriberJourneys().get(storeJourney.getJourneyID() + "");
-                    if (profilejourneyStatus.in(SubscriberJourneyStatus.NotEligible, SubscriberJourneyStatus.UniversalControlGroup, SubscriberJourneyStatus.Excluded, SubscriberJourneyStatus.ObjectiveLimitReached)) {
+                    if (profilejourneyStatus.isSpecialExit()) {
                       customerStatusInJourney = profilejourneyStatus;
                     }
 
@@ -20336,9 +20334,10 @@ public class GUIManager
                     boolean campaignComplete = subsLatestStatistic.getStatusHistory().stream().filter(campaignStat -> campaignStat.getJourneyComplete()).count() > 0L; // ??
                     SubscriberJourneyStatus customerStatusInJourney = Journey.getSubscriberJourneyStatus(statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
                     SubscriberJourneyStatus profilejourneyStatus = baseSubscriberProfile.getSubscriberJourneys().get(storeCampaign.getJourneyID() + "");
-                    if (profilejourneyStatus.in(SubscriberJourneyStatus.NotEligible, SubscriberJourneyStatus.UniversalControlGroup, SubscriberJourneyStatus.Excluded, SubscriberJourneyStatus.ObjectiveLimitReached))
+                    if (profilejourneyStatus.isSpecialExit()) {
                       customerStatusInJourney = profilejourneyStatus;
-
+                    }
+                    
                     if (customerStatus != null)
                       {
                         SubscriberJourneyStatus customerStatusInReq = SubscriberJourneyStatus.fromExternalRepresentation(customerStatus);

@@ -22,6 +22,7 @@ import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
+import com.evolving.nglm.evolution.JourneyHistory.NodeHistory;
 
 public class JourneyState
 {
@@ -43,15 +44,11 @@ public class JourneyState
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("journey_state");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(9));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(10)); // 9 -> 10 EVPRO-1318
     schemaBuilder.field("journeyEndedState", JourneyEndedState.schema());//those are the info we still need after journey is finished
     schemaBuilder.field("callingJourneyRequest", JourneyRequest.serde().optionalSchema());
-    schemaBuilder.field("journeyNodeID", Schema.STRING_SCHEMA);
     schemaBuilder.field("journeyParameters", ParameterMap.schema());
     schemaBuilder.field("journeyActionManagerContext", ParameterMap.serde().optionalSchema());
-    schemaBuilder.field("journeyEntryDate", Timestamp.SCHEMA);
-    schemaBuilder.field("journeyNodeEntryDate", Timestamp.SCHEMA);
-    schemaBuilder.field("journeyOutstandingDeliveryRequestID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("sourceFeatureID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("journeyHistory", JourneyHistory.schema());
     schemaBuilder.field("journeyEndDate", Timestamp.builder().optional().schema());
@@ -83,16 +80,12 @@ public class JourneyState
 
   private JourneyEndedState journeyEndedState;
   private JourneyRequest callingJourneyRequest;
-  private String journeyNodeID;
   private ParameterMap journeyParameters;
   private ParameterMap journeyActionManagerContext;
-  private Date journeyEntryDate;
-  private Date journeyNodeEntryDate;
-  private String journeyOutstandingDeliveryRequestID;
+  private Date journeyEndDate;
   private String sourceFeatureID; // can be null, present by example for workflows that must not define there own ModuleID / FeatureID <ModuleID:FeatureID>
   private String sourceModuleID; // can be null
   private JourneyHistory journeyHistory;
-  private Date journeyEndDate;
   private List<VoucherChange> voucherChanges; // used only in node criteria - no need to persist
   private SubscriberJourneyStatus specialExitReason;
   private int priority;
@@ -124,12 +117,8 @@ public class JourneyState
   public Map<String,Long> getJourneyMetricsPost() { return journeyEndedState.getJourneyMetricsPost(); }
 
   public JourneyRequest getCallingJourneyRequest() { return callingJourneyRequest; }
-  public String getJourneyNodeID() { return journeyNodeID; }
   public ParameterMap getJourneyParameters() { return journeyParameters; }
   public ParameterMap getJourneyActionManagerContext() { return journeyActionManagerContext; }
-  public Date getJourneyEntryDate() { return journeyEntryDate; }
-  public Date getJourneyNodeEntryDate() { return journeyNodeEntryDate; }
-  public String getJourneyOutstandingDeliveryRequestID() { return journeyOutstandingDeliveryRequestID; }
   public String getsourceFeatureID() { return sourceFeatureID; }
   public JourneyHistory getJourneyHistory() { return journeyHistory; }
   public Date getJourneyEndDate() { return journeyEndDate; }
@@ -145,21 +134,65 @@ public class JourneyState
   public boolean getNotifiedThisEvent() { return notifiedThisEvent; }
   public boolean getConvertedThisEvent() { return convertedThisEvent; }
   
+  //
+  // From JourneyHistory
+  //
+  private NodeHistory getFirstNodeTransition() {
+    List<NodeHistory> transitions = this.journeyHistory.getNodeHistory();
+    
+    if(transitions.isEmpty()) { // Any JourneyState should be created with at least one transition - see constructor
+      log.error("This should never happen - tried to extract the first node transition from an empty list.");
+      return new NodeHistory(null, null, null, null, null);
+    }
+    return transitions.get(0);
+  }
+  
+  private NodeHistory getLastNodeTransition() {
+    List<NodeHistory> transitions = this.journeyHistory.getNodeHistory();
+    
+    if(transitions.isEmpty()) { // Any JourneyState should be created with at least one transition - see constructor
+      log.error("This should never happen - tried to extract the last node transition from an empty list.");
+      return new NodeHistory(null, null, null, null, null);
+    }
+    return transitions.get(transitions.size() - 1);
+  }
+
+  public Date getJourneyEntryDate() { return getFirstNodeTransition().getTransitionDate(); }
+  public String getJourneyNodeID() { return getLastNodeTransition().getToNodeID(); }
+  public Date getJourneyNodeEntryDate() { return getLastNodeTransition().getTransitionDate(); }
+  public String getJourneyOutstandingDeliveryRequestID() { return getLastNodeTransition().getDeliveryRequestID(); }
+  
   /*****************************************
   *
   *  setters
   *
   *****************************************/
-
-  public void setJourneyNodeID(String journeyNodeID, Date journeyNodeEntryDate) { this.journeyNodeID = journeyNodeID; this.journeyNodeEntryDate = journeyNodeEntryDate; this.journeyOutstandingDeliveryRequestID = null; }
-  public void setJourneyOutstandingDeliveryRequestID(String journeyOutstandingDeliveryRequestID) { this.journeyOutstandingDeliveryRequestID = journeyOutstandingDeliveryRequestID; }
-  public void setSpecialExitReason(SubscriberJourneyStatus specialExitReason) { this.specialExitReason = specialExitReason;	}
-  public void setJourneyNodeID(String journeyNodeID) { this.journeyNodeID = journeyNodeID; }
+  public void setSpecialExitReason(SubscriberJourneyStatus specialExitReason) { this.specialExitReason = specialExitReason; }
   public void setPriority(int priority) { this.priority = priority; }
   
   // transient
   public void setNotifiedThisEvent(boolean notifiedThisEvent) { this.notifiedThisEvent = notifiedThisEvent; } 
   public void setConvertedThisEvent(boolean convertedThisEvent) { this.convertedThisEvent = convertedThisEvent; }
+  
+  // @rl refactoring: set directly those information in NodeHistory.
+  // /!\ This should be always called after having updated the getJourneyHistory.getNodeInformation with the new transition
+  public void setJourneyOutstandingDeliveryRequestID(String journeyOutstandingDeliveryRequestID)
+  {
+    getLastNodeTransition().setDeliveryRequestID(journeyOutstandingDeliveryRequestID);
+  }
+
+  /*****************************************
+  *
+  *  metrics
+  *
+  *****************************************/
+  public boolean setJourneyExitDate(Date journeyExitDate, SubscriberState subscriberState, Journey journey, EvolutionEngine.EvolutionEventContext context){
+    return this.getJourneyEndedState().setJourneyExitDate(journeyExitDate,subscriberState,journey,context);
+  }
+  
+  public boolean populateMetricsPrior(SubscriberState subscriberState, int tenantID){
+    return this.getJourneyEndedState().populateMetricsPrior(subscriberState,this.getJourneyEntryDate(),tenantID);
+  }
 
   /*****************************************
   *
@@ -167,18 +200,15 @@ public class JourneyState
   *
   *****************************************/
 
-  public JourneyState(EvolutionEventContext context, Journey journey, JourneyRequest callingJourneyRequest, String sourceModuleID, String sourceFeatureID, Map<String, Object> journeyParameters, Date journeyEntryDate, JourneyHistory journeyHistory, String sourceOrigin)
+  public JourneyState(EvolutionEventContext context, Journey journey, JourneyRequest callingJourneyRequest, String sourceModuleID, String sourceFeatureID, Map<String, Object> journeyParameters, String entryNode, Date journeyEntryDate, String sourceOrigin)
   {
-  	this.journeyEndedState = new JourneyEndedState(context.getUniqueKey(),journey.getJourneyID());
+    this.journeyEndedState = new JourneyEndedState(context.getUniqueKey(),journey.getJourneyID());
     this.callingJourneyRequest = callingJourneyRequest;
     this.sourceFeatureID = sourceFeatureID;
-    this.journeyNodeID = journey.getStartNodeID();
     this.journeyParameters = new ParameterMap(journeyParameters);
     this.journeyActionManagerContext = new ParameterMap();
-    this.journeyEntryDate = journeyEntryDate;
-    this.journeyNodeEntryDate = journeyEntryDate;
-    this.journeyOutstandingDeliveryRequestID = null;    
-    this.journeyHistory = journeyHistory;
+    this.journeyHistory = new JourneyHistory(journey.getJourneyID());
+    this.journeyHistory.addNodeInformation(null, entryNode, journeyEntryDate, null); // Add first node transition
     this.journeyEndDate = journey.getEffectiveEndDate();
     this.voucherChanges = new ArrayList<VoucherChange>();
     this.priority = journey.getPriority();
@@ -188,24 +218,18 @@ public class JourneyState
     this.badgeChanges = new ArrayList<BadgeChange>();
   }
   
- 
-
   /*****************************************
   *
   *  constructor -- unpack
   *
   *****************************************/
 
-  public JourneyState(JourneyEndedState journeyEndedState, JourneyRequest callingJourneyRequest, String journeyNodeID, ParameterMap journeyParameters, ParameterMap journeyActionManagerContext, Date journeyEntryDate, Date journeyNodeEntryDate, String journeyOutstandingDeliveryRequestID, String sourceModuleID, String sourceFeatureID, JourneyHistory journeyHistory, Date journeyEndDate, SubscriberJourneyStatus specialExitReason, int priority, String sourceOrigin)
+  public JourneyState(JourneyEndedState journeyEndedState, JourneyRequest callingJourneyRequest, ParameterMap journeyParameters, ParameterMap journeyActionManagerContext, String sourceModuleID, String sourceFeatureID, JourneyHistory journeyHistory, Date journeyEndDate, SubscriberJourneyStatus specialExitReason, int priority, String sourceOrigin)
   {
   	this.journeyEndedState = journeyEndedState;
     this.callingJourneyRequest = callingJourneyRequest;
-    this.journeyNodeID = journeyNodeID;
     this.journeyParameters = journeyParameters;
     this.journeyActionManagerContext = journeyActionManagerContext;
-    this.journeyEntryDate = journeyEntryDate;
-    this.journeyNodeEntryDate = journeyNodeEntryDate;
-    this.journeyOutstandingDeliveryRequestID = journeyOutstandingDeliveryRequestID;
     this.sourceFeatureID = sourceFeatureID;
     this.journeyHistory = journeyHistory;
     this.journeyEndDate = journeyEndDate;
@@ -230,12 +254,8 @@ public class JourneyState
     Struct struct = new Struct(schema);
     struct.put("journeyEndedState", JourneyEndedState.serde().pack(journeyState.getJourneyEndedState()));
     struct.put("callingJourneyRequest", JourneyRequest.serde().packOptional(journeyState.getCallingJourneyRequest()));
-    struct.put("journeyNodeID", journeyState.getJourneyNodeID());
     struct.put("journeyParameters", ParameterMap.pack(journeyState.getJourneyParameters()));
     struct.put("journeyActionManagerContext", ParameterMap.serde().packOptional(journeyState.getJourneyActionManagerContext()));
-    struct.put("journeyEntryDate", journeyState.getJourneyEntryDate());
-    struct.put("journeyNodeEntryDate", journeyState.getJourneyNodeEntryDate());
-    struct.put("journeyOutstandingDeliveryRequestID", journeyState.getJourneyOutstandingDeliveryRequestID());
     struct.put("sourceFeatureID",  journeyState.getsourceFeatureID());
     struct.put("journeyHistory", JourneyHistory.serde().pack(journeyState.getJourneyHistory()));
     struct.put("journeyEndDate", journeyState.getJourneyEndDate());
@@ -268,12 +288,8 @@ public class JourneyState
 
     Struct valueStruct = (Struct) value;
     JourneyRequest callingJourneyRequest = (schemaVersion >= 4) ? JourneyRequest.serde().unpackOptional(new SchemaAndValue(schema.field("callingJourneyRequest").schema(), valueStruct.get("callingJourneyRequest"))) : null;
-    String journeyNodeID = valueStruct.getString("journeyNodeID");
     ParameterMap journeyParameters = ParameterMap.unpack(new SchemaAndValue(schema.field("journeyParameters").schema(), valueStruct.get("journeyParameters")));
     ParameterMap journeyActionManagerContext = (schemaVersion >= 3) ? ParameterMap.serde().unpackOptional(new SchemaAndValue(schema.field("journeyActionManagerContext").schema(), valueStruct.get("journeyActionManagerContext"))) : new ParameterMap();
-    Date journeyEntryDate = (Date) valueStruct.get("journeyEntryDate");
-    Date journeyNodeEntryDate = (Date) valueStruct.get("journeyNodeEntryDate");
-    String journeyOutstandingDeliveryRequestID = valueStruct.getString("journeyOutstandingDeliveryRequestID");
     String sourceFeatureID = schema.field("sourceFeatureID") != null ? valueStruct.getString("sourceFeatureID") : null;
     JourneyHistory journeyHistory = JourneyHistory.serde().unpack(new SchemaAndValue(schema.field("journeyHistory").schema(), valueStruct.get("journeyHistory")));
     Date journeyEndDate = (schemaVersion >= 5) ? (Date) valueStruct.get("journeyEndDate") : new Date();
@@ -307,7 +323,7 @@ public class JourneyState
     //  return
     //
 
-    return new JourneyState(journeyEndedState, callingJourneyRequest, journeyNodeID, journeyParameters, journeyActionManagerContext, journeyEntryDate, journeyNodeEntryDate, journeyOutstandingDeliveryRequestID, sourceModuleID, sourceFeatureID, journeyHistory, journeyEndDate, specialExitReason, priority, sourceOrigin);
+    return new JourneyState(journeyEndedState, callingJourneyRequest, journeyParameters, journeyActionManagerContext, sourceModuleID, sourceFeatureID, journeyHistory, journeyEndDate, specialExitReason, priority, sourceOrigin);
   }
   
   private static SubscriberJourneyStatus unpackSpecialExitReason(Struct valueStruct)
@@ -322,14 +338,7 @@ public class JourneyState
   @Override
   public String toString()
   {
-    return "JourneyState [JourneyEndedState=" + journeyEndedState + " priority=" + priority + ", callingJourneyRequest=" + callingJourneyRequest + ", journeyNodeID=" + journeyNodeID + ", journeyParameters=" + journeyParameters + ", journeyActionManagerContext=" + journeyActionManagerContext + ", journeyEntryDate=" + journeyEntryDate + ", journeyNodeEntryDate=" + journeyNodeEntryDate + ", journeyOutstandingDeliveryRequestID=" + journeyOutstandingDeliveryRequestID + ", sourceFeatureID=" + sourceFeatureID + ", journeyHistory=" + journeyHistory + "]";
-  }
-
-  public boolean setJourneyExitDate(Date journeyExitDate, SubscriberState subscriberState, Journey journey, EvolutionEngine.EvolutionEventContext context){
-    return this.getJourneyEndedState().setJourneyExitDate(journeyExitDate,subscriberState,journey,context);
-  }
-  public boolean populateMetricsPrior(SubscriberState subscriberState, int tenantID){
-    return this.getJourneyEndedState().populateMetricsPrior(subscriberState,this.getJourneyEntryDate(),tenantID);
+    return "JourneyState [JourneyEndedState=" + journeyEndedState + " priority=" + priority + ", callingJourneyRequest=" + callingJourneyRequest + ", journeyParameters=" + journeyParameters + ", journeyActionManagerContext=" + journeyActionManagerContext + ", sourceFeatureID=" + sourceFeatureID + ", journeyHistory=" + journeyHistory + "]";
   }
 
   // native Object hashCode is to heavy for this object heavily used in hashset

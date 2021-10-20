@@ -6437,20 +6437,23 @@ public class EvolutionEngine
                 if (journeyMaxNumberOfCustomersReserved) {
                   stockService.confirmReservation(journey, 1);
                 }
-
-                JourneyHistory journeyHistory = new JourneyHistory(journey.getJourneyID());
-                JourneyState journeyState = new JourneyState(context, journey, journeyRequest, sourceModuleID, sourceFeatureID, boundParameters, context.processingDate(), journeyHistory, sourceOrigin);
-
-                if (currentStatus != null) // EVPRO-530
-                {
+                
+                // Create new JourneyState for this
+                JourneyState journeyState;
+                
+                if (currentStatus == null) {
+                  // Entry by Entry node - nominal
+                  journeyState = new JourneyState(context, journey, journeyRequest, sourceModuleID, sourceFeatureID, boundParameters, journey.getStartNodeID(), context.processingDate(), sourceOrigin);
+                }
+                else { // EVPRO-530 - Special: entry directly by end node
                   // keep the current status only if it has not been kept before...
                   SubscriberJourneyStatus previousStatus = subscriberState.getSubscriberProfile().getSubscriberJourneys().get(journey.getJourneyID());
-                  if(previousStatus==null)
+                  if(previousStatus == null)
                     {
-                      journeyState.setJourneyNodeID(journey.getEndNodeID());
+                      journeyState = new JourneyState(context, journey, journeyRequest, sourceModuleID, sourceFeatureID, boundParameters, journey.getEndNodeID(), context.processingDate(), sourceOrigin);
                       journeyState.setSpecialExitReason(currentStatus);
                       boolean metricsUpdated = journeyState.setJourneyExitDate(context.processingDate(), subscriberState, journey, context); // populate journeyMetrics (during)
-                      subscriberStateUpdated = subscriberStateUpdated || metricsUpdated;
+                      subscriberStateUpdated = true; // metricsUpdated is ignored - update boolean is true anyway
                     }
                   else
                     {
@@ -6458,17 +6461,13 @@ public class EvolutionEngine
                       continue; // continue of the main journey loop
                     }
                 }
+                
+                boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(context.processingDate(), journeyState, false, currentStatus); // statusUpdated is ignored - update boolean is true anyway
 
-                journeyState.getJourneyHistory().addNodeInformation(null, journeyState.getJourneyNodeID(), null, null);
-                boolean statusUpdated = journeyState.getJourneyHistory()
-                            .addStatusInformation(context.processingDate(), journeyState, false, currentStatus);
+                // Update SubscriberState with new journeyState
                 subscriberState.getJourneyStates().add(journeyState);
-                subscriberState.addJourneyStatistic(new JourneyStatistic(context,
-                                          subscriberState.getSubscriberID(),
-                                          journeyState.getJourneyHistory(),
-                                          journeyState, subscriberState.getSubscriberProfile().getStatisticsSegmentsMap(subscriberGroupEpochReader, segmentationDimensionService),
-                                          subscriberState.getSubscriberProfile()));
                 subscriberState.getSubscriberProfile().getSubscriberJourneys().put(journey.getJourneyID(), Journey.getSubscriberJourneyStatus(journeyState));
+                subscriberState.addJourneyStatistic(new JourneyStatistic(context, subscriberState, journeyState, journey, subscriberState.getSubscriberProfile().getStatisticsSegmentsMap(subscriberGroupEpochReader, segmentationDimensionService)));
                 subscriberStateUpdated = true;
 
                 /*****************************************
@@ -6640,24 +6639,29 @@ public class EvolutionEngine
             context.subscriberTrace("ignoring inactive for now journey {0}", journeyState.getJourneyID());
             continue;
           }
-          GUIManagedObject journeyGMO = journeyService.getStoredGUIManagedObject(journeyState.getJourneyID());
-          // possible journey ended but need to wait late event if we are still in the allowed window
-          if(journey==null && journeyGMO!=null){
-            Date waitUntil = new Date(journeyGMO.getEffectiveEndDate().getTime()+Deployment.getEventMaxDelayMs());
-            if(context.processingDate().before(waitUntil)){
-              if(log.isTraceEnabled()) log.trace(journeyGMO.getGUIManagedObjectDisplay()+" ended on "+journeyGMO.getEffectiveEndDate()," but need to wait till "+waitUntil+" before closing");
-              continue;
+          
+          // EVPRO-1275 in case Journey is not active anymore (ended journey) - set exit date to Journey's end date
+          GUIManagedObject inactiveJourney = journeyService.getStoredGUIManagedObject(journeyState.getJourneyID());
+          if(inactiveJourney != null) {
+            // possible journey ended but need to wait late event if we are still in the allowed window
+            // In a late event, journey could still be active (!= null) and we need to treat this late event before closing the journey state
+            if(journey == null){
+              Date waitUntil = new Date(inactiveJourney.getEffectiveEndDate().getTime()+Deployment.getEventMaxDelayMs());
+              if(context.processingDate().before(waitUntil)){
+                if(log.isTraceEnabled()) log.trace(inactiveJourney.getGUIManagedObjectDisplay()+" ended on "+inactiveJourney.getEffectiveEndDate()," but need to wait till "+waitUntil+" before closing");
+                continue;
+              }
             }
+            boolean metricsUpdated = journeyState.setJourneyExitDate(inactiveJourney.getEffectiveEndDate(), subscriberState, null, context); // populate journeyMetrics (during)
+            subscriberStateUpdated = subscriberStateUpdated || metricsUpdated;
           }
-
-          boolean metricsUpdated = journeyState.setJourneyExitDate(context.processingDate(), subscriberState, journey, context); // populate journeyMetrics (during)
-          subscriberStateUpdated = subscriberStateUpdated || metricsUpdated;
+          else {
+            boolean metricsUpdated = journeyState.setJourneyExitDate(context.processingDate(), subscriberState, null, context); // populate journeyMetrics (during)
+            subscriberStateUpdated = subscriberStateUpdated || metricsUpdated;
+          }
+          
           boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(context.processingDate(), journeyState, true);
-          // EVPRO-1275 set correct exitDate for ended campaigns
-          if (journeyGMO != null) {
-            journeyState.setJourneyExitDate(journeyGMO.getEffectiveEndDate(), null, null, null);
-          }
-          subscriberState.addJourneyStatistic(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, subscriberState.getSubscriberProfile().getStatisticsSegmentsMap(subscriberGroupEpochReader, segmentationDimensionService), subscriberState.getSubscriberProfile(), context.processingDate()));
+          subscriberState.addJourneyStatistic(new JourneyStatistic(context, subscriberState, journeyState, journey, subscriberState.getSubscriberProfile().getStatisticsSegmentsMap(subscriberGroupEpochReader, segmentationDimensionService)));
           inactiveJourneyStates.add(journeyState);
           continue;
         }
@@ -6728,7 +6732,7 @@ public class EvolutionEngine
                               boolean metricsUpdated = journeyState.setJourneyExitDate(context.processingDate(), subscriberState, journey, context); // populate journeyMetrics (during)
                               subscriberStateUpdated = subscriberStateUpdated || metricsUpdated;
                               boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(context.processingDate(), journeyState, true);
-                              subscriberState.addJourneyStatistic(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, subscriberState.getSubscriberProfile().getStatisticsSegmentsMap(subscriberGroupEpochReader, segmentationDimensionService), subscriberState.getSubscriberProfile(), context.processingDate()));
+                              subscriberState.addJourneyStatistic(new JourneyStatistic(context, subscriberState, journeyState, journey, subscriberState.getSubscriberProfile().getStatisticsSegmentsMap(subscriberGroupEpochReader, segmentationDimensionService)));
                               inactiveJourneyStates.add(journeyState);
                               break;
                             }
@@ -6779,7 +6783,6 @@ public class EvolutionEngine
         Set<JourneyNode> visited = new HashSet<JourneyNode>();
         boolean terminateCycle = false;
         JourneyLink firedLink = null;
-        String sample = null;
         do
           {
             /*****************************************
@@ -6917,7 +6920,7 @@ public class EvolutionEngine
                                   boolean metricsUpdated = journeyState.setJourneyExitDate(context.processingDate(), subscriberState, journey, context); // populate journeyMetrics (during)
                                   subscriberStateUpdated = subscriberStateUpdated || metricsUpdated;
                                   boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(context.processingDate(), journeyState, true);
-                                  subscriberState.addJourneyStatistic(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, subscriberState.getSubscriberProfile().getStatisticsSegmentsMap(subscriberGroupEpochReader, segmentationDimensionService), subscriberState.getSubscriberProfile(), context.processingDate()));
+                                  subscriberState.addJourneyStatistic(new JourneyStatistic(context, subscriberState, journeyState, journey, subscriberState.getSubscriberProfile().getStatisticsSegmentsMap(subscriberGroupEpochReader, segmentationDimensionService)));
                                   inactiveJourneyStates.add(journeyState);
                                   break;
                                 }
@@ -6996,11 +6999,9 @@ public class EvolutionEngine
                 *
                 *****************************************/
 
-                JourneyNode nextJourneyNode = firedLink.getDestination();
-                journeyState.setJourneyNodeID(nextJourneyNode.getNodeID(), context.processingDate());
-                journeyState.getJourneyHistory().addNodeInformation(firedLink.getSourceReference(), firedLink.getDestinationReference(), journeyState.getJourneyOutstandingDeliveryRequestID(), firedLink.getLinkID()); 
+                journeyState.getJourneyHistory().addNodeInformation(firedLink.getSourceReference(), firedLink.getDestinationReference(), context.processingDate(), firedLink.getLinkID()); 
                 journeyState.getJourneyActionManagerContext().clear();
-                journeyNode = nextJourneyNode;
+                journeyNode = firedLink.getDestination();
                 subscriberStateUpdated = true;
 
                 /*****************************************
@@ -7127,7 +7128,7 @@ public class EvolutionEngine
                                   boolean metricsUpdated = journeyState.setJourneyExitDate(context.processingDate(), subscriberState, journey, context); // populate journeyMetrics (during)
                                   subscriberStateUpdated = subscriberStateUpdated || metricsUpdated;
                                   boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(context.processingDate(), journeyState, true);
-                                  subscriberState.addJourneyStatistic(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, subscriberState.getSubscriberProfile().getStatisticsSegmentsMap(subscriberGroupEpochReader, segmentationDimensionService), subscriberState.getSubscriberProfile(), context.processingDate()));
+                                  subscriberState.addJourneyStatistic(new JourneyStatistic(context, subscriberState, journeyState, journey, subscriberState.getSubscriberProfile().getStatisticsSegmentsMap(subscriberGroupEpochReader, segmentationDimensionService)));
                                   inactiveJourneyStates.add(journeyState);
                                   break;
                                 }
@@ -7171,27 +7172,9 @@ public class EvolutionEngine
                 *****************************************/
                 
                 //
-                // abTesting (we remove it so its only counted once per journey)
-                //
-                
-               
-                if(journeyState.getJourneyParameters().get("sample.a") != null)
-                  {
-                    sample = (String) journeyState.getJourneyParameters().get("sample.a");
-                    journeyState.getJourneyParameters().remove("sample.a");
-                  }
-
-                else if(journeyState.getJourneyParameters().get("sample.b") != null)
-                  {
-                    sample = (String) journeyState.getJourneyParameters().get("sample.b");
-                    journeyState.getJourneyParameters().remove("sample.b");
-                  }
-                
-                //
                 //  journeyStatistic
                 //
-                
-                subscriberState.addJourneyStatistic(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, firedLink, journeyState.getNotifiedThisEvent(), journeyState.getConvertedThisEvent(), sample, subscriberState.getSubscriberProfile().getStatisticsSegmentsMap(subscriberGroupEpochReader, segmentationDimensionService), subscriberState.getSubscriberProfile()));
+                subscriberState.addJourneyStatistic(new JourneyStatistic(context, subscriberState, journeyState, journey, subscriberState.getSubscriberProfile().getStatisticsSegmentsMap(subscriberGroupEpochReader, segmentationDimensionService)));
                 
                 boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(context.processingDate(), journeyState, journeyNode.getExitNode());
                 if(journey.isWorkflow())
@@ -7203,7 +7186,11 @@ public class EvolutionEngine
                           {
                             if(parentState.getJourneyID().equals(journeyState.getsourceFeatureID()) && DeliveryRequest.Module.Journey_Manager.getExternalRepresentation().equals(journeyState.getSourceModuleID()))
                               {
-                                subscriberState.addJourneyStatistic(new JourneyStatistic(context, subscriberState.getSubscriberID(), parentState.getJourneyHistory(), parentState, null, parentState.getNotifiedThisEvent(), parentState.getConvertedThisEvent(), sample, subscriberState.getSubscriberProfile().getStatisticsSegmentsMap(subscriberGroupEpochReader, segmentationDimensionService), subscriberState.getSubscriberProfile()));
+                                // @rl I don't get why is it necessary to re-take a picture of ParentState (a.k.a journeyStatistic) if we did no modification on it.
+                                
+                                // EVPRO-1318 Here we push "null" as the Parent Journey, assuming a workflow cannot create another workflow, therefore there is no need to archive this parent journeystatistic push
+                                subscriberState.addJourneyStatistic(new JourneyStatistic(context, subscriberState, parentState, null, subscriberState.getSubscriberProfile().getStatisticsSegmentsMap(subscriberGroupEpochReader, segmentationDimensionService)));
+                                
                                 break;
                               }
                           }

@@ -119,30 +119,39 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
   //
   //  SubscriberJourneyStatus
   //
-
+  
   public enum SubscriberJourneyStatus
   {
-    NotEligible("notEligible", "NotEligible"),
-    Excluded("excluded", "Excluded"),
-    ObjectiveLimitReached("objective_limitReached", "ObjectiveLimitReached"),
-    Entered("entered", "Entered"),
-    Targeted("targeted", "Targeted"),
-    Notified("notified", "Notified"),
-    ConvertedNotNotified("unnotified_converted", "Converted"),
-    ConvertedNotified("notified_converted", "ConvertedNotified"),
-    ControlGroup("controlGroup", "Control"),
-    UniversalControlGroup("UniversalControlGroup", "UCG"),
-    ControlGroupConverted("controlGroup_converted", "ControlConverted"),
-    UniversalControlGroupConverted("UniversalControlGroup_converted", "UCGConverted"),
-    Unknown("(unknown)", "Unknown");
+    NotEligible("notEligible", "NotEligible", true),
+    Excluded("excluded", "Excluded", true),
+    ObjectiveLimitReached("objective_limitReached", "ObjectiveLimitReached", true),
+    UniversalControlGroup("UniversalControlGroup", "UCG", true),
+    Entered("entered", "Entered", false),
+    Targeted("targeted", "Targeted", false),
+    Notified("notified", "Notified", false),
+    ConvertedNotNotified("unnotified_converted", "Converted", false),
+    ConvertedNotified("notified_converted", "ConvertedNotified", false),
+    ControlGroup("controlGroup", "Control", false),
+    ControlGroupConverted("controlGroup_converted", "ControlConverted", false),
+    UniversalControlGroupConverted("UniversalControlGroup_converted", "UCGConverted", false),
+    Unknown("(unknown)", "Unknown", false);
     private String externalRepresentation;
     private String display;
-    private SubscriberJourneyStatus(String externalRepresentation, String display) { this.externalRepresentation = externalRepresentation; this.display = display; }
+    private boolean specialExit; // EVPRO-742 tag special exit status
+    private SubscriberJourneyStatus(String externalRepresentation, String display, boolean specialExit) { this.externalRepresentation = externalRepresentation; this.display = display; this.specialExit = specialExit; }
     public String getExternalRepresentation() { return externalRepresentation; }
     public String getDisplay() { return display; }
+    public boolean isSpecialExit() { return specialExit; }
     public static SubscriberJourneyStatus fromExternalRepresentation(String externalRepresentation) { for (SubscriberJourneyStatus enumeratedValue : SubscriberJourneyStatus.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
-    public boolean in (SubscriberJourneyStatus ... states) {
-        return Arrays.asList(states).contains(this);
+    
+    public static List<String> getExitStatusReprensentation() {
+      List<String> result = new LinkedList<String>();
+      for (SubscriberJourneyStatus status: SubscriberJourneyStatus.values()) {
+        if(status.isSpecialExit()) {
+          result.add(status.getExternalRepresentation());
+        }
+      }
+      return result;
     }
   }
 
@@ -362,6 +371,9 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
   //  derived
   //
 
+  // EVPRO-1318: it is really important that we do no try to publish JourneyMetric for Workflow otherwise it will try 
+  // to push JourneyMetric in journeystatistic ES index after its removal (workflowarchive mechanism)
+  // Therefore, journeyMetricsNeeded() call should always return false for Workflow.
   public boolean journeyMetricsNeeded()
   {
     return this.fullStatistics && this.getGUIManagedObjectType() == GUIManagedObjectType.Campaign;

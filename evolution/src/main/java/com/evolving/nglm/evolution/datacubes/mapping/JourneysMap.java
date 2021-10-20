@@ -80,4 +80,15 @@ public class JourneysMap extends GUIManagedObjectMap<Journey>
       return 0;
     }
   }
+  
+  public boolean isWorkflow(String journeyID)
+  {
+    Journey journey = this.guiManagedObjects.get(journeyID);
+    if(journey != null) {
+      return journey.isWorkflow();
+    } else {
+      log.error("Could not retrieve workflow info from journeyID "+ journeyID);
+      return false;
+    }
+  }
 }

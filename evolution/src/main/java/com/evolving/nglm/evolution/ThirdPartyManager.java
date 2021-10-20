@@ -2187,9 +2187,10 @@ public class ThirdPartyManager
 
               SubscriberJourneyStatus customerStatusInJourney = Journey.getSubscriberJourneyStatus(statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
               SubscriberJourneyStatus profilejourneyStatus = baseSubscriberProfile.getSubscriberJourneys().get(storeJourney.getJourneyID() + "");
-              if (profilejourneyStatus.in(SubscriberJourneyStatus.NotEligible, SubscriberJourneyStatus.UniversalControlGroup, SubscriberJourneyStatus.Excluded, SubscriberJourneyStatus.ObjectiveLimitReached))
+              if (profilejourneyStatus.isSpecialExit()) {
                 customerStatusInJourney = profilejourneyStatus;
-
+              }
+              
               if (!subscriberJourneyStatuses.isEmpty())
                 {
                   boolean criteriaSatisfied = subscriberJourneyStatuses.contains(customerStatusInJourney);
@@ -2483,9 +2484,10 @@ public class ThirdPartyManager
 
               SubscriberJourneyStatus customerStatusInJourney = Journey.getSubscriberJourneyStatus(statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
               SubscriberJourneyStatus profilejourneyStatus = baseSubscriberProfile.getSubscriberJourneys().get(storeCampaign.getJourneyID() + "");
-              if (profilejourneyStatus.in(SubscriberJourneyStatus.NotEligible, SubscriberJourneyStatus.UniversalControlGroup, SubscriberJourneyStatus.Excluded, SubscriberJourneyStatus.ObjectiveLimitReached))
+              if (profilejourneyStatus.isSpecialExit()) {
                 customerStatusInJourney = profilejourneyStatus;
-
+              }
+              
               if (!subscriberJourneyStatuses.isEmpty())
                 {
                   boolean criteriaSatisfied = subscriberJourneyStatuses.contains(customerStatusInJourney);

@@ -692,6 +692,10 @@ public class DatacubeJobs
         datacubeWriter.pause();
         
         for(String journeyID : journeysMap.keySet()) {
+          if(journeysMap.isWorkflow(journeyID)) {  // EVPRO-1318 do not generate datacubes for Workflow, the journeystatistic does not contain all data. Plus it is not needed.
+            continue;
+          }
+          
           if(journeysMap.getTenant(journeyID) == config.getTenantID()) { // only journeys of this tenant
             trafficDatacube.definitive(journeyID, journeysMap.getStartDateTime(journeyID), endOfLastHour);
             rewardsDatacube.definitive(journeyID, journeysMap.getStartDateTime(journeyID), endOfLastHour);
