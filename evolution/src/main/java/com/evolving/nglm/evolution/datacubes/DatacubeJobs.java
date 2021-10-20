@@ -424,10 +424,10 @@ public class DatacubeJobs
   }
   /**********************TDR */
   /*****************************************
-   * BDR daily preview
+   * TDR daily preview
    *
-   * This will generated a datacube preview of the day from the detailedrecords_bonuses-yyyy-MM-dd index of the day
-   * Those data are not definitive, the day is not ended yet, new BDR can still be added.
+   * This will generated a datacube preview of the day from the detailedrecords_tokens-yyyy-MM-dd index of the day
+   * Those data are not definitive, the day is not ended yet, new TDR can still be added.
    *****************************************/
   private static ScheduledJob TDRDailyPreview(ScheduledJobConfiguration config, DatacubeManager datacubeManager) {
     // Datacube generators classes are NOT thread-safe and must be used by only one thread (the AsyncJob thread).
@@ -446,7 +446,7 @@ public class DatacubeJobs
   /*****************************************
    * TDR daily definitive
    *
-   * This will generated a datacube every day from the detailedrecords_bonuses-yyyy-MM-dd index of the previous day.
+   * This will generated a datacube every day from the detailedrecords_tokens-yyyy-MM-dd index of the previous day.
    *****************************************/
   private static ScheduledJob TDRDailyDefinitive(ScheduledJobConfiguration config, DatacubeManager datacubeManager) {
     // Datacube generators classes are NOT thread-safe and must be used by only one thread (the AsyncJob thread).
@@ -465,8 +465,8 @@ public class DatacubeJobs
   /*****************************************
    * TDR hourly preview
    *
-   * This will generated a datacube preview of every hour from the detailedrecords_bonuses-yyyy-MM-dd index of the current day
-   * Those data are not definitive, the day is not ended yet, new BDR can still be added.
+   * This will generated a datacube preview of every hour from the detailedrecords_tokens-yyyy-MM-dd index of the current day
+   * Those data are not definitive, the day is not ended yet, new TDR can still be added.
    *****************************************/
   private static ScheduledJob TDRHourlyPreview(ScheduledJobConfiguration config, DatacubeManager datacubeManager) {
     // Datacube generators classes are NOT thread-safe and must be used by only one thread (the AsyncJob thread).
@@ -485,7 +485,7 @@ public class DatacubeJobs
   /*****************************************
    * TDR hourly definitive
    *
-   * This will generated a datacube of every hour from the detailedrecords_bonuses-yyyy-MM-dd index of the previous day.
+   * This will generated a datacube of every hour from the detailedrecords_tokens-yyyy-MM-dd index of the previous day.
    *****************************************/
   private static ScheduledJob TDRHourlyDefinitive(ScheduledJobConfiguration config, DatacubeManager datacubeManager) {
     // Datacube generators classes are NOT thread-safe and must be used by only one thread (the AsyncJob thread).
