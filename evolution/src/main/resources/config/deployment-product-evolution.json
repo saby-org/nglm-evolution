@@ -1152,7 +1152,7 @@
   "backupManager" :
   {
     "backupManagerOutputPath"      : "/app/backup",
-    "backupManagerCronEntry"       : "0,5,10,15,20,25,30,35,40,45,50,55 * * * *",
+    "backupManagerCronEntry"       : "0 3 * * *",
     "backupManagerDateFormat"      : "yyyy-MM-dd_HH-mm-ss",
     "backupManagerFileExtension"   : "bin.gz",
     "backupManagerRequestTimeoutMS": 120000,
