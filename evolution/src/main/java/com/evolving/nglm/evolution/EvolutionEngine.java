@@ -5478,11 +5478,13 @@ public class EvolutionEngine
               dnboToken.setPurchaseStatus(purchaseResponseEvent.getStatus());
 
               if (!PurchaseFulfillmentManager.PurchaseFulfillmentStatus.PURCHASED.equals(purchaseResponseEvent.getStatus()))
-              {               
+              { 
+              log.info("Set purchaseStatus of " + token.getTokenCode() + " from " + dnboToken.getTokenStatus() + " back to Bound " + dnboToken);              
               failed=true;
-              tokenChangeStatus=RESTAPIGenericReturnCodes.INSUFFICIENT_BALANCE.getGenericResponseCode()+"";
+              tokenChangeStatus = RESTAPIGenericReturnCodes.fromGenericResponseCode(purchaseResponseEvent.getStatus().getReturnCode())+"";
               purchaseOfferID = null;
               dnboToken.setTokenStatus(TokenStatus.Bound);  
+              dnboToken.setRedeemedDate(null);
               dnboToken.setAcceptedOfferID(null);          
               }   
               ArrayList<String> presentedOfferIDs = new ArrayList<>();
