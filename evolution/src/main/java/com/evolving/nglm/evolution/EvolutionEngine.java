@@ -3877,14 +3877,18 @@ public class EvolutionEngine
     Date earliestDateToKeep = null;
     Integer maximumAcceptancesPeriodDays = offer.getMaximumAcceptancesPeriodDays();
     if (maximumAcceptancesPeriodDays != Offer.UNSET) {
-      earliestDateToKeep = RLMDateUtils.addDays(now, -maximumAcceptancesPeriodDays, Deployment.getDeployment(tenantID).getTimeZone());
+      // EVPRO-1061 : For day unit, limit should be 0h on (today - number of days + 1)
+      earliestDateToKeep = RLMDateUtils.addDays(now, -maximumAcceptancesPeriodDays+1, Deployment.getDeployment(tenantID).getTimeZone());
+      earliestDateToKeep = RLMDateUtils.truncate(earliestDateToKeep, Calendar.DATE, Deployment.getDeployment(tenantID).getTimeZone());
     } else {
       Integer maximumAcceptancesPeriodMonths = offer.getMaximumAcceptancesPeriodMonths();
       if (maximumAcceptancesPeriodMonths != Offer.UNSET) {
         if (maximumAcceptancesPeriodMonths == 1) { // current month
           earliestDateToKeep = RLMDateUtils.truncate(now, Calendar.MONTH, Deployment.getDeployment(tenantID).getTimeZone());
         } else {
-          earliestDateToKeep = RLMDateUtils.addMonths(now, -maximumAcceptancesPeriodMonths, Deployment.getDeployment(tenantID).getTimeZone());
+          // for month unit, the limit should be on 0h on (1st day of this month - number of months + 1)
+          earliestDateToKeep = RLMDateUtils.addMonths(now, -maximumAcceptancesPeriodMonths+1, Deployment.getDeployment(tenantID).getTimeZone());
+          earliestDateToKeep = RLMDateUtils.truncate(earliestDateToKeep, Calendar.MONTH, Deployment.getDeployment(tenantID).getTimeZone());
         }
       } else {
         log.info("internal error : maximumAcceptancesPeriodDays & maximumAcceptancesPeriodMonths are both unset, using 1 day");
@@ -7005,7 +7009,7 @@ public class EvolutionEngine
         // Check if JourneyMetrics are enabled.
         // JourneyMetrics should only be generated for Campaigns (not journeys nor bulk campaigns)
         //
-        if (journey == null) {
+        if (journey == null || !(journey instanceof Journey)) {
           log.warn("Unable to retrieve journey " + journeyEndedState.getJourneyID() + ". It will be closed without publishing any JourneyMetrics.");
           journeyEndedStateIterator.remove();
           subscriberStateUpdated = true;
