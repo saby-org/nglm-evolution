@@ -315,11 +315,10 @@ public class GrafanaUtils
                           // TODO -this verification will be no longer needed when all clients are up-to-date-
                           for (Map.Entry<String, String> dbUnderStudy : exisitingDashBoards.entrySet()) 
                           {
-                            log.info("dbUnderStudy: " + dbUnderStudy.getKey() + " with uid: " +dbUnderStudy.getValue());
                             if(dbUnderStudy.getKey().equals("New General Dashboard") || dbUnderStudy.getKey().equals("Business - Campaign Dashboard")) 
                             {
                               log.info("Dashboard titled " + expectedTitle + " with uid " + existingUID + " is one of the two dashboards to be deleted");
-                              HttpResponse response = sendGrafanaCurl(null, "/api/dashboards/uid/" + existingUID, "DELETE");
+                              HttpResponse response = sendGrafanaCurl(null, "/api/dashboards/uid/" + dbUnderStudy.getValue(), "DELETE");
                               if (response == null) {
                                 log.warn("Could not get a non null response while loading dashboard " + expectedTitle + " for organisation "  + orgID);
                               }
