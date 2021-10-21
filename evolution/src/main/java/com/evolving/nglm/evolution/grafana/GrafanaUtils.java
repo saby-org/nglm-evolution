@@ -134,7 +134,7 @@ public class GrafanaUtils
                 if (switchOK)
                   {
                     // -----------Prepare Data sources-----------------
-                    // check which dashboard already exist in this org
+                    // check which datasource already exists in this org
                     HashMap<String, Integer> exisitingDatasources = getExistingGrafanaDatasourceForOrg(orgID);
 
                     // retrieve all datasource configuration that must exist at the end
@@ -221,8 +221,7 @@ public class GrafanaUtils
 
                     // -----------Prepare Dashboards-----------------
                     // check which dashboard already exists in this org and extract its uid
-                    HashMap<String, Integer> exisitingDashBoards = getExistingGrafanaDashboardForOrg(orgID);
-                    HashMap<String, String> uidOfExistingDashBoards = getUIDofExistingGrafanaDashboardForOrg(orgID);
+                    HashMap<String, String> exisitingDashBoards = getExistingGrafanaDashboardForOrg(orgID);
                     
                     // retrieve all dashboards's configuration that must exist at the end
                     reflections = new Reflections(new ConfigurationBuilder().setUrls(ClasspathHelper.forPackage("com.evolving.nglm.evolution", ClasspathHelper.contextClassLoader(), ClasspathHelper.staticClassLoader())).setScanners(new ResourcesScanner()));
@@ -241,12 +240,10 @@ public class GrafanaUtils
                     }
                     if(tenantID == 0)
                     {
-                      createDashboardForOrg(elasticsearch, existingOrgs, tenantID, orgID, t0FileNames, exisitingDashBoards,
-                        uidOfExistingDashBoards);
+                      createDashboardForOrg(elasticsearch, existingOrgs, tenantID, orgID, t0FileNames, exisitingDashBoards);
                     }
                     else {
-                      createDashboardForOrg(elasticsearch, existingOrgs, tenantID, orgID, nonT0FileNames, exisitingDashBoards,
-                        uidOfExistingDashBoards);
+                      createDashboardForOrg(elasticsearch, existingOrgs, tenantID, orgID, nonT0FileNames, exisitingDashBoards);
                     }
                   }
                 else
@@ -266,8 +263,7 @@ public class GrafanaUtils
   }
 
   private static void createDashboardForOrg(ElasticsearchClientAPI elasticsearch, HashMap<String, Integer> existingOrgs,
-      int tenantID, int orgID, Set<String> fileNames, HashMap<String, Integer> exisitingDashBoards,
-      HashMap<String, String> uidOfExistingDashBoards) {
+      int tenantID, int orgID, Set<String> fileNames, HashMap<String, String> exisitingDashBoards) {
                     for (String currentFileName : fileNames)
                     {
                       try {
@@ -283,7 +279,7 @@ public class GrafanaUtils
                         JSONObject fulldashboardDef = (JSONObject) (new JSONParser()).parse(s);
                         JSONObject dashboardDef = (JSONObject) fulldashboardDef.get("dashboard");
                         String expectedTitle = (String) dashboardDef.get("title");
-                        String existingUID = uidOfExistingDashBoards.get(expectedTitle);
+                        String existingUID = exisitingDashBoards.get(expectedTitle);
                         String regex = "[ACDEFGHJKMNPQRTWXYacdefghjkmnpqrtwx34679]{15}";
 //                        HashMap<String,Object> mapDbEs=new HashMap<String,Object>();
 //                        UpdateRequest request = new UpdateRequest();
@@ -316,28 +312,32 @@ public class GrafanaUtils
                         else if (exisitingDashBoards.containsKey(expectedTitle) && existingUID.substring(0, 3).equals("t" + tenantID + "-") == true)
                         {
                           // Delete the dashboard if it is the "New General Dashboard" or the "Business - Campaign Dashboard"
-                          // TODO -this verification is no longer needed when all clients are up-to-date-
-                          if (expectedTitle.equals("New General Dashboard") || expectedTitle.contentEquals("Business - Campaign Dashboard")) 
+                          // TODO -this verification will be no longer needed when all clients are up-to-date-
+                          for (Map.Entry<String, String> dbUnderStudy : exisitingDashBoards.entrySet()) 
                           {
-                            HttpResponse response = sendGrafanaCurl(null, "/api/dashboards/uid/" + existingUID, "DELETE");
-                            log.info("Dashboard titled " + expectedTitle + " with uid " + existingUID + " is DELETED");
-                            if (response == null) {
-                              log.warn("Could not get a non null response while loading dashboard " + expectedTitle + " for organisation "  + orgID);
+                            log.info("dbUnderStudy: " + dbUnderStudy.getKey() + " with uid: " +dbUnderStudy.getValue());
+                            if(dbUnderStudy.getKey().equals("New General Dashboard") || dbUnderStudy.getKey().equals("Business - Campaign Dashboard")) 
+                            {
+                              log.info("Dashboard titled " + expectedTitle + " with uid " + existingUID + " is one of the two dashboards to be deleted");
+                              HttpResponse response = sendGrafanaCurl(null, "/api/dashboards/uid/" + existingUID, "DELETE");
+                              if (response == null) {
+                                log.warn("Could not get a non null response while loading dashboard " + expectedTitle + " for organisation "  + orgID);
+                              }
+                              if (response.getStatusLine().getStatusCode() != 200) {
+                                log.warn("Problem while deleting dashboard " + expectedTitle + " for organisation orgID, " + orgID + " error code " + response.getStatusLine().getStatusCode() + " response message " + response.getStatusLine().getReasonPhrase());
+                              }
+                            } 
+                            else
+                            {
+                              // overwrite it using the same existing uid
+                              log.info("GrafanaUtils.prepareGrafanaForTenants: Dashboard " + expectedTitle + " already exists for orgID " + orgID + " for dashboard file name " + currentFileName + " and it'll be overwritten.");
+                              s= s.replace("replaceWithUniqueID", existingUID);
+                              fulldashboardDef = (JSONObject) (new JSONParser()).parse(s);
+                              //                          mapDbEs.put("name",expectedTitle);
+                              //                          mapDbEs.put("reportID",existingUID);
+                              //                          request = new UpdateRequest("dashboard_links",existingUID);
+                              log.info("The uid of the already existing Dashboard: " + expectedTitle + " is " + existingUID);
                             }
-                            if (response.getStatusLine().getStatusCode() != 200) {
-                              log.warn("Problem while deleting dashboard " + expectedTitle + " for organisation orgID, " + orgID + " error code " + response.getStatusLine().getStatusCode() + " response message " + response.getStatusLine().getReasonPhrase());
-                            }
-                          } 
-                          else
-                          {
-                            // overwrite it using the same existing uid
-                            log.info("GrafanaUtils.prepareGrafanaForTenants: Dashboard " + expectedTitle + " already exists for orgID " + orgID + " for dashboard file name " + currentFileName + " and it'll be overwritten.");
-                            s= s.replace("replaceWithUniqueID", existingUID);
-                            fulldashboardDef = (JSONObject) (new JSONParser()).parse(s);
-                            //                          mapDbEs.put("name",expectedTitle);
-                            //                          mapDbEs.put("reportID",existingUID);
-                            //                          request = new UpdateRequest("dashboard_links",existingUID);
-                            log.info("The uid of the already existing Dashboard: " + expectedTitle + " is " + existingUID);
                           }
                         }
                         // 3- The dashboard doesn't exist already
@@ -568,7 +568,7 @@ public class GrafanaUtils
     }
   }
   
-  private static HashMap<String, Integer> getExistingGrafanaDashboardForOrg(int orgID)
+  private static HashMap<String, String> getExistingGrafanaDashboardForOrg(int orgID)
   {
     HttpResponse response = sendGrafanaCurl(null, "/api/search", "GET");
     if (response == null) {
@@ -586,47 +586,14 @@ public class GrafanaUtils
     {
       JSONArray responseJson = (JSONArray) (new JSONParser())
           .parse(EntityUtils.toString(response.getEntity(), "UTF-8"));
-      HashMap<String, Integer> existingDashboard = new HashMap<>();
+      HashMap<String, String> existingDashboard = new HashMap<>();
       for (int i = 0; i < responseJson.size(); i++) {
         JSONObject currentDashboard = (JSONObject) responseJson.get(i);
-        int dbID = JSONUtilities.decodeInteger(currentDashboard, "id");
+        String dbID = JSONUtilities.decodeString(currentDashboard, "uid");
         String titleDb = JSONUtilities.decodeString(currentDashboard, "title");        
         existingDashboard.put(titleDb, dbID);
       }
       return existingDashboard;
-    }
-    catch(Exception e) {
-      log.warn("GrafanaUtils.prepareGrafanaForTenants: Exception " + e.getClass().getName() + " while getting all grafana dashboard for orgs " + orgID, e);
-      return null;
-    }
-  }
-  
-  private static HashMap<String, String> getUIDofExistingGrafanaDashboardForOrg(int orgID)
-  {
-    HttpResponse response = sendGrafanaCurl(null, "/api/search", "GET");
-    if (response == null) {
-      log.warn("GrafanaUtils.prepareGrafanaForTenants: Could not get a non null response when getting list of dashboard for orgID " + orgID);
-      return null;
-    }
-    if (response.getStatusLine().getStatusCode() != 200) {
-      log.warn("GrafanaUtils.prepareGrafanaForTenants: Could not get list of dashboards for org " + orgID + ", error code " + response.getStatusLine().getStatusCode()+ " response message " + response.getStatusLine().getReasonPhrase());
-      return null;
-    }
-
-    // if we are here, then the status code is 200
-    // parse the entity response
-    try 
-    {
-      JSONArray responseJson = (JSONArray) (new JSONParser())
-          .parse(EntityUtils.toString(response.getEntity(), "UTF-8"));
-      HashMap<String, String> uidOfExistingDashBoards = new HashMap<>();
-      for (int i = 0; i < responseJson.size(); i++) {
-        JSONObject currentDashboard = (JSONObject) responseJson.get(i);
-        String titleDb = JSONUtilities.decodeString(currentDashboard, "title");
-        String dbUniqueID = JSONUtilities.decodeString(currentDashboard, "uid");
-        uidOfExistingDashBoards.put(titleDb, dbUniqueID);
-      }
-      return uidOfExistingDashBoards;
     }
     catch(Exception e) {
       log.warn("GrafanaUtils.prepareGrafanaForTenants: Exception " + e.getClass().getName() + " while getting all grafana dashboard for orgs " + orgID, e);
