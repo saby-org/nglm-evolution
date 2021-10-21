@@ -9,6 +9,7 @@ package com.evolving.nglm.evolution;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import org.apache.kafka.connect.data.*;
 import org.json.simple.JSONArray;
@@ -17,6 +18,7 @@ import org.json.simple.JSONObject;
 import java.util.*;
 import java.util.Date;
 
+@GUIDependencyDef(objectType = "ucgrule", serviceClass = UCGRuleService.class, dependencies = { "segmentationdimension" })
 public class UCGRule extends GUIManagedObject
 {
   /*****************************************
@@ -316,5 +318,13 @@ public class UCGRule extends GUIManagedObject
       {
         return true;
       }
+  }
+  
+  @Override
+  public Map<String, List<String>> getGUIDependencies(List<GUIService> guiServiceList, int tenantID)
+  {
+    Map<String, List<String>> result = new HashMap<String, List<String>>();
+    if (getSelectedDimensions() != null && !getSelectedDimensions().isEmpty()) result.put("segmentationdimension", getSelectedDimensions());
+    return result;
   }
 }
