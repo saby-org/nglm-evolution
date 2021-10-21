@@ -96,6 +96,9 @@ case "${ENTRYPOINT}" in
   "extractmanager")
     exec kafka-run-class -name extractmanager -loggc com.evolving.nglm.evolution.extracts.ExtractManager $BROKER_SERVERS $MASTER_ESROUTER_SERVER:${ELASTICSEARCH_USERNAME}:${ELASTICSEARCH_USERPASSWORD} $KAFKA_REPLICATION_FACTOR $SUBSCRIBER_PARTITIONS $KAFKA_STREAMS_STANDBY_REPLICAS
     ;;
+  "backupmanager")
+    exec kafka-run-class -name backup -loggc com.evolving.nglm.evolution.backup.kafka.BackupManager $BROKER_SERVERS $MASTER_ESROUTER_SERVER:${ELASTICSEARCH_USERNAME}:${ELASTICSEARCH_USERPASSWORD} $KAFKA_REPLICATION_FACTOR $SUBSCRIBER_PARTITIONS $KAFKA_STREAMS_STANDBY_REPLICAS
+    ;;
   *)
     echo -n "unknown"
     ;;

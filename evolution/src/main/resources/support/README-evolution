@@ -620,6 +620,9 @@ $DEPLOY_ROOT/bin/update-subscribergroup.sh delete segmentationDimension churnRis
 -- Dynamically change log levels for a container
 $DEPLOY_ROOT/bin/configlog.sh
 
+-- Restore kafka data from backup
+$DEPLOY_ROOT/bin/restoreKafkaBackup.sh 
+
 --
 --  storeconfiguration
 --

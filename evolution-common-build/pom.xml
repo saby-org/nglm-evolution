@@ -3,7 +3,7 @@
   <groupId>com.evolving.nglm</groupId>
   <artifactId>nglm-evolution-common-build</artifactId>
   <packaging>pom</packaging>
-  <version>2.0.0_7-SNAPSHOT</version>
+  <version>2.0.0_7-887-2007-ok2-SNAPSHOT</version>
   <name>evolution-common-build</name>
 
   <repositories> 
@@ -64,6 +64,7 @@
     <common.build.phase.generate-datacubemanager-image>none</common.build.phase.generate-datacubemanager-image>
     <common.build.phase.generate-upgrade-image>none</common.build.phase.generate-upgrade-image>
     <common.build.phase.generate-extractmanager-image>none</common.build.phase.generate-extractmanager-image>
+    <common.build.phase.generate-backupmanager-image>none</common.build.phase.generate-backupmanager-image>
     <common.build.skip.docker-guimanager-image>true</common.build.skip.docker-guimanager-image>
     <common.build.skip.docker-thirdpartymanager-image>true</common.build.skip.docker-thirdpartymanager-image>
     <common.build.skip.docker-dnboproxy-image>true</common.build.skip.docker-dnboproxy-image>
@@ -84,6 +85,7 @@
     <common.build.skip.docker-datacubemanager-image>true</common.build.skip.docker-datacubemanager-image>
     <common.build.skip.docker-upgrade-image>true</common.build.skip.docker-upgrade-image>
     <common.build.skip.docker-extractmanager-image>true</common.build.skip.docker-extractmanager-image>
+    <common.build.skip.docker-backupmanager-image>true</common.build.skip.docker-backupmanager-image>
     
     <!-- topics -->
     <topic.journey>journey</topic.journey>

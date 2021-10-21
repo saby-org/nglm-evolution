@@ -72,3 +72,6 @@ if [ "${EXTRACTMANAGER_ENABLED}" = "true" ]; then
   docker stack deploy -c $DEPLOY_ROOT/stack/stack-extractmanager.yml ${DOCKER_STACK}-extractmanager
 fi
 
+if [ "${BACKUPMANAGER_ENABLED}" = "true" ]; then
+  docker stack deploy -c $DEPLOY_ROOT/stack/stack-backupmanager.yml ${DOCKER_STACK}-backupmanager
+fi
