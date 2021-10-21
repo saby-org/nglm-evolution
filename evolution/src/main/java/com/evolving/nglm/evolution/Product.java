@@ -419,17 +419,18 @@ public class Product extends GUIManagedObject implements StockableItem
     List<String> deliverableIDs = new ArrayList<String>();
     
     supplierIDs.add(getSupplierID());
-    result.put("supplier", supplierIDs);
     String pointID=getDeliverableID().startsWith(CommodityDeliveryManager.POINT_PREFIX)?getDeliverableID().replace(CommodityDeliveryManager.POINT_PREFIX, ""):"";
     pointIDs.add(pointID);
     String campaignID=getDeliverableID().startsWith(CommodityDeliveryManager.JOURNEY_PREFIX)?getDeliverableID().replace(CommodityDeliveryManager.JOURNEY_PREFIX, ""):"";
     campaignIDs.add(campaignID);
-    for(ProductTypeInstance prdIn:getProductTypes()) {
-    	productTypeIDs.add(prdIn.getProductTypeID());	
-    }
+    for (ProductTypeInstance prdIn : getProductTypes())
+      {
+        productTypeIDs.add(prdIn.getProductTypeID());
+      }
     if (getWorkflowID() != null && !getWorkflowID().isEmpty()) wrkflowIDs.add(getWorkflowID());
     if (getDeliverableID() != null && !getDeliverableID().isEmpty()) deliverableIDs.add(getDeliverableID());
     
+    result.put("supplier", supplierIDs);
     result.put("workflow", wrkflowIDs);
     result.put("point", pointIDs);
     result.put("campaign", campaignIDs);
