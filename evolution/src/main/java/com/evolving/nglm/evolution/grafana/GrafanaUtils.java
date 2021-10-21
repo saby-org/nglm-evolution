@@ -317,13 +317,13 @@ public class GrafanaUtils
                           {
                             if(dbUnderStudy.getKey().equals("New General Dashboard") || dbUnderStudy.getKey().equals("Business - Campaign Dashboard")) 
                             {
-                              log.info("Dashboard titled " + expectedTitle + " with uid " + existingUID + " is one of the two dashboards to be deleted");
+                              log.info("Dashboard titled " + dbUnderStudy.getKey() + " with uid " + dbUnderStudy.getValue() + " is one of the two dashboards to be deleted");
                               HttpResponse response = sendGrafanaCurl(null, "/api/dashboards/uid/" + dbUnderStudy.getValue(), "DELETE");
                               if (response == null) {
-                                log.warn("Could not get a non null response while loading dashboard " + expectedTitle + " for organisation "  + orgID);
+                                log.warn("Could not get a non null response while loading dashboard " + dbUnderStudy.getKey() + " for organisation "  + orgID);
                               }
                               if (response.getStatusLine().getStatusCode() != 200) {
-                                log.warn("Problem while deleting dashboard " + expectedTitle + " for organisation orgID, " + orgID + " error code " + response.getStatusLine().getStatusCode() + " response message " + response.getStatusLine().getReasonPhrase());
+                                log.warn("Problem while deleting dashboard " + dbUnderStudy.getKey() + " for organisation orgID, " + orgID + " error code " + response.getStatusLine().getStatusCode() + " response message " + response.getStatusLine().getReasonPhrase());
                               }
                             } 
                             else
