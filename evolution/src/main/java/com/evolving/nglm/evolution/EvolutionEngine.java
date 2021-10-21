@@ -7007,7 +7007,7 @@ public class EvolutionEngine
         // Check if JourneyMetrics are enabled.
         // JourneyMetrics should only be generated for Campaigns (not journeys nor bulk campaigns)
         //
-        if (journey == null) {
+        if (journey == null || !(journey instanceof Journey)) {
           log.warn("Unable to retrieve journey " + journeyEndedState.getJourneyID() + ". It will be closed without publishing any JourneyMetrics.");
           journeyEndedStateIterator.remove();
           subscriberStateUpdated = true;
