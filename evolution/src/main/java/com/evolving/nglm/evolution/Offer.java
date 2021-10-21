@@ -141,8 +141,8 @@ public class Offer extends GUIManagedObject implements StockableItem
   private Integer maximumAcceptances;
   private Integer maximumAcceptancesPeriodDays;
   private Integer maximumAcceptancesPeriodMonths;
-  private String eligibility;
-  private String limitsReached;
+  private String notEligibilityReason;
+  private String limitsReachedReason;
 
   //
   //  derived
@@ -178,6 +178,8 @@ public class Offer extends GUIManagedObject implements StockableItem
   public Integer getMaximumAcceptances() { return maximumAcceptances; }
   public Integer getMaximumAcceptancesPeriodDays() { return maximumAcceptancesPeriodDays; }
   public Integer getMaximumAcceptancesPeriodMonths() { return maximumAcceptancesPeriodMonths; }
+  public String getNotEligibilityReason() { return notEligibilityReason; }
+  public String getLimitsReachedReason() {	return limitsReachedReason; }
  
   /*****************************************
   *
@@ -190,6 +192,36 @@ public class Offer extends GUIManagedObject implements StockableItem
     return EvaluationCriterion.evaluateCriteria(evaluationRequest, profileCriteria);
   }
 
+  
+  /*****************************************
+  *
+  *  evaluateProfileCriteriaWithReason
+  *
+  *****************************************/
+
+  public boolean evaluateProfileCriteriaWithReason(SubscriberEvaluationRequest evaluationRequest)
+  {
+	    //
+	    //  clear evaluationVariables
+	    //
+
+	    evaluationRequest.getEvaluationVariables().clear();
+
+	    //
+	    //  evaluate
+	    //
+
+	    for (EvaluationCriterion criterion : profileCriteria)
+	      {
+	        if(!criterion.evaluate(evaluationRequest)) {
+	        	setNotEligibilityReason(criterion.getCriterionField().getName());
+	        }
+	        
+	      }
+
+	    return true;
+  }
+  
   /*****************************************
   *
   *  constructor -- unpack
@@ -1175,16 +1207,11 @@ public class Offer extends GUIManagedObject implements StockableItem
     }
     return result;
   }
-public String getEligibility() {
-	return eligibility;
+
+public void setNotEligibilityReason(String notEligibilityReason) {
+	this.notEligibilityReason = notEligibilityReason;
 }
-public void setEligibility(String eligibility) {
-	this.eligibility = eligibility;
-}
-public String getLimitsReached() {
-	return limitsReached;
-}
-public void setLimitsReached(String limitsReached) {
-	this.limitsReached = limitsReached;
+public void setLimitsReachedReason(String limitsReachedReason) {
+	this.limitsReachedReason = limitsReachedReason;
 }
 }

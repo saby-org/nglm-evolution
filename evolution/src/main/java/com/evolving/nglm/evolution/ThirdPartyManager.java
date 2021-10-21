@@ -3069,11 +3069,7 @@ public class ThirdPartyManager
               if(!notEligible) {
             	  offers = offers.stream().filter(offer -> offer.evaluateProfileCriteria(evaluationRequest)).collect(Collectors.toList());
               } else {
-            	  for(Offer offer: offers) {
-            		  if(!offer.evaluateProfileCriteria(evaluationRequest)){
-            			  offer.setEligibility("Criteria of offer not valid for subscriber + Criteria name à ajouter");
-            		  }
-            	  }
+            	  offers = offers.stream().filter(offer -> offer.evaluateProfileCriteriaWithReason(evaluationRequest)).collect(Collectors.toList());
               }
             }
 
@@ -3213,8 +3209,8 @@ public class ThirdPartyManager
                 
                 if (EvolutionEngine.isPurchaseLimitReached(offer, totalPurchased))
                   {
-                    if (log.isTraceEnabled()) log.trace("maximumAcceptances : " + offer.getMaximumAcceptances() + " of offer " + offer.getOfferID() + " exceeded for subscriber " + subscriberProfile.getSubscriberID() + " as totalPurchased = " + totalPurchased + " (" + cleanPurchaseHistory.size() + "+1) earliestDateToKeep : " + earliestDateToKeep);
-                    offer.setLimitsReached("purchases limit reached");
+                    if (log.isTraceEnabled()) log.trace("maximumAcceptances : " + offer.getMaximumAcceptances() + " of offer " + offer.getOfferID() + " exceeded for subscriber " + subscriberProfile.getSubscriberID() + " as totalPurchased = " + totalPurchased + " (" + cleanPurchaseHistory.size() + ") earliestDateToKeep : " + earliestDateToKeep);
+                    offer.setLimitsReachedReason("purchases limit reached");
                   }
                 
             }

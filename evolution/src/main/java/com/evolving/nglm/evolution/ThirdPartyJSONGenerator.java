@@ -130,8 +130,8 @@ public class ThirdPartyJSONGenerator
     offerMap.put("products", products);
     List<JSONObject> vouchers = offer.getOfferVouchers()==null?null:offer.getOfferVouchers().stream().map(voucher -> ThirdPartyJSONGenerator.generateVoucherJSONForThirdParty(voucher, voucherService)).collect(Collectors.toList());
     offerMap.put("vouchers", vouchers);
-    offerMap.put("eligibility", offer.getEligibility()==null?"":offer.getEligibility());
-    offerMap.put("limitsReached", offer.getLimitsReached()==null?"":offer.getLimitsReached());
+    offerMap.put("eligibility", offer.getNotEligibilityReason()==null?"":"not eligible due to "+offer.getNotEligibilityReason());
+    offerMap.put("limitsReached", offer.getLimitsReachedReason()==null?"":offer.getLimitsReachedReason());
     return JSONUtilities.encodeObject(offerMap);
   }
   
