@@ -5477,11 +5477,11 @@ public class EvolutionEngine
               String purchaseOfferID = purchaseResponseEvent.getOfferID();
               dnboToken.setPurchaseStatus(purchaseResponseEvent.getStatus());
 
-              if (!PurchaseFulfillmentManager.PurchaseFulfillmentStatus.PURCHASED.equals(purchaseResponseEvent.getStatus()))
+              if (PurchaseFulfillmentManager.PurchaseFulfillmentStatus.PURCHASED.getReturnCode() != purchaseResponseEvent.getStatus().getReturnCode())
               { 
               log.info("Set purchaseStatus of " + token.getTokenCode() + " from " + dnboToken.getTokenStatus() + " back to Bound " + dnboToken);              
               failed=true;
-              tokenChangeStatus = RESTAPIGenericReturnCodes.fromGenericResponseCode(purchaseResponseEvent.getStatus().getReturnCode())+"";
+              tokenChangeStatus = tokenChangeStatus = purchaseResponseEvent.getStatus().getReturnCode()+"";
               purchaseOfferID = null;
               dnboToken.setTokenStatus(TokenStatus.Bound);  
               dnboToken.setRedeemedDate(null);
