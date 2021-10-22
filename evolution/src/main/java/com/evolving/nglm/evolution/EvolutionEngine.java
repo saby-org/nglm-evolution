@@ -5481,7 +5481,7 @@ public class EvolutionEngine
               { 
               log.info("Set purchaseStatus of " + token.getTokenCode() + " from " + dnboToken.getTokenStatus() + " back to Bound " + dnboToken);              
               failed=true;
-              tokenChangeStatus = tokenChangeStatus = purchaseResponseEvent.getStatus().getReturnCode()+"";
+              tokenChangeStatus = purchaseResponseEvent.getStatus().getReturnCode()+"";
               purchaseOfferID = null;
               dnboToken.setTokenStatus(TokenStatus.Bound);  
               dnboToken.setRedeemedDate(null);
