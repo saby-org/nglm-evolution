@@ -4296,6 +4296,12 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
                 String dialogId = ((NotificationTemplateParameters) boundParameters.get("journey.dialogtemplate")).getSubscriberMessageTemplateID();
                 dialogIDs.add(dialogId);
               }
+            
+            if (this.boundParameters != null && this.boundParameters.containsKey("journey.smssource") && this.boundParameters.get("journey.smssource") != null)
+              {
+                String sourceAddressID = this.boundParameters.get("journey.smssource").toString();
+                sourceaddressIDs.add(sourceAddressID);
+              }
 
 			result.put("point", blkpointIDs);
 			result.put("dialogtemplate", dialogIDs);
