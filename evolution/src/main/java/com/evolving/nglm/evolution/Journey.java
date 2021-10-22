@@ -4273,19 +4273,29 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
         case BulkCampaign:
 			List<String> blkpointIDs = new ArrayList<String>();
 			internaltargetIDs = new ArrayList<String>();
-			if (this.boundParameters != null && this.boundParameters.containsKey("journey.deliverableID")
-					&& this.boundParameters.get("journey.deliverableID") != null && this.boundParameters
-							.get("journey.deliverableID").toString().startsWith(CommodityDeliveryManager.POINT_PREFIX))
-				blkpointIDs.add(boundParameters.get("journey.deliverableID").toString()
-						.replace(CommodityDeliveryManager.POINT_PREFIX, ""));
+            if (this.boundParameters != null && this.boundParameters.containsKey("journey.deliverableID") && this.boundParameters.get("journey.deliverableID") != null)
+              {
+                String deliverableID = this.boundParameters.get("journey.deliverableID").toString();
+                if (deliverableID.startsWith(CommodityDeliveryManager.POINT_PREFIX))
+                  {
+                    blkpointIDs.add(deliverableID.replace(CommodityDeliveryManager.POINT_PREFIX, ""));
+                  }
+                else
+                  {
+                    DeliverableService deliverableService = (DeliverableService) guiServiceList.stream().filter(srvc -> srvc.getClass() == DeliverableService.class).findFirst().orElse(null);
+                    if (deliverableService != null && deliverableService.getStoredDeliverable(deliverableID) != null && deliverableService.getStoredDeliverable(deliverableID).getAccepted())
+                      {
+                        deliverableIDs.add(deliverableID);
+                      }
+                  }
+              }
+              
 
-			if (this.boundParameters != null && this.boundParameters.containsKey("journey.dialogtemplate")
-					&& this.boundParameters.get("journey.dialogtemplate") != null) {
-				String dialogId = ((NotificationTemplateParameters) boundParameters.get("journey.dialogtemplate"))
-						.getSubscriberMessageTemplateID();
-				dialogIDs.add(dialogId);
-
-			}
+            if (this.boundParameters != null && this.boundParameters.containsKey("journey.dialogtemplate") && this.boundParameters.get("journey.dialogtemplate") != null)
+              {
+                String dialogId = ((NotificationTemplateParameters) boundParameters.get("journey.dialogtemplate")).getSubscriberMessageTemplateID();
+                dialogIDs.add(dialogId);
+              }
 
 			result.put("point", blkpointIDs);
 			result.put("dialogtemplate", dialogIDs);
@@ -4293,11 +4303,11 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
 			targetIDs = new ArrayList<>(getTargetIDs());
 			result.put("target", targetIDs);
 
-			List<String> jourObjIDs = getJourneyObjectiveInstances().stream()
-					.map(journeyObjective -> journeyObjective.getJourneyObjectiveID()).collect(Collectors.toList());
+			List<String> jourObjIDs = getJourneyObjectiveInstances().stream().map(journeyObjective -> journeyObjective.getJourneyObjectiveID()).collect(Collectors.toList());
 			result.put("journeyobjective", jourObjIDs);
 			result.put("sourceaddress", sourceaddressIDs);
 			result.put("supplier", supplierIDs);
+			result.put("deliverable", deliverableIDs);
 
 			break;
             
