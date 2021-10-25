@@ -76,6 +76,7 @@ public class VDRReportMonoPhase implements ReportCsvFactory
   private static final String voucherType = "voucherType";
   private static final String returnCode = "returnCode";
   private static final String returnCodeDetails = "returnCodeDetails";
+  private static final String deliveryRequestID = "deliveryRequestID";
 
   static List<String> headerFieldsOrder = new LinkedList<String>();
   static
@@ -100,6 +101,7 @@ public class VDRReportMonoPhase implements ReportCsvFactory
       headerFieldsOrder.add(moduleName);
       headerFieldsOrder.add(featureName);
       headerFieldsOrder.add(origin);
+      headerFieldsOrder.add(deliveryRequestID);
     }
 
   @Override
@@ -352,6 +354,14 @@ public class VDRReportMonoPhase implements ReportCsvFactory
         else
           {
             vdrRecs.put(returnCodeDetails, "");
+          }
+        if (VDRFields.containsKey(deliveryRequestID) && VDRFields.get(deliveryRequestID) != null)
+          {
+            vdrRecs.put(deliveryRequestID, VDRFields.get(deliveryRequestID));
+          }
+        else
+          {
+            vdrRecs.put(deliveryRequestID, "");
           }
 
         //

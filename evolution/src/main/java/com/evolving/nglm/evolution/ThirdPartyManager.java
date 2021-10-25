@@ -1764,7 +1764,7 @@ public class ThirdPartyManager
     *****************************************/
     
     String deliveryRequestID = zuks.getStringKey();
-    String eventID = deliveryRequestID.concat("-").concat(Module.REST_API.toString());
+    String eventID = deliveryRequestID;
     try {
       SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
       com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit validityPeriodType = null;
@@ -1863,7 +1863,7 @@ public class ThirdPartyManager
     *****************************************/
     
     String deliveryRequestID = zuks.getStringKey();
-    String eventID = deliveryRequestID.concat("-").concat(Module.REST_API.toString());
+    String eventID = deliveryRequestID;
     try {
       SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
       Future<BonusDelivery> futureResponse = CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(sync,paymentMeanService,deliverableService,subscriberProfile, subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, eventID, Module.REST_API.getExternalRepresentation(), featureID, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getPaymentMeanID(), CommodityDeliveryOperation.Debit, quantity, null, null, DELIVERY_REQUEST_PRIORITY, origin, tenantID);
@@ -4975,7 +4975,7 @@ public class ThirdPartyManager
       // Fields for DeliveryRequest
       request.put("deliveryRequestID", loyaltyProgramRequestID);
       request.put("subscriberID", subscriberID);
-      request.put("eventID", "0"); // No event here
+      request.put("eventID", loyaltyProgramRequestID);
       request.put("moduleID", moduleID);
       request.put("featureID", featureID);
       request.put("deliveryType", "loyaltyProgramFulfillment");
@@ -5533,11 +5533,12 @@ public class ThirdPartyManager
     
     
     //build the request to send
+    String eventID=zuksVoucherChange.getStringKey();
     VoucherChange request = new VoucherChange(
             subscriberID,
             SystemTime.getCurrentTime(),
             null,
-            zuksVoucherChange.getStringKey().concat("-").concat(Module.REST_API.toString()),
+            eventID,
             VoucherChange.VoucherChangeAction.Redeem,
             voucherProfileStored.getVoucherCode(),
             voucherProfileStored.getVoucherID(),
@@ -5547,8 +5548,9 @@ public class ThirdPartyManager
             origin,
             RESTAPIGenericReturnCodes.UNKNOWN,
             segments,
-            tenantID,
+            eventID,
             voucherProfileStored.getOfferID());
+            tenantID);
 
     Future<VoucherChange> waitingResponse=null;
     if(sync){
@@ -6068,7 +6070,7 @@ public class ThirdPartyManager
 	  OTPInstanceChangeEvent request = new OTPInstanceChangeEvent(
 	            SystemTime.getCurrentTime(),
 	            subscriberID,
-	            zuks.getStringKey().concat("-").concat(Module.REST_API.toString()), // eventID ??
+	            zuks.getStringKey(),
 	            OTPInstanceChangeEvent.OTPChangeAction.Check,
 	            JSONUtilities.decodeString(jsonRoot, "otpType", true),
 	            JSONUtilities.decodeString(jsonRoot, "otpCheckValue", true),
@@ -6127,7 +6129,7 @@ public class ThirdPartyManager
     OTPInstanceChangeEvent request = new OTPInstanceChangeEvent(
         SystemTime.getCurrentTime(),
         subscriberID,
-        zuks.getStringKey().concat("-").concat(Module.REST_API.toString()), // eventID ??
+        zuks.getStringKey(),
         OTPInstanceChangeEvent.OTPChangeAction.Generate,
         optTypeDisplay,
         (String) null, //otpCheckValue
@@ -7073,7 +7075,7 @@ public class ThirdPartyManager
     request.put("quantity", quantity);
     request.put("salesChannelID", salesChannelID); 
     request.put("deliveryRequestID", deliveryRequestID);
-    request.put("eventID", "event from " + Module.fromExternalRepresentation(moduleID).toString()); // No event here
+    request.put("eventID", deliveryRequestID);
     request.put("moduleID", moduleID);
     request.put("featureID", featureID);
     request.put("origin", origin);

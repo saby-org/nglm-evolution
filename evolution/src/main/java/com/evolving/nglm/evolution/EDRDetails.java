@@ -89,6 +89,7 @@ public class EDRDetails extends SubscriberStreamOutput implements SubscriberStre
     {
       return subscriberID;
     }
+    @Override
     public String getEventID()
     {
       return eventID;

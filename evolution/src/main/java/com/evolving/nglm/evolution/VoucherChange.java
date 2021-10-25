@@ -64,6 +64,7 @@ public class VoucherChange extends SubscriberStreamOutput implements EvolutionEn
     schemaBuilder.field("origin", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("returnStatus", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("segments", SchemaBuilder.map(groupIDSchema, Schema.INT32_SCHEMA).name("voucherchange_segments").schema());
+    schemaBuilder.field("deliveryRequestID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
     schemaBuilder.field("offerID", Schema.OPTIONAL_STRING_SCHEMA);
     schema = schemaBuilder.build();
@@ -91,6 +92,7 @@ public class VoucherChange extends SubscriberStreamOutput implements EvolutionEn
     struct.put("origin", voucherChange.getOrigin());
     struct.put("returnStatus", voucherChange.getReturnStatus().getGenericResponseMessage());
     struct.put("segments",packSegments(voucherChange.getSegments()));
+    struct.put("deliveryRequestID", voucherChange.getDeliveryRequestID());
     struct.put("tenantID", (short) voucherChange.getTenantID());
     struct.put("offerID",voucherChange.getOfferID());
     return struct;
@@ -114,9 +116,10 @@ public class VoucherChange extends SubscriberStreamOutput implements EvolutionEn
     String origin = valueStruct.getString("origin");
     RESTAPIGenericReturnCodes returnStatus = RESTAPIGenericReturnCodes.fromGenericResponseMessage(valueStruct.getString("returnStatus"));
     Map<Pair<String,String>, Integer> segments = (schemaVersion >= 10) ? unpackSegments(valueStruct.get("segments")) : unpackSegmentsV1(valueStruct.get("subscriberGroups"));
+    String deliveryRequestID = (schemaVersion >= 11 && schema.field("deliveryRequestID")!=null) ? valueStruct.getString("deliveryRequestID") : null;
     int tenantID = (schemaVersion >= 9)? valueStruct.getInt16("tenantID") : 1; // for old system, default to tenant 1
     String offerID = (schemaVersion >= 10)? valueStruct.getString("offerID") : "";
-    return new VoucherChange(schemaAndValue,subscriberID,eventDateTime,newVoucherExpiryDate,eventID,action,voucherCode,voucherID,fileID,moduleID,featureID,origin,returnStatus,segments, tenantID, offerID);
+    return new VoucherChange(schemaAndValue,subscriberID,eventDateTime,newVoucherExpiryDate,eventID,action,voucherCode,voucherID,fileID,moduleID,featureID,origin,returnStatus,segments, deliveryRequestID, offerID, tenantID);
   }
 
   private String subscriberID;
@@ -132,15 +135,14 @@ public class VoucherChange extends SubscriberStreamOutput implements EvolutionEn
   private String origin;
   private RESTAPIGenericReturnCodes returnStatus;
   private Map<Pair<String,String>,Integer> segments;
+  private String deliveryRequestID;
   private int tenantID;
   private String offerID;
 
-  @Override
-  public String getSubscriberID() { return subscriberID; }
-  @Override
-  public Date getEventDate() { return eventDate; }
+  @Override public String getSubscriberID() { return subscriberID; }
+  @Override public Date getEventDate() { return eventDate; }
   public Date getNewVoucherExpiryDate() { return newVoucherExpiryDate; }
-  public String getEventID() { return eventID; }
+  @Override public String getEventID() { return eventID; }
   public VoucherChangeAction getAction() { return action; }
   public String getVoucherCode() { return voucherCode; }
   public String getVoucherID() { return voucherID; }
@@ -150,6 +152,7 @@ public class VoucherChange extends SubscriberStreamOutput implements EvolutionEn
   public String getOrigin() { return origin; }
   public RESTAPIGenericReturnCodes getReturnStatus() { return returnStatus; }
   public Map<Pair<String, String>, Integer> getSegments(){return segments;}
+  public String getDeliveryRequestID(){return deliveryRequestID;}
   public int getTenantID() { return tenantID; }
   public String getOfferID() { return offerID; }
 
@@ -172,10 +175,10 @@ public class VoucherChange extends SubscriberStreamOutput implements EvolutionEn
 
   public void setReturnStatus(RESTAPIGenericReturnCodes returnStatus) { this.returnStatus = returnStatus; }
 
-  public VoucherChange(SubscriberProfile subscriberProfile, Date eventDate, Date newVoucherExpiryDate, String eventID, VoucherChangeAction action, String voucherCode, String voucherID, String fileID, String moduleID, String featureID, String origin, RESTAPIGenericReturnCodes returnStatus, int tenantID, String offerID) {
-    this(subscriberProfile.getSubscriberID(), eventDate, newVoucherExpiryDate, eventID, action, voucherCode, voucherID, fileID, moduleID, featureID, origin, returnStatus, subscriberProfile.getSegments(), tenantID, offerID);
+  public VoucherChange(SubscriberProfile subscriberProfile, Date eventDate, Date newVoucherExpiryDate, String eventID, VoucherChangeAction action, String voucherCode, String voucherID, String fileID, String moduleID, String featureID, String origin, RESTAPIGenericReturnCodes returnStatus, String deliveryRequestID, int tenantID) {
+    this(subscriberProfile.getSubscriberID(), eventDate, newVoucherExpiryDate, eventID, action, voucherCode, voucherID, fileID, moduleID, featureID, origin, returnStatus, subscriberProfile.getSegments(), deliveryRequestID, offerID, tenantID);
   }
-  public VoucherChange(String subscriberID, Date eventDate, Date newVoucherExpiryDate, String eventID, VoucherChangeAction action, String voucherCode, String voucherID, String fileID, String moduleID, String featureID, String origin, RESTAPIGenericReturnCodes returnStatus, Map<Pair<String,String>,Integer> segments, int tenantID, String offerID) {
+  public VoucherChange(String subscriberID, Date eventDate, Date newVoucherExpiryDate, String eventID, VoucherChangeAction action, String voucherCode, String voucherID, String fileID, String moduleID, String featureID, String origin, RESTAPIGenericReturnCodes returnStatus, Map<Pair<String,String>,Integer> segments, String deliveryRequestID, String offerID, int tenantID) {
     this.subscriberID = subscriberID;
     this.eventDate = eventDate;
     this.newVoucherExpiryDate = newVoucherExpiryDate;
@@ -190,7 +193,6 @@ public class VoucherChange extends SubscriberStreamOutput implements EvolutionEn
     this.returnStatus = returnStatus;
     this.segments = segments;
     this.tenantID = tenantID;
-    this.offerID = offerID;
   }
   
   public VoucherChange(VoucherChange voucherChange) {
@@ -209,9 +211,10 @@ public class VoucherChange extends SubscriberStreamOutput implements EvolutionEn
     this.segments = voucherChange.getSegments();
     this.tenantID = voucherChange.getTenantID();
     this.offerID = voucherChange.getOfferID();
+    this.deliveryRequestID = deliveryRequestID;
   }
 
-  public VoucherChange(SchemaAndValue schemaAndValue, String subscriberID, Date eventDate, Date newVoucherExpiryDate, String eventID, VoucherChangeAction action, String voucherCode, String voucherID, String fileID, String moduleID, String featureID, String origin, RESTAPIGenericReturnCodes returnStatus, Map<Pair<String,String>,Integer> segments, int tenantID, String offerID) {
+  public VoucherChange(SchemaAndValue schemaAndValue, String subscriberID, Date eventDate, Date newVoucherExpiryDate, String eventID, VoucherChangeAction action, String voucherCode, String voucherID, String fileID, String moduleID, String featureID, String origin, RESTAPIGenericReturnCodes returnStatus, Map<Pair<String,String>,Integer> segments, String deliveryRequestID, String offerID, int tenantID) {
     super(schemaAndValue);
     this.subscriberID = subscriberID;
     this.eventDate = eventDate;
@@ -226,6 +229,7 @@ public class VoucherChange extends SubscriberStreamOutput implements EvolutionEn
     this.origin = origin;
     this.returnStatus = returnStatus;
     this.segments = segments;
+    this.deliveryRequestID = deliveryRequestID;
     this.tenantID = tenantID;
     this.offerID = offerID;
   }
@@ -245,6 +249,7 @@ public class VoucherChange extends SubscriberStreamOutput implements EvolutionEn
             ", featureID='" + featureID + '\'' +
             ", origin='" + origin + '\'' +
             ", returnStatus=" + returnStatus.getGenericResponseMessage() + '\'' +
+            ", deliveryRequestID='" + deliveryRequestID + '\'' +
             ", tenantID='" + tenantID + 
             ", offerID='" + offerID +
             '}';

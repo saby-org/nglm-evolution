@@ -2168,7 +2168,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
         // Fields for DeliveryRequest
         request.put("deliveryRequestID", loyaltyProgramRequestID);
         request.put("subscriberID", subscriberID);
-        request.put("eventID", "0"); // No event here
+        request.put("eventID", loyaltyProgramRequestID);
         request.put("moduleID", moduleID);
         request.put("featureID", featureID);
         request.put("deliveryType", "loyaltyProgramFulfillment");

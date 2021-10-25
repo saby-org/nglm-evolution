@@ -516,7 +516,8 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/vdr -u $EL
       "voucherCode" : { "type" : "keyword" },
       "voucherID" : { "type" : "keyword" },
       "returnCode" : { "type" : "integer" },
-      "expiryDate" : { "type" : "keyword" }
+      "expiryDate" : { "type" : "keyword" },
+      "deliveryRequestID" : { "type" : "keyword" }
     }
   }
 }'

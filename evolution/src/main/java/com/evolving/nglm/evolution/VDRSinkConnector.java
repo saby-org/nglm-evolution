@@ -12,7 +12,6 @@ import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.SimpleESSinkConnector;
 import com.evolving.nglm.core.StreamESSinkTask;
-import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.data.Schema;
@@ -132,7 +131,8 @@ public class VDRSinkConnector extends SimpleESSinkConnector
       documentMap.put("stratum", voucherChange.getStatisticsSegmentsMap(subscriberGroupEpochReader, segmentationDimensionService));
       documentMap.put("fileID", voucherChange.getFileID());
       documentMap.put("offerID", voucherChange.getOfferID());
-      
+      documentMap.put("deliveryRequestID", voucherChange.getDeliveryRequestID() != null ? voucherChange.getDeliveryRequestID() : "");
+
       return documentMap;
     }
   }

@@ -2433,7 +2433,7 @@ public class EvolutionEngine
               purchaseFulfillmentRequest.getOrigin()
             );
             int returnCode = purchaseFulfillmentRequest.getReturnCode();
-         // storing the voucherChange
+            // exporting result
             VoucherChange voucherChange = new VoucherChange(
                 purchaseFulfillmentRequest.getSubscriberID(),
                 purchaseFulfillmentRequest.getEventDate(),
@@ -2448,8 +2448,9 @@ public class EvolutionEngine
                 purchaseFulfillmentRequest.getOrigin(),
                 RESTAPIGenericReturnCodes.fromGenericResponseCode(returnCode),
                 purchaseFulfillmentRequest.getSegments(),
-                tenantID,
                 purchaseFulfillmentRequest.getOfferID());
+                uniqueKeyServer.getKey(),
+                tenantID);
             subscriberProfile.getVouchers().add(voucherToStore);
             subscriberState.getVoucherChanges().add(voucherChange);
             // we keep voucher ordered by expiry data, this is important when we will apply change
@@ -2489,8 +2490,9 @@ public class EvolutionEngine
               voucherStored.getOrigin(),
               RESTAPIGenericReturnCodes.SUCCESS,
               subscriberProfile.getSegments(),
-              tenantID,
               voucherStored.getOfferID());
+              uniqueKeyServer.getKey(),
+              tenantID);
           subscriberState.getVoucherChanges().add(voucherChange);
           subscriberUpdated=true;
         }
@@ -3881,14 +3883,18 @@ public class EvolutionEngine
     Date earliestDateToKeep = null;
     Integer maximumAcceptancesPeriodDays = offer.getMaximumAcceptancesPeriodDays();
     if (maximumAcceptancesPeriodDays != Offer.UNSET) {
-      earliestDateToKeep = RLMDateUtils.addDays(now, -maximumAcceptancesPeriodDays, Deployment.getDeployment(tenantID).getTimeZone());
+      // EVPRO-1061 : For day unit, limit should be 0h on (today - number of days + 1)
+      earliestDateToKeep = RLMDateUtils.addDays(now, -maximumAcceptancesPeriodDays+1, Deployment.getDeployment(tenantID).getTimeZone());
+      earliestDateToKeep = RLMDateUtils.truncate(earliestDateToKeep, Calendar.DATE, Deployment.getDeployment(tenantID).getTimeZone());
     } else {
       Integer maximumAcceptancesPeriodMonths = offer.getMaximumAcceptancesPeriodMonths();
       if (maximumAcceptancesPeriodMonths != Offer.UNSET) {
         if (maximumAcceptancesPeriodMonths == 1) { // current month
           earliestDateToKeep = RLMDateUtils.truncate(now, Calendar.MONTH, Deployment.getDeployment(tenantID).getTimeZone());
         } else {
-          earliestDateToKeep = RLMDateUtils.addMonths(now, -maximumAcceptancesPeriodMonths, Deployment.getDeployment(tenantID).getTimeZone());
+          // for month unit, the limit should be on 0h on (1st day of this month - number of months + 1)
+          earliestDateToKeep = RLMDateUtils.addMonths(now, -maximumAcceptancesPeriodMonths+1, Deployment.getDeployment(tenantID).getTimeZone());
+          earliestDateToKeep = RLMDateUtils.truncate(earliestDateToKeep, Calendar.MONTH, Deployment.getDeployment(tenantID).getTimeZone());
         }
       } else {
         log.info("internal error : maximumAcceptancesPeriodDays & maximumAcceptancesPeriodMonths are both unset, using 1 day");
@@ -7047,7 +7053,7 @@ public class EvolutionEngine
         // Check if JourneyMetrics are enabled.
         // JourneyMetrics should only be generated for Campaigns (not journeys nor bulk campaigns)
         //
-        if (journey == null) {
+        if (journey == null || !(journey instanceof Journey)) {
           log.warn("Unable to retrieve journey " + journeyEndedState.getJourneyID() + ". It will be closed without publishing any JourneyMetrics.");
           journeyEndedStateIterator.remove();
           subscriberStateUpdated = true;
@@ -8046,47 +8052,15 @@ public class EvolutionEngine
       this.uniqueKeyServer = uniqueKeyServer;
       this.now = now;
       this.subscriberTraceDetails = new ArrayList<String>();
-      this.eventID = generateEventID(event);
+      this.eventID = generateEventID();
     }
 
-    private String generateEventID(SubscriberStreamEvent event)
+    private String generateEventID()
     {
-      String result = null;
-      String className = event.getClass().getSimpleName();
-      if (event instanceof EvolutionEngineEvent)
-        {
-          EvolutionEngineEvent engineEvent = (EvolutionEngineEvent) event;
-          EvolutionEngineEventDeclaration declaration = Deployment.getEvolutionEngineEvents().get(engineEvent.getEventName());
-          if (declaration != null && declaration.getEdrCriterionFieldsMapping() != null && !declaration.getEdrCriterionFieldsMapping().isEmpty())
-            {
-              result = getUniqueKey();
-            }
-          else if (event instanceof DeliveryRequest)
-            {
-              //
-              //  propagate the eventID as long as we can track - if campaign is configureID like chain of bonus/message
-              //
-              
-              DeliveryRequest deliveryRes = (DeliveryRequest) event;
-              if (deliveryRes.getEventID() != null)
-                {
-                  result = deliveryRes.getEventID(); //deliveryRes.getEventName() != null ? deliveryRes.getEventName().concat("-").concat(deliveryRes.getEventID()) : className.concat("-").concat(deliveryRes.getEventID());
-                } 
-              else
-                {
-                  result = deliveryRes.getEventName() != null ? deliveryRes.getEventName() : className;
-                } 
-            }
-          else
-            {
-              result = engineEvent.getEventName();
-            }
-        }
-      else
-        {
-          result = className;
-        }
-      return result;
+      //  propagate the eventID as long as we can track - if campaign is configureID like chain of bonus/message
+      if(this.event.getEventID() != null) return this.event.getEventID();
+      // or create one
+      return getUniqueKey();
     }
 
     /*****************************************
@@ -9471,7 +9445,7 @@ public class EvolutionEngine
           try
             {
               VoucherProfileStored voucherProfileStored = getStoredVoucher(voucherCode, supplierDisplay, subscriberProfile);
-              VoucherChange voucherChange = new VoucherChange(subscriberProfile.getSubscriberID(), now, null, evolutionEventContext.getEventID(), VoucherChangeAction.Redeem, voucherProfileStored.getVoucherCode(), voucherProfileStored.getVoucherID(), voucherProfileStored.getFileID(), moduleID, journeyID, origin, RESTAPIGenericReturnCodes.UNKNOWN, subscriberProfile.getSegments(), tenantID, voucherProfileStored.getOfferID());
+              VoucherChange voucherChange = new VoucherChange(subscriberProfile.getSubscriberID(), now, null, evolutionEventContext.getEventID(), VoucherChangeAction.Redeem, voucherProfileStored.getVoucherCode(), voucherProfileStored.getVoucherID(), voucherProfileStored.getFileID(), moduleID, journeyID, origin, RESTAPIGenericReturnCodes.UNKNOWN, subscriberProfile.getSegments(), voucherProfileStored.getOfferID(), uniqueKeyServer.getKey(), tenantID);
               for (VoucherProfileStored voucherStored : subscriberProfile.getVouchers())
                 {
                   if (voucherStored.getVoucherCode().equals(voucherChange.getVoucherCode()) && voucherStored.getVoucherID().equals(voucherChange.getVoucherID()))
@@ -9498,7 +9472,7 @@ public class EvolutionEngine
           try
             {
               VoucherProfileStored voucherProfileStored = getStoredVoucher(voucherCode, supplierDisplay, subscriberProfile);
-              VoucherChange voucherChange = new VoucherChange(subscriberProfile.getSubscriberID(), now, null, "", VoucherChangeAction.Unknown, voucherProfileStored.getVoucherCode(), voucherProfileStored.getVoucherID(), voucherProfileStored.getFileID(), moduleID, journeyID, origin, RESTAPIGenericReturnCodes.SUCCESS, subscriberProfile.getSegments(), tenantID, voucherProfileStored.getOfferID());
+              VoucherChange voucherChange = new VoucherChange(subscriberProfile.getSubscriberID(), now, null, "", VoucherChangeAction.Unknown, voucherProfileStored.getVoucherCode(), voucherProfileStored.getVoucherID(), voucherProfileStored.getFileID(), moduleID, journeyID, origin, RESTAPIGenericReturnCodes.SUCCESS, subscriberProfile.getSegments(), voucherProfileStored.getOfferID(), uniqueKeyServer.getKey(), tenantID);
               subscriberEvaluationRequest.getJourneyState().getVoucherChanges().add(voucherChange);
               voucherActionEvent.setActionStatus(voucherChange.getReturnStatus().getGenericResponseMessage());
               voucherActionEvent.setActionStatusCode(voucherChange.getReturnStatus().getGenericResponseCode());

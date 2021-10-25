@@ -99,10 +99,9 @@ public class NotificationEvent extends SubscriberStreamOutput implements Evoluti
   // accessor
   //
 
-  @Override
-  public String getSubscriberID() { return subscriberID; }
+  @Override public String getSubscriberID() { return subscriberID; }
   public Date geteventDateTime() { return eventDateTime; }
-  public String getEventID() { return eventID; }
+  @Override public String getEventID() { return eventID; }
  
   public String getTemplateID()
   {

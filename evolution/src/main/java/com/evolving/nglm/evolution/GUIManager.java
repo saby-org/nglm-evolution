@@ -16663,11 +16663,12 @@ public class GUIManager
       }
     }
     //build the request to send
+	String eventID=zuksVoucherChange.getStringKey();
     VoucherChange request = new VoucherChange(
             subscriberID,
             SystemTime.getCurrentTime(),
             newExpiryDate,
-            zuksVoucherChange.getStringKey().concat("-").concat(Module.Customer_Care.toString()),
+            eventID,
             voucherChangeAction,
             voucherCode,
             voucherID,
@@ -16677,8 +16678,9 @@ public class GUIManager
             origin,
             RESTAPIGenericReturnCodes.UNKNOWN,
             segments,
-            tenantID,
-            "");
+            eventID,
+            "",
+            tenantID);
 
     // put a listener on the reponse topic
     Future<VoucherChange> waitingResponse=voucherChangeResponseListenerService.addWithOnValueFilter((value)->value.getEventID().equals(request.getEventID())&&value.getReturnStatus()!=RESTAPIGenericReturnCodes.UNKNOWN);
@@ -22820,7 +22822,7 @@ public class GUIManager
     *****************************************/
     
     String deliveryRequestID = zuks.getStringKey();
-    String eventID = deliveryRequestID.concat("-").concat(Module.Customer_Care.toString());
+    String eventID = deliveryRequestID;
     try {
       SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
       GUIManagedObject pointObject = pointService.getStoredPoint(bonusID);
@@ -22920,7 +22922,7 @@ public class GUIManager
     *****************************************/
     
     String deliveryRequestID = zuks.getStringKey();
-    String eventID = deliveryRequestID.concat("-").concat(Module.Customer_Care.toString());
+    String eventID = deliveryRequestID;
     try {
       SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
       CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(false,paymentMeanService,deliverableService,subscriberProfile,subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, eventID, Module.Customer_Care.getExternalRepresentation(), featureID, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Debit, quantity, null, null, DELIVERY_REQUEST_PRIORITY, origin, tenantID);
@@ -26144,7 +26146,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     request.put("quantity", quantity);
     request.put("salesChannelID", salesChannelID); 
     request.put("deliveryRequestID", deliveryRequestID);
-    request.put("eventID", "event from " + Module.fromExternalRepresentation(moduleID).toString()); // No event here
+    request.put("eventID", deliveryRequestID);
     request.put("moduleID", moduleID);
     request.put("featureID", featureID);
     request.put("origin", origin);
@@ -27782,7 +27784,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
             {
               try
               {
-                result.addAll((List<JSONObject>) guiManagerExtensionEvaluateEnumeratedValuesMethod.invoke(null, guiManagerContext, reference, now, includeDynamic));
+                result.addAll((List<JSONObject>) guiManagerExtensionEvaluateEnumeratedValuesMethod.invoke(null, guiManagerContext, reference, now, includeDynamic, tenantID));
               }
               catch (IllegalAccessException|InvocationTargetException|RuntimeException e)
               {
@@ -31651,7 +31653,8 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
             String topic = Deployment.getNotificationEventTopic();
             Serializer<StringKey> keySerializer = StringKey.serde().serializer();
             Serializer<NotificationEvent> valueSerializer = NotificationEvent.serde().serializer();
-            NotificationEvent notificationEvent = new NotificationEvent(subscriberID, now, "eventID", templateID, tagValue, communicationChannelID, contactType, "CC", source, featureID, moduleID); 
+			String eventID = zuks.getStringKey();
+            NotificationEvent notificationEvent = new NotificationEvent(subscriberID, now, eventID, templateID, tagValue, communicationChannelID, contactType, "CC", source, featureID, moduleID);
             
             kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
                 topic,
