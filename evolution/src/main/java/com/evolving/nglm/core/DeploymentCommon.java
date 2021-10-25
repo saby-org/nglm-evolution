@@ -485,6 +485,7 @@ public class DeploymentCommon
   private static int detailedrecordReportsArrearCount;
   private static int journeyReportsArrearCount;
   private static int subscriberprofileReportsArrearCount;
+  private static int journeysReportActiveNHoursAgo;
   
   private static int guiConfigurationSoftRetentionDays;// "soft" this is the number of days after which we stopped loading in memory deleted GUIManagedObjects
   private static int guiConfigurationRetentionDays;// this is the number of days after which we delete record from topic deleted GUIManagedObjects
@@ -773,6 +774,7 @@ public class DeploymentCommon
   public static String getReportManagerCsvSeparator() { return reportManagerCsvSeparator; } // EVPRO-99 check for tenant and static
   public static String getReportManagerFieldSurrounder() { return reportManagerFieldSurrounder; } // EVPRO-99 check for tenant and static
   public static String getUploadedFileSeparator() { return uploadedFileSeparator; } // EVPRO-99 check for tenant and static
+  public static int getReportManagerJourneysReportActiveNHoursAgo() { return journeysReportActiveNHoursAgo; }
   public static String getReportManagerStreamsTempDir() { return reportManagerStreamsTempDir; }
   public static String getReportManagerTopicsCreationProperties() { return reportManagerTopicsCreationProperties; }
   public static CustomerMetaData getCustomerMetaData() { return customerMetaData; }
@@ -1332,7 +1334,9 @@ public class DeploymentCommon
     journeyReportsArrearCount = JSONUtilities.decodeInteger(reportManager, "journeyReportsArrearCount", 2);
     subscriberprofileReportsArrearCount = JSONUtilities.decodeInteger(reportManager, "subscriberprofileReportsArrearCount", 2);
     reportManagerContentDateFormat = JSONUtilities.decodeString(reportManager, "reportManagerContentDateFormat", "yyyy-MM-dd'T'HH:mm:ssZZZZ");
-
+    journeysReportActiveNHoursAgo = JSONUtilities.decodeInteger(reportManager, "journeysReportActiveNHoursAgo", 24);
+    
+    
     if (reportManagerFieldSurrounder.length() > 1) {
       throw new ServerRuntimeException("reportManagerFieldSurrounder is not a single character, this would lead to errors in the reports, truncating, please fix this : " + reportManagerFieldSurrounder);
     }
