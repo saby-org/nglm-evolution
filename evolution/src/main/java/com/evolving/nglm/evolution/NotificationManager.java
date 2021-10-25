@@ -1007,8 +1007,19 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       NotificationTemplateParameters templateParameters = (NotificationTemplateParameters) CriterionFieldRetriever.getJourneyNodeParameter(new SubscriberEvaluationRequest(null, null, null, null, journeyNode, null, null, SystemTime.getCurrentTime(), tenantID), "node.parameter.dialog_template");
       String dialogueTemplateID = (String) templateParameters.getSubscriberMessageTemplateID();
       String fromAddressID = (String) journeyNode.getNodeParameters().get("node.parameter.fromaddress");
-      if (dialogueTemplateID != null) result.put("dialogtemplate", dialogueTemplateID);
       if (fromAddressID != null) result.put("sourceaddress", fromAddressID);
+      if (dialogueTemplateID != null) {
+    	  result.put("dialogtemplate", dialogueTemplateID);
+    	  SimpleParameterMap paramMap = templateParameters.getParameterTags();
+    	  String customCriteria = "";
+    	  if (paramMap != null) {
+    	    for (String paramKey : paramMap.keySet()) {
+    	      Object param = paramMap.get(paramKey);
+    	      customCriteria += ",toto";
+    	    }
+    	    if (customCriteria.length() > 0) result.put("customcriteria", customCriteria.substring(1)); // remove leading ','
+    	  }
+      }
       return result;
     }
   }

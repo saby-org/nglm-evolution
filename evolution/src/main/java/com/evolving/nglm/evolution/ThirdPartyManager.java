@@ -285,7 +285,9 @@ public class ThirdPartyManager
     getVoucherList(39),
     deleteCustomer(40),
     getCustomerVouchers(41),
-    getOfferDetails(42);
+    getCustomerVDRs(42);
+    getOfferDetails(43);
+
     private int methodIndex;
     private API(int methodIndex) { this.methodIndex = methodIndex; }
     public int getMethodIndex() { return methodIndex; }
@@ -5521,7 +5523,8 @@ public class ThirdPartyManager
             origin,
             RESTAPIGenericReturnCodes.UNKNOWN,
             segments,
-            tenantID);
+            tenantID,
+            voucherProfileStored.getOfferID());
 
     Future<VoucherChange> waitingResponse=null;
     if(sync){

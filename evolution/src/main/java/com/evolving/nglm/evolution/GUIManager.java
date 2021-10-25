@@ -482,6 +482,7 @@ public class GUIManager
     getCustomerBDRs("getCustomerBDRs"),
     getCustomerEDRs("getCustomerEDRs"),
     getCustomerODRs("getCustomerODRs"),
+    getCustomerVDRs("getCustomerVDRs"),
     getCustomerMessages("getCustomerMessages"),
     getCustomerJourneys("getCustomerJourneys"),
     getCustomerCampaigns("getCustomerCamapigns"),
@@ -598,6 +599,11 @@ public class GUIManager
     getOTPType("getOTPType"),
     putOTPType("putOTPType"),
     removeOTPType("removeOTPType"),
+    getCustomCriteriaList("getCustomCriteriaList"),
+    getCustomCriteriaSummaryList("getCustomCriteriaSummaryList"),
+    getCustomCriteria("getCustomCriteria"),
+    putCustomCriteria("putCustomCriteria"),
+    removeCustomCriteria("removeCustomCriteria"),
 
     //
     //  configAdaptor APIs
@@ -756,6 +762,7 @@ public class GUIManager
   protected ElasticsearchManager elasticsearchManager;
   protected static Method externalAPIMethodJourneyActivated;
   protected static Method externalAPIMethodJourneyDeactivated;
+  protected CustomCriteriaService customCriteriaService;
   
   protected ZookeeperUniqueKeyServer zuks;
   protected ZookeeperUniqueKeyServer zuksVoucherChange;
@@ -882,6 +889,7 @@ public class GUIManager
     String dynamicEventDeclarationsTopic = Deployment.getDynamicEventDeclarationsTopic();
     String criterionFieldAvailableValuesTopic = Deployment.getCriterionFieldAvailableValuesTopic();
     String otpTypeTopic = Deployment.getOTPTypeTopic();
+    String customCriteriaTopic = Deployment.getCustomCriteriaTopic();
     
     this.getCustomerAlternateID = Deployment.getGetCustomerAlternateID();
 
@@ -1110,6 +1118,7 @@ public class GUIManager
     criterionFieldAvailableValuesService = new CriterionFieldAvailableValuesService(bootstrapServers, "guimanager-criterionfieldavailablevaluesservice-"+apiProcessKey, criterionFieldAvailableValuesTopic, true);
     otpTypeService = new OTPTypeService(bootstrapServers, "guimanager-otptypeservice-"+apiProcessKey, otpTypeTopic, true);
     elasticsearchManager = new ElasticsearchManager(elasticsearch, voucherService, journeyService);
+    customCriteriaService = new CustomCriteriaService(bootstrapServers, "guimanager-customCriteriaservice-" + apiProcessKey, customCriteriaTopic, true);
     
     DeliveryManagerDeclaration dmd = Deployment.getDeliveryManagers().get(ThirdPartyManager.PURCHASE_FULFILLMENT_MANAGER_TYPE);
     purchaseResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),dmd.getResponseTopic(DELIVERY_REQUEST_PRIORITY),StringKey.serde(),PurchaseFulfillmentRequest.serde());
@@ -1122,7 +1131,7 @@ public class GUIManager
     voucherChangeResponseListenerService.start();
 
     guiManagerBaseManagement = new GUIManagerBaseManagement(journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, dnboMatrixService, dynamicCriterionFieldService, dynamicEventDeclarationsService, journeyTemplateService, purchaseResponseListenerService, subscriberGroupSharedIDService, zuks, httpTimeout, kafkaProducer, elasticsearch, subscriberMessageTemplateService, getCustomerAlternateID, guiManagerContext, subscriberGroupEpochReader, renamedProfileCriterionFieldReader);
-    guiManagerLoyaltyReporting = new GUIManagerLoyaltyReporting(journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, dnboMatrixService, dynamicCriterionFieldService, dynamicEventDeclarationsService, journeyTemplateService, purchaseResponseListenerService, subscriberGroupSharedIDService, zuks, httpTimeout, kafkaProducer, elasticsearch, subscriberMessageTemplateService, getCustomerAlternateID, guiManagerContext, subscriberGroupEpochReader, renamedProfileCriterionFieldReader);
+    guiManagerLoyaltyReporting = new GUIManagerLoyaltyReporting(journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, dnboMatrixService, dynamicCriterionFieldService, dynamicEventDeclarationsService, journeyTemplateService, purchaseResponseListenerService, customCriteriaService, subscriberGroupSharedIDService, zuks, httpTimeout, kafkaProducer, elasticsearch, subscriberMessageTemplateService, getCustomerAlternateID, guiManagerContext, subscriberGroupEpochReader, renamedProfileCriterionFieldReader);
     guiManagerGeneral = new GUIManagerGeneral(journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, dnboMatrixService, dynamicCriterionFieldService, dynamicEventDeclarationsService, journeyTemplateService, purchaseResponseListenerService, subscriberGroupSharedIDService, zuks, httpTimeout, kafkaProducer, elasticsearch, subscriberMessageTemplateService, getCustomerAlternateID, guiManagerContext, subscriberGroupEpochReader, renamedProfileCriterionFieldReader);
 
     /*****************************************
@@ -1965,6 +1974,7 @@ public class GUIManager
     resellerService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);
     segmentContactPolicyService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);
     dynamicEventDeclarationsService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);
+    customCriteriaService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);
     for(Tenant tenant : Deployment.getTenants())
       {
         dynamicEventDeclarationsService.refreshSegmentationChangeEvent(segmentationDimensionService, tenant.getTenantID());
@@ -2257,6 +2267,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getCustomerBDRs", new APISimpleHandler(API.getCustomerBDRs));
         restServer.createContext("/nglm-guimanager/getCustomerEDRs", new APISimpleHandler(API.getCustomerEDRs));
         restServer.createContext("/nglm-guimanager/getCustomerODRs", new APISimpleHandler(API.getCustomerODRs));
+        restServer.createContext("/nglm-guimanager/getCustomerVDRs", new APISimpleHandler(API.getCustomerVDRs));
         restServer.createContext("/nglm-guimanager/getCustomerMessages", new APISimpleHandler(API.getCustomerMessages));
         restServer.createContext("/nglm-guimanager/getCustomerJourneys", new APISimpleHandler(API.getCustomerJourneys));
         restServer.createContext("/nglm-guimanager/getCustomerCampaigns", new APISimpleHandler(API.getCustomerCampaigns));
@@ -2409,6 +2420,12 @@ public class GUIManager
 
         restServer.createContext("/nglm-guimanager/sendMessage", new APISimpleHandler(API.sendMessage));
         restServer.createContext("/nglm-guimanager/getRedisSubscriberIDAndAlternateIDs", new APISimpleHandler(API.getRedisSubscriberIDAndAlternateIDs));
+        restServer.createContext("/nglm-guimanager/getCustomCriteriaList", new APISimpleHandler(API.getCustomCriteriaList));
+        restServer.createContext("/nglm-guimanager/getCustomCriteriaSummaryList", new APISimpleHandler(API.getCustomCriteriaSummaryList));
+        restServer.createContext("/nglm-guimanager/getCustomCriteria", new APISimpleHandler(API.getCustomCriteria));
+        restServer.createContext("/nglm-guimanager/putCustomCriteria", new APISimpleHandler(API.putCustomCriteria));
+        restServer.createContext("/nglm-guimanager/removeCustomCriteria", new APISimpleHandler(API.removeCustomCriteria));
+
         
         restServer.setExecutor(Executors.newFixedThreadPool(10));
         restServer.start();
@@ -2424,7 +2441,7 @@ public class GUIManager
     *
     *****************************************/
 
-    guiManagerContext = new GUIManagerContext(journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService);
+    guiManagerContext = new GUIManagerContext(journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, customCriteriaService);
 
     /*****************************************
     *
@@ -2432,7 +2449,7 @@ public class GUIManager
     *
     *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, dynamicCriterionFieldService, journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, renamedProfileCriterionFieldReader, reportService, subscriberMessageTemplateService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, dnboMatrixService, segmentContactPolicyService, criterionFieldAvailableValuesService, elasticsearchManager));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, dynamicCriterionFieldService, journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, renamedProfileCriterionFieldReader, reportService, subscriberMessageTemplateService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, dnboMatrixService, segmentContactPolicyService, criterionFieldAvailableValuesService, elasticsearchManager, customCriteriaService));
 
     /*****************************************
     *
@@ -2538,12 +2555,13 @@ public class GUIManager
     private SegmentContactPolicyService segmentContactPolicyService;
     private CriterionFieldAvailableValuesService criterionFieldAvailableValuesService;
     private ElasticsearchManager elasticsearchManager;
+    private CustomCriteriaService customCriteriaService;
 
     //
     //  constructor
     //
     
-    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, DynamicCriterionFieldService dynamicCriterionFieldService, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader, ReportService reportService, SubscriberMessageTemplateService subscriberMessageTemplateService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, DNBOMatrixService dnboMatrixService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService, ElasticsearchManager elasticsearchManager)
+    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, DynamicCriterionFieldService dynamicCriterionFieldService, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader, ReportService reportService, SubscriberMessageTemplateService subscriberMessageTemplateService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, DNBOMatrixService dnboMatrixService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService, ElasticsearchManager elasticsearchManager, CustomCriteriaService customCriteriaService)
     {
       this.kafkaProducer = kafkaProducer;
       this.restServer = restServer;
@@ -2586,6 +2604,7 @@ public class GUIManager
       this.segmentContactPolicyService = segmentContactPolicyService;
       this.criterionFieldAvailableValuesService = criterionFieldAvailableValuesService;
       this.elasticsearchManager = elasticsearchManager;
+      this.customCriteriaService = customCriteriaService;
     }
 
     //
@@ -2636,6 +2655,7 @@ public class GUIManager
       if (dnboMatrixService != null) dnboMatrixService.stop();
       if (segmentContactPolicyService != null) segmentContactPolicyService.stop();
       if (criterionFieldAvailableValuesService != null) criterionFieldAvailableValuesService.stop();
+      if (customCriteriaService != null) customCriteriaService.stop();
 
       //
       //  rest server
@@ -3831,6 +3851,10 @@ public class GUIManager
                   jsonResponse = processGetCustomerODRs(userID, jsonRoot, tenantID);
                   break;
 
+                case getCustomerVDRs:
+                  jsonResponse = processGetCustomerVDRs(userID, jsonRoot, tenantID);
+                  break;
+                
                 case getCustomerMessages:
                   jsonResponse = processGetCustomerMessages(userID, jsonRoot, tenantID);
                   break;
@@ -4373,6 +4397,26 @@ public class GUIManager
                   jsonResponse = subscriberIDService.getRedisSubscriberIDsForPTTTests((String)jsonRoot.get("alternateIDName"), (String)jsonRoot.get("alternateIDValue"));
                   break;
 
+                case getCustomCriteriaList:
+                  jsonResponse = processGetCustomCriteriaList(userID, jsonRoot, true, includeArchived, tenantID);
+                  break;
+
+                case getCustomCriteriaSummaryList:
+                  jsonResponse = processGetCustomCriteriaList(userID, jsonRoot, false, includeArchived, tenantID);
+                  break;
+
+                case getCustomCriteria:
+                  jsonResponse = processGetCustomCriteria(userID, jsonRoot, includeArchived, tenantID);
+                  break;
+
+                case putCustomCriteria:
+                  jsonResponse = processPutCustomCriteria(userID, jsonRoot, tenantID);
+                  break;
+
+                case removeCustomCriteria:
+                  jsonResponse = processRemoveCustomCriteria(userID, jsonRoot, tenantID);
+                  break;
+                  
               }
           }
         else
@@ -16630,7 +16674,8 @@ public class GUIManager
             origin,
             RESTAPIGenericReturnCodes.UNKNOWN,
             segments,
-            tenantID);
+            tenantID,
+            "");
 
     // put a listener on the reponse topic
     Future<VoucherChange> waitingResponse=voucherChangeResponseListenerService.addWithOnValueFilter((value)->value.getEventID().equals(request.getEventID())&&value.getReturnStatus()!=RESTAPIGenericReturnCodes.UNKNOWN);
@@ -19372,6 +19417,143 @@ public class GUIManager
                 //
 
                 response.put("messages", JSONUtilities.encodeArray(messagesJson));
+                response.put("responseCode", "ok");
+              }
+          }
+        catch (SubscriberProfileServiceException | java.text.ParseException e)
+          {
+            throw new GUIManagerException(e);
+          }
+      }
+
+    /*****************************************
+    *
+    *  return
+    *
+    *****************************************/
+
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  * processGetCustomerVDRs
+  *
+  *****************************************/
+
+  private JSONObject processGetCustomerVDRs(String userID, JSONObject jsonRoot, int tenantID) throws GUIManagerException
+  {
+
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    Map<String, Object> response = new HashMap<String, Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+    String startDateReq = JSONUtilities.decodeString(jsonRoot, "startDate", false);
+
+    List<QueryBuilder> filters = new ArrayList<QueryBuilder>();
+    
+    /*****************************************
+    *
+    *  resolve subscriberID
+    *
+    *****************************************/
+
+    String subscriberID = resolveSubscriberID(customerID, tenantID);
+    if (subscriberID == null)
+      {
+        log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
+        response.put("responseCode", "CustomerNotFound");
+      }
+    else
+      {
+        /*****************************************
+        *
+        *  getSubscriberProfile - include history
+        *
+        *****************************************/
+        try
+          {
+            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
+            if (baseSubscriberProfile == null)
+              {
+                response.put("responseCode", "CustomerNotFound");
+                log.debug("SubscriberProfile is null for subscriberID {}" , subscriberID);
+              }
+            else
+              {
+                List<JSONObject> VDRsJson = new ArrayList<JSONObject>();
+                ArrayList<JSONObject> VDRs = new ArrayList<JSONObject>();
+                                
+                SearchRequest searchRequest = this.elasticsearch.getSearchRequest(API.getCustomerVDRs, subscriberID, startDateReq == null ? null : RLMDateUtils.parseDateFromDay(startDateReq, Deployment.getDeployment(tenantID).getTimeZone()), filters, tenantID);
+                List<SearchHit> hits = this.elasticsearch.getESHits(searchRequest);
+                for (SearchHit hit : hits)
+                  {
+                	Map<String, Object> esMap = new HashMap<String, Object>();
+                	String fileID = (String) hit.getSourceAsMap().get("fileID");
+                	String voucherID = (String) hit.getSourceAsMap().get("voucherID");
+                	String voucherFormat = "";
+                	Date expiryDate = null;
+                	String offerID = "";
+                	Voucher voucher = (Voucher) voucherService.getStoredVoucher(voucherID);
+                	if(voucher instanceof VoucherShared){
+                  	  	voucherFormat = ((VoucherShared)voucher).getCodeFormatId();
+	                    List<JSONObject> vouchersJsonArray = new ArrayList<>();
+	                    for(VoucherProfileStored voucherProfileStored:baseSubscriberProfile.getVouchers())
+	                    {
+	                    	if(voucherProfileStored.getVoucherID().equals(voucherID)) {
+	                    		expiryDate = voucherProfileStored.getVoucherExpiryDate()!=null?voucherProfileStored.getVoucherExpiryDate():null;
+	                    		offerID = voucherProfileStored.getOfferID();
+	                    		break;
+	                    	}
+	                    }
+                   
+                	} else if (voucher instanceof VoucherPersonal){
+                      	for(VoucherProfileStored voucherProfileStored:baseSubscriberProfile.getVouchers())
+	                    {
+	                    	if(voucherProfileStored.getVoucherID().equals(voucherID)) {
+	                    		offerID = voucherProfileStored.getOfferID();
+	                    		if(fileID==null) {
+	                    			fileID = voucherProfileStored.getFileID();
+	                    		}
+	                    		break;
+	                    	}
+	                    }
+                      	for(VoucherFile voucherFile:((VoucherPersonal)voucher).getVoucherFiles()){
+                      		if(voucherFile.getFileId().equals(fileID)) {
+                      			voucherFormat = voucherFile.getCodeFormatId();
+                      			expiryDate = voucherFile.getExpiryDate()!=null?voucherFile.getExpiryDate():null;
+                      			break;
+                      		}
+                      	}
+                      }
+                	esMap.put("voucherCode", hit.getSourceAsMap().get("voucherCode"));
+                	esMap.put("voucherID", voucher.getVoucherID());
+                	esMap.put("voucherFormat", voucherFormat);
+                	esMap.put("voucherExpiryDate", hit.getSourceAsMap().get("action").equals(VoucherChange.VoucherChangeAction.Extend.name())?getDateString(RLMDateUtils.parseDateFromElasticsearch((String)hit.getSourceAsMap().get("expiryDate")),tenantID):getDateString(expiryDate,tenantID));
+                	esMap.put("operation", hit.getSourceAsMap().get("action"));
+                    esMap.put("offerDisplayName", offerID.equals("")? "": offerService.getStoredOffer(offerID).getJSONRepresentation().get("display"));
+                    esMap.put("offerID", offerID);
+                    
+                    
+                	VDRsJson.add(JSONUtilities.encodeObject(esMap));
+                  }
+                
+                //
+                // prepare response
+                //
+
+                response.put("VDRs", JSONUtilities.encodeArray(VDRsJson));
                 response.put("responseCode", "ok");
               }
           }
@@ -29025,6 +29207,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     private ResellerService resellerService;
     private SegmentContactPolicyService segmentContactPolicyService;
     private CriterionFieldAvailableValuesService criterionFieldAvailableValuesService;
+    private CustomCriteriaService customCriteriaService;
 
     /*****************************************
     *
@@ -29067,6 +29250,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     public ResellerService getPartnerService() { return resellerService; }
     public SegmentContactPolicyService getSegmentContactPolicyService() { return segmentContactPolicyService; }
     public CriterionFieldAvailableValuesService getCriterionFieldAvailableValuesService() { return criterionFieldAvailableValuesService; }
+    public CustomCriteriaService getCustomCriteriaService() { return customCriteriaService; }
     
 
     /*****************************************
@@ -29075,7 +29259,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     *
     *****************************************/
 
-    public GUIManagerContext(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService)
+    public GUIManagerContext(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService, CustomCriteriaService customCriteriaService)
     {
       this.journeyService = journeyService;
       this.segmentationDimensionService = segmentationDimensionService;
@@ -29112,6 +29296,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
       this.resellerService = resellerService;
       this.segmentContactPolicyService = segmentContactPolicyService;
       this.criterionFieldAvailableValuesService = criterionFieldAvailableValuesService;
+      this.customCriteriaService = customCriteriaService;
     }
   }
 
@@ -31026,6 +31211,366 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     response.put("removedOfferIDs", JSONUtilities.encodeArray(validIDs));
     return JSONUtilities.encodeObject(response);
 
+  }
+  
+  
+  /*****************************************
+  *
+  *  processGetCustomCriteriasList
+  *
+  *****************************************/
+
+  private JSONObject processGetCustomCriteriaList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived, int tenantID)
+  {
+    /*****************************************
+    *
+    *  retrieve and convert customCriterias
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> customCriterias = new ArrayList<JSONObject>();    
+    Collection <GUIManagedObject> customCriteriaObjects = new ArrayList<GUIManagedObject>();
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        JSONArray customerCriteriaIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+        for (int i = 0; i < customerCriteriaIDs.size(); i++)
+          {
+            String customerCriteriaID = customerCriteriaIDs.get(i).toString();
+            GUIManagedObject customCriteria = customCriteriaService.getStoredCustomCriteria(customerCriteriaID, includeArchived);
+            if (customCriteria != null)
+              {
+                customCriteriaObjects.add(customCriteria);
+              }
+          }
+      }
+    else
+      {
+        customCriteriaObjects = customCriteriaService.getStoredCustomCriterias(includeArchived, tenantID);
+      }
+    for (GUIManagedObject customCriteria : customCriteriaObjects)
+      {
+        customCriterias.add(customCriteriaService.generateResponseJSON(customCriteria, fullDetails, now));
+      }
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();;
+    response.put("responseCode", "ok");
+    response.put("customCriterias", JSONUtilities.encodeArray(customCriterias));
+    return JSONUtilities.encodeObject(response);
+  }
+
+  /*****************************************
+  *
+  *  processGetCustomCriteria
+  *
+  *****************************************/
+
+  private JSONObject processGetCustomCriteria(String userID, JSONObject jsonRoot, boolean includeArchived, int tenantID)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String customCriteriaID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    /*****************************************
+    *
+    *  retrieve and decorate customCriteria
+    *
+    *****************************************/
+    
+    GUIManagedObject customCriteria = customCriteriaService.getStoredCustomCriteria(customCriteriaID, includeArchived);
+    JSONObject customCriteriaJSON = customCriteriaService.generateResponseJSON(customCriteria, true, SystemTime.getCurrentTime());
+
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("responseCode", (customCriteria != null) ? "ok" : "customCriteriaNotFound");
+    if (customCriteria != null) response.put("customCriteria", customCriteriaJSON);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  
+  /*****************************************
+  *
+  *  processPutCustomCriteria
+  *
+  *****************************************/
+
+  private JSONObject processPutCustomCriteria(String userID, JSONObject jsonRoot, int tenantID)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    Boolean dryRun = false;
+    
+
+    /*****************************************
+    *
+    *  dryRun
+    *
+    *****************************************/
+    if (jsonRoot.containsKey("dryRun")) {
+      dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", false);
+    }
+
+
+    /*****************************************
+    *
+    *  customCriteriaID
+    *
+    *****************************************/
+
+    String customCriteriaID = JSONUtilities.decodeString(jsonRoot, "id", false); 
+    if (customCriteriaID == null)
+      {
+        customCriteriaID = customCriteriaService.generateCustomCriteriaID();
+        jsonRoot.put("id", customCriteriaID);
+      }
+
+    /*****************************************
+    *
+    *  existing customCriteria
+    *
+    *****************************************/
+
+    GUIManagedObject existingCustomCriteria = customCriteriaService.getStoredCustomCriteria(customCriteriaID);
+
+    /*****************************************
+    *
+    *  read-only
+    *
+    *****************************************/
+
+    if (existingCustomCriteria != null && existingCustomCriteria.getReadOnly())
+      {
+        response.put("id", existingCustomCriteria.getGUIManagedObjectID());
+        response.put("accepted", existingCustomCriteria.getAccepted());
+        response.put("valid", existingCustomCriteria.getAccepted());
+        response.put("processing", customCriteriaService.isActiveCustomCriteria(existingCustomCriteria, now));
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+
+    /*****************************************
+    *
+    *  process customCriteria
+    *
+    *****************************************/
+    long epoch = epochServer.getKey();
+    try
+      {
+        /****************************************
+        *
+        *  instantiate customCriteria
+        *
+        ****************************************/
+
+        CustomCriteria customCriteria = new CustomCriteria(jsonRoot, epoch, existingCustomCriteria, tenantID);
+
+        /*****************************************
+        *
+        *  store
+        *
+        *****************************************/
+        if (!dryRun)
+          {
+            customCriteriaService.putCustomCriteria(customCriteria, (existingCustomCriteria == null), userID, customCriteriaService);
+            
+            /*****************************************
+            *
+            * add dynamic criterion fields)
+            *
+            *****************************************/
+
+           dynamicCriterionFieldService.addCustomCriterionField(customCriteria, (existingCustomCriteria == null));
+
+          }
+
+        /*****************************************
+        *
+        *  response
+        *
+        *****************************************/
+
+        response.put("id", customCriteria.getCustomCriteriaID());
+        response.put("accepted", customCriteria.getAccepted());
+        response.put("valid", customCriteria.getAccepted());
+        response.put("processing", customCriteriaService.isActiveCustomCriteria(customCriteria, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  incompleteObject
+        //
+
+        IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch, tenantID);
+
+        //
+        //  store
+        //
+        if (!dryRun)
+          {
+            customCriteriaService.putCustomCriteria(incompleteObject, (existingCustomCriteria == null), userID, customCriteriaService);
+
+          }
+
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  response
+        //
+
+        response.put("id", incompleteObject.getGUIManagedObjectID());
+        response.put("responseCode", "customCriteriaNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+  
+  /*****************************************
+  *
+  *  processRemoveCustomCriteria
+  *
+  *****************************************/
+
+  private JSONObject processRemoveCustomCriteria(String userID, JSONObject jsonRoot, int tenantID)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();
+
+    /*****************************************
+    *
+    *  now
+    *
+    *****************************************/
+
+    Date now = SystemTime.getCurrentTime();
+    String responseCode = "";
+    String singleIDresponseCode = "";
+    List<GUIManagedObject> customCriterias = new ArrayList<>();
+    JSONArray customCriteriaIDs = new JSONArray();
+    List<String> validIDs = new ArrayList<>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
+    //
+    //remove single customCriteria
+    //
+    if (jsonRoot.containsKey("id"))
+      {
+        String customCriteriaID = JSONUtilities.decodeString(jsonRoot, "id", false);
+        customCriteriaIDs.add(customCriteriaID);
+        GUIManagedObject customCriteria = customCriteriaService.getStoredCustomCriteria(customCriteriaID);
+        if (customCriteria != null && (force || !customCriteria.getReadOnly()))
+          singleIDresponseCode = "ok";
+        else if (customCriteria != null)
+          singleIDresponseCode = "failedReadOnly";
+        else singleIDresponseCode = "customCriteriaNotFound";
+      }
+    //
+    // multiple deletion
+    //
+    
+    if (jsonRoot.containsKey("ids"))
+      {
+        customCriteriaIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false);
+      }
+  
+    for (int i = 0; i < customCriteriaIDs.size(); i++)
+      {
+        String customCriteriaID = customCriteriaIDs.get(i).toString();
+        GUIManagedObject customCriteria = customCriteriaService.getStoredCustomCriteria(customCriteriaID);
+        if (customCriteria != null && (force || !customCriteria.getReadOnly()))
+          {
+            customCriterias.add(customCriteria);
+            validIDs.add(customCriteriaID);
+          }
+      }
+        
+  
+
+    /*****************************************
+    *
+    *  remove
+    *
+    *****************************************/
+    for (int i = 0; i < customCriterias.size(); i++)
+      {
+
+        GUIManagedObject customCriteria = customCriterias.get(i);
+        customCriteriaService.removeCustomCriteria(customCriteria.getGUIManagedObjectID(), userID, tenantID);
+        dynamicCriterionFieldService.removeDynamicCriterionField(DynamicCriterionFieldService.CUSTOMCRITERIA_PREFIX + customCriteria.getGUIManagedObjectID(), userID, tenantID);
+      }
+    
+    /*****************************************
+     *
+     * responseCode
+     *
+     *****************************************/
+    if (jsonRoot.containsKey("id"))
+      {
+        response.put("responseCode", singleIDresponseCode);
+        return JSONUtilities.encodeObject(response);
+      }
+
+    else
+      {
+        response.put("responseCode", "ok");
+      }
+
+    /*****************************************
+     *
+     * response
+     *
+     *****************************************/
+    response.put("removedcustomCriteriaIDS", JSONUtilities.encodeArray(validIDs));
+
+    return JSONUtilities.encodeObject(response);
   }
   
   public JSONObject processSoftwareVersions(String userID, JSONObject jsonRoot, int tenantID)
