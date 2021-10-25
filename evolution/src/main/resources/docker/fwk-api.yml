@@ -20,6 +20,8 @@ fwk-api-<_KEY_>:
     FwkSettings__LDAPauthentication: '<_FWKSETTINGS_LDAPAUTHENTICATION_>'
     FwkSettings__LDAPHost: '<_FWKSETTINGS_LDAPHOST_>'
     FwkSettings__LDAPPort: <_FWKSETTINGS_LDAPPORT_>
+    FwkSettings__NoReplyEmailAddress: '<_FWKSETTINGS_NO_REPLY_EMAIL_ADDRESS_>'
+    FwkSettings__NoReplyEmailAddressAlias: '<_FWKSETTINGS_NO_REPLY_EMAIL_NAME_>'
     Email__Smtp__Host: '<_FWKSETTINGS_EMAIL_SMTP_HOST_>'
     Email__Smtp__Port: <_FWKSETTINGS_EMAIL_SMTP_PORT_>
     Email__Smtp__Username: '<_FWKSETTINGS_EMAIL_SMTP_USERNAME_>'
