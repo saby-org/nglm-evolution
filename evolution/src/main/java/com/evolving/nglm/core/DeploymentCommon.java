@@ -312,6 +312,8 @@ public class DeploymentCommon
   private static String offerObjectiveTopic;
   private static String productTypeTopic;
   private static String ucgRuleTopic;
+  private static String predictionSettingsTopic;
+  private static String predictionSettingsMetadataTopic;
   private static String deliverableTopic;
   private static String tokenTypeTopic;
   private static String otpTypeTopic;
@@ -336,6 +338,8 @@ public class DeploymentCommon
   private static String journeyMetricTopic;
   private static String presentationLogTopic;
   private static String acceptanceLogTopic;
+  private static String subscriberPredictionsPushTopic;
+  private static String subscriberPredictionsRequestTopic;
   private static String profileLoyaltyProgramChangeEventTopic;
   private static String profileChangeEventTopic;
   private static String profileSegmentChangeEventTopic;
@@ -634,6 +638,8 @@ public class DeploymentCommon
   public static String getOfferObjectiveTopic() { return offerObjectiveTopic; }
   public static String getProductTypeTopic() { return productTypeTopic; }
   public static String getUCGRuleTopic() { return ucgRuleTopic; }
+  public static String getPredictionSettingsTopic() { return predictionSettingsTopic; }
+  public static String getPredictionSettingsMetadataTopic() { return predictionSettingsMetadataTopic; }
   public static String getDeliverableTopic() { return deliverableTopic; }
   public static String getTokenTypeTopic() { return tokenTypeTopic; }
   public static String getOTPTypeTopic() { return otpTypeTopic; }
@@ -658,6 +664,8 @@ public class DeploymentCommon
   public static String getJourneyMetricTopic() { return journeyMetricTopic; }
   public static String getPresentationLogTopic() { return presentationLogTopic; }
   public static String getAcceptanceLogTopic() { return acceptanceLogTopic; }
+  public static String getSubscriberPredictionsPushTopic() { return subscriberPredictionsPushTopic; }
+  public static String getSubscriberPredictionsRequestTopic() { return subscriberPredictionsRequestTopic; }
   public static String getProfileChangeEventTopic() { return profileChangeEventTopic;}
   public static String getProfileSegmentChangeEventTopic() { return profileSegmentChangeEventTopic;}
   public static String getProfileLoyaltyProgramChangeEventTopic() { return profileLoyaltyProgramChangeEventTopic;}
@@ -936,6 +944,8 @@ public class DeploymentCommon
     offerObjectiveTopic = jsonReader.decodeString("offerObjectiveTopic");
     productTypeTopic = jsonReader.decodeString("productTypeTopic");
     ucgRuleTopic = jsonReader.decodeString("ucgRuleTopic");
+    predictionSettingsTopic = jsonReader.decodeString("predictionSettingsTopic");
+    predictionSettingsMetadataTopic = jsonReader.decodeString("predictionSettingsMetadataTopic");
     deliverableTopic = jsonReader.decodeString("deliverableTopic");
     tokenTypeTopic = jsonReader.decodeString("tokenTypeTopic");
     otpTypeTopic = jsonReader.decodeString("otpTypeTopic");
@@ -971,6 +981,8 @@ public class DeploymentCommon
     journeyMetricTopic = jsonReader.decodeString("journeyMetricTopic");
     presentationLogTopic = jsonReader.decodeString("presentationLogTopic");
     acceptanceLogTopic = jsonReader.decodeString("acceptanceLogTopic");
+    subscriberPredictionsPushTopic = jsonReader.decodeString("subscriberPredictionsPushTopic");
+    subscriberPredictionsRequestTopic = jsonReader.decodeString("subscriberPredictionsRequestTopic");
     segmentContactPolicyTopic = jsonReader.decodeString("segmentContactPolicyTopic");
     profileChangeEventTopic = jsonReader.decodeString("profileChangeEventTopic");
     profileSegmentChangeEventTopic = jsonReader.decodeString("profileSegmentChangeEventTopic");

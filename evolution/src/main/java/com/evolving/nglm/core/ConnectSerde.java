@@ -578,7 +578,9 @@ public class ConnectSerde<T> implements Serde<T>
         Struct wrapper = (Struct) wrapperSchemaAndValue.value();
 
         //
-        //  get (single) schema and value
+        //  get (single) schema and value 
+        // @rl: I don't think this code work at all tbh. Or explain me what it does exactly...
+        // I am more convinced that we never enter in this IF block
         //
 
         Schema persistedValueSchema = null;
