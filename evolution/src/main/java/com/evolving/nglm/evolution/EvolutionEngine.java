@@ -2461,7 +2461,7 @@ public class EvolutionEngine
                 purchaseFulfillmentRequest.getOrigin(),
                 RESTAPIGenericReturnCodes.fromGenericResponseCode(returnCode),
                 purchaseFulfillmentRequest.getSegments(),
-                purchaseFulfillmentRequest.getOfferID());
+                purchaseFulfillmentRequest.getOfferID(),
                 uniqueKeyServer.getKey(),
                 tenantID);
             subscriberProfile.getVouchers().add(voucherToStore);
@@ -2503,7 +2503,7 @@ public class EvolutionEngine
               voucherStored.getOrigin(),
               RESTAPIGenericReturnCodes.SUCCESS,
               subscriberProfile.getSegments(),
-              voucherStored.getOfferID());
+              voucherStored.getOfferID(),
               uniqueKeyServer.getKey(),
               tenantID);
           subscriberState.getVoucherChanges().add(voucherChange);
@@ -5572,7 +5572,7 @@ public class EvolutionEngine
             if (dnboToken.getPurchaseDeliveryRequestID().equals(purchaseResponseEvent.getDeliveryRequestID())) {               
                 String tokenRedeem=TokenChange.REDEEM;
                 String tokenChangeStatus = RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode()+"";
-                String purchaseOfferID = purchaseResponseEvent.getOfferID();
+                purchaseOfferID = purchaseResponseEvent.getOfferID();
                 dnboToken.setPurchaseStatus(purchaseResponseEvent.getStatus());
                 if (PurchaseFulfillmentManager.PurchaseFulfillmentStatus.PURCHASED.getReturnCode() != purchaseResponseEvent.getStatus().getReturnCode()) {
                   log.info("Set purchaseStatus of " + token.getTokenCode() + " from " + dnboToken.getTokenStatus() + " back to Bound " + dnboToken);

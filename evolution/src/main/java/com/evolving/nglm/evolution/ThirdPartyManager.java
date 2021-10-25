@@ -285,7 +285,7 @@ public class ThirdPartyManager
     getVoucherList(39),
     deleteCustomer(40),
     getCustomerVouchers(41),
-    getCustomerVDRs(42);
+    getCustomerVDRs(42),
     getOfferDetails(43);
 
     private int methodIndex;
@@ -5549,7 +5549,7 @@ public class ThirdPartyManager
             RESTAPIGenericReturnCodes.UNKNOWN,
             segments,
             eventID,
-            voucherProfileStored.getOfferID());
+            voucherProfileStored.getOfferID(),
             tenantID);
 
     Future<VoucherChange> waitingResponse=null;

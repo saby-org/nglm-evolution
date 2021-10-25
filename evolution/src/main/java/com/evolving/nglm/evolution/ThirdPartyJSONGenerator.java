@@ -472,7 +472,7 @@ public class ThirdPartyJSONGenerator
         for (ProposedOfferDetails offerDetails : dnboToken.getProposedOfferDetails())
           {
         	boolean isPresentOfferDetails = false;
-            presentedOffersList.add(JSONUtilities.encodeObject(buildOfferElement(offerID, offerService, offerObjectiveService, now, callingChannel, isPresentOfferDetails, presentedOffers, dnboToken, paymentMeanService, tenantID)));
+            presentedOffersList.add(JSONUtilities.encodeObject(buildOfferElement(offerDetails.getOfferId(), offerService, offerObjectiveService, now, callingChannel, isPresentOfferDetails, presentedOffers, dnboToken, paymentMeanService, tenantID)));
           }
         tokenMap.put("presentedOffers", JSONUtilities.encodeArray(presentedOffersList));
         tokenMap.put("presentedOffersSalesChannel", dnboToken.getPresentedOffersSalesChannel());

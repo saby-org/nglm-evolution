@@ -176,7 +176,7 @@ public class VoucherChange extends SubscriberStreamOutput implements EvolutionEn
   public void setReturnStatus(RESTAPIGenericReturnCodes returnStatus) { this.returnStatus = returnStatus; }
 
   public VoucherChange(SubscriberProfile subscriberProfile, Date eventDate, Date newVoucherExpiryDate, String eventID, VoucherChangeAction action, String voucherCode, String voucherID, String fileID, String moduleID, String featureID, String origin, RESTAPIGenericReturnCodes returnStatus, String deliveryRequestID, int tenantID) {
-    this(subscriberProfile.getSubscriberID(), eventDate, newVoucherExpiryDate, eventID, action, voucherCode, voucherID, fileID, moduleID, featureID, origin, returnStatus, subscriberProfile.getSegments(), deliveryRequestID, offerID, tenantID);
+    this(subscriberProfile.getSubscriberID(), eventDate, newVoucherExpiryDate, eventID, action, voucherCode, voucherID, fileID, moduleID, featureID, origin, returnStatus, subscriberProfile.getSegments(), deliveryRequestID, null, tenantID);
   }
   public VoucherChange(String subscriberID, Date eventDate, Date newVoucherExpiryDate, String eventID, VoucherChangeAction action, String voucherCode, String voucherID, String fileID, String moduleID, String featureID, String origin, RESTAPIGenericReturnCodes returnStatus, Map<Pair<String,String>,Integer> segments, String deliveryRequestID, String offerID, int tenantID) {
     this.subscriberID = subscriberID;
