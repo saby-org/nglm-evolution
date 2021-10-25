@@ -2985,6 +2985,8 @@ public class ThirdPartyManager
     String endDateString = readString(jsonRoot, "endDate", false);
     String offerObjective = readString(jsonRoot, "objective", false);
     String supplier = readString(jsonRoot, "supplier", false);
+    //EVPRO-1353: add salesChannel filter
+    String salesChannelName = readString(jsonRoot, "salesChannel", false);
     JSONObject offerObjectivesCharacteristicsJSON = JSONUtilities.decodeJSONObject(jsonRoot, "offerObjectivesCharacteristics", false);
     JSONObject offerCharacteristicsJSON = JSONUtilities.decodeJSONObject(jsonRoot, "offerCharacteristics", false);
     final OfferObjectiveInstance objectiveInstanceReq = offerObjectivesCharacteristicsJSON != null ? decodeOfferObjectiveInstance(offerObjectivesCharacteristicsJSON, offerObjectiveService, catalogCharacteristicService, tenantID) : null;
@@ -3227,6 +3229,28 @@ public class ThirdPartyManager
                   .collect(Collectors.toList());
 
             } 
+          
+          String salesChannelIDtmp = null;
+          if (salesChannelName != null && !salesChannelName.isEmpty())
+          {
+              //
+              //  filter on salesChannel
+              //
+        	  if(salesChannelService.getActiveSalesChannels(now, tenantID)!=null && !salesChannelService.getActiveSalesChannels(now, tenantID).isEmpty()) {
+        		 for(SalesChannel sc: salesChannelService.getActiveSalesChannels(now, tenantID)) {
+        			 if(sc.getGUIManagedObjectDisplay().equals(salesChannelName)) {
+        				 salesChannelIDtmp = sc.getSalesChannelID();
+        				 break;
+        			 }
+        		 }
+        	  }
+
+        	  if(salesChannelIDtmp != null && !salesChannelIDtmp.isEmpty()) {
+        		  final String salesChannelID = salesChannelIDtmp;
+        		  offers = offers.stream().filter(offer -> offer.hasThisOfferSalesChannel(salesChannelID)).collect(Collectors.toList());
+        	  }
+          }
+          
           //
           // filter the offers based on the product supplier parent ID
           //

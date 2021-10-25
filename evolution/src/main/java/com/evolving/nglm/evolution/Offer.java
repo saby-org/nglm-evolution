@@ -19,6 +19,7 @@ import com.evolving.nglm.evolution.StockMonitor.StockableItem;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.core.SystemTime;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1031,6 +1032,35 @@ public class Offer extends GUIManagedObject implements StockableItem
                 result = false;
               }
             if (!result)break;
+          }
+      }
+    return result;
+  }
+  
+  /*****************************************
+  *
+  *  hasThisOfferSalesChannel
+  *
+  *****************************************/
+  
+  public boolean hasThisOfferSalesChannel(String salesChannelID)
+  {
+    boolean result = false;
+    if (getOfferSalesChannelsAndPrices()!=null && !getOfferSalesChannelsAndPrices().isEmpty())
+      {
+        for (OfferSalesChannelsAndPrice offerSalesChannelsAndPrice : getOfferSalesChannelsAndPrices())
+          {
+            if(offerSalesChannelsAndPrice.getSalesChannelIDs() != null) 
+            {
+              for(String scID : offerSalesChannelsAndPrice.getSalesChannelIDs()) 
+                {
+                  if(scID.equals(salesChannelID))
+                    {
+                      result = true;
+                      break;
+                    }
+                }
+            }
           }
       }
     return result;

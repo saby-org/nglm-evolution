@@ -285,7 +285,7 @@ public class ThirdPartyJSONGenerator
                       {
                         JSONObject channelObject = new JSONObject();
                         channelObject.put("salesChannelID", salesChannel.getSalesChannelID());
-                        channelObject.put("salesChannelName", salesChannel.getSalesChannelName());
+                        channelObject.put("salesChannelName", salesChannel.getGUIManagedObjectDisplay());
                         if (offerPrice != null)
                           {
                             channelObject.put("paymentMeanID", offerPrice.getPaymentMeanID());
