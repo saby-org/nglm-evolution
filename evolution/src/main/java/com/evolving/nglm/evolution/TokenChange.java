@@ -222,6 +222,7 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
     this.callUniqueIdentifier = callUniqueIdentifier;
     this.acceptedOfferID=acceptedOfferID;
     this.presentedOfferIDs = presentedOfferIDs;   
+    this.tenantID = tenantID;
   }  
 
   /*****************************************
