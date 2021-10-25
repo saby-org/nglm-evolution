@@ -3811,7 +3811,7 @@ public class EvolutionEngine
                 ThreadLocalRandom random = ThreadLocalRandom.current();
                 addToUCG = (random.nextDouble() < shiftProbability);
               }
-            else
+            else if(subscriberUCGGroup != null)
             {
               //will add subscribers based on count. In hash map the key will be segment_id-segment_id foreach strata
               String key = String.join("-",subscriberUCGGroup.getSegmentIDs());
@@ -3826,6 +3826,10 @@ public class EvolutionEngine
                 addToUCG = true;
                 ucgSegmentEvaluationCount.put(key,1);
               }
+            }
+            else
+            {
+              log.warn("no subscriber group found for"+subscriberProfile.getSubscriberID());
             }
 
             /*****************************************
