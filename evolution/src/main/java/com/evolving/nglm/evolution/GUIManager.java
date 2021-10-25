@@ -1502,7 +1502,7 @@ public class GUIManager
     //
     //  calling channels
     //
-    for(Tenant tenant : Deployment.getTenants())
+    for(Tenant tenant : Deployment.getRealTenants())
       {
         int tenantID = tenant.getTenantID();
         if (callingChannelService.getStoredCallingChannels(tenantID).size() == 0)
@@ -1513,7 +1513,13 @@ public class GUIManager
                 for (int i=0; i<initialCallingChannelsJSONArray.size(); i++)
                   {
                     JSONObject  callingChannelJSON = (JSONObject) initialCallingChannelsJSONArray.get(i);
-                    processPutCallingChannel("0", callingChannelJSON, tenantID);
+                    if (callingChannelJSON.containsKey("id"))
+                      {
+                        if (log.isWarnEnabled()) log.warn("initial callingChannel JSON should not have id field - removing it");
+                        callingChannelJSON.remove("id");
+                      }
+                    JSONObject callingChannel = (JSONObject) callingChannelJSON.clone();
+                    processPutCallingChannel("0", callingChannel, tenantID);
                   }
               }
             catch (JSONUtilitiesException e)
@@ -1527,7 +1533,7 @@ public class GUIManager
     //  sales channels
     //
 
-    for(Tenant tenant : Deployment.getTenants())
+    for(Tenant tenant : Deployment.getRealTenants())
       {
         int tenantID = tenant.getTenantID();
         if (salesChannelService.getStoredSalesChannels(tenantID).size() == 0)
@@ -1538,7 +1544,13 @@ public class GUIManager
                 for (int i=0; i<initialSalesChannelsJSONArray.size(); i++)
                   {
                     JSONObject  salesChannelJSON = (JSONObject) initialSalesChannelsJSONArray.get(i);
-                    processPutSalesChannel("0", salesChannelJSON, tenantID);
+                    if (salesChannelJSON.containsKey("id"))
+                      {
+                        if (log.isWarnEnabled()) log.warn("initial salesChannel JSON should not have id field - removing it");
+                        salesChannelJSON.remove("id");
+                      }
+                    JSONObject salesChannel = (JSONObject) salesChannelJSON.clone();
+                    processPutSalesChannel("0", salesChannel, tenantID);
                   }
               }
             catch (JSONUtilitiesException e)
@@ -1552,7 +1564,7 @@ public class GUIManager
     //  suppliers
     //
     
-    for(Tenant tenant : Deployment.getTenants())
+    for(Tenant tenant : Deployment.getRealTenants())
       {
         int tenantID = tenant.getTenantID();
         if (supplierService.getStoredSuppliers(tenantID).size() == 0)
@@ -1563,7 +1575,13 @@ public class GUIManager
                 for (int i=0; i<initialSuppliersJSONArray.size(); i++)
                   {
                     JSONObject supplierJSON = (JSONObject) initialSuppliersJSONArray.get(i);
-                    processPutSupplier("0", supplierJSON, tenantID);
+                    if (supplierJSON.containsKey("id"))
+                      {
+                        if (log.isWarnEnabled()) log.warn("initial supplier JSON should not have id field - removing it");
+                        supplierJSON.remove("id");
+                      }
+                    JSONObject supplier = (JSONObject) supplierJSON.clone();
+                    processPutSupplier("0", supplier, tenantID);
                   }
               }
             catch (JSONUtilitiesException e)
@@ -1576,7 +1594,7 @@ public class GUIManager
     //
     //  products
     //
-    for(Tenant tenant : Deployment.getTenants())
+    for(Tenant tenant : Deployment.getRealTenants())
       {
         int tenantID = tenant.getTenantID();
         if (productService.getStoredProducts(tenantID).size() == 0)
@@ -1587,7 +1605,13 @@ public class GUIManager
                 for (int i=0; i<initialProductsJSONArray.size(); i++)
                   {
                     JSONObject productJSON = (JSONObject) initialProductsJSONArray.get(i);
-                    processPutProduct("0", productJSON, tenantID);
+                    if (productJSON.containsKey("id"))
+                      {
+                        if (log.isWarnEnabled()) log.warn("initial product JSON should not have id field - removing it");
+                        productJSON.remove("id");
+                      }
+                    JSONObject product = (JSONObject) productJSON.clone();
+                    processPutProduct("0", product, tenantID);
                   }
               }
             catch (JSONUtilitiesException e)
@@ -1601,7 +1625,7 @@ public class GUIManager
     //  Source Addresses not before communicationChannels
     //
     
-    for(Tenant tenant : Deployment.getTenants())
+    for(Tenant tenant : Deployment.getRealTenants())
       {
         int tenantID = tenant.getTenantID();
         if (sourceAddressService.getStoredSourceAddresss(tenantID).size() == 0)
@@ -1611,8 +1635,14 @@ public class GUIManager
                 JSONArray initialSourceAddressesJSONArray = Deployment.getDeployment(tenantID).getInitialSourceAddressesJSONArray();
                 for (int i=0; i<initialSourceAddressesJSONArray.size(); i++)
                   {
-                    JSONObject  sourceAddresslJSON = (JSONObject) initialSourceAddressesJSONArray.get(i);
-                    processPutSourceAddress("0", sourceAddresslJSON, tenantID);
+                    JSONObject  sourceAddressJSON = (JSONObject) initialSourceAddressesJSONArray.get(i);
+                    if (sourceAddressJSON.containsKey("id"))
+                      {
+                        if (log.isWarnEnabled()) log.warn("initial sourceAddress JSON should not have id field - removing it");
+                        sourceAddressJSON.remove("id");
+                      }
+                    JSONObject sourceAddress = (JSONObject) sourceAddressJSON.clone();
+                    processPutSourceAddress("0", sourceAddress, tenantID);
                   }
               }
             catch (JSONUtilitiesException e)
@@ -1625,7 +1655,7 @@ public class GUIManager
     //
     //  contactPolicies
     //
-    for(Tenant tenant : Deployment.getTenants())
+    for(Tenant tenant : Deployment.getRealTenants())
       {
         int tenantID = tenant.getTenantID();
         if (contactPolicyService.getStoredContactPolicies(tenantID).size() == 0)
@@ -1636,7 +1666,13 @@ public class GUIManager
                 for (int i=0; i<initialContactPoliciesJSONArray.size(); i++)
                   {
                     JSONObject contactPolicyJSON = (JSONObject) initialContactPoliciesJSONArray.get(i);
-                    processPutContactPolicy("0", contactPolicyJSON, tenantID);
+                    if (contactPolicyJSON.containsKey("id"))
+                      {
+                        if (log.isWarnEnabled()) log.warn("initial contactPolicy JSON should not have id field - removing it");
+                        contactPolicyJSON.remove("id");
+                      }
+                    JSONObject contactPolicy = (JSONObject) contactPolicyJSON.clone();
+                    processPutContactPolicy("0", contactPolicy, tenantID);
                   }
               }
             catch (JSONUtilitiesException e)
@@ -1647,7 +1683,7 @@ public class GUIManager
       }
         
     //
-    //  journeyTemplates
+    //  journeyTemplates do not change the ID - still this is a bug, how two different tenant have the obj with sameID
     //
     
     for(Tenant tenant : Deployment.getTenants())
@@ -1676,7 +1712,7 @@ public class GUIManager
     //  journeyObjectives
     //
 
-    for(Tenant tenant : Deployment.getTenants())
+    for(Tenant tenant : Deployment.getRealTenants())
       {
         int tenantID = tenant.getTenantID();
         if (journeyObjectiveService.getStoredJourneyObjectives(tenantID).size() == 0)
@@ -1687,7 +1723,13 @@ public class GUIManager
                 for (int i=0; i<initialJourneyObjectivesJSONArray.size(); i++)
                   {
                     JSONObject journeyObjectiveJSON = (JSONObject) initialJourneyObjectivesJSONArray.get(i);
-                    processPutJourneyObjective("0", journeyObjectiveJSON, tenantID);
+                    if (journeyObjectiveJSON.containsKey("id"))
+                      {
+                        if (log.isWarnEnabled()) log.warn("initial journeyObjective JSON should not have id field - removing it");
+                        journeyObjectiveJSON.remove("id");
+                      }
+                    JSONObject journeyObjective = (JSONObject) journeyObjectiveJSON.clone();
+                    processPutJourneyObjective("0", journeyObjective, tenantID);
                   }
               }
             catch (JSONUtilitiesException e)
@@ -1701,7 +1743,7 @@ public class GUIManager
     //  offerObjectives
     //
 
-    for(Tenant tenant : Deployment.getTenants())
+    for(Tenant tenant : Deployment.getRealTenants())
       {
         int tenantID = tenant.getTenantID();
         if (offerObjectiveService.getStoredOfferObjectives(tenantID).size() == 0)
@@ -1712,7 +1754,13 @@ public class GUIManager
                 for (int i=0; i<initialOfferObjectivesJSONArray.size(); i++)
                   {
                     JSONObject offerObjectiveJSON = (JSONObject) initialOfferObjectivesJSONArray.get(i);
-                    processPutOfferObjective("0", offerObjectiveJSON, tenantID);
+                    if (offerObjectiveJSON.containsKey("id"))
+                      {
+                        if (log.isWarnEnabled()) log.warn("initial offerObjective JSON should not have id field - removing it");
+                        offerObjectiveJSON.remove("id");
+                      }
+                    JSONObject offerObjective = (JSONObject) offerObjectiveJSON.clone();
+                    processPutOfferObjective("0", offerObjective, tenantID);
                   }
               }
             catch (JSONUtilitiesException e)
@@ -1726,7 +1774,7 @@ public class GUIManager
     //
     //  segmentationDimensions
     //
-    for(Tenant tenant : Deployment.getTenants())
+    for(Tenant tenant : Deployment.getRealTenants())
       {
         int tenantID = tenant.getTenantID();
         if (segmentationDimensionService.getStoredSegmentationDimensions(tenantID).size() == 0)
@@ -1737,7 +1785,13 @@ public class GUIManager
                 for (int i=0; i<initialSegmentationDimensionsJSONArray.size(); i++)
                   {
                     JSONObject segmentationDimensionJSON = (JSONObject) initialSegmentationDimensionsJSONArray.get(i);
-                    guiManagerBaseManagement.processPutSegmentationDimension("0", segmentationDimensionJSON, tenantID);
+                    if (segmentationDimensionJSON.containsKey("id"))
+                      {
+                        if (log.isWarnEnabled()) log.warn("initial segmentationDimension JSON should not have id field - removing it");
+                        segmentationDimensionJSON.remove("id");
+                      }
+                    JSONObject segmentationDimension = (JSONObject) segmentationDimensionJSON.clone();
+                    guiManagerBaseManagement.processPutSegmentationDimension("0", segmentationDimension, tenantID);
                   }
               }
             catch (JSONUtilitiesException e)
