@@ -674,7 +674,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
           //
           
           CriterionField criterionField = Deployment.getProfileCriterionFields().get(communicationChannel.getProfileAddressField());
-          destAddress = (String) criterionField.retrieveNormalized(subscriberEvaluationRequest);
+          destAddress = (String) criterionField.retrieve(subscriberEvaluationRequest);
           
           //
           //  get dialogMessageTags

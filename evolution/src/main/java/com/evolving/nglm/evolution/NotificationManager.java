@@ -914,7 +914,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
           //
 
           CriterionField criterionField = Deployment.getProfileCriterionFields().get(communicationChannel.getProfileAddressField());
-          destAddress = (String) criterionField.retrieveNormalized(subscriberEvaluationRequest);
+          destAddress = (String) criterionField.retrieve(subscriberEvaluationRequest);
 
           //
           // get dialogMessageTags
