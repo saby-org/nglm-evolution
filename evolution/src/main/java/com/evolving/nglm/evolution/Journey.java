@@ -67,6 +67,7 @@ import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.StockMonitor.StockableItem;
 import com.evolving.nglm.evolution.notification.NotificationTemplateParameters;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientException;
 
 @GUIDependencyDef(objectType = "journey", serviceClass = JourneyService.class, dependencies = { "deliverable", "offer", "journey", "campaign", "journeyobjective" , "target" , "workflow" , "mailtemplate" , "pushtemplate" , "dialogtemplate", "voucher", "loyaltyProgramPoints", "loyaltyprogramchallenge", "loyaltyprogrammission", "sourceaddress", "presentationstrategy"})
 public class Journey extends GUIManagedObject implements StockableItem, GUIManagedObject.ElasticSearchMapping
@@ -4435,7 +4436,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     return "_" + this.getJourneyID().hashCode();
   }
   @Override
-  public Map<String, Object> getESDocumentMap(JourneyService journeyService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, ContactPolicyService contactPolicyService)
+  public Map<String, Object> getESDocumentMap(boolean autoUpdate, ElasticsearchClientAPI elasticsearch, JourneyService journeyService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, ContactPolicyService contactPolicyService)
   {
     Map<String,Object> documentMap = new HashMap<String,Object>();
     
@@ -4487,15 +4488,41 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     }
     
     //
-    // targetCount: retrieved from JSON, not in the object
+    // targetCount 
     //
-    Object targetCountObj = this.getJSONRepresentation().get("targetCount");
-    long targetCount = (targetCountObj != null && targetCountObj instanceof Long) ? (long) targetCountObj : 0;
+    
+    long targetCount = autoUpdate ? 0 : JSONUtilities.decodeLong(getJSONRepresentation(), "targetCount", 0L);
+    long journeySubsCount = 0;
+    JourneyStatus journeyStatus = journeyService.getJourneyStatus(this);
+    Date post24HourStartDate = RLMDateUtils.addHours(getEffectiveStartDate(), 24);
+    if (SystemTime.getCurrentTime().before(post24HourStartDate) || !autoUpdate)
+      {
+        targetCount = TargetingType.FileVariables == getTargetingType() ? JSONUtilities.decodeLong(getJSONRepresentation(), "targetCount", 0L) : this.evaluateTargetCount(elasticsearch, getTenantID());
+        
+        //
+        //  recalculate
+        //
+        
+        List<String> journeyIDs = new ArrayList<String>();
+        journeyIDs.add(getGUIManagedObjectID());
+        Map<String, Long> journeysubsCountMap;
+        try
+          {
+            journeysubsCountMap = elasticsearch.getJourneySubscriberCountMap(journeyIDs);
+          } 
+        catch (ElasticsearchClientException e)
+          {
+            journeysubsCountMap = new HashMap<String, Long>();
+          }
+        journeySubsCount = journeysubsCountMap.get(getGUIManagedObjectID()) == null ? new Long(0) : journeysubsCountMap.get(getGUIManagedObjectID());
+        targetCount = targetCount > journeySubsCount ? targetCount : journeySubsCount;
+      }
     
     
     //
     // documentMap
     //
+    
     documentMap.put("journeyID", this.getJourneyID());
     documentMap.put("tenantID", this.getTenantID());
     documentMap.put("display", this.getGUIManagedObjectDisplay());
@@ -4503,7 +4530,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     documentMap.put("type", this.getGUIManagedObjectType().getExternalRepresentation());
     documentMap.put("user", this.getUserName());
     documentMap.put("targets", targets);
-    documentMap.put("targetCount", targetCount);
+    if ((autoUpdate && targetCount > 0) || !autoUpdate) documentMap.put("targetCount", targetCount);
     documentMap.put("objectives", objectives);
     documentMap.put("startDate", RLMDateUtils.formatDateForElasticsearchDefault(this.getEffectiveStartDate()));
     documentMap.put("endDate", RLMDateUtils.formatDateForElasticsearchDefault(this.getEffectiveEndDate()));
@@ -4514,10 +4541,11 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     //
     // return
     //
+    
     return documentMap;
   }
-  @Override
-  public String getESIndexName()
+  
+  @Override public String getESIndexName()
   {
     return "mapping_journeys";
   }
