@@ -6,23 +6,8 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
-import com.evolving.nglm.evolution.EvaluationCriterion.CriterionOperator;
-import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
-import com.evolving.nglm.evolution.Expression.ConstantExpression;
-import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
-import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
-import com.evolving.nglm.evolution.OfferCharacteristics.OfferCharacteristicsLanguageProperty;
-import com.evolving.nglm.evolution.OfferCharacteristics.OfferCharacteristicsProperty;
-import com.evolving.nglm.evolution.StockMonitor.StockableItem;
-
-import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.SchemaUtilities;
-
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -39,15 +24,25 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
-import org.apache.kafka.connect.data.Timestamp;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionOperator;
+import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
+import com.evolving.nglm.evolution.Expression.ConstantExpression;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
+import com.evolving.nglm.evolution.OfferCharacteristics.OfferCharacteristicsLanguageProperty;
+import com.evolving.nglm.evolution.OfferCharacteristics.OfferCharacteristicsProperty;
+import com.evolving.nglm.evolution.StockMonitor.StockableItem;
 
-@GUIDependencyDef(objectType = "offer", serviceClass = OfferService.class, dependencies = { "offer", "product" , "voucher", "saleschannel" , "offerobjective", "target", "catalogcharacteristic", "loyaltyProgramPoints", "loyaltyprogramchallenge", "loyaltyprogrammission"})
+@GUIDependencyDef(objectType = "offer", serviceClass = OfferService.class, dependencies = { "offer", "product" , "voucher", "saleschannel" , "callingchannel", "offerobjective", "target", "catalogcharacteristic", "loyaltyProgramPoints", "loyaltyprogramchallenge", "loyaltyprogrammission", "point" })
 public class Offer extends GUIManagedObject implements StockableItem
 {  
   //
@@ -944,6 +939,8 @@ public class Offer extends GUIManagedObject implements StockableItem
     List<String> loyaltyProgramPointsIDs = new ArrayList<String>();
     List<String> loyaltyprogramchallengeIDs = new ArrayList<String>();
     List<String> loyaltyprogrammissionIDs = new ArrayList<String>();
+    List<String> callingchannelIDs = new ArrayList<String>();
+    List<String> pointIDs = new ArrayList<String>();
 
     for (OfferSalesChannelsAndPrice offerSalesChannelsAndPrice : getOfferSalesChannelsAndPrices())
       {
@@ -978,28 +975,47 @@ public class Offer extends GUIManagedObject implements StockableItem
     
     if (getOfferCharacteristics() != null && getOfferCharacteristics().getOfferCharacteristicProperties() != null && !getOfferCharacteristics().getOfferCharacteristicProperties().isEmpty())
       {
+        CallingChannelService callingChannelService = (CallingChannelService) guiServiceList.stream().filter(srvc -> srvc.getClass() == CallingChannelService.class).findFirst().orElse(null);
+        List<GUIManagedObject> callingChannels = new ArrayList<GUIManagedObject>();
+        if (callingChannelService != null) callingChannels = callingChannelService.getStoredCallingChannels(tenantID).stream().filter(callingChannelUnchecked -> callingChannelUnchecked.getAccepted()).collect(Collectors.toList());
         for (OfferCharacteristicsLanguageProperty offerCharacteristicsLanguageProperty : getOfferCharacteristics().getOfferCharacteristicProperties())
           {
             if (offerCharacteristicsLanguageProperty.getProperties() != null && !offerCharacteristicsLanguageProperty.getProperties().isEmpty())
               {
                 for (OfferCharacteristicsProperty characteristicsProperty : offerCharacteristicsLanguageProperty.getProperties())
                   {
-                    offerCharacteristicsLanguagePropertyIDs.add(characteristicsProperty.getCatalogCharacteristicID());
+                    String catalogCharacteristicID = characteristicsProperty.getCatalogCharacteristicID();
+                    offerCharacteristicsLanguagePropertyIDs.add(catalogCharacteristicID);
+                    CallingChannel callingChannel = (CallingChannel) callingChannels.stream().filter(callingChannelObj -> ((CallingChannel) callingChannelObj).getCatalogCharacteristics().contains(catalogCharacteristicID)).findFirst().orElse(null);
+                    if (callingChannel != null) callingchannelIDs.add(callingChannel.getGUIManagedObjectID());
                   }
               }
           }
       }
 
+    if (getOfferSalesChannelsAndPrices() != null && !getOfferSalesChannelsAndPrices().isEmpty())
+      {
+        for (OfferSalesChannelsAndPrice offerSalesChannelsAndPrice : getOfferSalesChannelsAndPrices())
+          {
+            if (offerSalesChannelsAndPrice.getPrice() != null && "provider_Point".equals(offerSalesChannelsAndPrice.getPrice().getProviderID()))
+              {
+                String pointID = offerSalesChannelsAndPrice.getPrice().getPaymentMeanID() != null && offerSalesChannelsAndPrice.getPrice().getPaymentMeanID().startsWith(CommodityDeliveryManager.POINT_PREFIX) ? offerSalesChannelsAndPrice.getPrice().getPaymentMeanID().replace(CommodityDeliveryManager.POINT_PREFIX, "") : null ;
+                if (pointID != null) pointIDs.add(pointID);
+              }
+          }
+      }
     result.put("offer", offerIDs);
     result.put("target", targetIDs);
     result.put("product", productIDs);
     result.put("voucher", voucherIDs);
     result.put("saleschannel", saleschannelIDs);
+    result.put("callingchannel", callingchannelIDs);
     result.put("offerobjective", offerObjectiveIDs);
     result.put("catalogcharacteristic", offerCharacteristicsLanguagePropertyIDs);
     result.put("loyaltyprogrampoints", loyaltyProgramPointsIDs);
     result.put("loyaltyprogramchallenge", loyaltyprogramchallengeIDs);
     result.put("loyaltyprogrammission", loyaltyprogrammissionIDs);
+    result.put("point", pointIDs);
 
     return result;
   }

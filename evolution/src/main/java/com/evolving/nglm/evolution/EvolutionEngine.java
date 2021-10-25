@@ -9084,7 +9084,6 @@ public class EvolutionEngine
 
       String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
       deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, deliveryRequestSource);
-      
       String loyaltyProgramID = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.loyaltyProgramId");
 
       /*****************************************
@@ -9109,35 +9108,48 @@ public class EvolutionEngine
     @Override public Map<String, String> getGUIDependencies(List<GUIService> guiServiceList, JourneyNode journeyNode, int tenantID)
     {
       Map<String, String> result = new HashMap<String, String>();
-      String loyaltyProgramId = (String) journeyNode.getNodeParameters().get("node.parameter.loyaltyProgramId");
-      LoyaltyProgramService loyaltyProgramService = (LoyaltyProgramService) guiServiceList.stream().filter(srvc -> srvc.getClass() == LoyaltyProgramService.class).findFirst().orElse(null);
-      if (loyaltyProgramService == null)
+      String loyaltyProgramIdUnchecked = null;
+      Object nodeParamObj = journeyNode.getNodeParameters().get("node.parameter.loyaltyProgramId");
+      if (nodeParamObj instanceof ParameterExpression && ((ParameterExpression) nodeParamObj).getExpression() instanceof ConstantExpression)
         {
-          log.error("loyaltyProgramService not found in guiServiceList - getGUIDependencies will be effected");
+          loyaltyProgramIdUnchecked  = (String)  ((ParameterExpression) nodeParamObj).getExpression().evaluateConstant();
         }
-      else
+      else if (nodeParamObj instanceof String)
         {
-          GUIManagedObject loyaltyUnchecked = loyaltyProgramService.getStoredLoyaltyPrograms(tenantID).stream().filter(obj -> obj.getGUIManagedObjectID().equals(loyaltyProgramId)).findFirst().orElse(null);
-          if (loyaltyUnchecked != null && loyaltyUnchecked.getAccepted())
+          loyaltyProgramIdUnchecked = (String) nodeParamObj;
+        }
+      if (loyaltyProgramIdUnchecked != null)
+        {
+          String loyaltyProgramId = loyaltyProgramIdUnchecked;
+          LoyaltyProgramService loyaltyProgramService = (LoyaltyProgramService) guiServiceList.stream().filter(srvc -> srvc.getClass() == LoyaltyProgramService.class).findFirst().orElse(null);
+          if (loyaltyProgramService == null)
             {
-              LoyaltyProgram loyaltyProgram = (LoyaltyProgram) loyaltyUnchecked;
-              switch (loyaltyProgram.getLoyaltyProgramType())
-              {
-                case POINTS:
-                  if (loyaltyProgramId != null) result.put("loyaltyprogram", loyaltyProgramId);
-                  break;
-                  
-                case MISSION:
-                  if (loyaltyProgramId != null) result.put("loyaltyprogrammission", loyaltyProgramId);
-                  break;
-                  
-                case CHALLENGE:
-                  if (loyaltyProgramId != null) result.put("loyaltyprogramchallenge", loyaltyProgramId);
-                  break;
+              log.error("loyaltyProgramService not found in guiServiceList - getGUIDependencies will be effected");
+            }
+          else
+            {
+              GUIManagedObject loyaltyUnchecked = loyaltyProgramService.getStoredLoyaltyPrograms(tenantID).stream().filter(obj -> obj.getGUIManagedObjectID().equals(loyaltyProgramId)).findFirst().orElse(null);
+              if (loyaltyUnchecked != null && loyaltyUnchecked.getAccepted())
+                {
+                  LoyaltyProgram loyaltyProgram = (LoyaltyProgram) loyaltyUnchecked;
+                  switch (loyaltyProgram.getLoyaltyProgramType())
+                  {
+                    case POINTS:
+                      if (loyaltyProgramId != null) result.put("loyaltyprogram", loyaltyProgramId);
+                      break;
+                      
+                    case MISSION:
+                      if (loyaltyProgramId != null) result.put("loyaltyprogrammission", loyaltyProgramId);
+                      break;
+                      
+                    case CHALLENGE:
+                      if (loyaltyProgramId != null) result.put("loyaltyprogramchallenge", loyaltyProgramId);
+                      break;
 
-                default:
-                  break;
-              }
+                    default:
+                      break;
+                  }
+                }
             }
         }
       return result;
@@ -9480,6 +9492,7 @@ public class EvolutionEngine
     {
       Map<String, String> result = new HashMap<String, String>();
       Object nodeParamObj = journeyNode.getNodeParameters().get("node.parameter.voucher.code");
+      Object nodeParamSupplierObj = journeyNode.getNodeParameters().get("node.parameter.supplier");
       if (nodeParamObj instanceof ParameterExpression && ((ParameterExpression) nodeParamObj).getExpression() instanceof ConstantExpression)
         {
           String nodeParam  = (String)  ((ParameterExpression) nodeParamObj).getExpression().evaluateConstant();
@@ -9492,6 +9505,29 @@ public class EvolutionEngine
       else
         {
           log.error("unsupported value/type expression {} - skipping", nodeParamObj);
+        }
+      if (nodeParamSupplierObj instanceof ParameterExpression && ((ParameterExpression) nodeParamSupplierObj).getExpression() instanceof ConstantExpression)
+        {
+          String nodeParamDisplay  = (String)  ((ParameterExpression) nodeParamSupplierObj).getExpression().evaluateConstant();
+          SupplierService supplierService = (SupplierService) guiServiceList.stream().filter(srvc -> srvc.getClass() == SupplierService.class).findFirst().orElse(null);
+          if (supplierService != null && nodeParamDisplay != null)
+            {
+              GUIManagedObject guiObjectSupplier = supplierService.getStoredGUIManagedObjects(tenantID).stream().filter(guiObject -> nodeParamDisplay.equals(guiObject.getGUIManagedObjectDisplay())).findFirst().orElse(null);
+              if (guiObjectSupplier != null) result.put("supplier", guiObjectSupplier.getGUIManagedObjectID());
+            }
+        }
+      else if (nodeParamSupplierObj instanceof String)
+        {
+          SupplierService supplierService = (SupplierService) guiServiceList.stream().filter(srvc -> srvc.getClass() == SupplierService.class).findFirst().orElse(null);
+          if (supplierService != null && nodeParamSupplierObj != null)
+            {
+              GUIManagedObject guiObjectSupplier = supplierService.getStoredGUIManagedObjects(tenantID).stream().filter(guiObject -> nodeParamSupplierObj.equals(guiObject.getGUIManagedObjectDisplay())).findFirst().orElse(null);
+              if (guiObjectSupplier != null) result.put("supplier", guiObjectSupplier.getGUIManagedObjectID());
+            }
+        }
+      else
+        {
+          log.error("unsupported value/type expression {} - skipping", nodeParamSupplierObj);
         }
       return result;
     }
