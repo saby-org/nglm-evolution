@@ -6234,7 +6234,9 @@ public class ThirdPartyManager
 		JSONObject offerJSON = new JSONObject();
 		GUIManagedObject offerObject = offerService.getStoredOffer(offerID);
         offerJSON.put("offerID",offerID);
-        offerJSON.put("offerDisplay",offerObject.getGUIManagedObjectDisplay());
+        if(offerObject!=null) {
+        	offerJSON.put("offerDisplay",offerObject.getGUIManagedObjectDisplay());
+        }
         voucherJson.put("offerDetails",offerJSON);
 
         vouchersJsonArray.add(voucherJson);
