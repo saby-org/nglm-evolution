@@ -113,7 +113,7 @@ public class ThirdPartyJSONGenerator
     offerMap.put("offerID", offer.getOfferID());
     offerMap.put("offerDisplay", offer.getDisplay());
     offerMap.put("offerName", offer.getGUIManagedObjectName());
-    offerMap.put("offerState", offerService.isActiveOffer(offer, SystemTime.getCurrentTime()) ? "active" : "stored");
+    offerMap.put("offerState", offerService.getOfferStatus(offer));
     offerMap.put("offerStartDate", getDateString(offer.getEffectiveStartDate(), offer.getTenantID()));
     offerMap.put("offerEndDate", getDateString(offer.getEffectiveEndDate(), offer.getTenantID()));
     offerMap.put("offerDescription", offer.getDescription());

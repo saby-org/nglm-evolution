@@ -190,7 +190,35 @@ public class OfferService extends GUIService
   *****************************************/
 
   public void removeOffer(String offerID, String userID, int tenantID) { removeGUIManagedObject(offerID, SystemTime.getCurrentTime(), userID, tenantID); }
+  
+  /*****************************************
+  *
+  *  getOfferStatus
+  *
+  *****************************************/
 
+  public String getOfferStatus(Offer offer)
+  {
+    Date now = SystemTime.getCurrentTime();
+    if(isActiveOffer(offer, now))
+      {
+        return "Started";
+      }
+    else if(offer.getEffectiveStartDate().after(now))
+      {
+        return "Pending";
+      }
+    else if(offer.getEffectiveStartDate().before(now) && offer.getEffectiveEndDate().after(now))
+      {
+        return "Suspended";
+      }
+    else if(offer.getEffectiveEndDate().before(now))
+      {
+        return "Complete";
+      }
+    return "Unknown"; // should not happen...
+  }
+  
   /*****************************************
   *
   *  interface OfferListener
