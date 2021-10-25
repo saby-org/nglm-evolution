@@ -5469,6 +5469,43 @@ public class EvolutionEngine
     if (evolutionEvent instanceof PurchaseFulfillmentRequest)
       {
         PurchaseFulfillmentRequest purchaseResponseEvent = (PurchaseFulfillmentRequest) evolutionEvent;
+        String purchaseOfferID = purchaseResponseEvent.getOfferID();
+        if (!PurchaseFulfillmentManager.PurchaseFulfillmentStatus.PURCHASED.equals(purchaseResponseEvent.getStatus())) {               
+          // EVPRO-1351 do not make this offer purchase count towards daily/monthly limit
+          int quantityToRemove = purchaseResponseEvent.getQuantity();
+          Map<String, List<Pair<String, Date>>> fullPurchaseHistory = subscriberProfile.getOfferPurchaseSalesChannelHistory();
+          String salesChannelID = purchaseResponseEvent.getSalesChannelID();
+          List<Pair<String, Date>> purchaseHistory = fullPurchaseHistory.get(purchaseOfferID);
+          List<Pair<String, Date>> cleanPurchaseHistory = new ArrayList<Pair<String, Date>>();
+          cleanPurchaseHistory.addAll(purchaseHistory);
+          if (purchaseHistory != null) {
+            // // EVPRO-1351 remove last elements (related to the correct salesChannelID), that were added when preparing this purchase
+            int totalRemoved = 0;
+            log.info("Need to remove " + quantityToRemove + " elements from list of size " + purchaseHistory.size());
+            if (purchaseHistory.size() < quantityToRemove) {
+              log.info("Problem : list too small");
+            } else {
+              for (int i=purchaseHistory.size()-1; i>=0; i--) {
+                if (purchaseHistory.get(i).getFirstElement().equals(salesChannelID)) {
+                  log.debug("removing element " + i + " : " + salesChannelID + " " + purchaseHistory.get(i).getSecondElement());
+                  cleanPurchaseHistory.remove(i);
+                  totalRemoved++;
+                  if (totalRemoved == quantityToRemove) {
+                    log.debug("removed " + quantityToRemove + " elements");
+                    break;
+                  }
+                }
+              }
+              if (cleanPurchaseHistory.size() != purchaseHistory.size()-quantityToRemove) {
+                log.info("problem : did not remove all elements");
+              } else {
+                fullPurchaseHistory.put(purchaseOfferID, cleanPurchaseHistory);
+              }
+            }
+            subscriberStateUpdated = true;
+          }
+        }
+        
         for(Token token:subscriberProfile.getTokens())
           {
             if (!(token instanceof DNBOToken)) continue;
