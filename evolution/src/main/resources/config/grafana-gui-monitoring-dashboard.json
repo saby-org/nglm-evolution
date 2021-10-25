@@ -277,9 +277,9 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(increase(com_evolving_nglm_evolution_notificationdelivery_count_total{tenant=\"replaceWithTenantID\"}[$__interval])) by (channel, status)",
+          "expr": "sum(rate(com_evolving_nglm_evolution_notificationdelivery_count_total{tenant=\"replaceWithTenantID\"}[$__interval])) by (channel)",
           "interval": "",
-          "legendFormat": "{{channel}} / {{status}}",
+          "legendFormat": "{{channel}} ",
           "refId": "A"
         }
       ],
@@ -1024,10 +1024,10 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum by(module ,operation, status)(rate(com_evolving_nglm_evolution_voucher_change_count_total{tenant=\"replaceWithTenantID\"}[$__interval]))",
+          "expr": "sum by(module ,operation)(rate(com_evolving_nglm_evolution_voucher_change_count_total{tenant=\"replaceWithTenantID\"}[$__interval]))",
           "hide": false,
           "interval": "",
-          "legendFormat": "{{module }} / {{operation}} / {{status}}",
+          "legendFormat": "{{module }} / {{operation}}",
           "refId": "B"
         }
       ],
@@ -1327,9 +1327,9 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(rate(com_evolving_nglm_evolution_purchasefulfillment_count_total{tenant=\"replaceWithTenantID\"}[$__interval])) by (module, status)",
+          "expr": "sum(rate(com_evolving_nglm_evolution_purchasefulfillment_count_total{tenant=\"replaceWithTenantID\"}[$__interval])) by (module)",
           "interval": "",
-          "legendFormat": "{{module}} / {{status}}",
+          "legendFormat": "{{module}} ",
           "refId": "A"
         }
       ],
@@ -1639,9 +1639,9 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(rate(com_evolving_nglm_evolution_infulfillmentdelivery_count_total{tenant=\"replaceWithTenantID\"}[$__interval])) by (process,operation, status)",
+          "expr": "sum(rate(com_evolving_nglm_evolution_infulfillmentdelivery_count_total{tenant=\"replaceWithTenantID\"}[$__interval])) by (process,operation)",
           "interval": "",
-          "legendFormat": "{{process}} / {{operation}} / {{status}}",
+          "legendFormat": "{{process}} / {{operation}} ",
           "refId": "B"
         }
       ],
@@ -2084,9 +2084,9 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(rate(com_evolving_nglm_evolution_thirdpartyaccess_count_total{tenant=\"replaceWithTenantID\"}[$__interval])) by(name, status)",
+          "expr": "sum(rate(com_evolving_nglm_evolution_thirdpartyaccess_count_total{tenant=\"replaceWithTenantID\"}[$__interval])) by(name)",
           "interval": "",
-          "legendFormat": "{{name}} / {{status}}",
+          "legendFormat": "{{name}} ",
           "refId": "A"
         }
       ],
