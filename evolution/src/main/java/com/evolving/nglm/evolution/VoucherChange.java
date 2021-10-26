@@ -174,6 +174,7 @@ public class VoucherChange extends SubscriberStreamOutput implements EvolutionEn
   }
 
   public void setReturnStatus(RESTAPIGenericReturnCodes returnStatus) { this.returnStatus = returnStatus; }
+  public void setNewVoucherExpiryDate(Date newVoucherExpiryDate) { this.newVoucherExpiryDate = newVoucherExpiryDate; }
 
   public VoucherChange(String subscriberID, Date eventDate, Date newVoucherExpiryDate, String eventID, VoucherChangeAction action, String voucherCode, String voucherID, String fileID, String moduleID, String featureID, String origin, RESTAPIGenericReturnCodes returnStatus, Map<Pair<String,String>,Integer> segments, String deliveryRequestID, String offerID, int tenantID) {
     this.subscriberID = subscriberID;

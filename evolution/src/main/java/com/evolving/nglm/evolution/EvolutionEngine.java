@@ -2450,7 +2450,7 @@ public class EvolutionEngine
             VoucherChange voucherChange = new VoucherChange(
                 purchaseFulfillmentRequest.getSubscriberID(),
                 purchaseFulfillmentRequest.getEventDate(),
-                null,
+                expiryDate,
                 purchaseFulfillmentRequest.getEventID(),
                 VoucherChangeAction.Deliver,
                 voucherDelivery.getVoucherCode(),
@@ -2492,7 +2492,7 @@ public class EvolutionEngine
           VoucherChange voucherChange = new VoucherChange(
               subscriberProfile.getSubscriberID(),              
               SystemTime.getCurrentTime(),
-              null,
+              voucherStored.getVoucherExpiryDate(),
               voucherStored.getEventID(),
               VoucherChangeAction.Expire,
               voucherStored.getVoucherCode(),
@@ -2519,6 +2519,7 @@ public class EvolutionEngine
     // check if we have update request
     if (evolutionEvent instanceof VoucherChange)
       {
+        Date expiryDate = null;// to propagate the stored voucher expiry date out, for ES reporting
         VoucherChange voucherChange = (VoucherChange) evolutionEvent;
         if (log.isDebugEnabled()) log.debug("voucher change to process : " + voucherChange);
         if (voucherChange.getAction() == VoucherChange.VoucherChangeAction.Unknown)
@@ -2536,6 +2537,7 @@ public class EvolutionEngine
                     if (voucherStored.getVoucherCode().equals(voucherChange.getVoucherCode()) && voucherStored.getVoucherID().equals(voucherChange.getVoucherID()))
                       {
                         voucherFound = true;
+                        expiryDate = voucherStored.getVoucherExpiryDate();
                         if (log.isDebugEnabled()) log.debug("need to apply to stored voucher " + voucherStored);
 
                         // redeem
@@ -2557,6 +2559,7 @@ public class EvolutionEngine
                               {
                                 // extend voucher OK
                                 voucherStored.setVoucherExpiryDate(voucherChange.getNewVoucherExpiryDate());
+                                expiryDate = voucherStored.getVoucherExpiryDate();
                                 sortVouchersPerExpiryDate(subscriberProfile);
                                 if (voucherStored.getVoucherExpiryDate().after(now)) voucherStored.setVoucherStatus(VoucherDelivery.VoucherStatus.Delivered);
                                 voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
@@ -2581,6 +2584,7 @@ public class EvolutionEngine
                               {
                                 // expire voucher OK
                                 voucherStored.setVoucherExpiryDate(now);
+                                expiryDate = voucherStored.getVoucherExpiryDate();
                                 sortVouchersPerExpiryDate(subscriberProfile);
                                 voucherStored.setVoucherStatus(VoucherDelivery.VoucherStatus.Expired);
                                 voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
@@ -2598,6 +2602,7 @@ public class EvolutionEngine
               }
           }
         // need to respond
+        if(expiryDate!=null) voucherChange.setNewVoucherExpiryDate(expiryDate);// for ES
         subscriberState.getVoucherChanges().add(voucherChange);
         subscriberUpdated = true;
       }
