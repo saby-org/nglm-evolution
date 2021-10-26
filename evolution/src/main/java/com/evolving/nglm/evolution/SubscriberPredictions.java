@@ -343,8 +343,16 @@ public class SubscriberPredictions
   *****************************************/
   public SubscriberPredictions(SubscriberPredictions predictions)
   {
-    this.current = new HashMap<>(predictions.current);
-    this.previous = new HashMap<>(predictions.previous);
+    if(predictions != null)
+      {
+	    this.current = new HashMap<>(predictions.current);
+        this.previous = new HashMap<>(predictions.previous);
+      }
+    else 
+      {
+    	this.current = new HashMap<>();
+        this.previous = new HashMap<>();
+      }
   }
   
   /*****************************************
@@ -354,7 +362,8 @@ public class SubscriberPredictions
   *****************************************/
   public void update(Prediction prediction) 
   {
-    String predictionID = prediction.predictionID;
+    if(prediction == null) { return; }    	
+	String predictionID = prediction.predictionID;
     if(this.current.get(predictionID) == null) {
       // New prediction 
       this.current.put(predictionID, prediction);
