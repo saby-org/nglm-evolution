@@ -5585,7 +5585,7 @@ public class EvolutionEngine
                   dnboToken.setTokenStatus(TokenStatus.Bound);
                   dnboToken.setRedeemedDate(null);
                   dnboToken.setAcceptedOfferID(null);
-                  tokenChangeStatus = RESTAPIGenericReturnCodes.fromGenericResponseCode(purchaseResponseEvent.getStatus().getReturnCode())+"";
+                  tokenChangeStatus = purchaseResponseEvent.getStatus().getReturnCode()+"";
                   purchaseOfferID = null;
                 }   
                 ArrayList<String> presentedOfferIDs = new ArrayList<>();
