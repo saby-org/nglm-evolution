@@ -5538,28 +5538,28 @@ public class EvolutionEngine
           Map<String, List<Pair<String, Date>>> fullPurchaseHistory = subscriberProfile.getOfferPurchaseSalesChannelHistory();
           String salesChannelID = purchaseResponseEvent.getSalesChannelID();
           List<Pair<String, Date>> purchaseHistory = fullPurchaseHistory.get(purchaseOfferID);
-          List<Pair<String, Date>> cleanPurchaseHistory = new ArrayList<Pair<String, Date>>();
-          cleanPurchaseHistory.addAll(purchaseHistory);
           if (purchaseHistory != null) {
             // // EVPRO-1351 remove last elements (related to the correct salesChannelID), that were added when preparing this purchase
+            List<Pair<String, Date>> cleanPurchaseHistory = new ArrayList<Pair<String, Date>>();
+            cleanPurchaseHistory.addAll(purchaseHistory);
             int totalRemoved = 0;
-            log.info("Need to remove " + quantityToRemove + " elements from list of size " + purchaseHistory.size());
+            if(log.isDebugEnabled()) log.debug("Need to remove " + quantityToRemove + " elements from list of size " + purchaseHistory.size());
             if (purchaseHistory.size() < quantityToRemove) {
-              log.info("Problem : list too small");
+              if(log.isDebugEnabled()) log.debug("Problem : list too small");
             } else {
               for (int i=purchaseHistory.size()-1; i>=0; i--) {
                 if (purchaseHistory.get(i).getFirstElement().equals(salesChannelID)) {
-                  log.debug("removing element " + i + " : " + salesChannelID + " " + purchaseHistory.get(i).getSecondElement());
+                  if(log.isDebugEnabled()) log.debug("removing element " + i + " : " + salesChannelID + " " + purchaseHistory.get(i).getSecondElement());
                   cleanPurchaseHistory.remove(i);
                   totalRemoved++;
                   if (totalRemoved == quantityToRemove) {
-                    log.debug("removed " + quantityToRemove + " elements");
+                    if(log.isDebugEnabled()) log.debug("removed " + quantityToRemove + " elements");
                     break;
                   }
                 }
               }
               if (cleanPurchaseHistory.size() != purchaseHistory.size()-quantityToRemove) {
-                log.info("problem : did not remove all elements");
+                if(log.isDebugEnabled()) log.debug("problem : did not remove all elements");
               } else {
                 fullPurchaseHistory.put(purchaseOfferID, cleanPurchaseHistory);
               }
