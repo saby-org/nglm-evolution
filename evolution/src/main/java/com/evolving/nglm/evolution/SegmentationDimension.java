@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+@GUIDependencyDef(objectType = "segmentationdimension", serviceClass = SegmentationDimensionService.class, dependencies = { })
 public abstract class SegmentationDimension extends GUIManagedObject implements GUIManagedObject.ElasticSearchMapping
 {
   
