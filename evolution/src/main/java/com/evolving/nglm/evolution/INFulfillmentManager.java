@@ -220,6 +220,12 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
       currentMin += (double) deliveryRatioArray[i] / (double) thruputSum;
       thruputMax[i] = currentMin; 
     }
+    for (int i=0; i<thruputMin.length; i++) {
+      log.info("  thruputMin[" + i + "] = " + thruputMin[i]);
+    }
+    for (int i=0; i<thruputMax.length; i++) {
+      log.info(" thruputMax[" + i + "] = " + thruputMax[i]);
+    }
     
     //
     // statistics
