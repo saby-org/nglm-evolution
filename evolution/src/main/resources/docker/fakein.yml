@@ -3,8 +3,6 @@ fakein-<_KEY_>:
   environment:
     PORT: <_PORT_>
     DETERMINISTIC: <_DETERMINISTIC_>
-    KAFKA_DEBUG: <_FAKEIN_DEBUG_>
-    JAVA_DEBUG_OPTS: -Xdebug -Xrunjdwp:transport=dt_socket,server=y,address=<_FAKEIN_DEBUG_PORT_>,suspend=n
   deploy: 
     restart_policy:
       condition: <_DOCKER_RESTART_POLICY_>
