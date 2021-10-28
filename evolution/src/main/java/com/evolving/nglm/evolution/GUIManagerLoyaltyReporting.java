@@ -1449,6 +1449,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     response.put("communicationChannelBlackoutCount", communicationChannelBlackoutService.getStoredCommunicationChannelBlackouts(includeArchived, tenantID).size());
     response.put("resellerCount", resellerService.getStoredResellers(includeArchived, tenantID).size());
     response.put("customCriteriaCount", customCriteriaService.getStoredCustomCriterias(includeArchived, tenantID).size());
+    response.put("criterionFieldAvailableValuesCount", criterionFieldAvailableValuesService.getStoredCriterionFieldAvailableValuesList(includeArchived, tenantID).size());
     
     //
     //  LoyaltyProgram
