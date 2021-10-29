@@ -145,6 +145,8 @@ public class SubscriberState implements StateStore
   private List<AssignSubscriberIDs> deleteActions; // for Evolution to simulate an incoming assignSubscriberID to Subscriber Manager that will generate a cleanup event for EvolutionEngine
   private List<TokenRedeemed> tokenRedeemeds;
   private List<SubscriberProfileForceUpdateResponse> subscriberProfileForceUpdatesResponse;
+  private List<BadgeChange> badgeChangeResponses;
+  
   //
   //  in memory only
   //
@@ -204,6 +206,8 @@ public class SubscriberState implements StateStore
   public List<AssignSubscriberIDs> getDeleteActions() { return deleteActions; }
   public List<TokenRedeemed> getTokenRedeemeds() { return tokenRedeemeds; }
   public List<SubscriberProfileForceUpdateResponse> getSubscriberProfileForceUpdatesResponse() { return subscriberProfileForceUpdatesResponse; }
+  //public List<BadgeChange> getBadgeChangeRequests() { return badgeChangeRequests; }
+  public List<BadgeChange> getBadgeChangeResponses() { return badgeChangeResponses; }
 
   public Map<Pair<String, String>, Integer> getSegments() {return (subscriberProfile==null) ? new LinkedHashMap<>() : subscriberProfile.getSegments(); }
   //
@@ -316,6 +320,7 @@ public class SubscriberState implements StateStore
         this.cleanupDate = null;
         this.tokenRedeemeds = new ArrayList<>();
         this.subscriberProfileForceUpdatesResponse = new ArrayList<>();
+        this.badgeChangeResponses = new ArrayList<BadgeChange>();
       }
     catch (InvocationTargetException e)
       {
@@ -379,6 +384,7 @@ public class SubscriberState implements StateStore
     // for data migration purpose only, can be removed once all market run EVPRO-885
     this.recentJourneyStates = oldRecentJourneyStates;
     this.subscriberProfileForceUpdatesResponse = new ArrayList<>();
+    this.badgeChangeResponses = new ArrayList<>();
   }
 
   /*****************************************

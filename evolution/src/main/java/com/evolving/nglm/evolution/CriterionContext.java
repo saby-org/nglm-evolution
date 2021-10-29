@@ -99,6 +99,7 @@ public class CriterionContext
   private static CriterionField evaluationEventName;
   private static CriterionField internalRandom100;
   private static CriterionField subscriberTmpSuccessVouchers;
+  private static CriterionField subscriberTmpSuccessBadges;
   private static CriterionField internalFalse;
   private static CriterionField internalTargets;
   private static CriterionField internalExclusionInclusionList;
@@ -371,6 +372,25 @@ public class CriterionContext
         subscriberTmpSuccessVouchersJSON.put("retriever", "getSubscriberTmpSuccessVouchers");
         subscriberTmpSuccessVouchersJSON.put("internalOnly", true);
         subscriberTmpSuccessVouchers  = new CriterionField(JSONUtilities.encodeObject(subscriberTmpSuccessVouchersJSON));
+      }
+    catch (GUIManagerException e)
+      {
+        throw new ServerRuntimeException(e);
+      }
+    
+    //
+    //  subscriber.tmp.success.badges
+    //
+
+    try
+      {
+        Map<String,Object> subscriberTmpSuccessBadgesJSON = new LinkedHashMap<String,Object>();
+        subscriberTmpSuccessBadgesJSON.put("id", "subscriber.tmp.success.badges");
+        subscriberTmpSuccessBadgesJSON.put("display", "subscriber.tmp.success.badges");
+        subscriberTmpSuccessBadgesJSON.put("dataType", "stringSet");
+        subscriberTmpSuccessBadgesJSON.put("retriever", "getSubscriberTmpSuccessBadges");
+        subscriberTmpSuccessBadgesJSON.put("internalOnly", true);
+        subscriberTmpSuccessBadges  = new CriterionField(JSONUtilities.encodeObject(subscriberTmpSuccessBadgesJSON));
       }
     catch (GUIManagerException e)
       {
@@ -988,6 +1008,7 @@ public class CriterionContext
           result.put(unknownRelationship.getID(), unknownRelationship);
           result.put(internalRandom100.getID(), internalRandom100);
           result.put(subscriberTmpSuccessVouchers.getID(), subscriberTmpSuccessVouchers);
+          result.put(subscriberTmpSuccessBadges.getID(), subscriberTmpSuccessBadges);
           result.put(internalFalse.getID(), internalFalse);
           result.put(internalTargets.getID(), internalTargets);
           result.put(internalExclusionInclusionList.getID(), internalExclusionInclusionList);
