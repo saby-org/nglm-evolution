@@ -42,6 +42,8 @@ import com.evolving.nglm.evolution.Report;
 import com.evolving.nglm.evolution.SalesChannel;
 import com.evolving.nglm.evolution.SalesChannelService;
 import com.evolving.nglm.evolution.SupportedCurrency;
+import com.evolving.nglm.evolution.Voucher;
+import com.evolving.nglm.evolution.VoucherService;
 import com.evolving.nglm.evolution.reports.FilterObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportDriver.ReportTypeDef;
@@ -57,6 +59,7 @@ public class OfferReportDriver extends ReportDriver
   private SalesChannelService salesChannelService;
   private OfferObjectiveService offerObjectiveService;
   private ProductService productService;
+  private VoucherService voucherService;
   private PaymentMeanService paymentmeanservice;
   private CatalogCharacteristicService catalogCharacteristicService;
   
@@ -118,6 +121,9 @@ public class OfferReportDriver extends ReportDriver
 
     productService = new ProductService(kafka, "offerReportDriver-productService-" + apiProcessKey, Deployment.getProductTopic(), false);
     productService.start();
+    
+    voucherService = new VoucherService(kafka, "offerReportDriver-voucherService-" + apiProcessKey, Deployment.getVoucherTopic(), null);
+    voucherService.start();
 
     paymentmeanservice = new PaymentMeanService(kafka, "offerReportDriver-paymentmeanservice-" + apiProcessKey, Deployment.getPaymentMeanTopic(), false);
     paymentmeanservice.start();
@@ -178,6 +184,7 @@ public class OfferReportDriver extends ReportDriver
       salesChannelService.stop();
       offerObjectiveService.stop();
       productService.stop();
+      voucherService.stop();
       paymentmeanservice.stop();
       catalogCharacteristicService.stop();
 
@@ -222,8 +229,14 @@ public class OfferReportDriver extends ReportDriver
         offerFields.put(offerName, recordJson.get("display"));
           {
             List<Map<String, Object>> offerContentJSON = new ArrayList<>();
-            JSONArray elements = (JSONArray) recordJson.get("products");
-            for (Object obj : elements)
+            JSONArray productsElements = (JSONArray) recordJson.get("products");
+            JSONArray vouchersElements = (JSONArray) recordJson.get("vouchers");
+            
+            //
+            //  productsElements
+            //
+            
+            for (Object obj : productsElements)
               {
                 JSONObject element = (JSONObject) obj;
                 if (element != null)
@@ -235,6 +248,27 @@ public class OfferReportDriver extends ReportDriver
                       {
                         Product product = (Product) guiManagedObject;
                         outputJSON.put(product.getDisplay(), element.get("quantity"));
+                      }
+                    offerContentJSON.add(outputJSON);
+                  }
+              }
+            
+            //
+            //  vouchersElements
+            //
+            
+            for (Object obj : vouchersElements)
+              {
+                JSONObject element = (JSONObject) obj;
+                if (element != null)
+                  {
+                    Map<String, Object> outputJSON = new HashMap<>();
+                    String objectid = (String) (element.get("voucherID"));
+                    GUIManagedObject guiManagedObject = (GUIManagedObject) voucherService.getStoredVoucher(objectid);
+                    if (guiManagedObject != null && guiManagedObject instanceof Voucher)
+                      {
+                        Voucher voucher = (Voucher) guiManagedObject;
+                        outputJSON.put(voucher.getVoucherDisplay(), element.get("quantity"));
                       }
                     offerContentJSON.add(outputJSON);
                   }
