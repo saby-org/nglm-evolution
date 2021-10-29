@@ -27,6 +27,7 @@ import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 @GUIDependencyDef(objectType = "badge", serviceClass = BadgeService.class, dependencies = { "badgeobjective" })
 public class Badge extends GUIManagedObject implements GUIManagedObject.ElasticSearchMapping
@@ -601,7 +602,7 @@ public class Badge extends GUIManagedObject implements GUIManagedObject.ElasticS
     return "_badge-" + getGUIManagedObjectID().hashCode();
   }
 
-  @Override public Map<String, Object> getESDocumentMap(JourneyService journeyService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, ContactPolicyService contactPolicyService)
+  @Override public Map<String, Object> getESDocumentMap(boolean autoUpdate, ElasticsearchClientAPI elasticsearch, JourneyService journeyService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, ContactPolicyService contactPolicyService)
   {
     Map<String, Object> documentMap = new HashMap<String, Object>();
     Date now = SystemTime.getCurrentTime();
