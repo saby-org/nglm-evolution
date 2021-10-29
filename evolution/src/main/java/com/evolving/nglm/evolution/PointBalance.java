@@ -572,12 +572,12 @@ public class PointBalance
     commodityDeliveryRequest.setCommodityDeliveryStatus(CommodityDeliveryStatus.SUCCESS);
     commodityDeliveryRequest.setDeliveryStatus(DeliveryStatus.Delivered);
     commodityDeliveryRequest.setStatusMessage("Success");
-    commodityDeliveryRequest.setDeliveryDate(SystemTime.getCurrentTime());
+    commodityDeliveryRequest.setDeliveryDate(context.processingDate());
 
     try{
       DeliveryRequest deliveryRequest = CommodityDeliveryManagerRemovalUtils.createDeliveryRequest(commodityDeliveryRequest,context.getPaymentMeanService(),context.getDeliverableService());
       deliveryRequest.setDeliveryStatus(DeliveryStatus.Delivered);
-      deliveryRequest.setDeliveryDate(SystemTime.getCurrentTime());
+      deliveryRequest.setDeliveryDate(context.processingDate());
       context.getSubscriberState().getDeliveryRequests().add(deliveryRequest);
     }catch (CommodityDeliveryException e) {
       log.info("could not create delivery response "+e.getError().getGenericResponseMessage());

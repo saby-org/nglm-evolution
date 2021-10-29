@@ -285,7 +285,7 @@ public class TokenUtils
    *
    *****************************************/
   
-  public static Collection<ProposedOfferDetails> getOffers(Date now, DNBOToken token, SubscriberEvaluationRequest evaluationRequest,
+  public static Collection<ProposedOfferDetails> getOffers(Date processingDate, DNBOToken token, SubscriberEvaluationRequest evaluationRequest,
       SubscriberProfile subscriberProfile, PresentationStrategy presentationStrategy,
       ProductService productService, ProductTypeService productTypeService,
       VoucherService voucherService, VoucherTypeService voucherTypeService,
@@ -298,7 +298,7 @@ public class TokenUtils
   {
     // check if we can call this PS
     int maximumPresentationsPeriodDays = presentationStrategy.getMaximumPresentationsPeriodDays();
-    Date earliestDateToKeep = RLMDateUtils.addDays(now, -maximumPresentationsPeriodDays, Deployment.getDeployment(tenantID).getTimeZone());
+    Date earliestDateToKeep = RLMDateUtils.addDays(processingDate, -maximumPresentationsPeriodDays, Deployment.getDeployment(tenantID).getTimeZone());
     List<Date> presentationDates = token.getPresentationDates();
     List<Date> newPresentationDates = new ArrayList<>();
     for (Date date : presentationDates)
@@ -316,7 +316,7 @@ public class TokenUtils
         token.setPresentationDates(new ArrayList<>()); // indicates that bound has failed
         return new ArrayList<>();
       }
-    newPresentationDates.add(now);
+    newPresentationDates.add(processingDate);
     token.setPresentationDates(newPresentationDates);
     
     Set<String> salesChannelIDs = presentationStrategy.getSalesChannelIDs();
@@ -365,7 +365,7 @@ public class TokenUtils
             }
         }
         String scoringStrategyID = position.getScoringStrategyID();
-        ScoringStrategy scoringStrategy = scoringStrategyService.getActiveScoringStrategy(scoringStrategyID, now);
+        ScoringStrategy scoringStrategy = scoringStrategyService.getActiveScoringStrategy(scoringStrategyID, evaluationRequest.getEvaluationDate());
         if (scoringStrategy == null)
           {
             log.warn("For positionIndex " + (positionIndex+1) + " invalid scoring strategy " + scoringStrategyID);
@@ -374,7 +374,7 @@ public class TokenUtils
         Collection<ProposedOfferDetails> localScoring = scoringCache.get(scoringStrategyID);
         if (localScoring == null) // cache miss
           {
-            localScoring = getOffersWithScoringStrategy(now, salesChannelID, subscriberProfile, scoringStrategy, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, subscriberGroupEpochReader, segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, supplierService, returnedLog, msisdn, supplier, tenantID);
+            localScoring = getOffersWithScoringStrategy(processingDate, evaluationRequest.getEvaluationDate(), salesChannelID, subscriberProfile, scoringStrategy, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, subscriberGroupEpochReader, segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, supplierService, returnedLog, msisdn, supplier, tenantID);
             scoringCache.put(scoringStrategyID, localScoring);
           }
         if (localScoring.size() < indexResult+1)
@@ -389,7 +389,7 @@ public class TokenUtils
     return res;
   }
   
-  public static Collection<ProposedOfferDetails> getOffersWithScoringStrategy(Date now, String salesChannelID,
+  public static Collection<ProposedOfferDetails> getOffersWithScoringStrategy(Date processingDate, Date eventDate, String salesChannelID,
     SubscriberProfile subscriberProfile, ScoringStrategy scoringStrategy,
     ProductService productService, ProductTypeService productTypeService,
     VoucherService voucherService, VoucherTypeService voucherTypeService,
@@ -407,7 +407,7 @@ public class TokenUtils
       log.debug(logFragment);
     }
 
-    Set<Offer> offersForAlgo = getOffersToOptimize(now, selectedScoringSegment.getOfferObjectiveIDs(), subscriberProfile, offerService, supplierService, subscriberGroupEpochReader, supplier, productService, voucherService, tenantID);
+    Set<Offer> offersForAlgo = getOffersToOptimize(processingDate, eventDate, selectedScoringSegment.getOfferObjectiveIDs(), subscriberProfile, offerService, supplierService, subscriberGroupEpochReader, supplier, productService, voucherService, tenantID);
 
     OfferOptimizationAlgorithm algo = selectedScoringSegment.getOfferOptimizationAlgorithm();
     if (algo == null)
@@ -452,7 +452,7 @@ public class TokenUtils
     // Now add some predefined offers based on alwaysAppendOfferObjectiveIDs of ScoringSplit
     //
     Set<String> offerObjectiveIds = selectedScoringSegment.getAlwaysAppendOfferObjectiveIDs();
-    for(Offer offer : offerService.getActiveOffers(now, tenantID))
+    for(Offer offer : offerService.getActiveOffers(eventDate, tenantID))
       {
         boolean inList = true;
         for (OfferObjectiveInstance offerObjective : offer.getOfferObjectives()) 
@@ -512,7 +512,7 @@ public class TokenUtils
     return offerAvailabilityFromPropensityAlgo;
   }
   
-  private static Set<Offer> getOffersToOptimize(Date now, Set<String> catalogObjectiveIDs,
+  private static Set<Offer> getOffersToOptimize(Date processingDate, Date eventDate, Set<String> catalogObjectiveIDs,
       SubscriberProfile subscriberProfile, OfferService offerService, SupplierService supplierService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader, Supplier supplier, ProductService productService, VoucherService voucherService, int tenantID)
   {
     // Browse all offers:
@@ -531,7 +531,7 @@ public class TokenUtils
     if (supplier != null)
       {
         List<String> supplierSonsIDs = new ArrayList<>();
-        for (Supplier supplierSon : getSupplierSons(now, supplierService, supplier, tenantID)) {
+        for (Supplier supplierSon : getSupplierSons(eventDate, supplierService, supplier, tenantID)) {
           supplierSonsIDs.add(supplierSon.getSupplierID());
         }
         for (Offer offer : offers)
@@ -600,21 +600,21 @@ public class TokenUtils
       Long maximumPresentationsStr = (Long) offer.getJSONRepresentation().get("maximumPresentations");
       long maximumPresentations = maximumPresentationsStr != null ? maximumPresentationsStr : Long.MAX_VALUE;  // default value
 
-      Date earliestDateToKeep = now;
+      Date earliestDateToKeep = processingDate;
       Long maximumPresentationsPeriod = (Long) offer.getJSONRepresentation().get("maximumPresentationsPeriod");
       String maximumPresentationsUnitStr = (String) offer.getJSONRepresentation().get("maximumPresentationsUnit");
       TimeUnit maximumPresentationsUnit = TimeUnit.fromExternalRepresentation(maximumPresentationsUnitStr);
       if (maximumPresentationsUnit.equals(TimeUnit.Day)) {
-        earliestDateToKeep = RLMDateUtils.addDays(now, (int)(-maximumPresentationsPeriod), Deployment.getDeployment(tenantID).getTimeZone());
+        earliestDateToKeep = RLMDateUtils.addDays(processingDate, (int)(-maximumPresentationsPeriod), Deployment.getDeployment(tenantID).getTimeZone());
       } else if (maximumPresentationsUnit.equals(TimeUnit.Month)) {
         if (maximumPresentationsPeriod == 1) { // current month
-          earliestDateToKeep = RLMDateUtils.truncate(now, Calendar.MONTH, Deployment.getDeployment(tenantID).getTimeZone());
+          earliestDateToKeep = RLMDateUtils.truncate(processingDate, Calendar.MONTH, Deployment.getDeployment(tenantID).getTimeZone());
         } else {
-          earliestDateToKeep = RLMDateUtils.addMonths(now, (int)(-maximumPresentationsPeriod), Deployment.getDeployment(tenantID).getTimeZone());
+          earliestDateToKeep = RLMDateUtils.addMonths(processingDate, (int)(-maximumPresentationsPeriod), Deployment.getDeployment(tenantID).getTimeZone());
         }
       } else {
         log.info("internal error : unknown maximumPresentationsUnit " + maximumPresentationsUnitStr + " in offer " + offer.getOfferID() + " , using 1 day");
-        earliestDateToKeep = RLMDateUtils.addDays(now, -1, Deployment.getDeployment(tenantID).getTimeZone());
+        earliestDateToKeep = RLMDateUtils.addDays(processingDate, -1, Deployment.getDeployment(tenantID).getTimeZone());
       }
       
       for (String catalogObjectiveID : catalogObjectiveIDs)
@@ -625,7 +625,7 @@ public class TokenUtils
           log.trace("    offerID : "+offer.getOfferID()+" offerObjectiveID : "+offerObjective.getOfferObjectiveID());
           if (offerObjective.getOfferObjectiveID().equals(catalogObjectiveID))
           {
-            SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, now, tenantID);
+            SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, eventDate, tenantID);
             if (offer.evaluateProfileCriteria(evaluationRequest))
             {
               // check if we can still present this offer

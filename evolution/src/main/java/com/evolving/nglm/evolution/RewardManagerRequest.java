@@ -440,7 +440,7 @@ public class RewardManagerRequest extends BonusDelivery
       *****************************************/
 
       String journeyID = subscriberEvaluationRequest.getJourneyState().getJourneyID();
-      Journey journey = evolutionEventContext.getJourneyService().getActiveJourney(journeyID, evolutionEventContext.now());
+      Journey journey = evolutionEventContext.getJourneyService().getActiveJourney(journeyID, evolutionEventContext.eventDate());
       String newModuleID = moduleID;
       
       if (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.Workflow && journey.getJSONRepresentation().get("areaAvailability") != null )

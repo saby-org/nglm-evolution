@@ -831,14 +831,6 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
 
       /*****************************************
        *
-       * now
-       *
-       *****************************************/
-
-      Date now = SystemTime.getCurrentTime();
-
-      /*****************************************
-       *
        * template parameters
        *
        *****************************************/
@@ -855,7 +847,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       
       String origin = subscriberEvaluationRequest.getJourneyNode().getNodeName() != null ? subscriberEvaluationRequest.getJourneyNode().getNodeName() : "unknown";
       String journeyID = subscriberEvaluationRequest.getJourneyState().getJourneyID();
-      Journey journey = evolutionEventContext.getJourneyService().getActiveJourney(journeyID, evolutionEventContext.now());
+      Journey journey = evolutionEventContext.getJourneyService().getActiveJourney(journeyID, evolutionEventContext.eventDate());
       String newModuleID = moduleID;
       
       if (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.Workflow && journey.getJSONRepresentation().get("areaAvailability") != null )
@@ -891,7 +883,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       String deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, journeyID);
       String language = subscriberEvaluationRequest.getLanguage();
       SubscriberMessageTemplateService subscriberMessageTemplateService = evolutionEventContext.getSubscriberMessageTemplateService();
-      DialogTemplate baseTemplate = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateParameters.getSubscriberMessageTemplateID(), now);
+      DialogTemplate baseTemplate = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateParameters.getSubscriberMessageTemplateID(), evolutionEventContext.eventDate());
       DialogTemplate template = (baseTemplate != null) ? ((DialogTemplate) baseTemplate.getReadOnlyCopy(evolutionEventContext)) : null;
 
       String destAddress = null;

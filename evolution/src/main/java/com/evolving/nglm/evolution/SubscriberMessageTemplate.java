@@ -504,7 +504,7 @@ public abstract class SubscriberMessageTemplate extends GUIManagedObject
     SubscriberMessageTemplate result;
     if (! getReadOnly() && getReadOnlyCopyID() != null)
       {
-        result = evolutionEventContext.getSubscriberMessageTemplateService().getActiveSubscriberMessageTemplate(getReadOnlyCopyID(), evolutionEventContext.now());
+        result = evolutionEventContext.getSubscriberMessageTemplateService().getActiveSubscriberMessageTemplate(getReadOnlyCopyID(), evolutionEventContext.eventDate());
       }
     else if (getReadOnly())
       {
