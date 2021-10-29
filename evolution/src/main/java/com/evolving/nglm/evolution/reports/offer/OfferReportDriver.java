@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.Deployment;
+import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.evolution.CatalogCharacteristic;
 import com.evolving.nglm.evolution.CatalogCharacteristicInstance;
 import com.evolving.nglm.evolution.CatalogCharacteristicService;
@@ -390,12 +391,7 @@ public class OfferReportDriver extends ReportDriver
                             JSONObject price = (JSONObject) element.get("price");
                             if (price != null)
                               {
-                                long amount = 0; // free by default
-                                Object amountObject = price.get("amount");
-                                if (amountObject != null && amountObject instanceof Long)
-                                  {
-                                    amount = (Long) amountObject;
-                                  }
+                                Long amount = JSONUtilities.decodeLong(price, "amount", Long.valueOf(0L)); // free by default
                                 String id = "" + price.get("supportedCurrencyID");
                                 String meansOfPayment = "" + price.get("paymentMeanID");
                                 if (id != null && meansOfPayment != null)
@@ -410,8 +406,7 @@ public class OfferReportDriver extends ReportDriver
                                             JSONObject supportedCurrencyJSON = supportedCurrency.getJSONRepresentation();
                                             if (id.equals(supportedCurrencyJSON.get("id")))
                                               {
-                                                currency = "" + supportedCurrencyJSON.get("display"); // TODO : not used
-                                                                                                      // ??
+                                                currency = "" + supportedCurrencyJSON.get("display"); // TODO : not used ??
                                                 break;
                                               }
                                           }
@@ -421,8 +416,8 @@ public class OfferReportDriver extends ReportDriver
                                         salesChannelJSON.put("currency", currency);
                                       }
                                   }
-                          }
-                        else
+                              } 
+                            else
                               {
                                 salesChannelJSON.put("amount", 0);
                               }
