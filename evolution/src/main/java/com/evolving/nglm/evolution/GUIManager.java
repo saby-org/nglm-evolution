@@ -28226,15 +28226,27 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                     List<JSONObject> availableValues = evaluateAvailableValues(availableValuesJSON, now, journey.getTenantID());
                     Object nodeParamObjVal = journeyNode.getNodeParameters().get(id);
                     log.info("RAJ K parameter id {}, availableValues {}, nodeParamObjVal {} - class type {}", id, availableValues, nodeParamObjVal, nodeParamObjVal.getClass());
+                    boolean found = false;
+                    Object actualVal = null;
                     if (nodeParamObjVal instanceof ParameterExpression && ((ParameterExpression) nodeParamObjVal).getExpression() instanceof ConstantExpression)
                       {
-                        final Object actualVal  = ((ParameterExpression) nodeParamObjVal).getExpression().evaluateConstant();
-                        log.info("RAJ K parameter id {}, availableValues {}, actualVal {}", id, availableValues, actualVal);
-                        if (actualVal != null)
+                        actualVal  = ((ParameterExpression) nodeParamObjVal).getExpression().evaluateConstant();
+                      }
+                    else if (nodeParamObjVal != null)
+                      {
+                        actualVal = nodeParamObjVal;
+                      }
+                    
+                    log.info("RAJ K parameter id {}, availableValues {}, actualVal {}", id, availableValues, actualVal);
+                    if (actualVal != null)
+                      {
+                        for (JSONObject jsn : availableValues)
                           {
-                            Object found = availableValues.stream().map(val -> val.get("id")).filter(valueID -> actualVal.equals(valueID)).findFirst().orElse(null);
-                            if (found == null) throw new GUIManagerException("bad value for parameter field ", name);
+                            Object idVal = jsn.get("id");
+                            found = actualVal.equals(idVal);
+                            if (found) break;
                           }
+                        if (!found) throw new GUIManagerException("bad node parameter value for parameter", name);
                       }
                   }
               }
