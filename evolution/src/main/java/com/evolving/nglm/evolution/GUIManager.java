@@ -28174,16 +28174,19 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
 
                         String id = JSONUtilities.decodeString(parameterJSON, "id", true);
                         String name = JSONUtilities.decodeString(parameterJSON, "name", id);
-                        List<JSONObject> availableValues = evaluateAvailableValues(JSONUtilities.decodeJSONArray(parameterJSON, "availableValues", false), now, tenantID);
-
-                        Object nodeParamObjVal = journeyNode.getNodeParameters().get(id);
-                        if (nodeParamObjVal instanceof ParameterExpression && ((ParameterExpression) nodeParamObjVal).getExpression() instanceof ConstantExpression)
+                        JSONArray availableValuesJSON = JSONUtilities.decodeJSONArray(parameterJSON, "availableValues", false);
+                        if (availableValuesJSON != null)
                           {
-                            final Object actualVal  = ((ParameterExpression) nodeParamObjVal).getExpression().evaluateConstant();
-                            if (actualVal != null)
+                            List<JSONObject> availableValues = evaluateAvailableValues(availableValuesJSON, now, tenantID);
+                            Object nodeParamObjVal = journeyNode.getNodeParameters().get(id);
+                            if (nodeParamObjVal instanceof ParameterExpression && ((ParameterExpression) nodeParamObjVal).getExpression() instanceof ConstantExpression)
                               {
-                                Object found = availableValues.stream().map(val -> val.get("id")).filter(valueID -> actualVal.equals(valueID)).findFirst().orElse(null);
-                                if (found == null) throw new GUIManagerException("bad value for parameter field ", name);
+                                final Object actualVal  = ((ParameterExpression) nodeParamObjVal).getExpression().evaluateConstant();
+                                if (actualVal != null)
+                                  {
+                                    Object found = availableValues.stream().map(val -> val.get("id")).filter(valueID -> actualVal.equals(valueID)).findFirst().orElse(null);
+                                    if (found == null) throw new GUIManagerException("bad value for parameter field ", name);
+                                  }
                               }
                           }
                       }
