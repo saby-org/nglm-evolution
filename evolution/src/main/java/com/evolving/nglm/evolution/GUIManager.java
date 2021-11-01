@@ -28198,6 +28198,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
 
   private void validateJourneyNodeParams(Journey journey, Date now) throws GUIManagerException
   {
+    log.info("RAJ K validateJourneyNodeParams called");
     for (JourneyNode journeyNode : journey.getJourneyNodes().values())
       {
         if (journeyNode.getNodeType().getActionManager() != null)
@@ -28225,7 +28226,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                   {
                     List<JSONObject> availableValues = evaluateAvailableValues(availableValuesJSON, now, journey.getTenantID());
                     Object nodeParamObjVal = journeyNode.getNodeParameters().get(id);
-                    log.info("RAJ K parameter id {}, availableValues {}, nodeParamObjVal {} - class type {}", id, availableValues, nodeParamObjVal, nodeParamObjVal.getClass());
                     boolean found = false;
                     Object actualVal = null;
                     if (nodeParamObjVal instanceof ParameterExpression && ((ParameterExpression) nodeParamObjVal).getExpression() instanceof ConstantExpression)
@@ -28237,7 +28237,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                         actualVal = nodeParamObjVal;
                       }
                     
-                    log.info("RAJ K parameter id {}, availableValues {}, actualVal {}", id, availableValues, actualVal);
                     if (actualVal != null)
                       {
                         for (JSONObject jsn : availableValues)
@@ -28250,10 +28249,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                       }
                   }
               }
-          }
-        else
-          {
-            
           }
       }
   }
