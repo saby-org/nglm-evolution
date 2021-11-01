@@ -6185,8 +6185,8 @@ public class GUIManager
         if (!dryRun)
           {
 
-            journeyService.putJourney(journey, journeyObjectiveService, catalogCharacteristicService, targetService, subscriberMessageTemplateService, 
-                (existingJourney == null), userID);
+            validateJourneyNodeParams(journey, now);
+            journeyService.putJourney(journey, journeyObjectiveService, catalogCharacteristicService, targetService, subscriberMessageTemplateService, (existingJourney == null), userID);
 
             /*****************************************
              *
@@ -28152,53 +28152,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
             //  validate nodes param
             //
             
-            for (JourneyNode journeyNode : journey.getJourneyNodes().values())
-              {
-                if (journeyNode.getNodeType().getActionManager() != null)
-                  {
-                    NodeType nodeType = journeyNode.getNodeType();
-                    JSONObject resolvedNodeTypeJSON = (JSONObject) nodeType.getJSONRepresentation().clone();
-                    JSONArray parameters = JSONUtilities.decodeJSONArray(resolvedNodeTypeJSON, "parameters", true);
-                    Map<String, List<JSONObject>> parameterAvailableValues = new HashMap<String, List<JSONObject>>();
-                    for (int i=0; i<parameters.size(); i++)
-                      {
-                        //
-                        // clone (so we can modify the result)
-                        //
-
-                        JSONObject parameterJSON = (JSONObject) ((JSONObject) parameters.get(i)).clone();
-
-                        //
-                        // availableValues
-                        //
-
-                        String id = JSONUtilities.decodeString(parameterJSON, "id", true);
-                        String name = JSONUtilities.decodeString(parameterJSON, "name", id);
-                        JSONArray availableValuesJSON = JSONUtilities.decodeJSONArray(parameterJSON, "availableValues", false);
-                        if (availableValuesJSON != null)
-                          {
-                            List<JSONObject> availableValues = evaluateAvailableValues(availableValuesJSON, now, tenantID);
-                            Object nodeParamObjVal = journeyNode.getNodeParameters().get(id);
-                            log.info("RAJ K parameter id {}, availableValues {}, nodeParamObjVal {}", id, availableValues, nodeParamObjVal);
-                            if (nodeParamObjVal instanceof ParameterExpression && ((ParameterExpression) nodeParamObjVal).getExpression() instanceof ConstantExpression)
-                              {
-                                final Object actualVal  = ((ParameterExpression) nodeParamObjVal).getExpression().evaluateConstant();
-                                log.info("RAJ K parameter id {}, availableValues {}, actualVal {}", id, availableValues, actualVal);
-                                if (actualVal != null)
-                                  {
-                                    Object found = availableValues.stream().map(val -> val.get("id")).filter(valueID -> actualVal.equals(valueID)).findFirst().orElse(null);
-                                    if (found == null) throw new GUIManagerException("bad value for parameter field ", name);
-                                  }
-                              }
-                          }
-                      }
-                  }
-                else
-                  {
-                    
-                  }
-              }
-            
+            validateJourneyNodeParams(journey, now);
             modifiedJourney = journey;
           }
         catch (JSONUtilitiesException|GUIManagerException e)
@@ -28238,6 +28192,56 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
         else
           {
             journeyService.putGUIManagedObject(modifiedJourney, date, false, null);
+          }
+      }
+  }
+
+  private void validateJourneyNodeParams(Journey journey, Date now) throws GUIManagerException
+  {
+    for (JourneyNode journeyNode : journey.getJourneyNodes().values())
+      {
+        if (journeyNode.getNodeType().getActionManager() != null)
+          {
+            NodeType nodeType = journeyNode.getNodeType();
+            JSONObject resolvedNodeTypeJSON = (JSONObject) nodeType.getJSONRepresentation().clone();
+            JSONArray parameters = JSONUtilities.decodeJSONArray(resolvedNodeTypeJSON, "parameters", true);
+            Map<String, List<JSONObject>> parameterAvailableValues = new HashMap<String, List<JSONObject>>();
+            for (int i=0; i<parameters.size(); i++)
+              {
+                //
+                // clone (so we can modify the result)
+                //
+
+                JSONObject parameterJSON = (JSONObject) ((JSONObject) parameters.get(i)).clone();
+
+                //
+                // availableValues
+                //
+
+                String id = JSONUtilities.decodeString(parameterJSON, "id", true);
+                String name = JSONUtilities.decodeString(parameterJSON, "name", id);
+                JSONArray availableValuesJSON = JSONUtilities.decodeJSONArray(parameterJSON, "availableValues", false);
+                if (availableValuesJSON != null)
+                  {
+                    List<JSONObject> availableValues = evaluateAvailableValues(availableValuesJSON, now, journey.getTenantID());
+                    Object nodeParamObjVal = journeyNode.getNodeParameters().get(id);
+                    log.info("RAJ K parameter id {}, availableValues {}, nodeParamObjVal {} - class type {}", id, availableValues, nodeParamObjVal, nodeParamObjVal.getClass());
+                    if (nodeParamObjVal instanceof ParameterExpression && ((ParameterExpression) nodeParamObjVal).getExpression() instanceof ConstantExpression)
+                      {
+                        final Object actualVal  = ((ParameterExpression) nodeParamObjVal).getExpression().evaluateConstant();
+                        log.info("RAJ K parameter id {}, availableValues {}, actualVal {}", id, availableValues, actualVal);
+                        if (actualVal != null)
+                          {
+                            Object found = availableValues.stream().map(val -> val.get("id")).filter(valueID -> actualVal.equals(valueID)).findFirst().orElse(null);
+                            if (found == null) throw new GUIManagerException("bad value for parameter field ", name);
+                          }
+                      }
+                  }
+              }
+          }
+        else
+          {
+            
           }
       }
   }
