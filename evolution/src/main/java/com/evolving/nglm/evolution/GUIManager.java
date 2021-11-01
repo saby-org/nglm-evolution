@@ -28179,9 +28179,11 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                           {
                             List<JSONObject> availableValues = evaluateAvailableValues(availableValuesJSON, now, tenantID);
                             Object nodeParamObjVal = journeyNode.getNodeParameters().get(id);
+                            log.info("RAJ K parameter id {}, availableValues {}, nodeParamObjVal {}", id, availableValues, nodeParamObjVal);
                             if (nodeParamObjVal instanceof ParameterExpression && ((ParameterExpression) nodeParamObjVal).getExpression() instanceof ConstantExpression)
                               {
                                 final Object actualVal  = ((ParameterExpression) nodeParamObjVal).getExpression().evaluateConstant();
+                                log.info("RAJ K parameter id {}, availableValues {}, actualVal {}", id, availableValues, actualVal);
                                 if (actualVal != null)
                                   {
                                     Object found = availableValues.stream().map(val -> val.get("id")).filter(valueID -> actualVal.equals(valueID)).findFirst().orElse(null);
