@@ -2511,10 +2511,10 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
                 throw new GUIManagerException("journey uses unknown/inactive target", currentTargetID);
               }
             }
-          
         }
         
       }
+    
   }
 
   /*****************************************

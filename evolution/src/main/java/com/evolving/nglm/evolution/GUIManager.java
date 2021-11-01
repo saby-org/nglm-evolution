@@ -137,8 +137,10 @@ import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EmptyFulfillmentManager.EmptyFulfillmentRequest;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionOperator;
+import com.evolving.nglm.evolution.Expression.ConstantExpression;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.GUIService.GUIManagedObjectListener;
 import com.evolving.nglm.evolution.INFulfillmentManager.INFulfillmentRequest;
 import com.evolving.nglm.evolution.Journey.GUINode;
@@ -28124,6 +28126,8 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
 
   protected void revalidateJourneys(Date date, int tenantID)
   {
+    Date now = SystemTime.getCurrentTime();
+    
     /****************************************
     *
     *  identify
@@ -28143,6 +28147,53 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           {
             Journey journey = new Journey(existingJourney.getJSONRepresentation(), existingJourney.getGUIManagedObjectType(), epoch, existingJourney, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, journeyTemplateService, tenantID);
             journey.validate(journeyObjectiveService, catalogCharacteristicService, targetService, date);
+            
+            //
+            //  validate nodes param
+            //
+            
+            for (JourneyNode journeyNode : journey.getJourneyNodes().values())
+              {
+                if (journeyNode.getNodeType().getActionManager() != null)
+                  {
+                    NodeType nodeType = journeyNode.getNodeType();
+                    JSONObject resolvedNodeTypeJSON = (JSONObject) nodeType.getJSONRepresentation().clone();
+                    JSONArray parameters = JSONUtilities.decodeJSONArray(resolvedNodeTypeJSON, "parameters", true);
+                    Map<String, List<JSONObject>> parameterAvailableValues = new HashMap<String, List<JSONObject>>();
+                    for (int i=0; i<parameters.size(); i++)
+                      {
+                        //
+                        // clone (so we can modify the result)
+                        //
+
+                        JSONObject parameterJSON = (JSONObject) ((JSONObject) parameters.get(i)).clone();
+
+                        //
+                        // availableValues
+                        //
+
+                        String id = JSONUtilities.decodeString(parameterJSON, "id", true);
+                        String name = JSONUtilities.decodeString(parameterJSON, "name", id);
+                        List<JSONObject> availableValues = evaluateAvailableValues(JSONUtilities.decodeJSONArray(parameterJSON, "availableValues", false), now, tenantID);
+
+                        Object nodeParamObjVal = journeyNode.getNodeParameters().get(id);
+                        if (nodeParamObjVal instanceof ParameterExpression && ((ParameterExpression) nodeParamObjVal).getExpression() instanceof ConstantExpression)
+                          {
+                            final Object actualVal  = ((ParameterExpression) nodeParamObjVal).getExpression().evaluateConstant();
+                            if (actualVal != null)
+                              {
+                                Object found = availableValues.stream().map(val -> val.get("id")).filter(valueID -> actualVal.equals(valueID)).findFirst().orElse(null);
+                                if (found == null) throw new GUIManagerException("bad value for parameter field ", name);
+                              }
+                          }
+                      }
+                  }
+                else
+                  {
+                    
+                  }
+              }
+            
             modifiedJourney = journey;
           }
         catch (JSONUtilitiesException|GUIManagerException e)
