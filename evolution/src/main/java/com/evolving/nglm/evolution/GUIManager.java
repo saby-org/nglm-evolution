@@ -28230,7 +28230,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                 String name = JSONUtilities.decodeString(parameterJSON, "name", id);
                 JSONObject parametersJSON = (JSONObject) nodesJSON.get(journeyNode.getNodeID()).stream().filter(paramJson -> id.equals(JSONUtilities.decodeString((JSONObject) paramJson, "parameterName", false))).findFirst().orElse(new JSONObject());
                 JSONObject parameterValueJSON = JSONUtilities.decodeJSONObject(parametersJSON, "value", new JSONObject());
-                log.info("RAJ K parametersJSON {}, parameterValueJSON {}, for id {}", parametersJSON, parameterValueJSON, id);
                 boolean isFixedValueType = JSONUtilities.decodeString(parameterValueJSON, "valueType", "").equals("simple"); // valueType is only used by GUI but here we need to know the value is fixed or set from a drop down
                 
                 //
@@ -28257,7 +28256,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                       {
                         actualVal = nodeParamObjVal;
                       }
-                    log.info("RAJ K actualvalue {} raw value is {} for parameterid {} and availableValues {}", actualVal, nodeParamObjVal, id, availableValues);
                     if (actualVal != null)
                       {
                         for (JSONObject jsn : availableValues)
@@ -28266,7 +28264,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                             found = actualVal.equals(idVal);
                             if (found) break;
                           }
-                        if (!found) throw new GUIManagerException("bad node parameter value for parameter", name);
+                        if (!found) throw new GUIManagerException("bad node parameter value for", name);
                       }
                   }
               }
