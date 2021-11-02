@@ -28199,7 +28199,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
   private void validateJourneyNodeParams(Journey journey, Date now) throws GUIManagerException
   {
     Map<String, GUINode> guiNodes = journey.decodeNodes(JSONUtilities.decodeJSONArray(journeyService.getJSONRepresentation(journey), "nodes", true), journey.getTemplateParameters(), Collections.<String,CriterionField>emptyMap(), true, journeyService, subscriberMessageTemplateService, dynamicEventDeclarationsService, journey.getTenantID());
-    log.info("RAJ K guiNodes {}", guiNodes);
     for (JourneyNode journeyNode : journey.getJourneyNodes().values())
       {
         if (journeyNode.getNodeType().getActionManager() != null)
