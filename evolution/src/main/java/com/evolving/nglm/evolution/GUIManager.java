@@ -28229,8 +28229,9 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                 String id = JSONUtilities.decodeString(parameterJSON, "id", true);
                 String name = JSONUtilities.decodeString(parameterJSON, "name", id);
                 JSONObject parametersJSON = (JSONObject) nodesJSON.get(journeyNode.getNodeID()).stream().filter(paramJson -> id.equals(JSONUtilities.decodeString((JSONObject) paramJson, "parameterName", false))).findFirst().orElse(new JSONObject());
-                log.info("RAJ K parametersJSON {}, nodesJSON {}, id {}}", parametersJSON, nodesJSON.get(journeyNode.getNodeID()), id);
-                boolean isFixedValueType = JSONUtilities.decodeString(parametersJSON, "valueType", "").equals("simple"); // valueType is only used by GUI but here we need to know the value is fixed or set from a drop down
+                JSONObject parameterValueJSON = JSONUtilities.decodeJSONObject(parametersJSON, "value", new JSONObject());
+                log.info("RAJ K parametersJSON {}, parameterValueJSON {}, for id {}", parametersJSON, parameterValueJSON, id);
+                boolean isFixedValueType = JSONUtilities.decodeString(parameterValueJSON, "valueType", "").equals("simple"); // valueType is only used by GUI but here we need to know the value is fixed or set from a drop down
                 
                 //
                 // availableValues
