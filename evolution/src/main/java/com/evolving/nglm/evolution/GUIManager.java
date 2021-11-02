@@ -28198,10 +28198,14 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
 
   private void validateJourneyNodeParams(Journey journey, Date now) throws GUIManagerException
   {
+    Map<String, GUINode> guiNodes = journey.decodeNodes(JSONUtilities.decodeJSONArray(journeyService.getJSONRepresentation(journey), "nodes", true), journey.getTemplateParameters(), Collections.<String,CriterionField>emptyMap(), true, journeyService, subscriberMessageTemplateService, dynamicEventDeclarationsService, journey.getTenantID());
+    log.info("RAJ K guiNodes {}", guiNodes);
     for (JourneyNode journeyNode : journey.getJourneyNodes().values())
       {
         if (journeyNode.getNodeType().getActionManager() != null)
           {
+            GUINode node = guiNodes.get(journeyNode.getNodeID());
+            log.info("RAJ K node {}, journeyNode {}", node, journeyNode.getNodeID());
             NodeType nodeType = journeyNode.getNodeType();
             JSONObject resolvedNodeTypeJSON = (JSONObject) nodeType.getJSONRepresentation().clone();
             JSONArray parameters = JSONUtilities.decodeJSONArray(resolvedNodeTypeJSON, "parameters", true);
@@ -28234,7 +28238,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                     Object actualVal = null;
                     if (nodeParamObjVal instanceof ParameterExpression && ((ParameterExpression) nodeParamObjVal).getExpression() instanceof ConstantExpression)
                       {
-                        actualVal  = ((ParameterExpression) nodeParamObjVal).getExpression().evaluateConstant();
+                        actualVal  = ((ParameterExpression) nodeParamObjVal).getExpression().evaluateConstant(); // context vars are ParameterExpression but not constant so value will be null - no need to do seperate check for context vars.
                       }
                     else if (nodeParamObjVal instanceof String)
                       {
