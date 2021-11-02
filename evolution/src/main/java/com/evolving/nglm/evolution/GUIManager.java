@@ -28228,7 +28228,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                     JSONArray availableValuesJSONArray = new JSONArray();
                     if (availableValuesJSON != null) availableValuesJSONArray.addAll(availableValuesJSONArray);
                     if (expressionValuesJSON != null) availableValuesJSONArray.addAll(expressionValuesJSON);
-                    List<JSONObject> availableValues = evaluateAvailableValues(availableValuesJSON, now, journey.getTenantID());
+                    List<JSONObject> availableValues = evaluateAvailableValues(availableValuesJSONArray, now, journey.getTenantID());
                     Object nodeParamObjVal = journeyNode.getNodeParameters().get(id);
                     boolean found = false;
                     Object actualVal = null;
