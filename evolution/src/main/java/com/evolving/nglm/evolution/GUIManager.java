@@ -28223,13 +28223,19 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                 JSONObject parameterJSON = (JSONObject) ((JSONObject) parameters.get(i)).clone();
 
                 //
-                // availableValues
+                //
                 //
 
                 String id = JSONUtilities.decodeString(parameterJSON, "id", true);
                 String name = JSONUtilities.decodeString(parameterJSON, "name", id);
                 JSONObject parametersJSON = (JSONObject) nodesJSON.get(journeyNode.getNodeID()).stream().filter(paramJson -> id.equals(JSONUtilities.decodeString((JSONObject) paramJson, "parameterName", false))).findFirst().orElse(new JSONObject());
+                log.info("RAJ K parametersJSON {}, nodesJSON {}, id {}}", parametersJSON, nodesJSON.get(journeyNode.getNodeID()), id);
                 boolean isFixedValueType = JSONUtilities.decodeString(parametersJSON, "valueType", "").equals("simple"); // valueType is only used by GUI but here we need to know the value is fixed or set from a drop down
+                
+                //
+                // availableValues
+                //
+                
                 JSONArray availableValuesJSON = JSONUtilities.decodeJSONArray(parameterJSON, "availableValues", false);
                 JSONArray expressionValuesJSON = JSONUtilities.decodeJSONArray(parameterJSON, "expressionFields", false);
                 boolean shouldBeValidated = !isFixedValueType && (availableValuesJSON != null || expressionValuesJSON != null);
