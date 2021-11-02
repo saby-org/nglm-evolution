@@ -28198,7 +28198,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
 
   private void validateJourneyNodeParams(Journey journey, Date now) throws GUIManagerException
   {
-    log.info("RAJ K validateJourneyNodeParams called");
     for (JourneyNode journeyNode : journey.getJourneyNodes().values())
       {
         if (journeyNode.getNodeType().getActionManager() != null)
@@ -28222,8 +28221,13 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                 String id = JSONUtilities.decodeString(parameterJSON, "id", true);
                 String name = JSONUtilities.decodeString(parameterJSON, "name", id);
                 JSONArray availableValuesJSON = JSONUtilities.decodeJSONArray(parameterJSON, "availableValues", false);
-                if (availableValuesJSON != null)
+                JSONArray expressionValuesJSON = JSONUtilities.decodeJSONArray(parameterJSON, "expressionFields", false);
+                boolean shouldBeValidated = availableValuesJSON != null || expressionValuesJSON != null;
+                if (shouldBeValidated)
                   {
+                    JSONArray availableValuesJSONArray = new JSONArray();
+                    if (availableValuesJSON != null) availableValuesJSONArray.addAll(availableValuesJSONArray);
+                    if (expressionValuesJSON != null) availableValuesJSONArray.addAll(expressionValuesJSON);
                     List<JSONObject> availableValues = evaluateAvailableValues(availableValuesJSON, now, journey.getTenantID());
                     Object nodeParamObjVal = journeyNode.getNodeParameters().get(id);
                     boolean found = false;
@@ -28232,11 +28236,11 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                       {
                         actualVal  = ((ParameterExpression) nodeParamObjVal).getExpression().evaluateConstant();
                       }
-                    else if (nodeParamObjVal != null)
+                    else if (nodeParamObjVal instanceof String)
                       {
                         actualVal = nodeParamObjVal;
                       }
-                    
+                    log.info("RAJ K actualvalue {} raw value is {} for parameterid {} and availableValues {}", actualVal, nodeParamObjVal, id, availableValues);
                     if (actualVal != null)
                       {
                         for (JSONObject jsn : availableValues)
