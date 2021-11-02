@@ -29,6 +29,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -45,6 +46,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -28198,13 +28200,16 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
 
   private void validateJourneyNodeParams(Journey journey, Date now) throws GUIManagerException
   {
-    Map<String, GUINode> guiNodes = journey.decodeNodes(JSONUtilities.decodeJSONArray(journeyService.getJSONRepresentation(journey), "nodes", true), journey.getTemplateParameters(), Collections.<String,CriterionField>emptyMap(), true, journeyService, subscriberMessageTemplateService, dynamicEventDeclarationsService, journey.getTenantID());
+    Map<String, JSONArray> nodesJSON = new HashMap<String, JSONArray>();
+    for (Object nodeObject : JSONUtilities.decodeJSONArray(journeyService.getJSONRepresentation(journey), "nodes", true))
+      {
+        JSONObject nodeJson = (JSONObject) nodeObject;
+        nodesJSON.put(JSONUtilities.decodeString(nodeJson, "id", true), JSONUtilities.decodeJSONArray(nodeJson, "parameters", new JSONArray()));
+      } 
     for (JourneyNode journeyNode : journey.getJourneyNodes().values())
       {
         if (journeyNode.getNodeType().getActionManager() != null)
           {
-            GUINode node = guiNodes.get(journeyNode.getNodeID());
-            log.info("RAJ K node {}, journeyNode {}", node, journeyNode.getNodeID());
             NodeType nodeType = journeyNode.getNodeType();
             JSONObject resolvedNodeTypeJSON = (JSONObject) nodeType.getJSONRepresentation().clone();
             JSONArray parameters = JSONUtilities.decodeJSONArray(resolvedNodeTypeJSON, "parameters", true);
@@ -28223,9 +28228,11 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
 
                 String id = JSONUtilities.decodeString(parameterJSON, "id", true);
                 String name = JSONUtilities.decodeString(parameterJSON, "name", id);
+                JSONObject parametersJSON = (JSONObject) nodesJSON.get(journeyNode.getNodeID()).stream().filter(paramJson -> id.equals(JSONUtilities.decodeString((JSONObject) paramJson, "parameterName", false))).findFirst().orElse(new JSONObject());
+                boolean isFixedValueType = JSONUtilities.decodeString(parametersJSON, "valueType", "").equals("simple");
                 JSONArray availableValuesJSON = JSONUtilities.decodeJSONArray(parameterJSON, "availableValues", false);
                 JSONArray expressionValuesJSON = JSONUtilities.decodeJSONArray(parameterJSON, "expressionFields", false);
-                boolean shouldBeValidated = availableValuesJSON != null || expressionValuesJSON != null;
+                boolean shouldBeValidated = !isFixedValueType && (availableValuesJSON != null || expressionValuesJSON != null);
                 if (shouldBeValidated)
                   {
                     JSONArray availableValuesJSONArray = new JSONArray();
