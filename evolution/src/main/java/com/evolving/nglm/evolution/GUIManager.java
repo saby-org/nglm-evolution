@@ -28217,7 +28217,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
             for (int i=0; i<parameters.size(); i++)
               {
                 //
-                // clone (so we can modify the result)
+                // clone
                 //
 
                 JSONObject parameterJSON = (JSONObject) ((JSONObject) parameters.get(i)).clone();
@@ -28229,7 +28229,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                 String id = JSONUtilities.decodeString(parameterJSON, "id", true);
                 String name = JSONUtilities.decodeString(parameterJSON, "name", id);
                 JSONObject parametersJSON = (JSONObject) nodesJSON.get(journeyNode.getNodeID()).stream().filter(paramJson -> id.equals(JSONUtilities.decodeString((JSONObject) paramJson, "parameterName", false))).findFirst().orElse(new JSONObject());
-                boolean isFixedValueType = JSONUtilities.decodeString(parametersJSON, "valueType", "").equals("simple");
+                boolean isFixedValueType = JSONUtilities.decodeString(parametersJSON, "valueType", "").equals("simple"); // valueType is only used by GUI but here we need to know the value is fixed or set from a drop down
                 JSONArray availableValuesJSON = JSONUtilities.decodeJSONArray(parameterJSON, "availableValues", false);
                 JSONArray expressionValuesJSON = JSONUtilities.decodeJSONArray(parameterJSON, "expressionFields", false);
                 boolean shouldBeValidated = !isFixedValueType && (availableValuesJSON != null || expressionValuesJSON != null);
