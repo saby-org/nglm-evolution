@@ -152,7 +152,7 @@ public abstract class SubscriberProfile
     //
 
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(14));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(15)); //badge
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("subscriberTraceEnabled", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("evolutionSubscriberStatus", Schema.OPTIONAL_STRING_SCHEMA);
@@ -1922,7 +1922,7 @@ public abstract class SubscriberProfile
     Date universalControlGroupChangeDate = (schemaVersion >= 12) ? (Date)valueStruct.get("universalControlGroupChangeDate") : null;
     Map<String,MetricHistory> scoreBalances = schema.field("scoreBalances") != null ? unpackScoreBalances(schema.field("scoreBalances").schema(), (Map<String,Object>) valueStruct.get("scoreBalances")): Collections.<String,MetricHistory>emptyMap();
     Map<String,MetricHistory> progressionBalances = schema.field("progressionBalances") != null ? unpackProgressionBalances(schema.field("progressionBalances").schema(), (Map<String,Object>) valueStruct.get("progressionBalances")): Collections.<String,MetricHistory>emptyMap();
-    List<BadgeState> badges = (schemaVersion >= 14) ? unpackBadges(schema.field("badges").schema(), valueStruct.get("badges")) : new LinkedList<BadgeState>();
+    List<BadgeState> badges = schema.field("badges") != null ? unpackBadges(schema.field("badges").schema(), valueStruct.get("badges")) : new LinkedList<BadgeState>();
     
     //
     //  return
