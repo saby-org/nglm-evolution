@@ -89,6 +89,7 @@ import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
 import com.evolving.nglm.core.SubscriberStreamEvent.SubscriberAction;
 import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.Badge.BadgeAction;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
@@ -184,6 +185,7 @@ public class ThirdPartyManager
   private CallingChannelService callingChannelService;
   private ExclusionInclusionTargetService exclusionInclusionTargetService;
   private UploadedFileService uploadedFileService;
+  private BadgeService badgeService;
 
   private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
   private static final int RESTAPIVersion = 1;
@@ -198,6 +200,7 @@ public class ThirdPartyManager
   private KafkaResponseListenerService<StringKey,JourneyRequest> enterCampaignResponseListenerService;
   private KafkaResponseListenerService<StringKey,SubscriberProfileForceUpdateResponse> subscriberProfileForceUpdateResponseListenerService;
   private KafkaResponseListenerService<StringKey,LoyaltyProgramRequest> loyaltyProgramOptInOutResponseListenerService;
+  private KafkaResponseListenerService<StringKey, BadgeChange> badgeActionResponseListenerService;
   private static Map<String, ThirdPartyMethodAccessLevel> methodPermissionsMapper = new LinkedHashMap<String,ThirdPartyMethodAccessLevel>();
   private static Map<String, Constructor<? extends SubscriberStreamOutput>> JSON3rdPartyEventsConstructor = new HashMap<>();
   private static Integer authResponseCacheLifetimeInMinutes = null;
@@ -286,8 +289,9 @@ public class ThirdPartyManager
     deleteCustomer(40),
     getCustomerVouchers(41),
     getCustomerVDRs(42),
-    getOfferDetails(43);
-
+    getOfferDetails(43),
+    loyaltyAwardBadge(44),
+    loyaltyRemoveBadge(45);
     private int methodIndex;
     private API(int methodIndex) { this.methodIndex = methodIndex; }
     public int getMethodIndex() { return methodIndex; }
@@ -543,6 +547,9 @@ public class ThirdPartyManager
     
     exclusionInclusionTargetService = new ExclusionInclusionTargetService(Deployment.getBrokerServers(), "thirdpartymanager-exclusionInclusionTargetService-" + apiProcessKey, Deployment.getExclusionInclusionTargetTopic(), false);
     exclusionInclusionTargetService.start();
+    
+    badgeService = new BadgeService(bootstrapServers, "thirdpartymanager-badgeservice-"+apiProcessKey, Deployment.getBadgeTopic(), false);
+    badgeService.start();
 
     subscriberIDService = new SubscriberIDService(redisServer, "thirdpartymanager-" + apiProcessKey);
     subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("thirdpartymanager-subscribergroupepoch", bootstrapServers, subscriberGroupEpochTopic, SubscriberGroupEpoch::unpack);
@@ -567,6 +574,8 @@ public class ThirdPartyManager
     DeliveryManagerDeclaration dmdl = Deployment.getDeliveryManagers().get(LOYALTYPROGRAM_FULFILLMENT_MANAGER_TYPE);
     loyaltyProgramOptInOutResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),dmdl.getResponseTopic(DELIVERY_REQUEST_PRIORITY),StringKey.serde(),LoyaltyProgramRequest.serde());
     loyaltyProgramOptInOutResponseListenerService.start();
+    badgeActionResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(), Deployment.getBadgeChangeResponseTopic(), StringKey.serde(),BadgeChange.serde());
+    badgeActionResponseListenerService.start();
     
     subscriberProfileForceUpdateResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),Deployment.getSubscriberProfileForceUpdateResponseTopic(),StringKey.serde(),SubscriberProfileForceUpdateResponse.serde());
     subscriberProfileForceUpdateResponseListenerService.start();
@@ -624,6 +633,8 @@ public class ThirdPartyManager
       restServer.createContext("/nglm-thirdpartymanager/deleteCustomer", new APIHandler(API.deleteCustomer));
       restServer.createContext("/nglm-thirdpartymanager/getCustomerVouchers", new APIHandler(API.getCustomerVouchers));
       restServer.createContext("/nglm-thirdpartymanager/getOfferDetails", new APIHandler(API.getOfferDetails));
+      restServer.createContext("/nglm-thirdpartymanager/loyaltyAwardBadge", new APIHandler(API.loyaltyAwardBadge));
+      restServer.createContext("/nglm-thirdpartymanager/loyaltyRemoveBadge", new APIHandler(API.loyaltyRemoveBadge));
       restServer.setExecutor(Executors.newFixedThreadPool(threadPoolSize));
       restServer.start();
 
@@ -639,7 +650,7 @@ public class ThirdPartyManager
      *
      *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, dynamicCriterionFieldService, offerService, subscriberProfileService, segmentationDimensionService, journeyService, journeyObjectiveService, loyaltyProgramService, pointService, paymentMeanService, offerObjectiveService, subscriberMessageTemplateService, salesChannelService, resellerService, subscriberIDService, subscriberGroupEpochReader, productService, deliverableService, callingChannelService, exclusionInclusionTargetService, uploadedFileService));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, dynamicCriterionFieldService, offerService, subscriberProfileService, segmentationDimensionService, journeyService, journeyObjectiveService, loyaltyProgramService, pointService, paymentMeanService, offerObjectiveService, subscriberMessageTemplateService, salesChannelService, resellerService, subscriberIDService, subscriberGroupEpochReader, productService, deliverableService, callingChannelService, exclusionInclusionTargetService, uploadedFileService, badgeService));
 
     /*****************************************
      *
@@ -685,12 +696,13 @@ public class ThirdPartyManager
     private CallingChannelService callingChannelService;
     private ExclusionInclusionTargetService exclusionInclusionTargetService;
     private UploadedFileService uploadedFileService;
+    private BadgeService badgeService;
 
     //
     //  constructor
     //
 
-    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, DynamicCriterionFieldService dynamicCriterionFieldService, OfferService offerService, SubscriberProfileService subscriberProfileService, SegmentationDimensionService segmentationDimensionService, JourneyService journeyService, JourneyObjectiveService journeyObjectiveService, LoyaltyProgramService loyaltyProgramService, PointService pointService, PaymentMeanService paymentMeanService, OfferObjectiveService offerObjectiveService, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, ResellerService resellerService, SubscriberIDService subscriberIDService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader, ProductService productService, DeliverableService deliverableService, CallingChannelService callingChannelService, ExclusionInclusionTargetService exclusionInclusionTargetService, UploadedFileService uploadedFileService)
+    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, DynamicCriterionFieldService dynamicCriterionFieldService, OfferService offerService, SubscriberProfileService subscriberProfileService, SegmentationDimensionService segmentationDimensionService, JourneyService journeyService, JourneyObjectiveService journeyObjectiveService, LoyaltyProgramService loyaltyProgramService, PointService pointService, PaymentMeanService paymentMeanService, OfferObjectiveService offerObjectiveService, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, ResellerService resellerService, SubscriberIDService subscriberIDService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader, ProductService productService, DeliverableService deliverableService, CallingChannelService callingChannelService, ExclusionInclusionTargetService exclusionInclusionTargetService, UploadedFileService uploadedFileService, BadgeService badgeService)
     {
       this.kafkaProducer = kafkaProducer;
       this.restServer = restServer;
@@ -714,6 +726,7 @@ public class ThirdPartyManager
       this.callingChannelService = callingChannelService;
       this.exclusionInclusionTargetService = exclusionInclusionTargetService;
       this.uploadedFileService = uploadedFileService;
+      this.badgeService = badgeService;
     }
 
     //
@@ -746,6 +759,7 @@ public class ThirdPartyManager
       if (callingChannelService != null) callingChannelService.stop();
       if (exclusionInclusionTargetService != null) exclusionInclusionTargetService.stop();
       if (uploadedFileService != null) uploadedFileService.stop();
+      if (badgeService != null) badgeService.stop();
       
       //
       //  rest server
@@ -961,6 +975,13 @@ public class ThirdPartyManager
             case loyaltyProgramOptOut:
               jsonResponse = processLoyaltyProgramOptInOut(jsonRoot, false, sync, tenantID);
               break;
+            case loyaltyAwardBadge:
+              jsonResponse = processLoyaltyBadgeRequest(jsonRoot, BadgeAction.AWARD, sync, tenantID);
+              break;
+            case loyaltyRemoveBadge:
+              jsonResponse = processLoyaltyBadgeRequest(jsonRoot, BadgeAction.REMOVE, sync, tenantID);
+              break;
+              
             case validateVoucher:
               jsonResponse = processValidateVoucher(jsonRoot, tenantID);
               break;
@@ -1293,7 +1314,7 @@ public class ThirdPartyManager
         }
       else
         {
-          response = baseSubscriberProfile.getProfileMapForThirdPartyPresentation(segmentationDimensionService, subscriberGroupEpochReader, exclusionInclusionTargetService);
+          response = baseSubscriberProfile.getProfileMapForThirdPartyPresentation(segmentationDimensionService, badgeService, subscriberGroupEpochReader, exclusionInclusionTargetService);
           response.putAll(resolveAllSubscriberIDs(baseSubscriberProfile, tenantID));
           updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
         }
@@ -5145,6 +5166,106 @@ public class ThirdPartyManager
     //response.put("deliveryRequestID", loyaltyProgramRequestID);
     return JSONUtilities.encodeObject(response);
   }
+  
+  /*****************************************
+  *
+  *  processLoyaltyProgramOptInOut
+  *
+  *****************************************/
+
+ private JSONObject processLoyaltyBadgeRequest(JSONObject jsonRoot, BadgeAction action, boolean sync, int tenantID) throws ThirdPartyManagerException
+ {
+   /****************************************
+    *
+    * response
+    *
+    ****************************************/
+
+   HashMap<String, Object> response = new HashMap<String, Object>();
+   Date now = SystemTime.getCurrentTime();
+
+   /****************************************
+    *
+    * argument
+    *
+    ****************************************/
+
+   String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
+   String badgeDisplay = JSONUtilities.decodeString(jsonRoot, "badge", true);
+   String origin = JSONUtilities.decodeString(jsonRoot, "origin", "loyalty"+action.getExternalRepresentation()+"Badge");
+
+   /*****************************************
+    *
+    * getSubscriberProfile - no history
+    *
+    *****************************************/
+
+   try
+     {
+       SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
+       if (subscriberProfile == null)
+         {
+           updateResponse(response, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND);
+           if (log.isDebugEnabled()) log.debug("SubscriberProfile is null for subscriberID {}", subscriberID);
+           return JSONUtilities.encodeObject(response);
+         }
+
+       Badge activeBadge = badgeService.getActiveBadges(now, tenantID).stream().filter(badgeObj -> badgeDisplay.equals(badgeObj.getGUIManagedObjectDisplay())).findFirst().orElse(null);
+       if (activeBadge == null)
+         {
+           updateResponse(response, RESTAPIGenericReturnCodes.LOYALTY_PROJECT_NOT_FOUND);
+           return JSONUtilities.encodeObject(response);
+         }
+
+       String featureID = JSONUtilities.decodeString(jsonRoot, "loginName", DEFAULT_FEATURE_ID);
+       String moduleID = DeliveryRequest.Module.REST_API.getExternalRepresentation();
+       String eventID = "event from " + Module.fromExternalRepresentation(moduleID).toString();
+       String deliveryRequestID = zuks.getStringKey();
+
+       /*****************************************
+        *
+        * badgeChangeRequest
+        *
+        *****************************************/
+       
+       BadgeChange badgeChangeRequest = new BadgeChange(subscriberID, deliveryRequestID, SystemTime.getCurrentTime(), eventID, action, activeBadge.getGUIManagedObjectID(), moduleID, featureID, origin, RESTAPIGenericReturnCodes.SUCCESS, tenantID, new ParameterMap());
+       Serializer<StringKey> keySerializer = StringKey.serde().serializer();
+       Serializer<BadgeChange> valueSerializer = BadgeChange.serde().serializer();
+       
+       Future<BadgeChange> waitingResponse = null;
+       if (sync)
+         {
+           waitingResponse = badgeActionResponseListenerService.addWithOnValueFilter(badgeChangeResponse -> badgeChangeResponse.getDeliveryRequestID().equals(deliveryRequestID));
+         }
+       
+       kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getBadgeChangeRequestTopic(), keySerializer.serialize(Deployment.getBadgeChangeRequestTopic(), new StringKey(subscriberID)), valueSerializer.serialize(Deployment.getBadgeChangeRequestTopic(), badgeChangeRequest)));
+       
+       if (sync)
+         {
+           BadgeChange result = handleWaitingResponse(waitingResponse);
+           response.put("deliveryRequestID", deliveryRequestID);
+           updateResponse(response, result.getReturnStatus());
+         } 
+       else
+         {
+           response.put("deliveryRequestID", deliveryRequestID);
+           updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
+         }
+     } 
+   catch (SubscriberProfileServiceException e)
+     {
+       log.error("unable to process request processLoyaltyProgramOptInOut {} ", e.getMessage());
+       throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
+     }
+
+   /*****************************************
+    *
+    * decorate and response
+    *
+    *****************************************/
+
+   return JSONUtilities.encodeObject(response);
+ }
 
   /*****************************************
    *

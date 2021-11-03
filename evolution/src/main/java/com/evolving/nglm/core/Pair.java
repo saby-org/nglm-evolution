@@ -9,6 +9,9 @@
 
 package com.evolving.nglm.core;
 
+import java.util.Date;
+import java.util.TimeZone;
+
 public class Pair<A,B>
 {
   //
@@ -65,6 +68,10 @@ public class Pair<A,B>
   
   public String toString()
   {
-    return new String("<" + firstElement + "," + secondElement + ">");
+    String firstElementStr = firstElement == null ? null : firstElement.toString();
+    String secondElementStr = secondElement == null ? null : secondElement.toString();
+    if (firstElement != null && firstElement instanceof Date) firstElementStr = RLMDateUtils.formatDateForREST((Date) firstElement, Deployment.getDefault().getTimeZone());
+    if (secondElement != null && secondElement instanceof Date) secondElementStr = RLMDateUtils.formatDateForREST((Date) secondElement, Deployment.getDefault().getTimeZone());
+    return new String("<" + firstElementStr + "," + secondElementStr + ">");
   }
 }

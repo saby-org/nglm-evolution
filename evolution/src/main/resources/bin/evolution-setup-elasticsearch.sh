@@ -159,6 +159,11 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/subscriber
           "earliestExpirationDate" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
           "expirationDates"        : { "type": "nested", "properties": { "date" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" } } }
          }
+      },
+      "badges"                            : { "type" : "nested",
+        "properties" : {
+          "badges"        : { "type": "nested", "properties": { "badgeAwardDate" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" }, "badgeRemoveDate" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" } } }
+        }
       }
     }
   }
@@ -518,6 +523,70 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/vdr -u $EL
       "returnCode" : { "type" : "integer" },
       "expiryDate" : { "type" : "keyword" },
       "deliveryRequestID" : { "type" : "keyword" }
+    }
+  }
+}'
+echo
+
+#
+#  create a cleaning policy for BGDR
+#
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_opendistro/_ism/policies/bgdr_policy -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
+{
+  "policy": {
+    "description": "hot delete workflow for bgdr",
+    "default_state": "hot",
+    "schema_version": 1,
+    "states": [
+      {
+        "name": "hot",
+        "actions": [],
+        "transitions": [
+          {
+            "state_name": "delete",
+            "conditions": {
+              "min_index_age": "Deployment.getElasticsearchRetentionDaysBGDR()d"
+            }
+          }
+        ]
+      },
+      {
+        "name": "delete",
+        "actions": [
+          {
+            "delete": {}
+          }
+        ]
+      }
+    ]
+  }
+}'
+echo
+
+#
+#  manually create bgdr template
+#
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/bgdr -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
+{
+  "index_patterns": ["detailedrecords_badges-*"],
+  "settings" : {
+    "opendistro.index_state_management.policy_id": "bgdr_policy"
+  },
+  "mappings" : {
+    "_meta": { "bgdr" : { "version": Deployment.getElasticsearchBGdrTemplateVersion() } },
+    "properties" : {
+      "subscriberID"		: { "type" : "keyword" },
+      "deliveryRequestID"	: { "type" : "keyword" },
+      "tenantID" 			: { "type" : "integer" },
+      "eventDatetime" 		: { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ"},
+      "eventID" 			: { "type" : "keyword" },     
+      "moduleID" 			: { "type" : "keyword" },
+      "featureID" 			: { "type" : "keyword" },
+      "origin" 				: { "type" : "keyword" },
+      "returnStatus" 		: { "type" : "keyword" },
+      "badgeID" 			: { "type" : "keyword" },
+      "action" 				: { "type" : "keyword" },
+      "returnCode" 			: { "type" : "keyword" }
     }
   }
 }'
@@ -1097,6 +1166,24 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_pa
 	  "parentId" : 		{ "type" : "keyword" },
 	  "provider" : 		{ "type" : "keyword" },
 	  "address" : 		{ "type" : "keyword" },
+	  "timestamp" : 	{ "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" }
+    }
+  }
+}'
+echo
+
+prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mapping_badges -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
+{
+  "index_patterns": ["mapping_badges*"],
+  "mappings" : {
+  "_meta": { "mapping_badges" : { "version": Deployment.getElasticsearchMappingBadgesTemplateVersion() } },
+    "properties" : {
+	  "id" : 			{ "type" : "keyword" },
+	  "display" : 		{ "type" : "keyword" },
+      "active" : 		{ "type" : "boolean" },
+      "badgeType" : 	{ "type" : "keyword" },
+      "tenantID"  : 	{ "type" : "integer" },
+      "createdDate" : 	{ "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
 	  "timestamp" : 	{ "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" }
     }
   }

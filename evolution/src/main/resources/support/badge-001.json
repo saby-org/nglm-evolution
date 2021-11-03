@@ -1,0 +1,24 @@
+
+--
+--  putBadge
+--
+
+{
+   "apiVersion":1,
+   "name":"devbadge001",
+   "display":"dev badge example",
+   "description": "badge dev ongoing example",
+   "valid":true,
+   "active":true,
+   "effectiveStartDate":"2020-08-12T00:00:00+00:00",
+   "effectiveEndDate":"2099-06-30T00:00:00+00:00",
+   "userName":"administrator",
+   "userID":"1",
+   "tenantID": 1,
+   "badgeType": null,
+   "pendingImageURL": null,
+   "awardedImageURL": null,
+   "awardedWorkflowId": null,
+   "removeWorkflowId": null,
+   "profileCriteria": []
+}
