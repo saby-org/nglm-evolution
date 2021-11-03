@@ -113,6 +113,7 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/subscriber
       "universalControlGroup"               : { "type" : "boolean" },
       "universalControlGroupPrevious"       : { "type" : "boolean" },
       "universalControlGroupChangeDate"     : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ" },
+      "universalControlGroupHistoryAuditInfo":{ "type" : "keyword" },
       "language"                            : { "type" : "keyword" },
       "segments"                            : { "type" : "keyword" },
       "exclusionInclusionList"              : { "type" : "keyword" },

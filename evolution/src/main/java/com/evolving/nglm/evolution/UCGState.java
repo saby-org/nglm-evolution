@@ -444,6 +444,7 @@ public class UCGState implements ReferenceDataValue<String>
     //normally one method can suppli both operations but for a better code readability 2 methods were created
     public void incrementUCGSubscribers(int numberOfSubscribers) { this.ucgSubscribers += numberOfSubscribers; }
     public void decrementUCGSubscribers(int numberOfSubscribers) { this.ucgSubscribers = this.ucgSubscribers - numberOfSubscribers; }
+    public void incrementTotalSubscribers(int numberOfSubscribers) { this.totalSubscribers += numberOfSubscribers; }
 
 
     /*****************************************

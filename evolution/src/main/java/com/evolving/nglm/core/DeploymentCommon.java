@@ -488,6 +488,10 @@ public class DeploymentCommon
   private static int guiConfigurationInitialConsumerMaxFetchBytes;
 
   private static boolean addSubscribersToUcgByCounting;
+  private static boolean ucgQuickRemovalAtRefresh;
+  private static int minDaysInUCGForQuickRemoval;
+  private static boolean ucgQuickOverloadRemoval;
+
 
 
   
@@ -793,6 +797,9 @@ public class DeploymentCommon
   public static int getNodesTransitionsHistorySize() { return nodesTransitionsHistorySize; }
   public static int getFirstDayOfTheWeek() { return firstDayOfTheWeek; }
   public static boolean getAddSubscribersToUcgByCounting() { return addSubscribersToUcgByCounting; }
+  public static boolean getUcgQuickRemovalAtRefresh() { return ucgQuickRemovalAtRefresh; }
+  public static int getMinDaysInUCGForQuickRemoval() { return minDaysInUCGForQuickRemoval; }
+  public static boolean getUcgQuickOverloadRemoval() { return ucgQuickOverloadRemoval; }
   
   
   /****************************************
@@ -1436,6 +1443,10 @@ public class DeploymentCommon
       }
 
     addSubscribersToUcgByCounting = jsonReader.decodeBoolean("addSubscribersToUcgByCounting");
+    ucgQuickRemovalAtRefresh = jsonReader.decodeBoolean("ucgQuickRemovalAtRefresh");
+    minDaysInUCGForQuickRemoval = jsonReader.decodeInteger("minDaysInUCGForQuickRemoval");
+    ucgQuickOverloadRemoval = jsonReader.decodeBoolean("ucgQuickOverloadRemoval");
+
     
   }
 
