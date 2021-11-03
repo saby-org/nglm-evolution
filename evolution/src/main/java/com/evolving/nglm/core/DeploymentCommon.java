@@ -67,6 +67,7 @@ import com.evolving.nglm.evolution.ToolboxSection;
 import com.evolving.nglm.evolution.EvolutionEngineEventDeclaration.EventRule;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.datacubes.SubscriberProfileDatacubeMetric;
+import com.evolving.nglm.evolution.datacubes.SubscriberProfileDatacubeMetricConfiguration;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchConnectionSettings;
 import com.evolving.nglm.evolution.kafka.Topic;
 import com.evolving.nglm.evolution.tenancy.Tenant;
@@ -443,7 +444,7 @@ public class DeploymentCommon
   private static Map<String,CommunicationChannel> communicationChannels;
   private static Map<String,SupportedDataType> supportedDataTypes;
   private static JourneyMetricConfiguration journeyMetricConfiguration;
-  private static Map<String,SubscriberProfileDatacubeMetric> subscriberProfileDatacubeMetrics;
+  private static SubscriberProfileDatacubeMetricConfiguration subscriberProfileDatacubeMetricConfiguration;
   private static Map<String,CriterionField> profileCriterionFields;
   private static Map<String,CriterionField> baseProfileCriterionFields;
   private static Map<String,CriterionField> extendedProfileCriterionFields;
@@ -760,7 +761,7 @@ public class DeploymentCommon
   public static boolean getGenerateSimpleProfileDimensions() { return generateSimpleProfileDimensions; }
   public static Map<String,SupportedDataType> getSupportedDataTypes() { return supportedDataTypes; }
   public static JourneyMetricConfiguration getJourneyMetricConfiguration() { return journeyMetricConfiguration; }
-  public static Map<String,SubscriberProfileDatacubeMetric> getSubscriberProfileDatacubeMetrics() { return subscriberProfileDatacubeMetrics; } // EVPRO-99 check for tenant and static 
+  public static SubscriberProfileDatacubeMetricConfiguration getSubscriberProfileDatacubeConfiguration() { return subscriberProfileDatacubeMetricConfiguration; } // EVPRO-99 check for tenant and static 
   public static Map<String,CriterionField> getProfileCriterionFields() { return profileCriterionFields; } // EVPRO-99 check for tenant and static
   public static Map<String,CriterionField> getBaseProfileCriterionFields() { return baseProfileCriterionFields; }
   public static Map<String,CriterionField> getExtendedProfileCriterionFields() { return extendedProfileCriterionFields; }
@@ -1138,7 +1139,7 @@ public class DeploymentCommon
     callingChannelProperties = jsonReader.decodeMapFromArray(CallingChannelProperty.class, "callingChannelProperties");
     catalogCharacteristicUnits = jsonReader.decodeMapFromArray(CatalogCharacteristicUnit.class, "catalogCharacteristicUnits");    
     supportedDataTypes = jsonReader.decodeMapFromArray(SupportedDataType.class, "supportedDataTypes");
-    subscriberProfileDatacubeMetrics = jsonReader.decodeMapFromArray(SubscriberProfileDatacubeMetric.class, "subscriberProfileDatacubeMetrics");
+//    subscriberProfileDatacubeMetrics = jsonReader.decodeMapFromArray(SubscriberProfileDatacubeMetric.class, "subscriberProfileDatacubeMetrics");
     
     initialCallingChannelsJSONArray = jsonReader.decodeJSONArray("initialCallingChannels");
     initialSalesChannelsJSONArray = jsonReader.decodeJSONArray("initialSalesChannels");
@@ -1181,6 +1182,32 @@ public class DeploymentCommon
         journeyMetricConfiguration = new JourneyMetricConfiguration();
       } else {
         journeyMetricConfiguration = new JourneyMetricConfiguration(priorPeriodDays, postPeriodDays, journeyMetricDeclarations);
+      }
+    }
+    
+    
+    // subscriberProfileDatacubeMetrcsDeclarations
+    DeploymentJSONReader subscriberProfileDatacubeMetricConfigurationJsonReader = jsonReader.get("subscriberProfileDatacubeMetrics");
+    if( subscriberProfileDatacubeMetricConfigurationJsonReader.keySet().isEmpty() ) {
+      // subscriberProfileDatacubeMetrics are therefore disabled
+    	subscriberProfileDatacubeMetricConfiguration  = new SubscriberProfileDatacubeMetricConfiguration();
+    } else {
+      int periodROI = subscriberProfileDatacubeMetricConfigurationJsonReader.decodeInteger("periodROI");
+      if(periodROI < 1) {
+    	log.warn("Bad 'subscriberProfileDatacubeMetric' settings. 'periodROI' field cannot be negative or zero. Put default value = 4");
+        periodROI = 4;
+      }
+      
+      String timeUnitROI = subscriberProfileDatacubeMetricConfigurationJsonReader.decodeString("timeUnitROI");
+      if(timeUnitROI.isEmpty()) {
+    	log.warn("Bad 'subscriberProfileDatacubeMetric' settings. 'timeUnitROI' field is empty. Put default value = week");
+    	timeUnitROI="week"; //default value="week"
+      }
+      Map<String,SubscriberProfileDatacubeMetric> subscriberProfileDatacubeMetricDeclarations = subscriberProfileDatacubeMetricConfigurationJsonReader.decodeMapFromArray(SubscriberProfileDatacubeMetric.class, "metrics");
+      if(subscriberProfileDatacubeMetricDeclarations.isEmpty()) { // subscriberProfileDatacubeMetric are therefore disabled
+    	  subscriberProfileDatacubeMetricConfiguration = new SubscriberProfileDatacubeMetricConfiguration();
+      } else {
+    	  subscriberProfileDatacubeMetricConfiguration = new SubscriberProfileDatacubeMetricConfiguration(periodROI, timeUnitROI, subscriberProfileDatacubeMetricDeclarations);
       }
     }
     

@@ -119,7 +119,7 @@ public class MissionsHistoryDatacubeGenerator extends DatacubeGenerator
   {
     loyaltyProgramMissionsMap.update();
     this.segmentationDimensionList.update();
-    this.customMetrics = Deployment.getSubscriberProfileDatacubeMetrics();
+    this.customMetrics = Deployment.getSubscriberProfileDatacubeConfiguration().getMetrics();
     //TODO: subscriberStatusDisplayMapping.updateFromElasticsearch(elasticsearch);
     return true;
   }

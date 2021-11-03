@@ -1191,6 +1191,12 @@
       "display"             : "Badge Customer Report",
       "description"         : "Description of status of badges delivered to customers",
       "class"               : "com.evolving.nglm.evolution.reports.badgeCustomer.BadgeCustomerReportDriver",
+    },
+    {
+      "name"                : "ROIReport",
+      "display"             : "ROI Report",
+      "description"         : "Return On Investment.",
+      "class"               : "com.evolving.nglm.evolution.reports.ROI.ROIReportDriver",
       "availableScheduling" : [ "none","daily", "weekly", "monthly" ]
     }
   ],
