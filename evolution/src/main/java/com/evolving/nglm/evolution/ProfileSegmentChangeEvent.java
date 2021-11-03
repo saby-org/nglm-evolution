@@ -6,15 +6,11 @@
 
 package com.evolving.nglm.evolution;
 
-import java.util.Date;
-
 import org.apache.kafka.connect.data.*;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SubscriberStreamOutput;
-import com.evolving.nglm.evolution.EvolutionEngineEvent;
-import com.evolving.nglm.evolution.ParameterMap;
 
 public class ProfileSegmentChangeEvent extends SubscriberStreamOutput implements EvolutionEngineEvent
 {
@@ -33,10 +29,9 @@ public class ProfileSegmentChangeEvent extends SubscriberStreamOutput implements
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("profileSegmentChange");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),8));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),9));
     for (Field field : subscriberStreamOutputSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
-    schemaBuilder.field("eventDate", Timestamp.SCHEMA);
     schemaBuilder.field("oldValues", ParameterMap.schema());
     schemaBuilder.field("newValues", ParameterMap.schema());
     schema = schemaBuilder.build();
@@ -79,7 +74,6 @@ public class ProfileSegmentChangeEvent extends SubscriberStreamOutput implements
   *
   ****************************************/
 
-  private Date eventDate;
   private String subscriberID;
   private ParameterMap oldValues;
   private ParameterMap newValues;
@@ -92,7 +86,6 @@ public class ProfileSegmentChangeEvent extends SubscriberStreamOutput implements
 
   public String getEventName() { return "segment update"; }
   public String getSubscriberID() { return subscriberID; }
-  public Date getEventDate() { return eventDate; }
   public ParameterMap getOldValues() { return oldValues; }
   public ParameterMap getNewValues() { return newValues; }
   
@@ -120,10 +113,9 @@ public class ProfileSegmentChangeEvent extends SubscriberStreamOutput implements
   *
   *****************************************/
 
-  public ProfileSegmentChangeEvent(String subscriberID, Date eventDate, ParameterMap oldValues, ParameterMap newValues)
+  public ProfileSegmentChangeEvent(String subscriberID, ParameterMap oldValues, ParameterMap newValues)
   {
     this.subscriberID = subscriberID;
-    this.eventDate = eventDate;
     this.oldValues = oldValues;
     this.newValues = newValues;
   }
@@ -134,11 +126,10 @@ public class ProfileSegmentChangeEvent extends SubscriberStreamOutput implements
   *
   *****************************************/
 
-  public ProfileSegmentChangeEvent(SchemaAndValue schemaAndValue, String subscriberID, Date eventDate, ParameterMap oldValues, ParameterMap newValues)
+  public ProfileSegmentChangeEvent(SchemaAndValue schemaAndValue, String subscriberID, ParameterMap oldValues, ParameterMap newValues)
   {
     super(schemaAndValue);
     this.subscriberID = subscriberID;
-    this.eventDate = eventDate;
     this.oldValues = oldValues;
     this.newValues = newValues;
   }
@@ -155,7 +146,6 @@ public class ProfileSegmentChangeEvent extends SubscriberStreamOutput implements
     Struct struct = new Struct(schema);
     packSubscriberStreamOutput(struct,profileSegmentChangeEvent);
     struct.put("subscriberID", profileSegmentChangeEvent.getSubscriberID());
-    struct.put("eventDate", profileSegmentChangeEvent.getEventDate());
     struct.put("oldValues", ParameterMap.pack(profileSegmentChangeEvent.getOldValues()));
     struct.put("newValues", ParameterMap.pack(profileSegmentChangeEvent.getNewValues()));
     
@@ -190,7 +180,6 @@ public class ProfileSegmentChangeEvent extends SubscriberStreamOutput implements
 
     Struct valueStruct = (Struct) value;
     String subscriberID = valueStruct.getString("subscriberID");
-    Date eventDate = (Date) valueStruct.get("eventDate");
     ParameterMap oldValues = ParameterMap.unpack(new SchemaAndValue(schema.field("oldValues").schema(), valueStruct.get("oldValues")));
     ParameterMap newValues = ParameterMap.unpack(new SchemaAndValue(schema.field("newValues").schema(), valueStruct.get("newValues")));
 
@@ -198,6 +187,6 @@ public class ProfileSegmentChangeEvent extends SubscriberStreamOutput implements
     // return
     //
 
-    return new ProfileSegmentChangeEvent(schemaAndValue, subscriberID, eventDate, oldValues, newValues);
+    return new ProfileSegmentChangeEvent(schemaAndValue, subscriberID, oldValues, newValues);
   }
 }

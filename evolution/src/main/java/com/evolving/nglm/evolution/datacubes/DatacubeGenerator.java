@@ -187,6 +187,9 @@ public abstract class DatacubeGenerator
     if(tmpBuffer == null || tmpBuffer.capacity() != bufferCapacity) {
       tmpBuffer = ByteBuffer.allocate(bufferCapacity);
     } else {
+      // ! This is very hacky, we should not have to cast ByteBuffer into Buffer normally.
+      // This cast is necessary here because of some discrepancies between Java 8 & Java 9.
+      // When built in Java 11 and executed on Java 8 JVM this wouldn't work without this cast.
       ((Buffer) tmpBuffer).rewind(); // re-use the buffer to optimize allocate calls.
     }
     

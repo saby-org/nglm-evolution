@@ -638,7 +638,7 @@ public class PushNotificationManager extends DeliveryManagerForNotifications imp
       PushTemplate baseTemplate = (PushTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(pushTemplateID, now);
       PushTemplate template = (baseTemplate != null) ? ((PushTemplate) baseTemplate.getReadOnlyCopy(evolutionEventContext)) : null;
       String journeyID = subscriberEvaluationRequest.getJourneyState().getJourneyID();
-      Journey journey = evolutionEventContext.getJourneyService().getActiveJourney(journeyID, evolutionEventContext.now());
+      Journey journey = evolutionEventContext.getJourneyService().getActiveJourney(journeyID, evolutionEventContext.eventDate());
       if (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.Workflow && journey.getJSONRepresentation().get("areaAvailability") != null )
         {
           JSONArray areaAvailability = (JSONArray) journey.getJSONRepresentation().get("areaAvailability");

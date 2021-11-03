@@ -8,12 +8,8 @@ package com.evolving.nglm.evolution;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.apache.kafka.connect.data.*;
@@ -25,10 +21,6 @@ import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.ActionManager.ActionType;
-import com.evolving.nglm.evolution.DeliveryRequest.Module;
-import com.evolving.nglm.evolution.offeroptimizer.ProposedOfferDetails;
-
-import java.util.ArrayList;
 
 public class TokenChange extends SubscriberStreamOutput implements EvolutionEngineEvent, Action
 {
@@ -74,11 +66,9 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
 
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("token_change");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),11));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),12));
     for (Field field : subscriberStreamOutputSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
-    schemaBuilder.field("eventDateTime", Timestamp.builder().schema());
-    schemaBuilder.field("eventID", Schema.STRING_SCHEMA);
     schemaBuilder.field("tokenCode", Schema.STRING_SCHEMA);
     schemaBuilder.field("action", Schema.STRING_SCHEMA);
     schemaBuilder.field("returnStatus", Schema.OPTIONAL_STRING_SCHEMA);
@@ -113,8 +103,6 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
   ****************************************/
 
   private String subscriberID;
-  private Date eventDateTime;
-  private String eventID;
   private String tokenCode;
   private String action;
   private String returnStatus;
@@ -138,8 +126,6 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
   //
 
   @Override public String getSubscriberID() { return subscriberID; }
-  public Date geteventDateTime() { return eventDateTime; }
-  @Override public String getEventID() { return eventID; }
   public String getTokenCode() { return tokenCode; }
   public String getAction() { return action; }
   public String getReturnStatus() { return returnStatus; }
@@ -158,8 +144,6 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
   //
 
   public void setSubscriberID(String subscriberID) { this.subscriberID = subscriberID; }
-  public void seteventDateTime(Date eventDateTime) { this.eventDateTime = eventDateTime; }
-  public void setEventID(String eventID) { this.eventID = eventID; }
   public void setTokenCode(String tokenCode) { this.tokenCode = tokenCode; }
   public void setAction(String action) { this.action = action; }
   public void setReturnStatus(String returnStatus) { this.returnStatus = returnStatus; }
@@ -174,9 +158,9 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
   * constructor (simple)
   *
   *****************************************/
-  public TokenChange(SubscriberProfile subscriberProfile, Date eventDateTime, String eventID, String tokenCode, String action, String returnStatus, String origin, String moduleID, String featureID, int tenantID)
+  public TokenChange(SubscriberProfile subscriberProfile, String tokenCode, String action, String returnStatus, String origin, String moduleID, String featureID, int tenantID)
   {
-    this(subscriberProfile, eventDateTime, eventID, tokenCode, action, returnStatus, origin, moduleID, featureID, null, tenantID);
+    this(subscriberProfile, tokenCode, action, returnStatus, origin, moduleID, featureID, null, tenantID);
   }
 
   
@@ -186,15 +170,13 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
   *
   *****************************************/
 
-  public TokenChange(SubscriberProfile subscriberProfile, Date eventDateTime, String eventID, String tokenCode, String action, String returnStatus, String origin, String moduleID, String featureID, String callUniqueIdentifier, int tenantID)
+  public TokenChange(SubscriberProfile subscriberProfile, String tokenCode, String action, String returnStatus, String origin, String moduleID, String featureID, String callUniqueIdentifier, int tenantID)
   {
     if(subscriberProfile != null) 
       { 
     	this.subscriberID = subscriberProfile.getSubscriberID();
     	this.segments = subscriberProfile.getSegments();
       }
-    this.eventDateTime = eventDateTime;
-    this.eventID = eventID;
     this.tokenCode = tokenCode;
     this.action = action;
     this.returnStatus = returnStatus;
@@ -204,15 +186,13 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
     this.callUniqueIdentifier = callUniqueIdentifier;
     this.tenantID = tenantID;
   }
-   public TokenChange(SubscriberProfile subscriberProfile, Date eventDateTime, String eventID, String tokenCode, String action, String returnStatus, String origin, String moduleID, String featureID, String callUniqueIdentifier, String acceptedOfferID, List<String> presentedOfferIDs, int tenantID)
+   public TokenChange(SubscriberProfile subscriberProfile, String tokenCode, String action, String returnStatus, String origin, String moduleID, String featureID, String callUniqueIdentifier, String acceptedOfferID, List<String> presentedOfferIDs, int tenantID)
   {
 	if(subscriberProfile != null) 
 	  { 
 		this.subscriberID = subscriberProfile.getSubscriberID();
 		this.segments = subscriberProfile.getSegments();
-	  }	
-    this.eventDateTime = eventDateTime;
-    this.eventID = eventID;
+	  }
     this.tokenCode = tokenCode;
     this.action = action;
     this.returnStatus = returnStatus;
@@ -230,12 +210,10 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
    * constructor unpack
    *
    *****************************************/
-  public TokenChange(SchemaAndValue schemaAndValue, String subscriberID, Date eventDateTime, String eventID, String tokenCode, String action, String returnStatus, String origin, String moduleID, String featureID, String callUniqueIdentifier, String acceptedOfferID,List<String> presentedOfferIDs, Map<Pair<String, String>, Integer> segments, int tenantID)
+  public TokenChange(SchemaAndValue schemaAndValue, String subscriberID, String tokenCode, String action, String returnStatus, String origin, String moduleID, String featureID, String callUniqueIdentifier, String acceptedOfferID,List<String> presentedOfferIDs, Map<Pair<String, String>, Integer> segments, int tenantID)
   {
     super(schemaAndValue);
     this.subscriberID = subscriberID;
-    this.eventDateTime = eventDateTime;
-    this.eventID = eventID;
     this.tokenCode = tokenCode;
     this.action = action;
     this.returnStatus = returnStatus;
@@ -261,8 +239,6 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
     Struct struct = new Struct(schema);
     packSubscriberStreamOutput(struct,tokenChange);
     struct.put("subscriberID",tokenChange.getSubscriberID());
-    struct.put("eventDateTime",tokenChange.geteventDateTime());
-    struct.put("eventID", tokenChange.getEventID());
     struct.put("tokenCode", tokenChange.getTokenCode());
     struct.put("action", tokenChange.getAction());
     struct.put("returnStatus", tokenChange.getReturnStatus());
@@ -303,8 +279,6 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
 
     Struct valueStruct = (Struct) value;
     String subscriberID = valueStruct.getString("subscriberID");
-    Date eventDateTime = (Date) valueStruct.get("eventDateTime");
-    String eventID = valueStruct.getString("eventID");
     String tokenCode = valueStruct.getString("tokenCode");
     String action = valueStruct.getString("action");
     String returnStatus = valueStruct.getString("returnStatus");
@@ -323,14 +297,7 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
     // return
     //
 
-    return new TokenChange(schemaAndValue, subscriberID, eventDateTime, eventID, tokenCode, action, returnStatus, origin, moduleID, featureID, callUniqueIdentifier, acceptedOfferID, presentedOfferIDs, segments, tenantID);
-  }
-  
-  
-  @Override
-  public Date getEventDate()
-  {
-    return geteventDateTime();
+    return new TokenChange(schemaAndValue, subscriberID, tokenCode, action, returnStatus, origin, moduleID, featureID, callUniqueIdentifier, acceptedOfferID, presentedOfferIDs, segments, tenantID);
   }
   
   @Override

@@ -41,11 +41,9 @@ public class NotificationEvent extends SubscriberStreamOutput implements Evoluti
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("notification_event");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(), 3));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(), 4));
     for (Field field : subscriberStreamOutputSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("subscriberID", Schema.OPTIONAL_STRING_SCHEMA);
-    schemaBuilder.field("eventDateTime", Timestamp.builder().schema());
-    schemaBuilder.field("eventID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("templateID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("tags", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA).optional());
     schemaBuilder.field("channelID", Schema.OPTIONAL_STRING_SCHEMA);
@@ -78,8 +76,6 @@ public class NotificationEvent extends SubscriberStreamOutput implements Evoluti
   ****************************************/
 
   private String subscriberID;
-  private Date eventDateTime;
-  private String eventID;
   private String templateID;
   private Map<String, String> tags;
   private String channelID;
@@ -100,8 +96,6 @@ public class NotificationEvent extends SubscriberStreamOutput implements Evoluti
   //
 
   @Override public String getSubscriberID() { return subscriberID; }
-  public Date geteventDateTime() { return eventDateTime; }
-  @Override public String getEventID() { return eventID; }
  
   public String getTemplateID()
   {
@@ -131,8 +125,6 @@ public class NotificationEvent extends SubscriberStreamOutput implements Evoluti
   //
 
   public void setSubscriberID(String subscriberID) { this.subscriberID = subscriberID; }
-  public void seteventDateTime(Date eventDateTime) { this.eventDateTime = eventDateTime; }
-  public void setEventID(String eventID) { this.eventID = eventID; }
   public void setTemplateID(String templateID) { this.templateID = templateID; }
   public void setTags(Map<String, String> tags) { this.tags = tags; }
   public void setChannelID(String channelID) { this.channelID = channelID; }
@@ -147,11 +139,9 @@ public class NotificationEvent extends SubscriberStreamOutput implements Evoluti
   *
   *****************************************/
 
-  public NotificationEvent(String subscriberID, Date eventDateTime, String eventID, String templateID, Map<String, String> tags, String channelID, ContactType contactType, String origin, String source, String featureID, Module moduleID)
+  public NotificationEvent(String subscriberID, String templateID, Map<String, String> tags, String channelID, ContactType contactType, String origin, String source, String featureID, Module moduleID)
   {
     this.subscriberID = subscriberID;
-    this.eventDateTime = eventDateTime;
-    this.eventID = eventID;
     this.templateID = templateID;
     this.tags = tags;
     this.channelID = channelID;
@@ -167,12 +157,10 @@ public class NotificationEvent extends SubscriberStreamOutput implements Evoluti
    * constructor unpack
    *
    *****************************************/
-  public NotificationEvent(SchemaAndValue schemaAndValue, String subscriberID, Date eventDateTime, String eventID, String templateID, Map<String, String> tags, String channelID, ContactType contactType, String origin, String source, String featureID, Module moduleID)
+  public NotificationEvent(SchemaAndValue schemaAndValue, String subscriberID, String templateID, Map<String, String> tags, String channelID, ContactType contactType, String origin, String source, String featureID, Module moduleID)
   {
     super(schemaAndValue);
     this.subscriberID = subscriberID;
-    this.eventDateTime = eventDateTime;
-    this.eventID = eventID;
     this.templateID = templateID;
     this.tags = tags;
     this.channelID = channelID;
@@ -196,8 +184,6 @@ public class NotificationEvent extends SubscriberStreamOutput implements Evoluti
     Struct struct = new Struct(schema);
     packSubscriberStreamOutput(struct,notificationEvent);
     struct.put("subscriberID",notificationEvent.getSubscriberID());
-    struct.put("eventDateTime",notificationEvent.geteventDateTime());
-    struct.put("eventID", notificationEvent.getEventID());
     struct.put("templateID", notificationEvent.getTemplateID());
     struct.put("tags", notificationEvent.getTags());
     struct.put("channelID", notificationEvent.getChannelID());
@@ -231,8 +217,6 @@ public class NotificationEvent extends SubscriberStreamOutput implements Evoluti
 
     Struct valueStruct = (Struct) value;
     String subscriberID = valueStruct.getString("subscriberID");
-    Date eventDateTime = (Date) valueStruct.get("eventDateTime");
-    String eventID = valueStruct.getString("eventID");
     String templateID = valueStruct.getString("templateID");
     Map<String, String> tags = (Map<String, String>) valueStruct.get("tags");
     String channelID = valueStruct.getString("channelID");
@@ -252,14 +236,7 @@ public class NotificationEvent extends SubscriberStreamOutput implements Evoluti
     // return
     //
 
-    return new NotificationEvent(schemaAndValue, subscriberID, eventDateTime, eventID,templateID, tags, channelID, contactTypeEnum, origin, source, featureID, moduleID);
-  }
-  
-  
-  @Override
-  public Date getEventDate()
-  {
-    return geteventDateTime();
+    return new NotificationEvent(schemaAndValue, subscriberID, templateID, tags, channelID, contactTypeEnum, origin, source, featureID, moduleID);
   }
   
   @Override

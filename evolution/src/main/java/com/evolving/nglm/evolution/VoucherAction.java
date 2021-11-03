@@ -6,8 +6,6 @@
 
 package com.evolving.nglm.evolution;
 
-import java.util.Date;
-
 import com.evolving.nglm.core.SubscriberStreamOutput;
 import org.apache.kafka.connect.data.*;
 import org.slf4j.Logger;
@@ -38,10 +36,9 @@ public class VoucherAction extends SubscriberStreamOutput implements EvolutionEn
     {
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("VoucherAction");
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),1));
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),2));
       for (Field field : subscriberStreamOutputSchema().fields()) schemaBuilder.field(field.name(), field.schema());
       schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
-      schemaBuilder.field("eventDate", Timestamp.SCHEMA);
       schemaBuilder.field("voucherCode", Schema.STRING_SCHEMA);
       schemaBuilder.field("actionStatus", Schema.STRING_SCHEMA);
       schemaBuilder.field("actionStatusCode", Schema.INT32_SCHEMA);
@@ -87,7 +84,6 @@ public class VoucherAction extends SubscriberStreamOutput implements EvolutionEn
    ****************************************/
   
   private String subscriberID;
-  private Date eventDate;
   private String voucherCode;
   private String actionStatus;
   private Integer actionStatusCode;
@@ -112,7 +108,6 @@ public class VoucherAction extends SubscriberStreamOutput implements EvolutionEn
     return operation; 
   }
   @Override public String getSubscriberID() { return subscriberID; }
-  @Override public Date getEventDate() { return eventDate; }
   public String getVoucherCode() { return voucherCode; };
   public String getActionStatus() { return actionStatus; }
   public Integer getActionStatusCode() { return actionStatusCode; }
@@ -134,21 +129,19 @@ public class VoucherAction extends SubscriberStreamOutput implements EvolutionEn
   *
   *****************************************/
   
-  public VoucherAction(String subscriberID, Date eventDate, String voucherCode, String actionStatus, Integer actionStatusCode, String operation)
+  public VoucherAction(String subscriberID, String voucherCode, String actionStatus, Integer actionStatusCode, String operation)
   {
     this.subscriberID = subscriberID;
-    this.eventDate = eventDate;
     this.voucherCode = voucherCode;
     this.actionStatus = actionStatus;
     this.actionStatusCode = actionStatusCode;
     this.operation = operation;
   }
 
-  public VoucherAction(SchemaAndValue schemaAndValue, String subscriberID, Date eventDate, String voucherCode, String actionStatus, Integer actionStatusCode, String operation)
+  public VoucherAction(SchemaAndValue schemaAndValue, String subscriberID, String voucherCode, String actionStatus, Integer actionStatusCode, String operation)
   {
     super(schemaAndValue);
     this.subscriberID = subscriberID;
-    this.eventDate = eventDate;
     this.voucherCode = voucherCode;
     this.actionStatus = actionStatus;
     this.actionStatusCode = actionStatusCode;
@@ -167,7 +160,6 @@ public class VoucherAction extends SubscriberStreamOutput implements EvolutionEn
    Struct struct = new Struct(schema);
    packSubscriberStreamOutput(struct,event);
    struct.put("subscriberID", event.getSubscriberID());
-   struct.put("eventDate", event.getEventDate());
    struct.put("voucherCode", event.getVoucherCode());
    struct.put("actionStatus", event.getActionStatus());
    struct.put("actionStatusCode", event.getActionStatusCode());
@@ -203,7 +195,6 @@ public class VoucherAction extends SubscriberStreamOutput implements EvolutionEn
 
    Struct valueStruct = (Struct) value;
    String subscriberID = valueStruct.getString("subscriberID");
-   Date eventDate = (Date) valueStruct.get("eventDate");
    String voucherCode = valueStruct.getString("voucherCode");
    String actionStatus = valueStruct.getString("actionStatus");
    Integer actionStatusCode = valueStruct.getInt32("actionStatusCode");
@@ -213,13 +204,13 @@ public class VoucherAction extends SubscriberStreamOutput implements EvolutionEn
    // return
    //
 
-   return new VoucherAction(schemaAndValue, subscriberID, eventDate, voucherCode, actionStatus, actionStatusCode, operation);
+   return new VoucherAction(schemaAndValue, subscriberID, voucherCode, actionStatus, actionStatusCode, operation);
  }
 
 @Override
 public String toString()
 {
-  return "VoucherAction [subscriberID=" + subscriberID + ", eventDate=" + eventDate + ", voucherCode=" + voucherCode + ", actionStatus=" + actionStatus + ", operation=" + operation + "]";
+  return "VoucherAction [subscriberID=" + subscriberID + ", voucherCode=" + voucherCode + ", actionStatus=" + actionStatus + ", operation=" + operation + "]";
 }
 
 }

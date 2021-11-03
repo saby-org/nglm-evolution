@@ -35,13 +35,11 @@ public class OTPInstanceChangeEvent extends SubscriberStreamOutput implements Ev
     {
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name("otpInstanceChangeEvent");
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(), 10));
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(), 11));
       for (Field field : subscriberStreamOutputSchema().fields())
         schemaBuilder.field(field.name(), field.schema());
       // IN + OUT
       schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
-      schemaBuilder.field("eventDate", Timestamp.builder().schema());
-      schemaBuilder.field("eventID", Schema.STRING_SCHEMA);
       schemaBuilder.field("action", Schema.STRING_SCHEMA);
       schemaBuilder.field("otpTypeName", Schema.STRING_SCHEMA);
       // IN
@@ -124,9 +122,7 @@ public class OTPInstanceChangeEvent extends SubscriberStreamOutput implements Ev
    *
    ****************************************/
 
-  private Date eventDate;
   private String subscriberID;
-  private String eventID;
   private OTPChangeAction action;
   private String otpTypeName;
   private String otpCheckValue;
@@ -155,18 +151,6 @@ public class OTPInstanceChangeEvent extends SubscriberStreamOutput implements Ev
   public String getSubscriberID()
   {
     return subscriberID;
-  }
-
-  @Override
-  public Date getEventDate()
-  {
-    return eventDate;
-  }
-
-  @Override
-  public String getEventID()
-  {
-    return eventID;
   }
 
   public OTPChangeAction getAction()
@@ -235,12 +219,9 @@ public class OTPInstanceChangeEvent extends SubscriberStreamOutput implements Ev
    *
    *****************************************/
 
-  public OTPInstanceChangeEvent(Date eventDate, String subscriberID, String eventID, OTPChangeAction action, String otpTypeName, String otpCheckValue, Boolean forceBurn, Integer remainingAttempts, Integer validityDuration, Integer currentTypeErrors, Integer globalErrorCounts, RESTAPIGenericReturnCodes returnStatus, String featureID, Module moduleID, int tenantID)
+  public OTPInstanceChangeEvent(String subscriberID, String eventID, OTPChangeAction action, String otpTypeName, String otpCheckValue, Boolean forceBurn, Integer remainingAttempts, Integer validityDuration, Integer currentTypeErrors, Integer globalErrorCounts, RESTAPIGenericReturnCodes returnStatus, String featureID, Module moduleID, int tenantID)
     {
-      // super();
-      this.eventDate = eventDate;
       this.subscriberID = subscriberID;
-      this.eventID = eventID;
       this.action = action;
       this.otpTypeName = otpTypeName;
       this.otpCheckValue = otpCheckValue;
@@ -253,14 +234,13 @@ public class OTPInstanceChangeEvent extends SubscriberStreamOutput implements Ev
       this.featureID = featureID;
       this.moduleID = moduleID;
       this.tenantID = tenantID;
+      setEventID(eventID);
     }
 
   public OTPInstanceChangeEvent(OTPInstanceChangeEvent eventToClone)
     {
-      // super();
-      this.eventDate = eventToClone.getEventDate();
+      super(eventToClone);
       this.subscriberID = eventToClone.getSubscriberID();
-      this.eventID = eventToClone.getEventID();
       this.action = eventToClone.getAction();
       this.otpTypeName = eventToClone.getOTPTypeName();
       this.otpCheckValue = eventToClone.getOTPCheckValue();
@@ -281,12 +261,10 @@ public class OTPInstanceChangeEvent extends SubscriberStreamOutput implements Ev
    *
    *****************************************/
 
-  public OTPInstanceChangeEvent(SchemaAndValue schemaAndValue, Date eventDate, String subscriberID, String eventID, OTPChangeAction action, String otpTypeName, String otpCheckValue, Boolean forceBurn, Integer remainingAttempts, Integer validityDuration, Integer currentTypeErrors, Integer globalErrorCounts, RESTAPIGenericReturnCodes returnStatus, String featureID, Module moduleID, int tenantID)
+  public OTPInstanceChangeEvent(SchemaAndValue schemaAndValue, String subscriberID, OTPChangeAction action, String otpTypeName, String otpCheckValue, Boolean forceBurn, Integer remainingAttempts, Integer validityDuration, Integer currentTypeErrors, Integer globalErrorCounts, RESTAPIGenericReturnCodes returnStatus, String featureID, Module moduleID, int tenantID)
     {
       super(schemaAndValue);
-      this.eventDate = eventDate;
       this.subscriberID = subscriberID;
-      this.eventID = eventID;
       this.action = action;
       this.otpTypeName = otpTypeName;
       this.otpCheckValue = otpCheckValue;
@@ -304,7 +282,7 @@ public class OTPInstanceChangeEvent extends SubscriberStreamOutput implements Ev
   @Override
   public String toString()
   {
-    return "OTPInstanceChangeEvent [eventDate=" + eventDate + ", subscriberID=" + subscriberID + ", eventID=" + eventID + ", action=" + action + ", otpTypeName=" + otpTypeName + ", otpCheckValue=" + otpCheckValue + ", remainingAttempts=" + remainingAttempts + ", validityDuration=" + validityDuration + ", currentTypeErrors=" + currentTypeErrors + ", globalErrorCounts=" + globalErrorCounts + ", returnStatus=" + returnStatus + ", tenantID=" + tenantID + ", featureID=" + featureID + ", moduleID=" + moduleID + "]";
+    return "OTPInstanceChangeEvent [ subscriberID=" + subscriberID + ", action=" + action + ", otpTypeName=" + otpTypeName + ", otpCheckValue=" + otpCheckValue + ", remainingAttempts=" + remainingAttempts + ", validityDuration=" + validityDuration + ", currentTypeErrors=" + currentTypeErrors + ", globalErrorCounts=" + globalErrorCounts + ", returnStatus=" + returnStatus + ", tenantID=" + tenantID + ", featureID=" + featureID + ", moduleID=" + moduleID + "]";
   }
 
   /*****************************************
@@ -319,9 +297,7 @@ public class OTPInstanceChangeEvent extends SubscriberStreamOutput implements Ev
     Struct struct = new Struct(schema);
     packSubscriberStreamOutput(struct, otpInstanceChangeEvent);
 
-    struct.put("eventDate", otpInstanceChangeEvent.getEventDate());
     struct.put("subscriberID", otpInstanceChangeEvent.getSubscriberID());
-    struct.put("eventID", otpInstanceChangeEvent.getEventID());
     struct.put("action", otpInstanceChangeEvent.getAction().getExternalRepresentation());
     struct.put("otpTypeName", otpInstanceChangeEvent.getOTPTypeName());
     struct.put("otpCheckValue", otpInstanceChangeEvent.getOTPCheckValue());
@@ -368,8 +344,6 @@ public class OTPInstanceChangeEvent extends SubscriberStreamOutput implements Ev
 
     Struct valueStruct = (Struct) value;
     String subscriberID = valueStruct.getString("subscriberID");
-    Date eventDate = (Date) valueStruct.get("eventDate");
-    String eventID = valueStruct.getString("eventID");
     OTPChangeAction action = OTPChangeAction.fromExternalRepresentation(valueStruct.getString("action"));
     String otpTypeName = valueStruct.getString("otpTypeName");
     String otpCheckValue = valueStruct.getString("otpCheckValue");
@@ -388,22 +362,12 @@ public class OTPInstanceChangeEvent extends SubscriberStreamOutput implements Ev
     // return
     //
 
-    return new OTPInstanceChangeEvent(schemaAndValue, eventDate, subscriberID, eventID, action, otpTypeName, otpCheckValue, forceBurn, remainingAttempts, validityDuration, currentTypeErrors, globalErrorCounts, returnStatus, featureID, moduleID, tenantID);
+    return new OTPInstanceChangeEvent(schemaAndValue, subscriberID, action, otpTypeName, otpCheckValue, forceBurn, remainingAttempts, validityDuration, currentTypeErrors, globalErrorCounts, returnStatus, featureID, moduleID, tenantID);
   }
 
   public void setReturnStatus(RESTAPIGenericReturnCodes returnStatus)
   {
     this.returnStatus = returnStatus;
-  }
-
-  public void setEventDate(Date eventDate)
-  {
-    this.eventDate = eventDate;
-  }
-
-  public void setEventID(String eventID)
-  {
-    this.eventID = eventID;
   }
 
   public void setAction(OTPChangeAction action)

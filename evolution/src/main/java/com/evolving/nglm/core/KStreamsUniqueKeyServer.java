@@ -33,7 +33,7 @@ public class KStreamsUniqueKeyServer {
         //taking the lowest partition from the lowest topicGroupId
         int smallestTopicGroupId=Integer.MAX_VALUE;
         int smallestPartition=Integer.MAX_VALUE;
-        for(TaskId taskId:streamThread.tasks().keySet()){
+        for(TaskId taskId:streamThread.allTasks().keySet()){
           if(taskId.topicGroupId<smallestTopicGroupId){
             smallestTopicGroupId=taskId.topicGroupId;
           }

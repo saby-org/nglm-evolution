@@ -33,10 +33,9 @@ public class ProfileChangeEvent extends SubscriberStreamOutput implements Evolut
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("profileChangeEvent");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),8));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),9));
     for (Field field : subscriberStreamOutputSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
-    schemaBuilder.field("eventDate", Timestamp.SCHEMA);
     schemaBuilder.field("oldValues", ParameterMap.schema());
     schemaBuilder.field("newValues", ParameterMap.schema());
     schema = schemaBuilder.build();
@@ -70,7 +69,6 @@ public class ProfileChangeEvent extends SubscriberStreamOutput implements Evolut
   *
   ****************************************/
 
-  private Date eventDate;
   private String subscriberID;
   private ParameterMap oldValues;
   private ParameterMap newValues;
@@ -83,7 +81,6 @@ public class ProfileChangeEvent extends SubscriberStreamOutput implements Evolut
 
   public String getEventName() { return "profile update"; }
   public String getSubscriberID() { return subscriberID; }
-  public Date getEventDate() { return eventDate; }
   public ParameterMap getOldValues() { return oldValues; }
   public ParameterMap getNewValues() { return newValues; }
     
@@ -114,10 +111,9 @@ public class ProfileChangeEvent extends SubscriberStreamOutput implements Evolut
   *
   *****************************************/
 
-  public ProfileChangeEvent(String subscriberID, Date eventDate, ParameterMap oldValues, ParameterMap newValues)
+  public ProfileChangeEvent(String subscriberID, ParameterMap oldValues, ParameterMap newValues)
   {
     this.subscriberID = subscriberID;
-    this.eventDate = eventDate;
     this.oldValues = oldValues;
     this.newValues = newValues;
   }
@@ -128,11 +124,10 @@ public class ProfileChangeEvent extends SubscriberStreamOutput implements Evolut
   *
   *****************************************/
 
-  public ProfileChangeEvent(SchemaAndValue schemaAndValue, String subscriberID, Date eventDate, ParameterMap oldValues, ParameterMap newValues)
+  public ProfileChangeEvent(SchemaAndValue schemaAndValue, String subscriberID, ParameterMap oldValues, ParameterMap newValues)
   {
     super(schemaAndValue);
     this.subscriberID = subscriberID;
-    this.eventDate = eventDate;
     this.oldValues = oldValues;
     this.newValues = newValues;
   }
@@ -149,7 +144,6 @@ public class ProfileChangeEvent extends SubscriberStreamOutput implements Evolut
     Struct struct = new Struct(schema);
     packSubscriberStreamOutput(struct,profileChangeEvent);
     struct.put("subscriberID", profileChangeEvent.getSubscriberID());
-    struct.put("eventDate", profileChangeEvent.getEventDate());
     struct.put("oldValues", ParameterMap.pack(profileChangeEvent.getOldValues()));
     struct.put("newValues", ParameterMap.pack(profileChangeEvent.getNewValues()));
     return struct;
@@ -183,7 +177,6 @@ public class ProfileChangeEvent extends SubscriberStreamOutput implements Evolut
 
     Struct valueStruct = (Struct) value;
     String subscriberID = valueStruct.getString("subscriberID");
-    Date eventDate = (Date) valueStruct.get("eventDate");
     ParameterMap oldValues = ParameterMap.unpack(new SchemaAndValue(schema.field("oldValues").schema(), valueStruct.get("oldValues")));
     ParameterMap newValues = ParameterMap.unpack(new SchemaAndValue(schema.field("newValues").schema(), valueStruct.get("newValues")));
 
@@ -191,6 +184,6 @@ public class ProfileChangeEvent extends SubscriberStreamOutput implements Evolut
     // return
     //
 
-    return new ProfileChangeEvent(schemaAndValue, subscriberID, eventDate, oldValues, newValues);
+    return new ProfileChangeEvent(schemaAndValue, subscriberID, oldValues, newValues);
   }
 }

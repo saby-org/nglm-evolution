@@ -15,13 +15,11 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
-import org.apache.kafka.connect.data.Timestamp;
 import org.json.simple.JSONObject;
 
 import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.ActionManager.ActionType;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
-import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 
@@ -42,10 +40,9 @@ public class JourneyRequest extends BonusDelivery implements SubscriberStreamEve
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("journey_request");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),8));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),9));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("journeyRequestID", Schema.STRING_SCHEMA);
-    schemaBuilder.field("eventDate", Timestamp.SCHEMA);
     schemaBuilder.field("journeyID", Schema.STRING_SCHEMA);
     schemaBuilder.field("callingJourneyInstanceID", SchemaBuilder.string().optional().defaultValue(null).schema());
     schemaBuilder.field("callingJourneyNodeID", SchemaBuilder.string().optional().defaultValue(null).schema());
@@ -77,7 +74,6 @@ public class JourneyRequest extends BonusDelivery implements SubscriberStreamEve
   *****************************************/
 
   private String journeyRequestID;
-  private Date eventDate;
   private String journeyID;
   private String callingJourneyInstanceID;
   private String callingJourneyNodeID;
@@ -99,7 +95,6 @@ public class JourneyRequest extends BonusDelivery implements SubscriberStreamEve
   *****************************************/
 
   public String getJourneyRequestID() { return journeyRequestID; }
-  public Date getEventDate() { return eventDate; }
   public String getJourneyID() { return journeyID; }
   public String getCallingJourneyInstanceID() { return callingJourneyInstanceID; }
   public String getCallingJourneyNodeID() { return callingJourneyNodeID; }
@@ -135,7 +130,6 @@ public class JourneyRequest extends BonusDelivery implements SubscriberStreamEve
   {
     super(context, "journeyFulfillment", deliveryRequestSource, tenantID);
     this.journeyRequestID = context.getUniqueKey();
-    this.eventDate = context.now();
     this.journeyID = journeyID;
     this.callingJourneyInstanceID = subscriberEvaluationRequest.getJourneyState().getJourneyInstanceID();
     this.callingJourneyNodeID = subscriberEvaluationRequest.getJourneyState().getJourneyNodeID();
@@ -156,7 +150,6 @@ public class JourneyRequest extends BonusDelivery implements SubscriberStreamEve
   {
     super(context, "journeyFulfillment", deliveryRequestSource, tenantID);
     this.journeyRequestID = context.getUniqueKey();
-    this.eventDate = context.now();
     this.journeyID = workflowID;
     this.callingJourneyInstanceID = subscriberEvaluationRequest.getJourneyState().getJourneyInstanceID();
     this.callingJourneyNodeID = subscriberEvaluationRequest.getJourneyState().getJourneyNodeID();
@@ -177,7 +170,6 @@ public class JourneyRequest extends BonusDelivery implements SubscriberStreamEve
   {
     super(subscriberProfile,subscriberGroupEpochReader,uniqueKey, subscriberID, "journeyFulfillment", deliveryRequestSource, universalControlGroup, tenantID);
     this.journeyRequestID = uniqueKey;
-    this.eventDate = SystemTime.getCurrentTime();
     this.journeyID = deliveryRequestSource;
     this.callingJourneyInstanceID = null;
     this.callingJourneyNodeID = null;
@@ -194,11 +186,10 @@ public class JourneyRequest extends BonusDelivery implements SubscriberStreamEve
   *
   *****************************************/
 
-  public JourneyRequest(DeliveryRequest originatingRequest, JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager, int tenantID)
+  public JourneyRequest(DeliveryRequest originatingRequest, JSONObject jsonRoot, int tenantID)
   {
     super(originatingRequest,jsonRoot, tenantID);
     this.journeyRequestID = JSONUtilities.decodeString(jsonRoot, "journeyRequestID", true);
-    this.eventDate = JSONUtilities.decodeDate(jsonRoot, "eventDate", true);
     this.journeyID = JSONUtilities.decodeString(jsonRoot, "journeyID", true);
     this.callingJourneyInstanceID = null;
     this.callingJourneyNodeID = null;
@@ -215,11 +206,10 @@ public class JourneyRequest extends BonusDelivery implements SubscriberStreamEve
   *
   *****************************************/
 
-  public JourneyRequest(SchemaAndValue schemaAndValue, String journeyRequestID, Date eventDate, String journeyID, String callingJourneyInstanceID, String callingJourneyNodeID, boolean waitForCompletion, SimpleParameterMap boundParameters, SubscriberJourneyStatus journeyStatus, SimpleParameterMap journeyResults)
+  public JourneyRequest(SchemaAndValue schemaAndValue, String journeyRequestID, String journeyID, String callingJourneyInstanceID, String callingJourneyNodeID, boolean waitForCompletion, SimpleParameterMap boundParameters, SubscriberJourneyStatus journeyStatus, SimpleParameterMap journeyResults)
   {
     super(schemaAndValue);
     this.journeyRequestID = journeyRequestID;
-    this.eventDate = eventDate;
     this.journeyID = journeyID;
     this.callingJourneyInstanceID = callingJourneyInstanceID;
     this.callingJourneyNodeID = callingJourneyNodeID;
@@ -240,7 +230,6 @@ public class JourneyRequest extends BonusDelivery implements SubscriberStreamEve
   {
     super(journeyRequest);
     this.journeyRequestID = journeyRequest.getJourneyRequestID();
-    this.eventDate = journeyRequest.getEventDate();
     this.journeyID = journeyRequest.getJourneyID();
     this.callingJourneyInstanceID = journeyRequest.getCallingJourneyInstanceID();
     this.callingJourneyNodeID = journeyRequest.getCallingJourneyNodeID();
@@ -274,7 +263,6 @@ public class JourneyRequest extends BonusDelivery implements SubscriberStreamEve
     Struct struct = new Struct(schema);
     packCommon(struct, journeyRequest);
     struct.put("journeyRequestID", journeyRequest.getJourneyRequestID());
-    struct.put("eventDate", journeyRequest.getEventDate());
     struct.put("journeyID", journeyRequest.getJourneyID());
     struct.put("callingJourneyInstanceID", journeyRequest.getCallingJourneyInstanceID());
     struct.put("callingJourneyNodeID", journeyRequest.getCallingJourneyNodeID());
@@ -313,7 +301,6 @@ public class JourneyRequest extends BonusDelivery implements SubscriberStreamEve
 
     Struct valueStruct = (Struct) value;
     String journeyRequestID = valueStruct.getString("journeyRequestID");
-    Date eventDate = (Date) valueStruct.get("eventDate");
     String journeyID = valueStruct.getString("journeyID");
     String callingJourneyInstanceID = (schemaVersion >= 2) ? valueStruct.getString("callingJourneyInstanceID") : null;
     String callingJourneyNodeID = (schemaVersion >= 2) ? valueStruct.getString("callingJourneyNodeID") : null;
@@ -326,7 +313,7 @@ public class JourneyRequest extends BonusDelivery implements SubscriberStreamEve
     //  return
     //
 
-    return new JourneyRequest(schemaAndValue, journeyRequestID, eventDate, journeyID, callingJourneyInstanceID, callingJourneyNodeID, waitForCompletion, boundParameters, journeyStatus,journeyResults);
+    return new JourneyRequest(schemaAndValue, journeyRequestID, journeyID, callingJourneyInstanceID, callingJourneyNodeID, waitForCompletion, boundParameters, journeyStatus,journeyResults);
   }
   
   /****************************************
@@ -372,7 +359,7 @@ public class JourneyRequest extends BonusDelivery implements SubscriberStreamEve
   @Override
   public String toString()
   {
-    return "JourneyRequest [" + (journeyRequestID != null ? "journeyRequestID=" + journeyRequestID + ", " : "") + (eventDate != null ? "eventDate=" + eventDate + ", " : "") + (journeyID != null ? "journeyID=" + journeyID + ", " : "") + (callingJourneyInstanceID != null ? "callingJourneyInstanceID=" + callingJourneyInstanceID + ", " : "") + (callingJourneyNodeID != null ? "callingJourneyNodeID=" + callingJourneyNodeID + ", " : "") + "waitForCompletion=" + waitForCompletion + ", "
+    return "JourneyRequest [" + (journeyRequestID != null ? "journeyRequestID=" + journeyRequestID + ", " : "") + (journeyID != null ? "journeyID=" + journeyID + ", " : "") + (callingJourneyInstanceID != null ? "callingJourneyInstanceID=" + callingJourneyInstanceID + ", " : "") + (callingJourneyNodeID != null ? "callingJourneyNodeID=" + callingJourneyNodeID + ", " : "") + "waitForCompletion=" + waitForCompletion + ", "
         + (boundParameters != null ? "boundParameters=" + boundParameters + ", " : "") + (journeyStatus != null ? "journeyStatus=" + journeyStatus + ", " : "") + (journeyResults != null ? "journeyResults=" + journeyResults + ", " : "") + "eligible=" + eligible + "]";
   }
 }
