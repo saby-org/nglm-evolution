@@ -135,6 +135,7 @@ import com.evolving.nglm.evolution.Token.TokenStatus;
 import com.evolving.nglm.evolution.VoucherChange.VoucherChangeAction;
 import com.evolving.nglm.evolution.UCGState.UCGGroup;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
+import com.evolving.nglm.evolution.SubscriberPredictions.Prediction;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -342,6 +343,7 @@ public class EvolutionEngine
     String subscriberTraceControlTopic = Deployment.getSubscriberTraceControlTopic();
     String presentationLogTopic = Deployment.getPresentationLogTopic();
     String acceptanceLogTopic = Deployment.getAcceptanceLogTopic();
+    String subscriberPredictionsPushTopic = Deployment.getSubscriberPredictionsPushTopic();
     String voucherChangeRequestTopic = Deployment.getVoucherChangeRequestTopic();
     String workflowEventTopic = Deployment.getWorkflowEventTopic();
     String otpInstanceChangeEventRequestTopic = Deployment.getOTPInstanceChangeRequestTopic();
@@ -736,6 +738,7 @@ public class EvolutionEngine
     final ConnectSerde<AssignSubscriberIDs> assignSubscriberIDsSerde = AssignSubscriberIDs.serde();
     final ConnectSerde<PresentationLog> presentationLogSerde = PresentationLog.serde();
     final ConnectSerde<AcceptanceLog> acceptanceLogSerde = AcceptanceLog.serde();
+    final ConnectSerde<Prediction> subscriberPredictionsPushSerde = Prediction.serde();
     final ConnectSerde<PointFulfillmentRequest> pointFulfillmentRequestSerde = PointFulfillmentRequest.serde();
     final ConnectSerde<SubscriberProfileForceUpdate> subscriberProfileForceUpdateSerde = SubscriberProfileForceUpdate.serde();
     final ConnectSerde<ExecuteActionOtherSubscriber> executeActionOtherSubscriberSerde = ExecuteActionOtherSubscriber.serde();
@@ -821,6 +824,7 @@ public class EvolutionEngine
     KStream<StringKey, SubscriberTraceControl> subscriberTraceControlSourceStream = builder.stream(subscriberTraceControlTopic, Consumed.with(stringKeySerde, subscriberTraceControlSerde));
     KStream<StringKey, PresentationLog> presentationLogSourceStream = builder.stream(presentationLogTopic, Consumed.with(stringKeySerde, presentationLogSerde));
     KStream<StringKey, AcceptanceLog> acceptanceLogSourceStream = builder.stream(acceptanceLogTopic, Consumed.with(stringKeySerde, acceptanceLogSerde));
+    KStream<StringKey, Prediction> subscriberPredictionsPushSourceStream = builder.stream(subscriberPredictionsPushTopic, Consumed.with(stringKeySerde, subscriberPredictionsPushSerde));
     KStream<StringKey, ProfileSegmentChangeEvent> profileSegmentChangeEventStream = builder.stream(Deployment.getProfileSegmentChangeEventTopic(), Consumed.with(stringKeySerde, profileSegmentChangeEventSerde));
     KStream<StringKey, ProfileLoyaltyProgramChangeEvent> profileLoyaltyProgramChangeEventStream = builder.stream(Deployment.getProfileLoyaltyProgramChangeEventTopic(), Consumed.with(stringKeySerde, profileLoyaltyProgramChangeEventSerde));
     KStream<StringKey, VoucherChange> voucherChangeRequestSourceStream = builder.stream(voucherChangeRequestTopic, Consumed.with(stringKeySerde, voucherChangeSerde));
@@ -968,6 +972,7 @@ public class EvolutionEngine
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) subscriberTraceControlSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) presentationLogSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) acceptanceLogSourceStream);
+    evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) subscriberPredictionsPushSourceStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) profileSegmentChangeEventStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) profileLoyaltyProgramChangeEventStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) voucherChangeRequestSourceStream);
@@ -2122,6 +2127,14 @@ public class EvolutionEngine
     
     /*****************************************
     *
+    *  update SubscriberPredictions
+    *
+    *****************************************/
+
+    subscriberStateUpdated = updatePredictions(context, evolutionEvent, tenantID) || subscriberStateUpdated;
+    
+    /*****************************************
+    *
     *  update PropensityOutputs
     *
     *****************************************/
@@ -2433,11 +2446,11 @@ public class EvolutionEngine
               purchaseFulfillmentRequest.getOrigin()
             );
             int returnCode = purchaseFulfillmentRequest.getReturnCode();
-         // storing the voucherChange
+            // exporting result
             VoucherChange voucherChange = new VoucherChange(
                 purchaseFulfillmentRequest.getSubscriberID(),
                 purchaseFulfillmentRequest.getEventDate(),
-                null,
+                expiryDate,
                 purchaseFulfillmentRequest.getEventID(),
                 VoucherChangeAction.Deliver,
                 voucherDelivery.getVoucherCode(),
@@ -2448,6 +2461,8 @@ public class EvolutionEngine
                 purchaseFulfillmentRequest.getOrigin(),
                 RESTAPIGenericReturnCodes.fromGenericResponseCode(returnCode),
                 purchaseFulfillmentRequest.getSegments(),
+                uniqueKeyServer.getKey(),
+                purchaseFulfillmentRequest.getOfferID(),
                 tenantID);
             subscriberProfile.getVouchers().add(voucherToStore);
             subscriberState.getVoucherChanges().add(voucherChange);
@@ -2477,7 +2492,7 @@ public class EvolutionEngine
           VoucherChange voucherChange = new VoucherChange(
               subscriberProfile.getSubscriberID(),              
               SystemTime.getCurrentTime(),
-              null,
+              voucherStored.getVoucherExpiryDate(),
               voucherStored.getEventID(),
               VoucherChangeAction.Expire,
               voucherStored.getVoucherCode(),
@@ -2488,6 +2503,8 @@ public class EvolutionEngine
               voucherStored.getOrigin(),
               RESTAPIGenericReturnCodes.SUCCESS,
               subscriberProfile.getSegments(),
+              uniqueKeyServer.getKey(),
+              voucherStored.getOfferID(),
               tenantID);
           subscriberState.getVoucherChanges().add(voucherChange);
           subscriberUpdated=true;
@@ -2502,6 +2519,7 @@ public class EvolutionEngine
     // check if we have update request
     if (evolutionEvent instanceof VoucherChange)
       {
+        Date expiryDate = null;// to propagate the stored voucher expiry date out, for ES reporting
         VoucherChange voucherChange = (VoucherChange) evolutionEvent;
         if (log.isDebugEnabled()) log.debug("voucher change to process : " + voucherChange);
         if (voucherChange.getAction() == VoucherChange.VoucherChangeAction.Unknown)
@@ -2519,6 +2537,7 @@ public class EvolutionEngine
                     if (voucherStored.getVoucherCode().equals(voucherChange.getVoucherCode()) && voucherStored.getVoucherID().equals(voucherChange.getVoucherID()))
                       {
                         voucherFound = true;
+                        expiryDate = voucherStored.getVoucherExpiryDate();
                         if (log.isDebugEnabled()) log.debug("need to apply to stored voucher " + voucherStored);
 
                         // redeem
@@ -2540,6 +2559,7 @@ public class EvolutionEngine
                               {
                                 // extend voucher OK
                                 voucherStored.setVoucherExpiryDate(voucherChange.getNewVoucherExpiryDate());
+                                expiryDate = voucherStored.getVoucherExpiryDate();
                                 sortVouchersPerExpiryDate(subscriberProfile);
                                 if (voucherStored.getVoucherExpiryDate().after(now)) voucherStored.setVoucherStatus(VoucherDelivery.VoucherStatus.Delivered);
                                 voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
@@ -2564,6 +2584,7 @@ public class EvolutionEngine
                               {
                                 // expire voucher OK
                                 voucherStored.setVoucherExpiryDate(now);
+                                expiryDate = voucherStored.getVoucherExpiryDate();
                                 sortVouchersPerExpiryDate(subscriberProfile);
                                 voucherStored.setVoucherStatus(VoucherDelivery.VoucherStatus.Expired);
                                 voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
@@ -2581,6 +2602,7 @@ public class EvolutionEngine
               }
           }
         // need to respond
+        if(expiryDate!=null) voucherChange.setNewVoucherExpiryDate(expiryDate);// for ES
         subscriberState.getVoucherChanges().add(voucherChange);
         subscriberUpdated = true;
       }
@@ -3809,7 +3831,7 @@ public class EvolutionEngine
                 ThreadLocalRandom random = ThreadLocalRandom.current();
                 addToUCG = (random.nextDouble() < shiftProbability);
               }
-            else
+            else if(subscriberUCGGroup != null)
             {
               //will add subscribers based on count. In hash map the key will be segment_id-segment_id foreach strata
               String key = String.join("-",subscriberUCGGroup.getSegmentIDs());
@@ -3824,6 +3846,10 @@ public class EvolutionEngine
                 addToUCG = true;
                 ucgSegmentEvaluationCount.put(key,1);
               }
+            }
+            else
+            {
+              log.warn("no subscriber group found for"+subscriberProfile.getSubscriberID());
             }
 
             /*****************************************
@@ -3875,14 +3901,18 @@ public class EvolutionEngine
     Date earliestDateToKeep = null;
     Integer maximumAcceptancesPeriodDays = offer.getMaximumAcceptancesPeriodDays();
     if (maximumAcceptancesPeriodDays != Offer.UNSET) {
-      earliestDateToKeep = RLMDateUtils.addDays(now, -maximumAcceptancesPeriodDays, Deployment.getDeployment(tenantID).getTimeZone());
+      // EVPRO-1061 : For day unit, limit should be 0h on (today - number of days + 1)
+      earliestDateToKeep = RLMDateUtils.addDays(now, -maximumAcceptancesPeriodDays+1, Deployment.getDeployment(tenantID).getTimeZone());
+      earliestDateToKeep = RLMDateUtils.truncate(earliestDateToKeep, Calendar.DATE, Deployment.getDeployment(tenantID).getTimeZone());
     } else {
       Integer maximumAcceptancesPeriodMonths = offer.getMaximumAcceptancesPeriodMonths();
       if (maximumAcceptancesPeriodMonths != Offer.UNSET) {
         if (maximumAcceptancesPeriodMonths == 1) { // current month
           earliestDateToKeep = RLMDateUtils.truncate(now, Calendar.MONTH, Deployment.getDeployment(tenantID).getTimeZone());
         } else {
-          earliestDateToKeep = RLMDateUtils.addMonths(now, -maximumAcceptancesPeriodMonths, Deployment.getDeployment(tenantID).getTimeZone());
+          // for month unit, the limit should be on 0h on (1st day of this month - number of months + 1)
+          earliestDateToKeep = RLMDateUtils.addMonths(now, -maximumAcceptancesPeriodMonths+1, Deployment.getDeployment(tenantID).getTimeZone());
+          earliestDateToKeep = RLMDateUtils.truncate(earliestDateToKeep, Calendar.MONTH, Deployment.getDeployment(tenantID).getTimeZone());
         }
       } else {
         log.info("internal error : maximumAcceptancesPeriodDays & maximumAcceptancesPeriodMonths are both unset, using 1 day");
@@ -5184,6 +5214,44 @@ public class EvolutionEngine
   
   /*****************************************
   *
+  *  updatePredictions
+  *
+  *****************************************/
+
+  private static boolean updatePredictions(EvolutionEventContext context, SubscriberStreamEvent evolutionEvent, int tenantID)
+  {
+    /*****************************************
+    *
+    *  result
+    *
+    *****************************************/
+
+    SubscriberState subscriberState = context.getSubscriberState();
+    SubscriberProfile subscriberProfile = subscriberState.getSubscriberProfile();
+    boolean subscriberStateUpdated = false;
+
+    /*****************************************
+    *
+    *  subscriberpredictionspush
+    *
+    *****************************************/
+
+    if (evolutionEvent instanceof Prediction) {
+      subscriberProfile.getPredictions().update((Prediction) evolutionEvent);
+      subscriberStateUpdated = true;
+    }
+
+    /*****************************************
+    *
+    *  return
+    *
+    *****************************************/
+  
+    return subscriberStateUpdated;
+  }
+  
+  /*****************************************
+  *
   *  updatePropensity
   *
   *****************************************/
@@ -5463,41 +5531,74 @@ public class EvolutionEngine
     if (evolutionEvent instanceof PurchaseFulfillmentRequest)
       {
         PurchaseFulfillmentRequest purchaseResponseEvent = (PurchaseFulfillmentRequest) evolutionEvent;
+        String purchaseOfferID = purchaseResponseEvent.getOfferID();
+        if (!PurchaseFulfillmentManager.PurchaseFulfillmentStatus.PURCHASED.equals(purchaseResponseEvent.getStatus())) {               
+          // EVPRO-1351 do not make this offer purchase count towards daily/monthly limit
+          int quantityToRemove = purchaseResponseEvent.getQuantity();
+          Map<String, List<Pair<String, Date>>> fullPurchaseHistory = subscriberProfile.getOfferPurchaseSalesChannelHistory();
+          String salesChannelID = purchaseResponseEvent.getSalesChannelID();
+          List<Pair<String, Date>> purchaseHistory = fullPurchaseHistory.get(purchaseOfferID);
+          if (purchaseHistory != null) {
+            // // EVPRO-1351 remove last elements (related to the correct salesChannelID), that were added when preparing this purchase
+            List<Pair<String, Date>> cleanPurchaseHistory = new ArrayList<Pair<String, Date>>();
+            cleanPurchaseHistory.addAll(purchaseHistory);
+            int totalRemoved = 0;
+            if(log.isDebugEnabled()) log.debug("Need to remove " + quantityToRemove + " elements from list of size " + purchaseHistory.size());
+            if (purchaseHistory.size() < quantityToRemove) {
+              if(log.isDebugEnabled()) log.debug("Problem : list too small");
+            } else {
+              for (int i=purchaseHistory.size()-1; i>=0; i--) {
+                if (purchaseHistory.get(i).getFirstElement().equals(salesChannelID)) {
+                  if(log.isDebugEnabled()) log.debug("removing element " + i + " : " + salesChannelID + " " + purchaseHistory.get(i).getSecondElement());
+                  cleanPurchaseHistory.remove(i);
+                  totalRemoved++;
+                  if (totalRemoved == quantityToRemove) {
+                    if(log.isDebugEnabled()) log.debug("removed " + quantityToRemove + " elements");
+                    break;
+                  }
+                }
+              }
+              if (cleanPurchaseHistory.size() != purchaseHistory.size()-quantityToRemove) {
+                if(log.isDebugEnabled()) log.debug("problem : did not remove all elements");
+              } else {
+                fullPurchaseHistory.put(purchaseOfferID, cleanPurchaseHistory);
+              }
+            }
+            subscriberStateUpdated = true;
+          }
+        }
+        
         for(Token token:subscriberProfile.getTokens())
           {
-            if(!(token instanceof DNBOToken)) continue;
+            if (!(token instanceof DNBOToken)) continue;
             DNBOToken dnboToken = (DNBOToken) token;
-            if(dnboToken.getPurchaseDeliveryRequestID()==null) continue;
-
+            if (dnboToken.getPurchaseDeliveryRequestID()==null) continue;
             boolean failed = false;
-            if(dnboToken.getPurchaseDeliveryRequestID().equals(purchaseResponseEvent.getDeliveryRequestID()))
-              {               
-              String tokenRedeem=TokenChange.REDEEM;
-              String tokenChangeStatus = RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode()+"";
-              String purchaseOfferID = purchaseResponseEvent.getOfferID();
-              dnboToken.setPurchaseStatus(purchaseResponseEvent.getStatus());
-
-              if (!PurchaseFulfillmentManager.PurchaseFulfillmentStatus.PURCHASED.equals(purchaseResponseEvent.getStatus()))
-              {               
-              failed=true;
-              tokenChangeStatus=RESTAPIGenericReturnCodes.INSUFFICIENT_BALANCE.getGenericResponseCode()+"";
-              purchaseOfferID = null;
-              dnboToken.setTokenStatus(TokenStatus.Bound);  
-              dnboToken.setAcceptedOfferID(null);          
-              }   
-              ArrayList<String> presentedOfferIDs = new ArrayList<>();
-              if(dnboToken.getTokenCode() != null)
-                {
-            	  for(ProposedOfferDetails current : dnboToken.getProposedOfferDetails())
-                    {
-                      presentedOfferIDs.add(current.getOfferId());
-                    }
+            if (dnboToken.getPurchaseDeliveryRequestID().equals(purchaseResponseEvent.getDeliveryRequestID())) {               
+                String tokenRedeem=TokenChange.REDEEM;
+                String tokenChangeStatus = RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode()+"";
+                purchaseOfferID = purchaseResponseEvent.getOfferID();
+                dnboToken.setPurchaseStatus(purchaseResponseEvent.getStatus());
+                if (PurchaseFulfillmentManager.PurchaseFulfillmentStatus.PURCHASED.getReturnCode() != purchaseResponseEvent.getStatus().getReturnCode()) {
+                  log.info("Set purchaseStatus of " + token.getTokenCode() + " from " + dnboToken.getTokenStatus() + " back to Bound " + dnboToken);
+                  failed=true;
+                  dnboToken.setTokenStatus(TokenStatus.Bound);
+                  dnboToken.setRedeemedDate(null);
+                  dnboToken.setAcceptedOfferID(null);
+                  tokenChangeStatus = purchaseResponseEvent.getStatus().getReturnCode()+"";
+                  purchaseOfferID = null;
+                }   
+                ArrayList<String> presentedOfferIDs = new ArrayList<>();
+                if(dnboToken.getTokenCode() != null) {
+                  for(ProposedOfferDetails current : dnboToken.getProposedOfferDetails()) {
+                    presentedOfferIDs.add(current.getOfferId());
+                  }
                 }
-              subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberProfile(), purchaseResponseEvent.getEventDate(),context.getEventID(), dnboToken.getTokenCode(), tokenRedeem, tokenChangeStatus, "AcceptanceLog",dnboToken.getModuleID(), dnboToken.getFeatureID(), purchaseResponseEvent.getDeliveryRequestID(), purchaseOfferID, presentedOfferIDs, tenantID));
-              
-              if((!external) && (!failed)) 
-               subscriberState.getTokenRedeemeds().add(new TokenRedeemed(subscriberState.getSubscriberID(), purchaseResponseEvent.getEventDate(), dnboToken.getTokenTypeID(), dnboToken.getAcceptedOfferID()));
-              break;
+                subscriberState.getTokenChanges().add(new TokenChange(subscriberState.getSubscriberProfile(), purchaseResponseEvent.getEventDate(),context.getEventID(), dnboToken.getTokenCode(), tokenRedeem, tokenChangeStatus, "AcceptanceLog",dnboToken.getModuleID(), dnboToken.getFeatureID(), purchaseResponseEvent.getDeliveryRequestID(), purchaseOfferID, presentedOfferIDs, tenantID));
+                if ((!external) && (!failed)) { 
+                  subscriberState.getTokenRedeemeds().add(new TokenRedeemed(subscriberState.getSubscriberID(), purchaseResponseEvent.getEventDate(), dnboToken.getTokenTypeID(), dnboToken.getAcceptedOfferID()));
+                }
+                break;
               }
           }
       }
@@ -6341,6 +6442,11 @@ public class EvolutionEngine
           boolean metricsUpdated = journeyState.setJourneyExitDate(now, subscriberState, journey, context); // populate journeyMetrics (during)
           subscriberStateUpdated = subscriberStateUpdated || metricsUpdated;
           boolean statusUpdated = journeyState.getJourneyHistory().addStatusInformation(SystemTime.getCurrentTime(), journeyState, true);
+          // EVPRO-1275 set correct exitDate for ended campaigns
+          GUIManagedObject journeyGMO = journeyService.getStoredGUIManagedObject(journeyState.getJourneyID());
+          if (journeyGMO != null) {
+            journeyState.setJourneyExitDate(journeyGMO.getEffectiveEndDate(), null, null, null);
+          }
           subscriberState.addJourneyStatistic(new JourneyStatistic(context, subscriberState.getSubscriberID(), journeyState.getJourneyHistory(), journeyState, subscriberState.getSubscriberProfile().getStatisticsSegmentsMap(subscriberGroupEpochReader, segmentationDimensionService), subscriberState.getSubscriberProfile(), now));
           inactiveJourneyStates.add(journeyState);
           continue;
@@ -7003,7 +7109,7 @@ public class EvolutionEngine
         // Check if JourneyMetrics are enabled.
         // JourneyMetrics should only be generated for Campaigns (not journeys nor bulk campaigns)
         //
-        if (journey == null) {
+        if (journey == null || !(journey instanceof Journey)) {
           log.warn("Unable to retrieve journey " + journeyEndedState.getJourneyID() + ". It will be closed without publishing any JourneyMetrics.");
           journeyEndedStateIterator.remove();
           subscriberStateUpdated = true;
@@ -8002,47 +8108,15 @@ public class EvolutionEngine
       this.uniqueKeyServer = uniqueKeyServer;
       this.now = now;
       this.subscriberTraceDetails = new ArrayList<String>();
-      this.eventID = generateEventID(event);
+      this.eventID = generateEventID();
     }
 
-    private String generateEventID(SubscriberStreamEvent event)
+    private String generateEventID()
     {
-      String result = null;
-      String className = event.getClass().getSimpleName();
-      if (event instanceof EvolutionEngineEvent)
-        {
-          EvolutionEngineEvent engineEvent = (EvolutionEngineEvent) event;
-          EvolutionEngineEventDeclaration declaration = Deployment.getEvolutionEngineEvents().get(engineEvent.getEventName());
-          if (declaration != null && declaration.getEdrCriterionFieldsMapping() != null && !declaration.getEdrCriterionFieldsMapping().isEmpty())
-            {
-              result = getUniqueKey();
-            }
-          else if (event instanceof DeliveryRequest)
-            {
-              //
-              //  propagate the eventID as long as we can track - if campaign is configureID like chain of bonus/message
-              //
-              
-              DeliveryRequest deliveryRes = (DeliveryRequest) event;
-              if (deliveryRes.getEventID() != null)
-                {
-                  result = deliveryRes.getEventID(); //deliveryRes.getEventName() != null ? deliveryRes.getEventName().concat("-").concat(deliveryRes.getEventID()) : className.concat("-").concat(deliveryRes.getEventID());
-                } 
-              else
-                {
-                  result = deliveryRes.getEventName() != null ? deliveryRes.getEventName() : className;
-                } 
-            }
-          else
-            {
-              result = engineEvent.getEventName();
-            }
-        }
-      else
-        {
-          result = className;
-        }
-      return result;
+      //  propagate the eventID as long as we can track - if campaign is configureID like chain of bonus/message
+      if(this.event.getEventID() != null) return this.event.getEventID();
+      // or create one
+      return getUniqueKey();
     }
 
     /*****************************************
@@ -9080,7 +9154,6 @@ public class EvolutionEngine
 
       String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
       deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, deliveryRequestSource);
-      
       String loyaltyProgramID = (String) CriterionFieldRetriever.getJourneyNodeParameter(subscriberEvaluationRequest,"node.parameter.loyaltyProgramId");
 
       /*****************************************
@@ -9105,35 +9178,48 @@ public class EvolutionEngine
     @Override public Map<String, String> getGUIDependencies(List<GUIService> guiServiceList, JourneyNode journeyNode, int tenantID)
     {
       Map<String, String> result = new HashMap<String, String>();
-      String loyaltyProgramId = (String) journeyNode.getNodeParameters().get("node.parameter.loyaltyProgramId");
-      LoyaltyProgramService loyaltyProgramService = (LoyaltyProgramService) guiServiceList.stream().filter(srvc -> srvc.getClass() == LoyaltyProgramService.class).findFirst().orElse(null);
-      if (loyaltyProgramService == null)
+      String loyaltyProgramIdUnchecked = null;
+      Object nodeParamObj = journeyNode.getNodeParameters().get("node.parameter.loyaltyProgramId");
+      if (nodeParamObj instanceof ParameterExpression && ((ParameterExpression) nodeParamObj).getExpression() instanceof ConstantExpression)
         {
-          log.error("loyaltyProgramService not found in guiServiceList - getGUIDependencies will be effected");
+          loyaltyProgramIdUnchecked  = (String)  ((ParameterExpression) nodeParamObj).getExpression().evaluateConstant();
         }
-      else
+      else if (nodeParamObj instanceof String)
         {
-          GUIManagedObject loyaltyUnchecked = loyaltyProgramService.getStoredLoyaltyPrograms(tenantID).stream().filter(obj -> obj.getGUIManagedObjectID().equals(loyaltyProgramId)).findFirst().orElse(null);
-          if (loyaltyUnchecked != null && loyaltyUnchecked.getAccepted())
+          loyaltyProgramIdUnchecked = (String) nodeParamObj;
+        }
+      if (loyaltyProgramIdUnchecked != null)
+        {
+          String loyaltyProgramId = loyaltyProgramIdUnchecked;
+          LoyaltyProgramService loyaltyProgramService = (LoyaltyProgramService) guiServiceList.stream().filter(srvc -> srvc.getClass() == LoyaltyProgramService.class).findFirst().orElse(null);
+          if (loyaltyProgramService == null)
             {
-              LoyaltyProgram loyaltyProgram = (LoyaltyProgram) loyaltyUnchecked;
-              switch (loyaltyProgram.getLoyaltyProgramType())
-              {
-                case POINTS:
-                  if (loyaltyProgramId != null) result.put("loyaltyprogram", loyaltyProgramId);
-                  break;
-                  
-                case MISSION:
-                  if (loyaltyProgramId != null) result.put("loyaltyprogrammission", loyaltyProgramId);
-                  break;
-                  
-                case CHALLENGE:
-                  if (loyaltyProgramId != null) result.put("loyaltyprogramchallenge", loyaltyProgramId);
-                  break;
+              log.error("loyaltyProgramService not found in guiServiceList - getGUIDependencies will be effected");
+            }
+          else
+            {
+              GUIManagedObject loyaltyUnchecked = loyaltyProgramService.getStoredLoyaltyPrograms(tenantID).stream().filter(obj -> obj.getGUIManagedObjectID().equals(loyaltyProgramId)).findFirst().orElse(null);
+              if (loyaltyUnchecked != null && loyaltyUnchecked.getAccepted())
+                {
+                  LoyaltyProgram loyaltyProgram = (LoyaltyProgram) loyaltyUnchecked;
+                  switch (loyaltyProgram.getLoyaltyProgramType())
+                  {
+                    case POINTS:
+                      if (loyaltyProgramId != null) result.put("loyaltyprogram", loyaltyProgramId);
+                      break;
+                      
+                    case MISSION:
+                      if (loyaltyProgramId != null) result.put("loyaltyprogrammission", loyaltyProgramId);
+                      break;
+                      
+                    case CHALLENGE:
+                      if (loyaltyProgramId != null) result.put("loyaltyprogramchallenge", loyaltyProgramId);
+                      break;
 
-                default:
-                  break;
-              }
+                    default:
+                      break;
+                  }
+                }
             }
         }
       return result;
@@ -9427,7 +9513,7 @@ public class EvolutionEngine
           try
             {
               VoucherProfileStored voucherProfileStored = getStoredVoucher(voucherCode, supplierDisplay, subscriberProfile);
-              VoucherChange voucherChange = new VoucherChange(subscriberProfile.getSubscriberID(), now, null, evolutionEventContext.getEventID(), VoucherChangeAction.Redeem, voucherProfileStored.getVoucherCode(), voucherProfileStored.getVoucherID(), voucherProfileStored.getFileID(), moduleID, journeyID, origin, RESTAPIGenericReturnCodes.UNKNOWN, subscriberProfile.getSegments(), tenantID);
+              VoucherChange voucherChange = new VoucherChange(subscriberProfile.getSubscriberID(), now, null, evolutionEventContext.getEventID(), VoucherChangeAction.Redeem, voucherProfileStored.getVoucherCode(), voucherProfileStored.getVoucherID(), voucherProfileStored.getFileID(), moduleID, journeyID, origin, RESTAPIGenericReturnCodes.UNKNOWN, subscriberProfile.getSegments(), uniqueKeyServer.getKey(), voucherProfileStored.getOfferID(), tenantID);
               for (VoucherProfileStored voucherStored : subscriberProfile.getVouchers())
                 {
                   if (voucherStored.getVoucherCode().equals(voucherChange.getVoucherCode()) && voucherStored.getVoucherID().equals(voucherChange.getVoucherID()))
@@ -9454,7 +9540,7 @@ public class EvolutionEngine
           try
             {
               VoucherProfileStored voucherProfileStored = getStoredVoucher(voucherCode, supplierDisplay, subscriberProfile);
-              VoucherChange voucherChange = new VoucherChange(subscriberProfile.getSubscriberID(), now, null, "", VoucherChangeAction.Unknown, voucherProfileStored.getVoucherCode(), voucherProfileStored.getVoucherID(), voucherProfileStored.getFileID(), moduleID, journeyID, origin, RESTAPIGenericReturnCodes.SUCCESS, subscriberProfile.getSegments(), tenantID);
+              VoucherChange voucherChange = new VoucherChange(subscriberProfile.getSubscriberID(), now, null, evolutionEventContext.getEventID(), VoucherChangeAction.Unknown, voucherProfileStored.getVoucherCode(), voucherProfileStored.getVoucherID(), voucherProfileStored.getFileID(), moduleID, journeyID, origin, RESTAPIGenericReturnCodes.SUCCESS, subscriberProfile.getSegments(), uniqueKeyServer.getKey(), voucherProfileStored.getOfferID(), tenantID);
               subscriberEvaluationRequest.getJourneyState().getVoucherChanges().add(voucherChange);
               voucherActionEvent.setActionStatus(voucherChange.getReturnStatus().getGenericResponseMessage());
               voucherActionEvent.setActionStatusCode(voucherChange.getReturnStatus().getGenericResponseCode());
@@ -9476,6 +9562,7 @@ public class EvolutionEngine
     {
       Map<String, String> result = new HashMap<String, String>();
       Object nodeParamObj = journeyNode.getNodeParameters().get("node.parameter.voucher.code");
+      Object nodeParamSupplierObj = journeyNode.getNodeParameters().get("node.parameter.supplier");
       if (nodeParamObj instanceof ParameterExpression && ((ParameterExpression) nodeParamObj).getExpression() instanceof ConstantExpression)
         {
           String nodeParam  = (String)  ((ParameterExpression) nodeParamObj).getExpression().evaluateConstant();
@@ -9488,6 +9575,29 @@ public class EvolutionEngine
       else
         {
           log.error("unsupported value/type expression {} - skipping", nodeParamObj);
+        }
+      if (nodeParamSupplierObj instanceof ParameterExpression && ((ParameterExpression) nodeParamSupplierObj).getExpression() instanceof ConstantExpression)
+        {
+          String nodeParamDisplay  = (String)  ((ParameterExpression) nodeParamSupplierObj).getExpression().evaluateConstant();
+          SupplierService supplierService = (SupplierService) guiServiceList.stream().filter(srvc -> srvc.getClass() == SupplierService.class).findFirst().orElse(null);
+          if (supplierService != null && nodeParamDisplay != null)
+            {
+              GUIManagedObject guiObjectSupplier = supplierService.getStoredGUIManagedObjects(tenantID).stream().filter(guiObject -> nodeParamDisplay.equals(guiObject.getGUIManagedObjectDisplay())).findFirst().orElse(null);
+              if (guiObjectSupplier != null) result.put("supplier", guiObjectSupplier.getGUIManagedObjectID());
+            }
+        }
+      else if (nodeParamSupplierObj instanceof String)
+        {
+          SupplierService supplierService = (SupplierService) guiServiceList.stream().filter(srvc -> srvc.getClass() == SupplierService.class).findFirst().orElse(null);
+          if (supplierService != null && nodeParamSupplierObj != null)
+            {
+              GUIManagedObject guiObjectSupplier = supplierService.getStoredGUIManagedObjects(tenantID).stream().filter(guiObject -> nodeParamSupplierObj.equals(guiObject.getGUIManagedObjectDisplay())).findFirst().orElse(null);
+              if (guiObjectSupplier != null) result.put("supplier", guiObjectSupplier.getGUIManagedObjectID());
+            }
+        }
+      else
+        {
+          log.error("unsupported value/type expression {} - skipping", nodeParamSupplierObj);
         }
       return result;
     }

@@ -516,7 +516,8 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/vdr -u $EL
       "voucherCode" : { "type" : "keyword" },
       "voucherID" : { "type" : "keyword" },
       "returnCode" : { "type" : "integer" },
-      "expiryDate" : { "type" : "keyword" }
+      "expiryDate" : { "type" : "keyword" },
+      "deliveryRequestID" : { "type" : "keyword" }
     }
   }
 }'
@@ -584,7 +585,8 @@ prepare-es-update-curl -XPUT http://$MASTER_ESROUTER_SERVER/_template/mdr -u $EL
       "deliveryStatus" : { "type" : "keyword" },
       "returnCodeDetails" : { "type" : "keyword", "index" : "false" },
       "originatingDeliveryRequestID" : { "type" : "keyword" },
-      "contactType" : { "type" : "keyword" }
+      "contactType" : { "type" : "keyword" },
+      "noOfParts" : { "type" : "keyword" }
     }
   }
 }'

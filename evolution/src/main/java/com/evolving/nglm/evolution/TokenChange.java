@@ -137,10 +137,9 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
   // accessor
   //
 
-  @Override
-  public String getSubscriberID() { return subscriberID; }
+  @Override public String getSubscriberID() { return subscriberID; }
   public Date geteventDateTime() { return eventDateTime; }
-  public String getEventID() { return eventID; }
+  @Override public String getEventID() { return eventID; }
   public String getTokenCode() { return tokenCode; }
   public String getAction() { return action; }
   public String getReturnStatus() { return returnStatus; }
@@ -223,6 +222,7 @@ public class TokenChange extends SubscriberStreamOutput implements EvolutionEngi
     this.callUniqueIdentifier = callUniqueIdentifier;
     this.acceptedOfferID=acceptedOfferID;
     this.presentedOfferIDs = presentedOfferIDs;   
+    this.tenantID = tenantID;
   }  
 
   /*****************************************

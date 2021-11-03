@@ -160,6 +160,7 @@ import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmen
 import com.evolving.nglm.evolution.PushNotificationManager.PushNotificationManagerRequest;
 import com.evolving.nglm.evolution.SMSNotificationManager.SMSNotificationManagerRequest;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
+import com.evolving.nglm.evolution.SubscriberProfile.EvolutionSubscriberStatus;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
 import com.evolving.nglm.evolution.ThirdPartyManager.API;
@@ -400,6 +401,11 @@ public class GUIManager
     putUCGRule("putUCGRule"),
     removeUCGRule("removeUCGRule"),
     setStatusUCGRule("setStatusUCGRule"),
+    getPredictionSettingsList("getPredictionSettingsList"),
+    getPredictionSettingsSummaryList("getPredictionSettingsSummaryList"),
+    getPredictionSettings("getPredictionSettings"),
+    putPredictionSettings("putPredictionSettings"),
+    removePredictionSettings("removePredictionSettings"),
     getDeliverableList("getDeliverableList"),
     putDeliverable("putDeliverable"),
     removeDeliverable("removeDeliverable"),
@@ -482,6 +488,7 @@ public class GUIManager
     getCustomerBDRs("getCustomerBDRs"),
     getCustomerEDRs("getCustomerEDRs"),
     getCustomerODRs("getCustomerODRs"),
+    getCustomerVDRs("getCustomerVDRs"),
     getCustomerMessages("getCustomerMessages"),
     getCustomerJourneys("getCustomerJourneys"),
     getCustomerCampaigns("getCustomerCamapigns"),
@@ -735,6 +742,7 @@ public class GUIManager
   protected OfferObjectiveService offerObjectiveService;
   protected ProductTypeService productTypeService;
   protected UCGRuleService ucgRuleService;
+  protected PredictionSettingsService predictionSettingsService;
   protected DeliverableService deliverableService;
   protected TokenTypeService tokenTypeService;
   protected VoucherTypeService voucherTypeService;
@@ -758,7 +766,6 @@ public class GUIManager
   protected DynamicEventDeclarationsService dynamicEventDeclarationsService;
   protected CriterionFieldAvailableValuesService criterionFieldAvailableValuesService;
   protected OTPTypeService otpTypeService;
-  protected ElasticsearchManager elasticsearchManager;
   protected static Method externalAPIMethodJourneyActivated;
   protected static Method externalAPIMethodJourneyDeactivated;
   protected CustomCriteriaService customCriteriaService;
@@ -867,6 +874,7 @@ public class GUIManager
     String offerObjectiveTopic = Deployment.getOfferObjectiveTopic();
     String productTypeTopic = Deployment.getProductTypeTopic();
     String ucgRuleTopic = Deployment.getUCGRuleTopic();
+    String predictionSettingsTopic = Deployment.getPredictionSettingsTopic();
     String deliverableTopic = Deployment.getDeliverableTopic();
     String tokenTypeTopic = Deployment.getTokenTypeTopic();
     String voucherTypeTopic = Deployment.getVoucherTypeTopic();
@@ -910,7 +918,7 @@ public class GUIManager
 
     try
       {
-        guiManagerExtensionEvaluateEnumeratedValuesMethod = (Deployment.getGUIManagerExtensionClass() != null) ? Deployment.getGUIManagerExtensionClass().getMethod("evaluateEnumeratedValues",GUIManagerContext.class,String.class,Date.class,boolean.class) : null;
+        guiManagerExtensionEvaluateEnumeratedValuesMethod = (Deployment.getGUIManagerExtensionClass() != null) ? Deployment.getGUIManagerExtensionClass().getMethod("evaluateEnumeratedValues",GUIManagerContext.class,String.class,Date.class,boolean.class, int.class) : null;
       }
     catch (NoSuchMethodException e)
       {
@@ -1095,6 +1103,7 @@ public class GUIManager
     offerObjectiveService = new OfferObjectiveService(bootstrapServers, "guimanager-offerobjectiveservice-" + apiProcessKey, offerObjectiveTopic, true);
     productTypeService = new ProductTypeService(bootstrapServers, "guimanager-producttypeservice-" + apiProcessKey, productTypeTopic, true);
     ucgRuleService = new UCGRuleService(bootstrapServers,"guimanager-ucgruleservice-"+apiProcessKey,ucgRuleTopic,true);
+    predictionSettingsService = new PredictionSettingsService(bootstrapServers, predictionSettingsTopic,true);
     deliverableService = new DeliverableService(bootstrapServers, "guimanager-deliverableservice-" + apiProcessKey, deliverableTopic, true);
     tokenTypeService = new TokenTypeService(bootstrapServers, "guimanager-tokentypeservice-" + apiProcessKey, tokenTypeTopic, true);
     voucherTypeService = new VoucherTypeService(bootstrapServers, "guimanager-vouchertypeservice-" + apiProcessKey, voucherTypeTopic, true);
@@ -1116,7 +1125,6 @@ public class GUIManager
     subscriberGroupSharedIDService = new SharedIDService(segmentationDimensionService, targetService, exclusionInclusionTargetService);
     criterionFieldAvailableValuesService = new CriterionFieldAvailableValuesService(bootstrapServers, "guimanager-criterionfieldavailablevaluesservice-"+apiProcessKey, criterionFieldAvailableValuesTopic, true);
     otpTypeService = new OTPTypeService(bootstrapServers, "guimanager-otptypeservice-"+apiProcessKey, otpTypeTopic, true);
-    elasticsearchManager = new ElasticsearchManager(elasticsearch, voucherService, journeyService);
     customCriteriaService = new CustomCriteriaService(bootstrapServers, "guimanager-customCriteriaservice-" + apiProcessKey, customCriteriaTopic, true);
     
     DeliveryManagerDeclaration dmd = Deployment.getDeliveryManagers().get(ThirdPartyManager.PURCHASE_FULFILLMENT_MANAGER_TYPE);
@@ -1129,6 +1137,7 @@ public class GUIManager
     voucherChangeResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),Deployment.getVoucherChangeResponseTopic(),StringKey.serde(),VoucherChange.serde());
     voucherChangeResponseListenerService.start();
 
+    guiManagerContext = new GUIManagerContext(journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, predictionSettingsService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, customCriteriaService);
     guiManagerBaseManagement = new GUIManagerBaseManagement(journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, dnboMatrixService, dynamicCriterionFieldService, dynamicEventDeclarationsService, journeyTemplateService, purchaseResponseListenerService, subscriberGroupSharedIDService, zuks, httpTimeout, kafkaProducer, elasticsearch, subscriberMessageTemplateService, getCustomerAlternateID, guiManagerContext, subscriberGroupEpochReader, renamedProfileCriterionFieldReader);
     guiManagerLoyaltyReporting = new GUIManagerLoyaltyReporting(journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, dnboMatrixService, dynamicCriterionFieldService, dynamicEventDeclarationsService, journeyTemplateService, purchaseResponseListenerService, customCriteriaService, subscriberGroupSharedIDService, zuks, httpTimeout, kafkaProducer, elasticsearch, subscriberMessageTemplateService, getCustomerAlternateID, guiManagerContext, subscriberGroupEpochReader, renamedProfileCriterionFieldReader);
     guiManagerGeneral = new GUIManagerGeneral(journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, dnboMatrixService, dynamicCriterionFieldService, dynamicEventDeclarationsService, journeyTemplateService, purchaseResponseListenerService, subscriberGroupSharedIDService, zuks, httpTimeout, kafkaProducer, elasticsearch, subscriberMessageTemplateService, getCustomerAlternateID, guiManagerContext, subscriberGroupEpochReader, renamedProfileCriterionFieldReader);
@@ -1501,7 +1510,7 @@ public class GUIManager
     //
     //  calling channels
     //
-    for(Tenant tenant : Deployment.getTenants())
+    for(Tenant tenant : Deployment.getRealTenants())
       {
         int tenantID = tenant.getTenantID();
         if (callingChannelService.getStoredCallingChannels(tenantID).size() == 0)
@@ -1512,7 +1521,13 @@ public class GUIManager
                 for (int i=0; i<initialCallingChannelsJSONArray.size(); i++)
                   {
                     JSONObject  callingChannelJSON = (JSONObject) initialCallingChannelsJSONArray.get(i);
-                    processPutCallingChannel("0", callingChannelJSON, tenantID);
+                    if (callingChannelJSON.containsKey("id"))
+                      {
+                        if (log.isWarnEnabled()) log.warn("initial callingChannel JSON should not have id field - removing it");
+                        callingChannelJSON.remove("id");
+                      }
+                    JSONObject callingChannel = (JSONObject) callingChannelJSON.clone();
+                    processPutCallingChannel("0", callingChannel, tenantID);
                   }
               }
             catch (JSONUtilitiesException e)
@@ -1526,7 +1541,7 @@ public class GUIManager
     //  sales channels
     //
 
-    for(Tenant tenant : Deployment.getTenants())
+    for(Tenant tenant : Deployment.getRealTenants())
       {
         int tenantID = tenant.getTenantID();
         if (salesChannelService.getStoredSalesChannels(tenantID).size() == 0)
@@ -1537,7 +1552,13 @@ public class GUIManager
                 for (int i=0; i<initialSalesChannelsJSONArray.size(); i++)
                   {
                     JSONObject  salesChannelJSON = (JSONObject) initialSalesChannelsJSONArray.get(i);
-                    processPutSalesChannel("0", salesChannelJSON, tenantID);
+                    if (salesChannelJSON.containsKey("id"))
+                      {
+                        if (log.isWarnEnabled()) log.warn("initial salesChannel JSON should not have id field - removing it");
+                        salesChannelJSON.remove("id");
+                      }
+                    JSONObject salesChannel = (JSONObject) salesChannelJSON.clone();
+                    processPutSalesChannel("0", salesChannel, tenantID);
                   }
               }
             catch (JSONUtilitiesException e)
@@ -1551,7 +1572,7 @@ public class GUIManager
     //  suppliers
     //
     
-    for(Tenant tenant : Deployment.getTenants())
+    for(Tenant tenant : Deployment.getRealTenants())
       {
         int tenantID = tenant.getTenantID();
         if (supplierService.getStoredSuppliers(tenantID).size() == 0)
@@ -1562,7 +1583,13 @@ public class GUIManager
                 for (int i=0; i<initialSuppliersJSONArray.size(); i++)
                   {
                     JSONObject supplierJSON = (JSONObject) initialSuppliersJSONArray.get(i);
-                    processPutSupplier("0", supplierJSON, tenantID);
+                    if (supplierJSON.containsKey("id"))
+                      {
+                        if (log.isWarnEnabled()) log.warn("initial supplier JSON should not have id field - removing it");
+                        supplierJSON.remove("id");
+                      }
+                    JSONObject supplier = (JSONObject) supplierJSON.clone();
+                    processPutSupplier("0", supplier, tenantID);
                   }
               }
             catch (JSONUtilitiesException e)
@@ -1575,7 +1602,7 @@ public class GUIManager
     //
     //  products
     //
-    for(Tenant tenant : Deployment.getTenants())
+    for(Tenant tenant : Deployment.getRealTenants())
       {
         int tenantID = tenant.getTenantID();
         if (productService.getStoredProducts(tenantID).size() == 0)
@@ -1586,7 +1613,13 @@ public class GUIManager
                 for (int i=0; i<initialProductsJSONArray.size(); i++)
                   {
                     JSONObject productJSON = (JSONObject) initialProductsJSONArray.get(i);
-                    processPutProduct("0", productJSON, tenantID);
+                    if (productJSON.containsKey("id"))
+                      {
+                        if (log.isWarnEnabled()) log.warn("initial product JSON should not have id field - removing it");
+                        productJSON.remove("id");
+                      }
+                    JSONObject product = (JSONObject) productJSON.clone();
+                    processPutProduct("0", product, tenantID);
                   }
               }
             catch (JSONUtilitiesException e)
@@ -1600,7 +1633,7 @@ public class GUIManager
     //  Source Addresses not before communicationChannels
     //
     
-    for(Tenant tenant : Deployment.getTenants())
+    for(Tenant tenant : Deployment.getRealTenants())
       {
         int tenantID = tenant.getTenantID();
         if (sourceAddressService.getStoredSourceAddresss(tenantID).size() == 0)
@@ -1610,8 +1643,14 @@ public class GUIManager
                 JSONArray initialSourceAddressesJSONArray = Deployment.getDeployment(tenantID).getInitialSourceAddressesJSONArray();
                 for (int i=0; i<initialSourceAddressesJSONArray.size(); i++)
                   {
-                    JSONObject  sourceAddresslJSON = (JSONObject) initialSourceAddressesJSONArray.get(i);
-                    processPutSourceAddress("0", sourceAddresslJSON, tenantID);
+                    JSONObject  sourceAddressJSON = (JSONObject) initialSourceAddressesJSONArray.get(i);
+                    if (sourceAddressJSON.containsKey("id"))
+                      {
+                        if (log.isWarnEnabled()) log.warn("initial sourceAddress JSON should not have id field - removing it");
+                        sourceAddressJSON.remove("id");
+                      }
+                    JSONObject sourceAddress = (JSONObject) sourceAddressJSON.clone();
+                    processPutSourceAddress("0", sourceAddress, tenantID);
                   }
               }
             catch (JSONUtilitiesException e)
@@ -1624,7 +1663,7 @@ public class GUIManager
     //
     //  contactPolicies
     //
-    for(Tenant tenant : Deployment.getTenants())
+    for(Tenant tenant : Deployment.getRealTenants())
       {
         int tenantID = tenant.getTenantID();
         if (contactPolicyService.getStoredContactPolicies(tenantID).size() == 0)
@@ -1635,7 +1674,13 @@ public class GUIManager
                 for (int i=0; i<initialContactPoliciesJSONArray.size(); i++)
                   {
                     JSONObject contactPolicyJSON = (JSONObject) initialContactPoliciesJSONArray.get(i);
-                    processPutContactPolicy("0", contactPolicyJSON, tenantID);
+                    if (contactPolicyJSON.containsKey("id"))
+                      {
+                        if (log.isWarnEnabled()) log.warn("initial contactPolicy JSON should not have id field - removing it");
+                        contactPolicyJSON.remove("id");
+                      }
+                    JSONObject contactPolicy = (JSONObject) contactPolicyJSON.clone();
+                    processPutContactPolicy("0", contactPolicy, tenantID);
                   }
               }
             catch (JSONUtilitiesException e)
@@ -1646,7 +1691,7 @@ public class GUIManager
       }
         
     //
-    //  journeyTemplates
+    //  journeyTemplates do not change the ID - still this is a bug, how two different tenant have the obj with sameID
     //
     
     for(Tenant tenant : Deployment.getTenants())
@@ -1675,7 +1720,7 @@ public class GUIManager
     //  journeyObjectives
     //
 
-    for(Tenant tenant : Deployment.getTenants())
+    for(Tenant tenant : Deployment.getRealTenants())
       {
         int tenantID = tenant.getTenantID();
         if (journeyObjectiveService.getStoredJourneyObjectives(tenantID).size() == 0)
@@ -1686,7 +1731,13 @@ public class GUIManager
                 for (int i=0; i<initialJourneyObjectivesJSONArray.size(); i++)
                   {
                     JSONObject journeyObjectiveJSON = (JSONObject) initialJourneyObjectivesJSONArray.get(i);
-                    processPutJourneyObjective("0", journeyObjectiveJSON, tenantID);
+                    if (journeyObjectiveJSON.containsKey("id"))
+                      {
+                        if (log.isWarnEnabled()) log.warn("initial journeyObjective JSON should not have id field - removing it");
+                        journeyObjectiveJSON.remove("id");
+                      }
+                    JSONObject journeyObjective = (JSONObject) journeyObjectiveJSON.clone();
+                    processPutJourneyObjective("0", journeyObjective, tenantID);
                   }
               }
             catch (JSONUtilitiesException e)
@@ -1700,7 +1751,7 @@ public class GUIManager
     //  offerObjectives
     //
 
-    for(Tenant tenant : Deployment.getTenants())
+    for(Tenant tenant : Deployment.getRealTenants())
       {
         int tenantID = tenant.getTenantID();
         if (offerObjectiveService.getStoredOfferObjectives(tenantID).size() == 0)
@@ -1711,7 +1762,13 @@ public class GUIManager
                 for (int i=0; i<initialOfferObjectivesJSONArray.size(); i++)
                   {
                     JSONObject offerObjectiveJSON = (JSONObject) initialOfferObjectivesJSONArray.get(i);
-                    processPutOfferObjective("0", offerObjectiveJSON, tenantID);
+                    if (offerObjectiveJSON.containsKey("id"))
+                      {
+                        if (log.isWarnEnabled()) log.warn("initial offerObjective JSON should not have id field - removing it");
+                        offerObjectiveJSON.remove("id");
+                      }
+                    JSONObject offerObjective = (JSONObject) offerObjectiveJSON.clone();
+                    processPutOfferObjective("0", offerObjective, tenantID);
                   }
               }
             catch (JSONUtilitiesException e)
@@ -1725,7 +1782,7 @@ public class GUIManager
     //
     //  segmentationDimensions
     //
-    for(Tenant tenant : Deployment.getTenants())
+    for(Tenant tenant : Deployment.getRealTenants())
       {
         int tenantID = tenant.getTenantID();
         if (segmentationDimensionService.getStoredSegmentationDimensions(tenantID).size() == 0)
@@ -1736,7 +1793,13 @@ public class GUIManager
                 for (int i=0; i<initialSegmentationDimensionsJSONArray.size(); i++)
                   {
                     JSONObject segmentationDimensionJSON = (JSONObject) initialSegmentationDimensionsJSONArray.get(i);
-                    guiManagerBaseManagement.processPutSegmentationDimension("0", segmentationDimensionJSON, tenantID);
+                    if (segmentationDimensionJSON.containsKey("id"))
+                      {
+                        if (log.isWarnEnabled()) log.warn("initial segmentationDimension JSON should not have id field - removing it");
+                        segmentationDimensionJSON.remove("id");
+                      }
+                    JSONObject segmentationDimension = (JSONObject) segmentationDimensionJSON.clone();
+                    guiManagerBaseManagement.processPutSegmentationDimension("0", segmentationDimension, tenantID);
                   }
               }
             catch (JSONUtilitiesException e)
@@ -1960,6 +2023,7 @@ public class GUIManager
     offerObjectiveService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);
     productTypeService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);
     ucgRuleService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);
+    predictionSettingsService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);
     deliverableService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);
     tokenTypeService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);
     voucherTypeService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);
@@ -1981,7 +2045,6 @@ public class GUIManager
       }
 
     criterionFieldAvailableValuesService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);
-    elasticsearchManager.start();
 
     /*****************************************
     *
@@ -2186,6 +2249,11 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/putUCGRule", new APISimpleHandler(API.putUCGRule));
         restServer.createContext("/nglm-guimanager/removeUCGRule", new APISimpleHandler(API.removeUCGRule));
         restServer.createContext("/nglm-guimanager/setStatusUCGRule", new APISimpleHandler(API.setStatusUCGRule));
+        restServer.createContext("/nglm-guimanager/getPredictionSettingsList", new APISimpleHandler(API.getPredictionSettingsList));
+        restServer.createContext("/nglm-guimanager/getPredictionSettingsSummaryList", new APISimpleHandler(API.getPredictionSettingsSummaryList));
+        restServer.createContext("/nglm-guimanager/getPredictionSettings", new APISimpleHandler(API.getPredictionSettings));
+        restServer.createContext("/nglm-guimanager/putPredictionSettings", new APISimpleHandler(API.putPredictionSettings));
+        restServer.createContext("/nglm-guimanager/removePredictionSettings", new APISimpleHandler(API.removePredictionSettings));
         restServer.createContext("/nglm-guimanager/getDeliverableList", new APISimpleHandler(API.getDeliverableList));
         restServer.createContext("/nglm-guimanager/getDeliverableSummaryList", new APISimpleHandler(API.getDeliverableSummaryList));
         restServer.createContext("/nglm-guimanager/getDeliverable", new APISimpleHandler(API.getDeliverable));
@@ -2266,6 +2334,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getCustomerBDRs", new APISimpleHandler(API.getCustomerBDRs));
         restServer.createContext("/nglm-guimanager/getCustomerEDRs", new APISimpleHandler(API.getCustomerEDRs));
         restServer.createContext("/nglm-guimanager/getCustomerODRs", new APISimpleHandler(API.getCustomerODRs));
+        restServer.createContext("/nglm-guimanager/getCustomerVDRs", new APISimpleHandler(API.getCustomerVDRs));
         restServer.createContext("/nglm-guimanager/getCustomerMessages", new APISimpleHandler(API.getCustomerMessages));
         restServer.createContext("/nglm-guimanager/getCustomerJourneys", new APISimpleHandler(API.getCustomerJourneys));
         restServer.createContext("/nglm-guimanager/getCustomerCampaigns", new APISimpleHandler(API.getCustomerCampaigns));
@@ -2432,23 +2501,15 @@ public class GUIManager
       {
         throw new ServerRuntimeException("could not initialize REST server", e);
       }
-
-    /*****************************************
-    *
-    *  context
-    *
-    *****************************************/
-
-    guiManagerContext = new GUIManagerContext(journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, customCriteriaService);
-
+    
     /*****************************************
     *
     *  shutdown hook
     *
     *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, dynamicCriterionFieldService, journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, renamedProfileCriterionFieldReader, reportService, subscriberMessageTemplateService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, dnboMatrixService, segmentContactPolicyService, criterionFieldAvailableValuesService, elasticsearchManager, customCriteriaService));
-
+    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, dynamicCriterionFieldService, journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, predictionSettingsService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, renamedProfileCriterionFieldReader, reportService, subscriberMessageTemplateService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, dnboMatrixService, segmentContactPolicyService, criterionFieldAvailableValuesService, customCriteriaService));
+    
     /*****************************************
     *
     *  guiManagerJobScheduler
@@ -2535,6 +2596,7 @@ public class GUIManager
     private OfferObjectiveService offerObjectiveService;
     private ProductTypeService productTypeService;
     private UCGRuleService ucgRuleService;
+    private PredictionSettingsService predictionSettingsService;
     private DeliverableService deliverableService;
     private TokenTypeService tokenTypeService;
     private VoucherTypeService voucherTypeService;
@@ -2552,14 +2614,13 @@ public class GUIManager
     private ResellerService resellerService;
     private SegmentContactPolicyService segmentContactPolicyService;
     private CriterionFieldAvailableValuesService criterionFieldAvailableValuesService;
-    private ElasticsearchManager elasticsearchManager;
     private CustomCriteriaService customCriteriaService;
 
     //
     //  constructor
     //
     
-    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, DynamicCriterionFieldService dynamicCriterionFieldService, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader, ReportService reportService, SubscriberMessageTemplateService subscriberMessageTemplateService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, DNBOMatrixService dnboMatrixService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService, ElasticsearchManager elasticsearchManager, CustomCriteriaService customCriteriaService)
+    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, DynamicCriterionFieldService dynamicCriterionFieldService, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, PredictionSettingsService predictionSettingsService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader, ReportService reportService, SubscriberMessageTemplateService subscriberMessageTemplateService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, DNBOMatrixService dnboMatrixService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService, CustomCriteriaService customCriteriaService)
     {
       this.kafkaProducer = kafkaProducer;
       this.restServer = restServer;
@@ -2583,6 +2644,7 @@ public class GUIManager
       this.offerObjectiveService = offerObjectiveService;
       this.productTypeService = productTypeService;
       this.ucgRuleService = ucgRuleService;
+      this.predictionSettingsService = predictionSettingsService;
       this.deliverableService = deliverableService;
       this.tokenTypeService = tokenTypeService;
       this.voucherTypeService = voucherTypeService;
@@ -2601,7 +2663,6 @@ public class GUIManager
       this.dnboMatrixService = dnboMatrixService;
       this.segmentContactPolicyService = segmentContactPolicyService;
       this.criterionFieldAvailableValuesService = criterionFieldAvailableValuesService;
-      this.elasticsearchManager = elasticsearchManager;
       this.customCriteriaService = customCriteriaService;
     }
 
@@ -2611,9 +2672,6 @@ public class GUIManager
 
     @Override public void shutdown(boolean normalShutdown)
     {
-
-      if (elasticsearchManager != null) elasticsearchManager.stop();
-
       //
       //  services 
       //
@@ -2638,6 +2696,7 @@ public class GUIManager
       if (offerObjectiveService != null) offerObjectiveService.stop();
       if (productTypeService != null) productTypeService.stop();
       if (ucgRuleService != null) ucgRuleService.stop();
+      if (predictionSettingsService != null) predictionSettingsService.stop();
       if (deliverableService != null) deliverableService.stop();
       if (tokenTypeService != null) tokenTypeService.stop();
       if (voucherTypeService != null) voucherTypeService.stop();
@@ -3556,6 +3615,26 @@ public class GUIManager
                 case setStatusUCGRule:
                   jsonResponse = guiManagerBaseManagement.processSetStatusUCGRule(userID, jsonRoot, tenantID);
                   break;
+                  
+                case getPredictionSettingsList:
+                  jsonResponse = guiManagerGeneral.processGetPredictionSettingsList(userID, jsonRoot, true, includeArchived, tenantID);
+                  break;
+                  
+                case getPredictionSettingsSummaryList:
+                  jsonResponse = guiManagerGeneral.processGetPredictionSettingsList(userID, jsonRoot, false, includeArchived, tenantID);
+                  break;
+                  
+                case getPredictionSettings:
+                  jsonResponse = guiManagerGeneral.processGetPredictionSettings(userID, jsonRoot, includeArchived, tenantID);
+                  break;
+                  
+                case putPredictionSettings:
+                  jsonResponse = guiManagerGeneral.processPutPredictionSettings(userID, jsonRoot, tenantID);
+                  break;
+                  
+                case removePredictionSettings:
+                  jsonResponse = guiManagerGeneral.processRemovePredictionSettings(userID, jsonRoot, tenantID);
+                  break;
 
                 case getDeliverableList:
                   jsonResponse = processGetDeliverableList(userID, jsonRoot, true, includeArchived, tenantID);
@@ -3849,6 +3928,10 @@ public class GUIManager
                   jsonResponse = processGetCustomerODRs(userID, jsonRoot, tenantID);
                   break;
 
+                case getCustomerVDRs:
+                  jsonResponse = processGetCustomerVDRs(userID, jsonRoot, tenantID);
+                  break;
+                
                 case getCustomerMessages:
                   jsonResponse = processGetCustomerMessages(userID, jsonRoot, tenantID);
                   break;
@@ -5527,14 +5610,17 @@ public class GUIManager
       }
     }
     
-    // Add DNBOMatrix Algorithm for gui
-    Date now = SystemTime.getCurrentTime();
-    for (GUIManagedObject dnboMatrix : dnboMatrixService.getStoredDNBOMatrixes(includeArchived, tenantID))
-    {
-      JSONObject matrixObject = presentationStrategyService.generateResponseJSON(dnboMatrix, false, now);
-      matrixObject.replace("id", "DNBO" + JSONUtilities.decodeString(matrixObject, "id", true));
-      offerOptimizationAlgorithms.add(matrixObject);
-    }
+    if (Deployment.getOfferOptimizationAlgorithms().get("matrix-algorithm") != null)
+      {
+        // Add DNBOMatrix Algorithm for gui if matrix-algorithm configured
+        Date now = SystemTime.getCurrentTime();
+        for (GUIManagedObject dnboMatrix : dnboMatrixService.getStoredDNBOMatrixes(includeArchived, tenantID))
+        {
+          JSONObject matrixObject = presentationStrategyService.generateResponseJSON(dnboMatrix, false, now);
+          matrixObject.replace("id", "DNBO" + JSONUtilities.decodeString(matrixObject, "id", true));
+          offerOptimizationAlgorithms.add(matrixObject);
+        }
+      }
 
     /*****************************************
     *
@@ -8640,6 +8726,16 @@ public class GUIManager
 
   private JSONObject processGetOfferList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived, int tenantID)
   {
+	  
+  /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    HashMap<String,Object> response = new HashMap<String,Object>();;
+	  
+	  
     /*****************************************
     *
     *  retrieve and convert offers
@@ -8649,6 +8745,36 @@ public class GUIManager
     Date now = SystemTime.getCurrentTime();
     List<JSONObject> offers = new ArrayList<JSONObject>();
     Collection <GUIManagedObject> offerObjects = new ArrayList<GUIManagedObject>();
+    
+ // _inbound_channel_ indicates which information to be returned for each presented offer
+    String callingChannelDisplay = JSONUtilities.decodeString(jsonRoot, "inboundChannel", false);
+    CallingChannel callingChannel = null;
+    if (callingChannelDisplay != null)
+      {
+        String callingChannelID = null;
+        for (CallingChannel callingChannelLoop : callingChannelService.getActiveCallingChannels(SystemTime.getCurrentTime(), tenantID))
+          {
+            if (callingChannelLoop.getGUIManagedObjectDisplay().equals(callingChannelDisplay))
+              {
+                callingChannelID = callingChannelLoop.getGUIManagedObjectID();
+                break;
+              }
+          }
+        if (callingChannelID == null)
+          {
+            response.put("responseCode", "ChannelNotValid");
+            response.put("responseMessage", "Inbound Channel not found");
+            return JSONUtilities.encodeObject(response);          
+          }
+        callingChannel = callingChannelService.getActiveCallingChannel(callingChannelID, SystemTime.getCurrentTime());
+        if (callingChannel == null)
+          {
+            log.error(RESTAPIGenericReturnCodes.CHANNEL_NOT_FOUND.getGenericDescription()+" unknown id : "+callingChannelID);
+            response.put("responseCode", "ChannelNotValid");
+            response.put("responseMessage", "Inbound Channel not found");
+            return JSONUtilities.encodeObject(response);          
+          }
+      }
     
     if (jsonRoot.containsKey("ids"))
       {
@@ -8667,21 +8793,202 @@ public class GUIManager
       {
         offerObjects = offerService.getStoredOffersWithCurrentStocks(includeArchived, tenantID);
       }
-    for (GUIManagedObject offer : offerObjects)
+    
+    HashMap<String, Object> offerMap = new HashMap<String, Object>();
+    
+    for (GUIManagedObject offerGUI : offerObjects)
       {        
-        JSONObject offerJSON = offerService.generateResponseJSON(offer, fullDetails, now);
+        JSONObject offerJSON = offerService.generateResponseJSON(offerGUI, fullDetails, now);
         if (!fullDetails)
           {
-            if (offer.getJSONRepresentation().get("simpleOffer") != null)
+            if (offerGUI.getJSONRepresentation().get("simpleOffer") != null)
               {
-                offerJSON.put("simpleOffer", offer.getJSONRepresentation().get("simpleOffer"));
+                offerJSON.put("simpleOffer", offerGUI.getJSONRepresentation().get("simpleOffer"));
               }
             else
               {
                 offerJSON.put("simpleOffer", "");
               }
           }
-        offers.add(offerJSON);
+        
+        //inboundChannel used in the response
+        if (callingChannel != null && offerJSON != null)
+        {
+            String offerID = (String) offerGUI.getJSONRepresentation().get("id");
+        	Offer offer = offerService.getActiveOffer(offerID, now);
+                
+    	  offerMap.put("id", offerID);
+          offerMap.put("name", offer.getGUIManagedObjectDisplay());
+          Collection<ProposedOfferDetails> presentedOffers = null; //TODO
+          // Add more elements to offerMap, based on what's in the channel
+          JSONObject callingChannelJSON = callingChannel.getJSONRepresentation();
+          if (callingChannelJSON != null)
+            {
+              JSONArray offerProperties = JSONUtilities.decodeJSONArray(callingChannelJSON, "offerProperties", false);
+              if (offerProperties != null)
+                {
+                  for (int i=0; i<offerProperties.size(); i++)
+                    {
+                      JSONObject offerPropertyJSON = (JSONObject) offerProperties.get(i);
+                      if (offerPropertyJSON != null)
+                        {
+                          boolean presentOffers = JSONUtilities.decodeBoolean(offerPropertyJSON, "presentOffers", Boolean.TRUE);
+                          if (presentOffers)
+                            {
+                              String offerPropertyName = JSONUtilities.decodeString(offerPropertyJSON, "offerPropertyName", false);
+                              if (offerPropertyName != null) 
+                                {
+                                  if ("offerScore".equals(offerPropertyName) && presentedOffers != null)
+                                    {
+                                      for (ProposedOfferDetails presentedOffer : presentedOffers)
+                                        {
+                                          if (offerID.equals(presentedOffer.getOfferId()))
+                                            {
+                                              offerMap.put("offerScore", presentedOffer.getOfferScore());
+                                              break;
+                                            }
+                                        }
+                                    }
+                                  else if ("offerRank".equals(offerPropertyName) && presentedOffers != null)
+                                    {
+                                      int rank=1;
+                                      for (ProposedOfferDetails presentedOffer : presentedOffers)
+                                        {
+                                          if (offerID.equals(presentedOffer.getOfferId()))
+                                            {
+                                              offerMap.put("offerRank", rank);
+                                              break;
+                                            }
+                                          rank++;
+                                        }
+                                    }
+                                  else if ("price".equals(offerPropertyName))
+                                    {
+                                      
+                                      for (OfferSalesChannelsAndPrice sc : offer.getOfferSalesChannelsAndPrices())
+                                        {
+                                          if (sc.getSalesChannelIDs() != null )
+                                            {
+                                              Map<String, Object> salesChannelJSON = new LinkedHashMap<>(); // to preserve order when displaying
+                                              String paymentMean = "";
+                                              String currency = "";
+                                              long amount = 0;
+                                              OfferPrice offerPrice = sc.getPrice(); // Can be null for free offer
+                                              if (offerPrice != null)
+                                                {
+                                                  amount = offerPrice.getAmount();
+                                                  String paymentMeanID = offerPrice.getPaymentMeanID();
+                                                  String currencyID = offerPrice.getSupportedCurrencyID();
+                                                  GUIManagedObject paymentMeanObject = paymentMeanService.getStoredPaymentMean(paymentMeanID);
+                                                  if (paymentMeanObject != null && (paymentMeanObject instanceof PaymentMean))
+                                                    {
+                                                      paymentMean = ((PaymentMean) paymentMeanObject).getDisplay();
+                                                    }
+                                                  if (currencyID != null)
+                                                    {
+                                                      for (SupportedCurrency supportedCurrency : Deployment.getDeployment(tenantID).getSupportedCurrencies().values())
+                                                        {
+                                                          JSONObject supportedCurrencyJSON = supportedCurrency.getJSONRepresentation();
+                                                          if (supportedCurrencyJSON != null && currencyID.equals(supportedCurrencyJSON.get("id")))
+                                                            {
+                                                              currency = "" + supportedCurrencyJSON.get("display");
+                                                              break;
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                              salesChannelJSON.put("paymentMean", paymentMean);
+                                              salesChannelJSON.put("amount", amount);
+                                              salesChannelJSON.put("currency", currency);
+                                              offerMap.put("price", salesChannelJSON);
+                                              break;
+                                            }
+                                        }
+                                    }
+                                  else if ("offerDescription".equals(offerPropertyName))
+                                  {
+                                	  offerMap.put("description", (String) offerGUI.getJSONRepresentation().get("description"));
+                                  }
+                                  else
+                                    {
+                                      Object offerProperty = offerJSON.get(offerPropertyName);
+                                      if (offerProperty != null)
+                                        {
+                                          log.debug("Adding property " + offerPropertyName + " : " + offerProperty);
+                                          offerMap.put(offerPropertyName, offerProperty);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+              // build an array of what's in the offer to speed up processing
+              Map<String,Object>offerPropertiesMap = new HashMap<>();
+
+              JSONObject offerCharacteristics = JSONUtilities.decodeJSONObject(offerJSON, "offerCharacteristics", false);
+              if (offerCharacteristics != null)
+                {
+                  JSONArray languageProperties = JSONUtilities.decodeJSONArray(offerCharacteristics, "languageProperties", false);
+                  if (languageProperties != null)
+                    {
+                      // take 1st language. What if we have more than 1 ?
+                      JSONObject languagePropertiesJSON = (JSONObject) languageProperties.get(0);
+                      if (languagePropertiesJSON != null)
+                        {
+                          JSONArray properties = JSONUtilities.decodeJSONArray(languagePropertiesJSON, "properties", false);
+                          if (properties != null)
+                            {
+                              for (int i=0; i<properties.size(); i++)
+                                {
+                                  JSONObject propertiesJSON = (JSONObject) properties.get(i);
+                                  if (propertiesJSON != null)
+                                    {
+                                      String catalogCharacteristicName = JSONUtilities.decodeString(propertiesJSON, "catalogCharacteristicName", false);
+                                      if (catalogCharacteristicName != null)
+                                        {
+                                          Object value = propertiesJSON.get("value");
+                                          offerPropertiesMap.put(catalogCharacteristicName, value);
+                                        }
+                                    }
+                                }
+                            }
+                          if (!offerPropertiesMap.isEmpty())
+                            {
+                              JSONArray catalogCharacteristics = JSONUtilities.decodeJSONArray(callingChannelJSON, "catalogCharacteristics", false);
+                              if (catalogCharacteristics != null)
+                                {
+                                  for (int i=0; i<catalogCharacteristics.size(); i++)
+                                    {
+                                      JSONObject catalogCharacteristicsJSON = (JSONObject) catalogCharacteristics.get(i);
+                                      if (catalogCharacteristicsJSON != null)
+                                        {
+                                          boolean presentOffers = JSONUtilities.decodeBoolean(catalogCharacteristicsJSON, "presentOffers", Boolean.TRUE);
+                                          if (presentOffers)
+                                            {
+                                              String catalogCharacteristicName = JSONUtilities.decodeString(catalogCharacteristicsJSON, "catalogCharacteristicName", false);
+                                              if (catalogCharacteristicName != null) 
+                                                {
+                                                  Object offerProperty = offerPropertiesMap.get(catalogCharacteristicName);
+                                                  offerMap.put(catalogCharacteristicName, offerProperty);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+          
+          offers.add(JSONUtilities.encodeObject(offerMap));
+          
+        } else {
+        	offers.add(offerJSON);
+        }
+        
+        
       }
     
     if (!fullDetails)
@@ -8713,13 +9020,6 @@ public class GUIManager
           }
       }
 
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    HashMap<String,Object> response = new HashMap<String,Object>();;
     response.put("responseCode", "ok");
     response.put("offers", JSONUtilities.encodeArray(offers));
     return JSONUtilities.encodeObject(response);
@@ -16440,11 +16740,12 @@ public class GUIManager
       }
     }
     //build the request to send
+	String eventID=zuksVoucherChange.getStringKey();
     VoucherChange request = new VoucherChange(
             subscriberID,
             SystemTime.getCurrentTime(),
             newExpiryDate,
-            zuksVoucherChange.getStringKey().concat("-").concat(Module.Customer_Care.toString()),
+            eventID,
             voucherChangeAction,
             voucherCode,
             voucherID,
@@ -16454,6 +16755,8 @@ public class GUIManager
             origin,
             RESTAPIGenericReturnCodes.UNKNOWN,
             segments,
+            eventID,
+            "",
             tenantID);
 
     // put a listener on the reponse topic
@@ -19196,6 +19499,143 @@ public class GUIManager
                 //
 
                 response.put("messages", JSONUtilities.encodeArray(messagesJson));
+                response.put("responseCode", "ok");
+              }
+          }
+        catch (SubscriberProfileServiceException | java.text.ParseException e)
+          {
+            throw new GUIManagerException(e);
+          }
+      }
+
+    /*****************************************
+    *
+    *  return
+    *
+    *****************************************/
+
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  * processGetCustomerVDRs
+  *
+  *****************************************/
+
+  private JSONObject processGetCustomerVDRs(String userID, JSONObject jsonRoot, int tenantID) throws GUIManagerException
+  {
+
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    Map<String, Object> response = new HashMap<String, Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+    String startDateReq = JSONUtilities.decodeString(jsonRoot, "startDate", false);
+
+    List<QueryBuilder> filters = new ArrayList<QueryBuilder>();
+    
+    /*****************************************
+    *
+    *  resolve subscriberID
+    *
+    *****************************************/
+
+    String subscriberID = resolveSubscriberID(customerID, tenantID);
+    if (subscriberID == null)
+      {
+        log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
+        response.put("responseCode", "CustomerNotFound");
+      }
+    else
+      {
+        /*****************************************
+        *
+        *  getSubscriberProfile - include history
+        *
+        *****************************************/
+        try
+          {
+            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
+            if (baseSubscriberProfile == null)
+              {
+                response.put("responseCode", "CustomerNotFound");
+                log.debug("SubscriberProfile is null for subscriberID {}" , subscriberID);
+              }
+            else
+              {
+                List<JSONObject> VDRsJson = new ArrayList<JSONObject>();
+                ArrayList<JSONObject> VDRs = new ArrayList<JSONObject>();
+                                
+                SearchRequest searchRequest = this.elasticsearch.getSearchRequest(API.getCustomerVDRs, subscriberID, startDateReq == null ? null : RLMDateUtils.parseDateFromDay(startDateReq, Deployment.getDeployment(tenantID).getTimeZone()), filters, tenantID);
+                List<SearchHit> hits = this.elasticsearch.getESHits(searchRequest);
+                for (SearchHit hit : hits)
+                  {
+                	Map<String, Object> esMap = new HashMap<String, Object>();
+                	String fileID = (String) hit.getSourceAsMap().get("fileID");
+                	String voucherID = (String) hit.getSourceAsMap().get("voucherID");
+                	String voucherFormat = "";
+                	Date expiryDate = null;
+                	String offerID = "";
+                	Voucher voucher = (Voucher) voucherService.getStoredVoucher(voucherID);
+                	if(voucher instanceof VoucherShared){
+                  	  	voucherFormat = ((VoucherShared)voucher).getCodeFormatId();
+	                    List<JSONObject> vouchersJsonArray = new ArrayList<>();
+	                    for(VoucherProfileStored voucherProfileStored:baseSubscriberProfile.getVouchers())
+	                    {
+	                    	if(voucherProfileStored.getVoucherID().equals(voucherID)) {
+	                    		expiryDate = voucherProfileStored.getVoucherExpiryDate()!=null?voucherProfileStored.getVoucherExpiryDate():null;
+	                    		offerID = voucherProfileStored.getOfferID();
+	                    		break;
+	                    	}
+	                    }
+                   
+                	} else if (voucher instanceof VoucherPersonal){
+                      	for(VoucherProfileStored voucherProfileStored:baseSubscriberProfile.getVouchers())
+	                    {
+	                    	if(voucherProfileStored.getVoucherID().equals(voucherID)) {
+	                    		offerID = voucherProfileStored.getOfferID();
+	                    		if(fileID==null) {
+	                    			fileID = voucherProfileStored.getFileID();
+	                    		}
+	                    		break;
+	                    	}
+	                    }
+                      	for(VoucherFile voucherFile:((VoucherPersonal)voucher).getVoucherFiles()){
+                      		if(voucherFile.getFileId().equals(fileID)) {
+                      			voucherFormat = voucherFile.getCodeFormatId();
+                      			expiryDate = voucherFile.getExpiryDate()!=null?voucherFile.getExpiryDate():null;
+                      			break;
+                      		}
+                      	}
+                      }
+                	esMap.put("voucherCode", hit.getSourceAsMap().get("voucherCode"));
+                	esMap.put("voucherID", voucher.getVoucherID());
+                	esMap.put("voucherFormat", voucherFormat);
+                	esMap.put("voucherExpiryDate", hit.getSourceAsMap().get("action").equals(VoucherChange.VoucherChangeAction.Extend.name())?getDateString(RLMDateUtils.parseDateFromElasticsearch((String)hit.getSourceAsMap().get("expiryDate")),tenantID):getDateString(expiryDate,tenantID));
+                	esMap.put("operation", hit.getSourceAsMap().get("action"));
+                    esMap.put("offerDisplayName", offerID.equals("")? "": offerService.getStoredOffer(offerID).getJSONRepresentation().get("display"));
+                    esMap.put("offerID", offerID);
+                    
+                    
+                	VDRsJson.add(JSONUtilities.encodeObject(esMap));
+                  }
+                
+                //
+                // prepare response
+                //
+
+                response.put("VDRs", JSONUtilities.encodeArray(VDRsJson));
                 response.put("responseCode", "ok");
               }
           }
@@ -22459,7 +22899,7 @@ public class GUIManager
     *****************************************/
     
     String deliveryRequestID = zuks.getStringKey();
-    String eventID = deliveryRequestID.concat("-").concat(Module.Customer_Care.toString());
+    String eventID = deliveryRequestID;
     try {
       SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
       GUIManagedObject pointObject = pointService.getStoredPoint(bonusID);
@@ -22559,7 +22999,7 @@ public class GUIManager
     *****************************************/
     
     String deliveryRequestID = zuks.getStringKey();
-    String eventID = deliveryRequestID.concat("-").concat(Module.Customer_Care.toString());
+    String eventID = deliveryRequestID;
     try {
       SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
       CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(false,paymentMeanService,deliverableService,subscriberProfile,subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, eventID, Module.Customer_Care.getExternalRepresentation(), featureID, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getDeliverableID(), CommodityDeliveryOperation.Debit, quantity, null, null, DELIVERY_REQUEST_PRIORITY, origin, tenantID);
@@ -24209,7 +24649,7 @@ public class GUIManager
             response.put("responseCode", "ok");
 		  }else{
           	purchaseWaitingResponse.cancel(true);
-            if(redeemResponse!=null && redeemResponse.getReturnStatus().equals(RESTAPIGenericReturnCodes.INSUFFICIENT_BALANCE.getGenericResponseCode()+"")){
+            if(redeemResponse!=null){
               handlePurchaseResponse(purchaseWaitingResponse);
             }
             else
@@ -25783,7 +26223,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     request.put("quantity", quantity);
     request.put("salesChannelID", salesChannelID); 
     request.put("deliveryRequestID", deliveryRequestID);
-    request.put("eventID", "event from " + Module.fromExternalRepresentation(moduleID).toString()); // No event here
+    request.put("eventID", deliveryRequestID);
     request.put("moduleID", moduleID);
     request.put("featureID", featureID);
     request.put("origin", origin);
@@ -26969,6 +27409,24 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
             }
           }
           break;
+          
+
+        case "predictions":
+          if (includeDynamic)
+          {
+            for (GUIManagedObject predictionSettingsUnchecked : predictionSettingsService.getStoredPredictionSettings(tenantID) )
+            {
+              if (predictionSettingsUnchecked.getAccepted())
+              {
+                PredictionSettings predictionSettings = (PredictionSettings) predictionSettingsUnchecked;
+                HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                availableValue.put("id", predictionSettings.getGUIManagedObjectID());
+                availableValue.put("display", predictionSettings.getGUIManagedObjectDisplay());
+                result.add(JSONUtilities.encodeObject(availableValue));
+              }
+            }
+          }
+          break;
 
 
         case "providerIds":
@@ -27287,6 +27745,19 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           }
         break;
 
+        case "supportedStatuses":
+          if (includeDynamic)
+            {
+              for (EvolutionSubscriberStatus returnCode : EvolutionSubscriberStatus.values())
+                {
+                  HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                  availableValue.put("id", returnCode.getExternalRepresentation());
+                  availableValue.put("display", returnCode.getExternalRepresentation());
+                  result.add(JSONUtilities.encodeObject(availableValue));
+              }
+          }
+        break;
+        
         case "supportedRelationships":
           HashMap<String, Object> availableValue = new HashMap<String, Object>();
           availableValue.put("id", "customer");
@@ -27421,7 +27892,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
             {
               try
               {
-                result.addAll((List<JSONObject>) guiManagerExtensionEvaluateEnumeratedValuesMethod.invoke(null, guiManagerContext, reference, now, includeDynamic));
+                result.addAll((List<JSONObject>) guiManagerExtensionEvaluateEnumeratedValuesMethod.invoke(null, guiManagerContext, reference, now, includeDynamic, tenantID));
               }
               catch (IllegalAccessException|InvocationTargetException|RuntimeException e)
               {
@@ -28834,6 +29305,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     private OfferObjectiveService offerObjectiveService;
     private ProductTypeService productTypeService;
     private UCGRuleService ucgRuleService;
+    private PredictionSettingsService predictionSettingsService;
     private DeliverableService deliverableService;
     private TokenTypeService tokenTypeService;
     private VoucherTypeService voucherTypeService;
@@ -28877,6 +29349,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     public OfferObjectiveService getOfferObjectiveService() { return offerObjectiveService; }
     public ProductTypeService getProductTypeService() { return productTypeService; }
     public UCGRuleService getUcgRuleService() { return ucgRuleService; }
+    public PredictionSettingsService getPredictionSettingsService() { return predictionSettingsService; }
     public DeliverableService getDeliverableService() { return deliverableService; }
     public TokenTypeService getTokenTypeService() { return tokenTypeService; }
     public VoucherTypeService getVoucherTypeService() { return voucherTypeService; }
@@ -28901,7 +29374,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     *
     *****************************************/
 
-    public GUIManagerContext(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService, CustomCriteriaService customCriteriaService)
+    public GUIManagerContext(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, PredictionSettingsService predictionSettingsService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService, CustomCriteriaService customCriteriaService)
     {
       this.journeyService = journeyService;
       this.segmentationDimensionService = segmentationDimensionService;
@@ -28923,6 +29396,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
       this.offerObjectiveService = offerObjectiveService;
       this.productTypeService = productTypeService;
       this.ucgRuleService = ucgRuleService;
+      this.predictionSettingsService = predictionSettingsService;
       this.deliverableService = deliverableService;
       this.tokenTypeService = tokenTypeService;
       this.voucherTypeService = voucherTypeService;
@@ -31290,7 +31764,8 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
             String topic = Deployment.getNotificationEventTopic();
             Serializer<StringKey> keySerializer = StringKey.serde().serializer();
             Serializer<NotificationEvent> valueSerializer = NotificationEvent.serde().serializer();
-            NotificationEvent notificationEvent = new NotificationEvent(subscriberID, now, "eventID", templateID, tagValue, communicationChannelID, contactType, "CC", source, featureID, moduleID); 
+			String eventID = zuks.getStringKey();
+            NotificationEvent notificationEvent = new NotificationEvent(subscriberID, now, eventID, templateID, tagValue, communicationChannelID, contactType, "CC", source, featureID, moduleID);
             
             kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
                 topic,

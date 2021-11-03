@@ -17,6 +17,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -63,6 +64,7 @@ import org.json.simple.parser.ParseException;
 import com.evolving.nglm.evolution.CommunicationChannel;
 import com.evolving.nglm.evolution.DeliveryManagerDeclaration;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager;
+import com.evolving.nglm.evolution.SubscriberPredictions;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchUpgrade;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchUpgrade.IndexPatch;
 import com.evolving.nglm.evolution.kafka.Topic;
@@ -118,9 +120,18 @@ public class EvolutionSetup
       //
       System.out.println("");
       System.out.println("================================================================================");
-      System.out.println("= KAFKA                                                                        =");
+      System.out.println("= KAFKA TOPIC                                                                  =");
       System.out.println("================================================================================");
       handleTopicSetup(topicsFolderPath);
+
+      //
+      // kafka topics
+      //
+      System.out.println("");
+      System.out.println("================================================================================");
+      System.out.println("= KAFKA SCHEMAS                                                                =");
+      System.out.println("================================================================================");
+      handleSpecialSchemasSetup();
   
       //
       // elasticSearch index setup
@@ -742,6 +753,39 @@ public class EvolutionSetup
     return null;
   }
 
+  /****************************************
+   *
+   * Kafka Special Schemas
+   *
+   ****************************************/
+  /**
+   * Force push schemas for topic that are read-only for Evolution (filled by third party processes, Spark for example)
+   * 
+   * Special topics that need a schema push :
+   * - subscriberpredictionspush
+   */
+  private static void handleSpecialSchemasSetup() throws EvolutionSetupException 
+  {
+    // Call .serialize() (with fake object) in order to force push schema in Schema Registry if not already present.
+    // The object passed as parameter will not be pushed in the topic. 
+    // The serialize() function only return a byte[] that we do not use nor push.
+    //
+    // if isKey = true   in ConnectSerde -> push in topic-key
+    // if isKey = false  in ConnectSerde -> push in topic-value
+    
+    // isKey = true (topic-key)
+    StringKey.serde().serializer().serialize(
+        DeploymentCommon.getSubscriberPredictionsPushTopic(), 
+        new StringKey("001")
+      );
+
+    // isKey = false (topic-key)
+    SubscriberPredictions.Prediction.serde().serializer().serialize(
+        DeploymentCommon.getSubscriberPredictionsPushTopic(), 
+        new SubscriberPredictions.Prediction("001", "2", 0.0, 0.0, new Date())
+      );
+  }
+  
   /****************************************
    *
    * Kafka Connectors

@@ -19,6 +19,7 @@ import com.evolving.nglm.evolution.reports.bdr.BDRReportMonoPhase;
 public class VDRReportDriver extends ReportDriver
 {
   private static final Logger log = LoggerFactory.getLogger(VDRReportDriver.class);
+  public static final String ES_INDEX_VDR_INITIAL = "detailedrecords_vouchers-";
 
   @Override public void produceReport(Report report, final Date reportGenerationDate, String zookeeper, String kafka, String elasticSearch, String csvFilename, String[] params, int tenantID)
   {

@@ -8,7 +8,7 @@ package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-
+import com.evolving.nglm.evolution.OfferOptimizationAlgorithm.OfferOptimizationAlgorithmParameter;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.NGLMRuntime;
@@ -36,7 +36,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-@GUIDependencyDef(objectType = "scoringStrategy", serviceClass = ScoringStrategyService.class, dependencies = { "segmentationdimension", "offerobjective", "dnbomatrix"})
+@GUIDependencyDef(objectType = "scoringstrategy", serviceClass = ScoringStrategyService.class, dependencies = { "segmentationdimension", "offerobjective", "dnbomatrix"})
 public class ScoringStrategy extends GUIManagedObject
 {
   /*****************************************
@@ -377,7 +377,11 @@ public class ScoringStrategy extends GUIManagedObject
     for (ScoringSegment scoringSegment : scoringSegments)
       {
         allOfferObjectivesID.addAll(scoringSegment.getOfferObjectiveIDs());
-        dnbomatrixIDs.add(scoringSegment.getOfferOptimizationAlgorithm().getID());
+        if ("matrix-algorithm".equals(scoringSegment.getOfferOptimizationAlgorithm().getID()))
+          {
+            String matrixID = scoringSegment.getParameters().get(new OfferOptimizationAlgorithmParameter("matrixID"));
+            if (matrixID != null) dnbomatrixIDs.add(matrixID);
+          }
       }
     result.put("segmentationdimension", segmentationDimensionIDs);
     result.put("offerobjective", allOfferObjectivesID);

@@ -1377,7 +1377,7 @@ public class EvaluationCriterion
 
   /*****************************************
   *
-  *  esCountMatchCriteria
+  *  esMatchCriteria
   *
   *****************************************/
   //
@@ -1394,7 +1394,7 @@ public class EvaluationCriterion
   }
 
   //
-  // execute query
+  // execute query  // TODO EVPRO-99 add tenantID filtering ????
   //
   public static long esCountMatchCriteriaExecuteQuery(BoolQueryBuilder query, ElasticsearchClientAPI elasticsearch) throws IOException, ElasticsearchStatusException {
     CountRequest countRequest = new CountRequest("subscriberprofile").query(query);

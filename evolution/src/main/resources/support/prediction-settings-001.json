@@ -1,0 +1,27 @@
+{
+  "apiVersion": 1,
+  "name": "criteriatest",
+  "display": "Churn With Criteria",
+  "active": true,
+  "description": "Churn prediction with criteria.",
+  "algorithm": "churn_pred",
+  "annotation": "",
+  "frequency": {
+    "runEveryDuration": 2,
+    "runEveryUnit": "day"  
+  },
+  "targetCriteria": [
+    {
+      "argument": {
+        "valueAdd": null,
+        "expression": "'fr'",
+        "valueMultiply": null,
+        "valueType": "simpleEnter.string",
+        "value": "fr",
+        "timeUnit": null
+      },
+      "criterionField": "subscriber.language",
+      "criterionOperator": "=="
+    }
+  ]
+}

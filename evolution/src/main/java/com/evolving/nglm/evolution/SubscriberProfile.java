@@ -152,7 +152,7 @@ public abstract class SubscriberProfile
     //
 
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(13));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(14));
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("subscriberTraceEnabled", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("evolutionSubscriberStatus", Schema.OPTIONAL_STRING_SCHEMA);
@@ -173,6 +173,7 @@ public abstract class SubscriberProfile
     schemaBuilder.field("vouchers", SchemaBuilder.array(VoucherProfileStored.voucherProfileStoredSchema()).name("subscriber_profile_vouchers").optional().schema());
     schemaBuilder.field("language", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("extendedSubscriberProfile", ExtendedSubscriberProfile.getExtendedSubscriberProfileSerde().optionalSchema());
+    schemaBuilder.field("predictions", SubscriberPredictions.serde().schema());
     schemaBuilder.field("complexObjectInstances", SchemaBuilder.array(ComplexObjectInstance.serde().schema()).defaultValue(Collections.<ComplexObjectInstance>emptyList()).schema());
     schemaBuilder.field("offerPurchaseHistory", SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Timestamp.SCHEMA)).name("subscriber_profile_purchase_history").schema());
     schemaBuilder.field("offerPurchaseSalesChannelHistory", SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(SalesChannelPurchaseDate.schema())).name("subscriber_profile_purchase_saleschannel_history").schema());
@@ -256,6 +257,7 @@ public abstract class SubscriberProfile
   private List<VoucherProfileStored> vouchers; // vouchers action rely on this being ordered (soonest expiry date first)
   private String languageID;
   private ExtendedSubscriberProfile extendedSubscriberProfile;
+  private SubscriberPredictions predictions;
   private Map<String,Integer> exclusionInclusionTargets; 
   private List<ComplexObjectInstance> complexObjectInstances; 
   @Deprecated
@@ -297,6 +299,7 @@ public abstract class SubscriberProfile
   public List<VoucherProfileStored> getVouchers() { return vouchers; }
   public String getLanguageID() { return languageID; }
   public ExtendedSubscriberProfile getExtendedSubscriberProfile() { return extendedSubscriberProfile; }
+  public SubscriberPredictions getPredictions() { return predictions; }
   public Map<String, Integer> getExclusionInclusionTargets() { return exclusionInclusionTargets; }
   public List<ComplexObjectInstance> getComplexObjectInstances() { return complexObjectInstances; }
   public void setComplexObjectInstances(List<ComplexObjectInstance> instances) { this.complexObjectInstances = instances; }
@@ -958,6 +961,43 @@ public abstract class SubscriberProfile
           }
       }
     return tokens;  
+  }
+  
+  /****************************************
+  *
+  *  getPredictionsJSON
+  *
+  ****************************************/
+  
+  public JSONObject getPredictionsJSON()
+  {
+    JSONObject predictionsJSON = new JSONObject();
+    if (this.predictions != null)
+      {
+        JSONArray previous = new JSONArray();
+        JSONArray current = new JSONArray();
+        for (SubscriberPredictions.Prediction pred : this.predictions.getPrevious().values())
+          {
+            JSONObject prediction = new JSONObject();
+            prediction.put("predictionID", pred.predictionID);
+            prediction.put("score", pred.score);
+            prediction.put("position", pred.position);
+            prediction.put("date", RLMDateUtils.formatDateForElasticsearchDefault(pred.date));
+            previous.add(prediction);
+          }
+        for (SubscriberPredictions.Prediction pred : this.predictions.getCurrent().values())
+          {
+            JSONObject prediction = new JSONObject();
+            prediction.put("predictionID", pred.predictionID);
+            prediction.put("score", pred.score);
+            prediction.put("position", pred.position);
+            prediction.put("date", RLMDateUtils.formatDateForElasticsearchDefault(pred.date));
+            current.add(prediction);
+          }
+        predictionsJSON.put("previous", previous);
+        predictionsJSON.put("current", current);
+      }
+    return predictionsJSON;  
   }
 
   /****************************************
@@ -1741,6 +1781,7 @@ public abstract class SubscriberProfile
     this.vouchers = new LinkedList<>();
     this.languageID = null;
     this.extendedSubscriberProfile = null;
+    this.predictions = new SubscriberPredictions();
     this.exclusionInclusionTargets = new HashMap<String, Integer>();
     this.complexObjectInstances = new ArrayList<>();
     this.offerPurchaseHistory = new HashMap<>();
@@ -1787,6 +1828,8 @@ public abstract class SubscriberProfile
     List<VoucherProfileStored> vouchers = (schemaVersion >= 5) ? unpackVouchers(schema.field("vouchers").schema(), valueStruct.get("vouchers")) : Collections.<VoucherProfileStored>emptyList();
     String languageID = valueStruct.getString("language");
     ExtendedSubscriberProfile extendedSubscriberProfile = (schemaVersion >= 2) ? ExtendedSubscriberProfile.getExtendedSubscriberProfileSerde().unpackOptional(new SchemaAndValue(schema.field("extendedSubscriberProfile").schema(), valueStruct.get("extendedSubscriberProfile"))) : null;
+    
+    SubscriberPredictions predictions = schema.field("predictions") != null ? SubscriberPredictions.unpack(new SchemaAndValue(schema.field("predictions").schema(), valueStruct.get("predictions"))) : new SubscriberPredictions();
     Map<String, Integer> exclusionInclusionTargets = (schemaVersion >= 2) ? unpackTargets(valueStruct.get("exclusionInclusionTargets")) : new HashMap<String,Integer>();
     List<ComplexObjectInstance> complexObjectInstances = (schema.field("complexObjectInstances") != null) ? unpackComplexObjectInstances(schema.field("complexObjectInstances").schema(), valueStruct.get("complexObjectInstances")) : Collections.<ComplexObjectInstance>emptyList();
     Map<String,LoyaltyProgramState> loyaltyPrograms = (schemaVersion >= 2) ? unpackLoyaltyPrograms(schema.field("loyaltyPrograms").schema(), (Map<String,Object>) valueStruct.get("loyaltyPrograms")): Collections.<String,LoyaltyProgramState>emptyMap();
@@ -1797,8 +1840,8 @@ public abstract class SubscriberProfile
 
     Boolean universalControlGroupPrevious = (schemaVersion >= 12) ? valueStruct.getBoolean("universalControlGroupPrevious") : null;
     Date universalControlGroupChangeDate = (schemaVersion >= 12) ? (Date)valueStruct.get("universalControlGroupChangeDate") : null;
-    Map<String,MetricHistory> scoreBalances = (schemaVersion >= 13) ? unpackScoreBalances(schema.field("scoreBalances").schema(), (Map<String,Object>) valueStruct.get("scoreBalances")): Collections.<String,MetricHistory>emptyMap();
-    Map<String,MetricHistory> progressionBalances = (schemaVersion >= 13) ? unpackProgressionBalances(schema.field("progressionBalances").schema(), (Map<String,Object>) valueStruct.get("progressionBalances")): Collections.<String,MetricHistory>emptyMap();
+    Map<String,MetricHistory> scoreBalances = schema.field("scoreBalances") != null ? unpackScoreBalances(schema.field("scoreBalances").schema(), (Map<String,Object>) valueStruct.get("scoreBalances")): Collections.<String,MetricHistory>emptyMap();
+    Map<String,MetricHistory> progressionBalances = schema.field("progressionBalances") != null ? unpackProgressionBalances(schema.field("progressionBalances").schema(), (Map<String,Object>) valueStruct.get("progressionBalances")): Collections.<String,MetricHistory>emptyMap();
     
     //
     //  return
@@ -1823,6 +1866,7 @@ public abstract class SubscriberProfile
     this.vouchers = vouchers;
     this.languageID = languageID;
     this.extendedSubscriberProfile = extendedSubscriberProfile;
+    this.predictions = predictions;
     this.exclusionInclusionTargets = exclusionInclusionTargets;
     this.complexObjectInstances = complexObjectInstances;
     this.offerPurchaseHistory = offerPurchaseHistory;
@@ -2268,6 +2312,7 @@ public abstract class SubscriberProfile
     this.vouchers = new LinkedList<VoucherProfileStored>(subscriberProfile.getVouchers());
     this.languageID = subscriberProfile.getLanguageID();
     this.extendedSubscriberProfile = subscriberProfile.getExtendedSubscriberProfile() != null ? ExtendedSubscriberProfile.copy(subscriberProfile.getExtendedSubscriberProfile()) : null;
+    this.predictions = new SubscriberPredictions(this.predictions); // Shallow copy
     this.exclusionInclusionTargets = new HashMap<String, Integer>(subscriberProfile.getExclusionInclusionTargets());
     this.complexObjectInstances = subscriberProfile.getComplexObjectInstances();
     this.offerPurchaseHistory = subscriberProfile.getOfferPurchaseHistory();
@@ -2305,6 +2350,7 @@ public abstract class SubscriberProfile
     struct.put("vouchers", packVouchers(subscriberProfile.getVouchers()));
     struct.put("language", subscriberProfile.getLanguageID());
     struct.put("extendedSubscriberProfile", (subscriberProfile.getExtendedSubscriberProfile() != null) ? ExtendedSubscriberProfile.getExtendedSubscriberProfileSerde().packOptional(subscriberProfile.getExtendedSubscriberProfile()) : null);
+    struct.put("predictions", SubscriberPredictions.serde().pack(subscriberProfile.getPredictions()));
     struct.put("exclusionInclusionTargets", packTargets(subscriberProfile.getExclusionInclusionTargets()));
     struct.put("complexObjectInstances", packComplexObjectInstances(subscriberProfile.getComplexObjectInstances()));
     struct.put("offerPurchaseHistory", subscriberProfile.getOfferPurchaseHistory());

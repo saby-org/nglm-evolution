@@ -1,0 +1,47 @@
+elasticsearchmanager:
+  image: ${env.DOCKER_REGISTRY}ev-guimanager:${project.name}-${project.version}
+  user: '<_DOCKER_UID_>:<_DOCKER_GID_>'
+  environment:
+    KAFKA_BROKER_ID: ignored
+    KAFKA_ZOOKEEPER_CONNECT: ignored
+    CUB_ZOOKEEPER_MIN_NODES: <_ZOOKEEPER_MIN_NODES_>
+    CUB_ZOOKEEPER_TIMEOUT: <_STARTUP_DEPENDENCY_TIMEOUT_>
+    BROKER_SERVERS: <_BROKER_SERVERS_>
+    BROKER_COUNT: <_BROKER_COUNT_>
+    CUB_BROKER_MIN_NODES: <_BROKER_MIN_NODES_>
+    CUB_KAFKA_TIMEOUT: <_STARTUP_DEPENDENCY_TIMEOUT_>
+    REGISTRY_SERVERS: <_REGISTRY_SERVERS_>
+    CUB_REGISTRY_MIN_NODES: <_REGISTRY_MIN_NODES_>
+    CUB_SCHEMA_REGISTRY_TIMEOUT: <_STARTUP_DEPENDENCY_TIMEOUT_>
+    ZOOKEEPER_SERVERS: <_ZOOKEEPER_SERVERS_>
+    TRACE_LEVEL: <_TRACE_LEVEL_>
+    KAFKA_DEBUG: <_ELASTICSEARCHMANAGER_DEBUG_>
+    ELASTICSEARCH_HOST: <_MASTER_ESROUTER_HOST_>
+    ELASTICSEARCH_PORT: <_MASTER_ESROUTER_PORT_>
+    ELASTICSEARCH_USERNAME: admin
+    ELASTICSEARCH_USERPASSWORD: <_ELASTICSEARCH_ADMIN_PASSWORD_>
+    GUIMANAGER_HOST: <_GUIMANAGER_HOST_>
+    GUIMANAGER_PORT: <_GUIMANAGER_PORT_>
+    JAVA_DEBUG_OPTS: -Xdebug -Xrunjdwp:transport=dt_socket,server=y,address=<_ELASTICSEARCHMANAGER_DEBUG_PORT_>,suspend=n
+    KAFKA_HEAP_OPTS: <_ELASTICSEARCHMANAGER_HEAP_OPTS_>
+    KAFKA_LOG4J_OPTS: -Dlog4j.configuration=file:/app/config/log4j-elasticsearchmanager.xml
+    KAFKA_OPTS: -javaagent:/app/jars/jmx_prometheus_javaagent-${jmx_prometheus_javaagent.version}.jar=<_ELASTICSEARCHMANAGER_MONITORING_PORT_>:/app/config/elasticsearchmanager_jmx.yml -Dnglm.schemaRegistryURL=<_REGISTRY_URL_> -Dnglm.converter=Avro -Dzookeeper.connect=<_ZOOKEEPER_SERVERS_> -Dbroker.servers=<_BROKER_SERVERS_> -Dnglm.zookeeper.root=${zookeeper.root} -Dredis.sentinels=<_REDIS_SENTINELS_> -Dredis.password=<_REDIS_PASSWORD_> -Devolutionengine.streamthreads=<_EVOLUTIONENGINE_STREAMTHREADS_>
+    ENTRYPOINT: elasticsearchmanager
+  deploy: 
+    restart_policy:
+      condition: <_DOCKER_RESTART_POLICY_>
+      delay: 5s
+      max_attempts: 3
+      window: 120s
+    mode: replicated
+    replicas: 1
+    placement:
+      constraints:
+        - engine.labels.hostname == <_ELASTICSEARCHMANAGER_HOST_>
+  networks:
+    - outside
+  volumes:
+    - <_NGLM_CONFIG_LOGS_>/log4j-elasticsearchmanager.xml:/app/config/log4j-elasticsearchmanager.xml
+    - type: bind
+      source: <_NGLM_LOGS_>
+      target: /app/logs

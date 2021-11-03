@@ -25,6 +25,7 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 @GUIDependencyDef(objectType = "deliverable", serviceClass = DeliverableService.class, dependencies = { "point" })
 public class Deliverable extends GUIManagedObject implements GUIManagedObject.ElasticSearchMapping
@@ -252,7 +253,7 @@ public class Deliverable extends GUIManagedObject implements GUIManagedObject.El
     return "_" + this.getDeliverableID().hashCode();   
   }
   @Override
-  public Map<String, Object> getESDocumentMap(JourneyService journeyService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, ContactPolicyService contactPolicyService)
+  public Map<String, Object> getESDocumentMap(final boolean autoUpdate, ElasticsearchClientAPI elasticsearch, JourneyService journeyService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, ContactPolicyService contactPolicyService)
   {
     Map<String,Object> documentMap = new HashMap<String,Object>();
     documentMap.put("deliverableID", this.getDeliverableID());

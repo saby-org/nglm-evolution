@@ -326,7 +326,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   public String getSubscriberID() { return subscriberID; }
   public String getOriginatingSubscriberID() { return originatingSubscriberID; }
   public String getTargetedSubscriberID() { return targetedSubscriberID; }
-  public String getEventID() { return eventID; }
+  @Override  public String getEventID() { return eventID; }
   public String getModuleID() { return moduleID; }
   public String getFeatureID() { return featureID; }
   public int getRetries() { return retries; }
@@ -444,7 +444,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.originatingRequest = true;
     this.creationDate = context.now();
     this.subscriberID = context.getSubscriberState().getSubscriberID();
-    //this.eventID = this.deliveryRequestID;
     this.eventID = context.getEventID();
     this.moduleID = null;
     this.featureID = null;

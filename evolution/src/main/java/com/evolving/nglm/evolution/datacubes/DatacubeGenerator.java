@@ -3,33 +3,24 @@ package com.evolving.nglm.evolution.datacubes;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.indices.GetIndexRequest;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.rest.RestStatus;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.elasticsearch.search.sort.FieldSortBuilder;
-import org.elasticsearch.search.sort.SortOrder;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -196,7 +187,10 @@ public abstract class DatacubeGenerator
     if(tmpBuffer == null || tmpBuffer.capacity() != bufferCapacity) {
       tmpBuffer = ByteBuffer.allocate(bufferCapacity);
     } else {
-      tmpBuffer.rewind(); // re-use the buffer to optimize allocate calls.
+      // ! This is very hacky, we should not have to cast ByteBuffer into Buffer normally.
+      // This cast is necessary here because of some discrepancies between Java 8 & Java 9.
+      // When built in Java 11 and executed on Java 8 JVM this wouldn't work without this cast.
+      ((Buffer) tmpBuffer).rewind(); // re-use the buffer to optimize allocate calls.
     }
     
     tmpBuffer.putInt(timestamp.hashCode());

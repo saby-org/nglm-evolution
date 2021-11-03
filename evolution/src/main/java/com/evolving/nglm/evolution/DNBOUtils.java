@@ -621,6 +621,8 @@ public class DNBOUtils
       String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
 
       PurchaseFulfillmentRequest request = new PurchaseFulfillmentRequest(evolutionEventContext,  deliveryRequestSource, offerID, quantity, salesChannelID, "", "", subscriberEvaluationRequest.getTenantID());
+      token.setPurchaseDeliveryRequestID(request.getDeliveryRequestID());
+      token.setPurchaseStatus(request.getStatus()); // PENDING
       request.setModuleID(DeliveryRequest.Module.Journey_Manager.getExternalRepresentation());
       request.setFeatureID(deliveryRequestSource);
       result.add(request);
@@ -792,6 +794,8 @@ public class DNBOUtils
       String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
 
       PurchaseFulfillmentRequest request = new PurchaseFulfillmentRequest(evolutionEventContext, deliveryRequestSource, offerID, quantity, salesChannelID, "", "", subscriberEvaluationRequest.getTenantID());
+      token.setPurchaseDeliveryRequestID(request.getDeliveryRequestID());
+      token.setPurchaseStatus(request.getStatus()); // PENDING
       request.setModuleID(DeliveryRequest.Module.Journey_Manager.getExternalRepresentation());
       request.setFeatureID(deliveryRequestSource);
       result.add(request);

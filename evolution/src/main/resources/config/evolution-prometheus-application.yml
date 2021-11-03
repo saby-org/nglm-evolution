@@ -117,6 +117,13 @@ scrape_configs:
     # main config
     static_configs:
       - targets: [<_DATACUBEMANAGER_PROMETHEUS_>]
+
+  # elasticsearchmanager job
+  - job_name: 'elasticsearchmanager'
+
+    # main config
+    static_configs:
+      - targets: [<_ELASTICSEARCHMANAGER_PROMETHEUS_>]
       
   # guimanager job
   - job_name: 'guimanager'
