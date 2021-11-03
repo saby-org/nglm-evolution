@@ -5,7 +5,7 @@ import org.apache.kafka.connect.data.Schema;
 import java.util.Date;
 import java.util.UUID;
 
-public interface SubscriberStreamEvent extends SubscriberStreamPriority
+public interface SubscriberStreamEvent extends SubscriberStreamPriority, SubscriberStreamTimeStamped
 {
 
   enum SubscriberAction
@@ -23,10 +23,10 @@ public interface SubscriberStreamEvent extends SubscriberStreamPriority
   }
 
   String getSubscriberID();
-  Date getEventDate();
   Schema subscriberStreamEventSchema();
   Object subscriberStreamEventPack(Object value);
-  default String getEventID() { return null; }
   default SubscriberAction getSubscriberAction() { return SubscriberAction.Standard; }
   default UUID getTrackingID() { return null; }
+  @Override default Date getEventDate() { return null; }
+  @Override default String getEventID() { return null; }
 }

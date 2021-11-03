@@ -2176,7 +2176,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
         request.put("deliveryType", "loyaltyProgramFulfillment");
         JSONObject valueRes = JSONUtilities.encodeObject(request);
 
-        LoyaltyProgramRequest loyaltyProgramRequest = new LoyaltyProgramRequest(subscriberProfile,subscriberGroupEpochReader,valueRes, null, tenantID);
+        LoyaltyProgramRequest loyaltyProgramRequest = new LoyaltyProgramRequest(subscriberProfile,subscriberGroupEpochReader,valueRes, tenantID);
         loyaltyProgramRequest.forceDeliveryPriority(DELIVERY_REQUEST_PRIORITY);
         String topic = Deployment.getDeliveryManagers().get(loyaltyProgramRequest.getDeliveryType()).getRequestTopic(loyaltyProgramRequest.getDeliveryPriority());
 

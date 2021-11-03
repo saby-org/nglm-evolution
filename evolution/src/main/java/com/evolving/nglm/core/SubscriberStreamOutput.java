@@ -6,26 +6,28 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
-import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public abstract class SubscriberStreamOutput implements SubscriberStreamPriority{
+public abstract class SubscriberStreamOutput implements SubscriberStreamPriority, SubscriberStreamTimeStamped {
 
 	private static final Logger log = LoggerFactory.getLogger(SubscriberStreamOutput.class);
 
 	// the common schema
 	private static Schema subscriberStreamOutputSchema;
-	private static int currentSchemaVersion = 9;
+	private static int currentSchemaVersion = 10;
 	static {
 		SchemaBuilder schemaBuilder = SchemaBuilder.struct();
 		schemaBuilder.name("subscriber_stream_output");
 		schemaBuilder.version(SchemaUtilities.packSchemaVersion(currentSchemaVersion));
 		schemaBuilder.field("alternateIDs", SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.OPTIONAL_STRING_SCHEMA).optional().schema());
 		schemaBuilder.field("deliveryPriority", Schema.STRING_SCHEMA);
+		schemaBuilder.field("eventDate", Schema.OPTIONAL_INT64_SCHEMA);
+		schemaBuilder.field("eventID", Schema.OPTIONAL_STRING_SCHEMA);
 		subscriberStreamOutputSchema = schemaBuilder.schema();
 	}
 	public static Schema subscriberStreamOutputSchema() { return subscriberStreamOutputSchema; }
@@ -34,14 +36,23 @@ public abstract class SubscriberStreamOutput implements SubscriberStreamPriority
 	public static void  packSubscriberStreamOutput(Struct struct, SubscriberStreamOutput subscriberStreamOutput){
 		struct.put("alternateIDs",subscriberStreamOutput.getAlternateIDs());
 		struct.put("deliveryPriority", subscriberStreamOutput.getDeliveryPriority().getExternalRepresentation());
+		struct.put("eventDate", subscriberStreamOutput.getEventDate().getTime());
+		struct.put("eventID", subscriberStreamOutput.getEventID());
 	}
 
 	// the common attributes
 	private Map<String,String> alternateIDs;
 	private DeliveryPriority deliveryPriority;
+	private Date eventDate;
+	private String eventID;
 	// the common getters
 	public Map<String, String> getAlternateIDs(){return alternateIDs;}
 	@Override public DeliveryPriority getDeliveryPriority(){return forcedDeliveryPriority!=null ? forcedDeliveryPriority : deliveryPriority; }
+	@Override public Date getEventDate(){return eventDate;}
+	@Override public String getEventID(){return eventID;}
+	// the common setters
+	public void setEventID(String eventID){this.eventID=eventID;}
+	public void setEventDate(Date eventDate){this.eventDate=eventDate;}
 
 	// the not packed data
 	// if set, the deliveryPriority will be this one (to override the default behavior of priority is set by the incoming event)
@@ -55,6 +66,7 @@ public abstract class SubscriberStreamOutput implements SubscriberStreamPriority
 	public SubscriberStreamOutput(){
 		this.alternateIDs=new LinkedHashMap<>();
 		this.deliveryPriority = DeliveryPriority.Standard;
+		this.eventDate = SystemTime.getCurrentTime();
 	}
 	// the super constructor for the "unpack" subclass object creation
 	public SubscriberStreamOutput(SchemaAndValue schemaAndValue){
@@ -63,22 +75,41 @@ public abstract class SubscriberStreamOutput implements SubscriberStreamPriority
 		Struct valueStruct = (Struct) value;
 		this.alternateIDs = (schema.field("alternateIDs")!=null && valueStruct.get("alternateIDs") != null) ? (Map<String,String>) valueStruct.get("alternateIDs") : new LinkedHashMap<>();
 		this.deliveryPriority = schema.field("deliveryPriority")!=null ? DeliveryPriority.fromExternalRepresentation(valueStruct.getString("deliveryPriority")) : DeliveryPriority.Standard;
+		this.eventDate = (schema.field("eventDate")!=null && valueStruct.get("eventDate") != null) ? new Date(valueStruct.getInt64("eventDate")) : SystemTime.getCurrentTime();
+		this.eventID = schema.field("eventID")!=null ? valueStruct.getString("eventID") : null;
 	}
 	// the copy constructor
 	public SubscriberStreamOutput(SubscriberStreamOutput subscriberStreamOutput){
 		this.alternateIDs = new LinkedHashMap<>();
 		if (subscriberStreamOutput.getAlternateIDs()!=null) getAlternateIDs().putAll(subscriberStreamOutput.getAlternateIDs());
 		this.deliveryPriority = subscriberStreamOutput.getDeliveryPriority();
+		this.eventDate = subscriberStreamOutput.getEventDate();
+		this.eventID = subscriberStreamOutput.getEventID();
+	}
+	// with an incoming event
+	public SubscriberStreamOutput(DeliveryPriority deliveryPriority, Date eventDate, String eventID){
+		this.alternateIDs = new LinkedHashMap<>();
+		this.deliveryPriority = deliveryPriority;
+		this.eventDate = eventDate;
+		this.eventID = eventID;
 	}
 	// with subscriberprofile context constructor
 	public SubscriberStreamOutput(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, DeliveryPriority deliveryPriority, int tenantID){
 		this.alternateIDs = buildAlternateIDs(subscriberProfile,subscriberGroupEpochReader, tenantID);
 		this.deliveryPriority = deliveryPriority;
+		this.eventDate = SystemTime.getCurrentTime();
+	}
+	// from ES
+	public SubscriberStreamOutput(Map<String, Object> esFields){
+		this();
+		this.eventID = (String) esFields.get("eventID");
 	}
 	// enrich directly
 	public void enrichSubscriberStreamOutput(SubscriberStreamEvent originatingEvent, SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, int tenantID){
 		this.alternateIDs = buildAlternateIDs(subscriberProfile,subscriberGroupEpochReader, tenantID);
 		this.deliveryPriority = originatingEvent.getDeliveryPriority();
+		this.eventDate = originatingEvent.getEventDate();
+		this.eventID = originatingEvent.getEventID();
 	}
 
 	// build alternateIDs populated

@@ -1075,7 +1075,7 @@ public class EvaluationCriterion
 
           case TimeCriterion:
             {
-              Date now = SystemTime.getCurrentTime();
+              Date now = evaluationRequest.getEvaluationDate();
               criterionFieldValue = getCurrentDateFromTime(now, (String) criterionFieldValue);
               evaluatedArgument = getCurrentDateFromTime(now, (String) evaluatedArgument);
             }

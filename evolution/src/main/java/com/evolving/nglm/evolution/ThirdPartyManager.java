@@ -2960,18 +2960,18 @@ public class ThirdPartyManager
      ****************************************/
     String subscriberID = null;
     boolean subscriberParameter = false;
-    
+
     String customerIDParameter = JSONUtilities.decodeString(jsonRoot, CUSTOMER_ID, false);
     String customerIDType = JSONUtilities.decodeString(jsonRoot, CUSTOMER_ID_TYPE, false);
     String customerIDValue = JSONUtilities.decodeString(jsonRoot, CUSTOMER_ID_VALUE, false);
-    
+
     if(customerIDType != null && customerIDValue != null)
       {
         subscriberParameter = true;
       }
-    else 
+    else
       {
-        if (customerIDParameter == null) 
+        if (customerIDParameter == null)
           {
             for (String id : Deployment.getAlternateIDs().keySet())
               {
@@ -4994,7 +4994,7 @@ public class ThirdPartyManager
       
       JSONObject valueRes = JSONUtilities.encodeObject(request);
 
-      LoyaltyProgramRequest loyaltyProgramRequest = new LoyaltyProgramRequest(subscriberProfile,subscriberGroupEpochReader,valueRes, null, tenantID);
+      LoyaltyProgramRequest loyaltyProgramRequest = new LoyaltyProgramRequest(subscriberProfile,subscriberGroupEpochReader,valueRes, tenantID);
       loyaltyProgramRequest.forceDeliveryPriority(DELIVERY_REQUEST_PRIORITY);
       String topic = Deployment.getDeliveryManagers().get(loyaltyProgramRequest.getDeliveryType()).getRequestTopic(loyaltyProgramRequest.getDeliveryPriority());
 
@@ -5548,7 +5548,6 @@ public class ThirdPartyManager
     String eventID=zuksVoucherChange.getStringKey();
     VoucherChange request = new VoucherChange(
             subscriberID,
-            SystemTime.getCurrentTime(),
             null,
             eventID,
             VoucherChange.VoucherChangeAction.Redeem,
@@ -6078,28 +6077,27 @@ public class ThirdPartyManager
   {
     String featureID = JSONUtilities.decodeString(jsonRoot, "loginName", DEFAULT_FEATURE_ID);
     
-      String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
-      
-      Map<String,Object> otpResponse = new HashMap<>();
-              
-        //build the request to send
-      
-      OTPInstanceChangeEvent request = new OTPInstanceChangeEvent(
-                SystemTime.getCurrentTime(),
-                subscriberID,
-                zuks.getStringKey(),
-                OTPInstanceChangeEvent.OTPChangeAction.Check,
-                JSONUtilities.decodeString(jsonRoot, "otpType", true),
-                JSONUtilities.decodeString(jsonRoot, "otpCheckValue", true),
-                JSONUtilities.decodeBoolean(jsonRoot, "burn", Boolean.FALSE), // mandatory=false+defaultValue= FALSE
-                0, //remainingAttempts
-                0, //validationDuration
-                0, //currentTypeErrors
-                0, // globalErrorCounts
-                RESTAPIGenericReturnCodes.UNKNOWN,
-                featureID,
-                Module.REST_API, // TODO
-                tenantID);
+	  String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
+	  
+	  Map<String,Object> otpResponse = new HashMap<>();
+	  	    
+	    //build the request to send
+	  
+	  OTPInstanceChangeEvent request = new OTPInstanceChangeEvent(
+	            subscriberID,
+	            zuks.getStringKey(),
+	            OTPInstanceChangeEvent.OTPChangeAction.Check,
+	            JSONUtilities.decodeString(jsonRoot, "otpType", true),
+	            JSONUtilities.decodeString(jsonRoot, "otpCheckValue", true),
+	            JSONUtilities.decodeBoolean(jsonRoot, "burn", Boolean.FALSE), // mandatory=false+defaultValue= FALSE
+	            0, //remainingAttempts
+	            0, //validationDuration
+	            0, //currentTypeErrors
+	            0, // globalErrorCounts
+	            RESTAPIGenericReturnCodes.UNKNOWN,
+	            featureID,
+	            Module.REST_API, // TODO
+	            tenantID);
 
         Future<OTPInstanceChangeEvent> waitingResponse = otpChangeResponseListenerService.addWithOnValueFilter((value)->value.getEventID().equals(request.getEventID())&&value.getReturnStatus()!=RESTAPIGenericReturnCodes.UNKNOWN);
 
@@ -6110,13 +6108,13 @@ public class ThirdPartyManager
                 OTPInstanceChangeEvent.serde().serializer().serialize(requestTopic, request)
         ));
 
-        
+
         OTPInstanceChangeEvent response = handleWaitingResponse(waitingResponse);
         if (!response.getReturnStatus().equals(RESTAPIGenericReturnCodes.SUCCESS)) otpResponse.put("numberOfRetriesLeft", response.getRemainingAttempts());
         return constructThirdPartyResponse(response.getReturnStatus(),otpResponse);
   }
 
-      
+
   private JSONObject processGenerateOTP(JSONObject jsonRoot, int tenantID) throws ThirdPartyManagerException, ParseException, IOException
   {
 
@@ -6144,7 +6142,6 @@ public class ThirdPartyManager
     String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
 
     OTPInstanceChangeEvent request = new OTPInstanceChangeEvent(
-        SystemTime.getCurrentTime(),
         subscriberID,
         zuks.getStringKey(),
         OTPInstanceChangeEvent.OTPChangeAction.Generate,
@@ -6347,7 +6344,7 @@ public class ThirdPartyManager
       }
     else 
       {
-        
+
         CallingChannel callingChannel = null;
         if (callingChannelDisplay != null)
           {
@@ -7580,7 +7577,7 @@ public class ThirdPartyManager
       Serializer<TokenChange> valueSerializer = TokenChange.serde().serializer();
       String featureID = JSONUtilities.decodeString(jsonRoot, "loginName", DEFAULT_FEATURE_ID);
       String origin = JSONUtilities.decodeString(jsonRoot, "origin", false);
-      TokenChange tokenChange = new TokenChange(subscriberProfile, now, "event from ".concat(Module.REST_API.toString()), tokenCode, action, str, origin, Module.REST_API.getExternalRepresentation(), featureID, tenantID);
+      TokenChange tokenChange = new TokenChange(subscriberProfile, tokenCode, action, str, origin, Module.REST_API.getExternalRepresentation(), featureID, tenantID);
       kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
           topic,
           keySerializer.serialize(topic, new StringKey(subscriberProfile.getSubscriberID())),

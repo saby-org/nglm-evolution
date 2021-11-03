@@ -14,7 +14,6 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -251,20 +250,20 @@ public class GUIService {
           public void run()
           {
             Date now = SystemTime.getCurrentTime();
-            
+
             //
             //  ES update
             //
-            
+
             for (GUIManagedObject guiManagedObject : getStoredGUIManagedObjects(0))
               {
                 if (guiManagedObject.getEffectiveEndDate().after(now)) updateElasticSearch(guiManagedObject, true);
               }
-            
+
             //
             //  topic deletion
             //
-            
+
             for (Map.Entry<String, Date> entry : forFullDeletionObjects.entrySet())
               {
                 Date toRemoveFromTopicDate = RLMDateUtils.addDays(entry.getValue(), Deployment.getGuiConfigurationRetentionDays(), Deployment.getDefault().getTimeZone());
@@ -275,7 +274,7 @@ public class GUIService {
                     try
                       {
                         kafkaProducer.send(new ProducerRecord<byte[], byte[]>(guiManagedObjectTopic, stringKeySerde.serializer().serialize(guiManagedObjectTopic, new StringKey(entry.getKey())), null)).get();
-                      } 
+                      }
                     catch (InterruptedException | ExecutionException e)
                       {
                         log.error("error deleting to kafka " + entry.getKey(), e);
@@ -742,7 +741,7 @@ public class GUIService {
     log.info("{} remove {}", this.getClass().getSimpleName(), guiManagedObjectID);
     if (guiManagedObjectID == null) throw new RuntimeException("null guiManagedObjectID" + guiManagedObjectID + " " + tenantID);
     if (!masterService) throw new RuntimeException("can not update conf outside the master service");
-    
+
     //
     // created/updated date
     //
@@ -873,7 +872,7 @@ public class GUIService {
               || date.compareTo(guiManagedObject.getEffectiveEndDate()) < 0);
       boolean active = accepted && !guiManagedObject.getDeleted() && guiManagedObject.getActive()
           && (guiManagedObject.getEffectiveStartDate().compareTo(date) <= 0)
-          && (date.compareTo(guiManagedObject.getEffectiveEndDate()) < 0);
+          && (date.compareTo(new Date(guiManagedObject.getEffectiveEndDate().getTime() + Deployment.getEventMaxDelayMs())) < 0);
       boolean future = accepted && !guiManagedObject.getDeleted() && guiManagedObject.getActive()
           && (guiManagedObject.getEffectiveStartDate().compareTo(date) > 0);
 
@@ -917,9 +916,10 @@ public class GUIService {
       if (active || future) {
         putSpecificAndAllTenants(availablePerTenantGUIManagedObjects, (GUIManagedObject) guiManagedObject);
         if (guiManagedObject.getEffectiveEndDate().compareTo(NGLMRuntime.END_OF_TIME) < 0) {
-          ScheduleEntry scheduleEntry = new ScheduleEntry(guiManagedObject.getEffectiveEndDate(),
-              guiManagedObject.getGUIManagedObjectID(), tenantID);
-          schedule.add(scheduleEntry);
+          ScheduleEntry realEndDate = new ScheduleEntry(guiManagedObject.getEffectiveEndDate(), guiManagedObject.getGUIManagedObjectID(), tenantID);
+          ScheduleEntry delayedEventEndDate = new ScheduleEntry(new Date(guiManagedObject.getEffectiveEndDate().getTime() + Deployment.getEventMaxDelayMs()), guiManagedObject.getGUIManagedObjectID(), tenantID);
+          schedule.add(realEndDate);
+          schedule.add(delayedEventEndDate);
           this.notifyAll();
         }
       }
@@ -1212,15 +1212,16 @@ public class GUIService {
           // after active window
           //
 
-          if (now.compareTo(guiManagedObject.getEffectiveEndDate()) >= 0) {
+          if (now.compareTo(new Date(guiManagedObject.getEffectiveEndDate().getTime()+Deployment.getEventMaxDelayMs())) >= 0) {
             removeSpecificAndAllTenants(availablePerTenantGUIManagedObjects, guiManagedObject.getGUIManagedObjectID(),
                 guiManagedObject.getTenantID());
             removeSpecificAndAllTenants(activePerTenantGUIManagedObjects, guiManagedObject.getGUIManagedObjectID(),
                 guiManagedObject.getTenantID());
             removeSpecificAndAllTenants(interruptedPerTenantGUIManagedObjects, guiManagedObject.getGUIManagedObjectID(),
                 guiManagedObject.getTenantID());
-            if (existingActiveGUIManagedObject != null)
-              notifyListener(guiManagedObject);
+          }
+          if (existingActiveGUIManagedObject != null && now.compareTo(guiManagedObject.getEffectiveEndDate()) >= 0 && now.compareTo(new Date(guiManagedObject.getEffectiveEndDate().getTime()+Deployment.getEventMaxDelayMs())) <= 0) {
+            notifyListener(guiManagedObject);
           }
 
           //
@@ -1357,41 +1358,6 @@ public class GUIService {
 
   /*****************************************
    *
-   * class GuiManagedObjectsConsumerRebalanceListener
-   *
-   *****************************************/
-
-  private class GuiManagedObjectsConsumerRebalanceListener implements ConsumerRebalanceListener {
-    //
-    // data
-    //
-
-    private String serviceName;
-    private String groupID;
-
-    //
-    // constructor
-    //
-
-    public GuiManagedObjectsConsumerRebalanceListener(String serviceName, String groupId) {
-      this.serviceName = serviceName;
-      this.groupID = groupId;
-    }
-
-    @Override
-    public void onPartitionsRevoked(Collection<TopicPartition> lastAssignedPartitions) {
-    }
-
-    @Override
-    public void onPartitionsAssigned(Collection<TopicPartition> partitionsToBeAssigned) {
-      if (partitionsToBeAssigned.size() == 0) {
-        log.error("{} has multiple instance with same key {}", serviceName, groupID);
-      }
-    }
-  }
-
-  /*****************************************
-   *
    * interface GUIManagedObjectListener
    *
    *****************************************/
@@ -1409,6 +1375,7 @@ public class GUIService {
    *****************************************/
 
   private void notifyListener(GUIManagedObject guiManagedObject) {
+    if(log.isTraceEnabled()) log.trace("notifying listener for "+guiManagedObject.getGUIManagedObjectID()+", "+guiManagedObject.getGUIManagedObjectDisplay()+", "+guiManagedObject.getEffectiveStartDate()+", "+guiManagedObject.getEffectiveEndDate());
     updateElasticSearch(guiManagedObject, false);
     listenerQueue.add(guiManagedObject);
   }
@@ -1471,7 +1438,7 @@ public class GUIService {
   * updateElasticSearch
   *
   *****************************************/
-  
+
   public void updateElasticSearch(GUIManagedObject guiManagedObject, final boolean autoUpdate)
   {
     if (guiManagedObject instanceof ElasticSearchMapping && elasticsearch != null /* to ensure it has been started with the good parameters*/ )
@@ -1483,12 +1450,12 @@ public class GUIService {
             try
               {
                 elasticsearch.delete(deleteRequest, RequestOptions.DEFAULT);
-              } 
+              }
             catch (IOException e)
               {
                 e.printStackTrace();
               }
-          } 
+          }
         else
           {
             UpdateRequest request = new UpdateRequest(((ElasticSearchMapping) guiManagedObject).getESIndexName(), ((ElasticSearchMapping) guiManagedObject).getESDocumentID());
@@ -1498,7 +1465,7 @@ public class GUIService {
             try
               {
                 elasticsearch.update(request, RequestOptions.DEFAULT);
-              } 
+              }
             catch (IOException e)
               {
                 e.printStackTrace();

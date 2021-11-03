@@ -13,6 +13,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -56,6 +58,7 @@ import org.apache.kafka.clients.admin.TopicListing;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.TopicPartitionInfo;
 import org.apache.kafka.common.utils.Time;
+import org.apache.zookeeper.client.ZKClientConfig;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -73,6 +76,8 @@ import com.google.common.net.HttpHeaders;
 import kafka.zk.AdminZkClient;
 import kafka.zk.KafkaZkClient;
 
+import scala.Option;
+
 public class EvolutionSetup
 {
   private static HttpClient httpClient;
@@ -87,6 +92,19 @@ public class EvolutionSetup
    ****************************************/
   public static void main(String[] args) throws InterruptedException, ExecutionException
   {
+    
+//    ClassLoader cl = ClassLoader.getSystemClassLoader();
+//
+//    URL[] urls = ((URLClassLoader)cl).getURLs();
+//    System.out.println("Classpath");
+//    for(URL url: urls){
+//      System.out.println(url.getFile());
+//    }
+    
+    Class klass = scala.collection.JavaConverters.class;
+    URL location = klass.getResource('/' + klass.getName().replace('.', '/') + ".class");
+    System.out.println("JAR Converters 1 " + location);
+    
     try {
       //
       // extracts files from args
@@ -674,7 +692,9 @@ public class EvolutionSetup
     // kafka topics setup
     //
 
-    KafkaZkClient zkClient = KafkaZkClient.apply(System.getProperty("zookeeper.connect"), false, 10000, 100000, 30, Time.SYSTEM, "foo", "bar", null);
+    Option<String> zkClientInstanceName = Option.apply("zkInstance"); 
+    Option<ZKClientConfig> zkClientConfig = Option.apply(new ZKClientConfig());
+    KafkaZkClient zkClient = KafkaZkClient.apply(System.getProperty("zookeeper.connect"), false, 10000, 100000, 30, Time.SYSTEM, "foo", "bar", zkClientInstanceName, zkClientConfig);
     AdminZkClient adminZkClient = new AdminZkClient(zkClient);
 
     //

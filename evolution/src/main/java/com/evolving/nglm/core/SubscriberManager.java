@@ -1486,10 +1486,10 @@ public class SubscriberManager
     switch (assignSubscriberIDs.getSubscriberAction())
       {
         case Delete:
-          result.add(new CleanupSubscriber(assignSubscriberIDs.getSubscriberID(), assignSubscriberIDs.getEventDate(), SubscriberAction.Cleanup));
+          result.add(new CleanupSubscriber(assignSubscriberIDs.getSubscriberID(), SubscriberAction.Cleanup));
           break;
         case DeleteImmediate:
-          result.add(new CleanupSubscriber(assignSubscriberIDs.getSubscriberID(), assignSubscriberIDs.getEventDate(), SubscriberAction.CleanupImmediate));
+          result.add(new CleanupSubscriber(assignSubscriberIDs.getSubscriberID(), SubscriberAction.CleanupImmediate));
           break;
 
       }

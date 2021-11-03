@@ -11,7 +11,6 @@ import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SubscriberStreamEvent;
 import com.evolving.nglm.core.SubscriberStreamOutput;
-import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.ActionManager.ActionType;
 import com.evolving.nglm.evolution.CustomerMetaData.MetaData;
@@ -22,15 +21,12 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
-import org.apache.kafka.connect.data.Timestamp;
 
 import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.RLMDateUtils;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
-import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -51,10 +47,9 @@ public class SubscriberProfileForceUpdate extends SubscriberStreamOutput impleme
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("subscriber_profile_force_update");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),2));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),3));
     for (Field field : subscriberStreamOutputSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
-    schemaBuilder.field("eventDate", Timestamp.SCHEMA);
     schemaBuilder.field("parameterMap", ParameterMap.schema());
     schemaBuilder.field("subscriberProfileForceUpdateRequestID", Schema.OPTIONAL_STRING_SCHEMA);
     schema = schemaBuilder.build();
@@ -81,7 +76,6 @@ public class SubscriberProfileForceUpdate extends SubscriberStreamOutput impleme
   *****************************************/
 
   private String subscriberID;
-  private Date eventDate;
   private ParameterMap parameterMap;
   private String subscriberProfileForceUpdateRequestID;
 
@@ -92,7 +86,6 @@ public class SubscriberProfileForceUpdate extends SubscriberStreamOutput impleme
   *****************************************/
 
   public String getSubscriberID() { return subscriberID; }
-  public Date getEventDate() { return eventDate; }
   public ParameterMap getParameterMap() { return parameterMap; }
   public String getSubscriberProfileForceUpdateRequestID() { return subscriberProfileForceUpdateRequestID; }
 
@@ -111,15 +104,6 @@ public class SubscriberProfileForceUpdate extends SubscriberStreamOutput impleme
     *****************************************/
 
     this.subscriberID = JSONUtilities.decodeString(jsonRoot, "subscriberID", true);
-    String date = JSONUtilities.decodeString(jsonRoot, "eventDate", false);
-    if(date != null)
-      {
-        this.eventDate = GUIManagedObject.parseDateField(date);
-      }
-    else
-      {
-        this.eventDate = SystemTime.getCurrentTime();
-      }
 
     /*****************************************
     *
@@ -193,19 +177,17 @@ public class SubscriberProfileForceUpdate extends SubscriberStreamOutput impleme
   *
   *****************************************/
 
-  public SubscriberProfileForceUpdate(SchemaAndValue schemaAndValue, String subscriberID, Date eventDate, ParameterMap parameterMap, String subscriberProfileForceUpdateRequestID)
+  public SubscriberProfileForceUpdate(SchemaAndValue schemaAndValue, String subscriberID, ParameterMap parameterMap, String subscriberProfileForceUpdateRequestID)
   {
     super(schemaAndValue);
     this.subscriberID = subscriberID;
-    this.eventDate = eventDate;
     this.parameterMap = parameterMap;
     this.subscriberProfileForceUpdateRequestID = subscriberProfileForceUpdateRequestID;
   }
 
-  public SubscriberProfileForceUpdate(String subscriberID, Date eventDate, ParameterMap parameterMap, String subscriberProfileForceUpdateRequestID)
+  public SubscriberProfileForceUpdate(String subscriberID, ParameterMap parameterMap, String subscriberProfileForceUpdateRequestID)
   {
     this.subscriberID = subscriberID;
-    this.eventDate = eventDate;
     this.parameterMap = parameterMap;
     this.subscriberProfileForceUpdateRequestID = subscriberProfileForceUpdateRequestID;
   }
@@ -222,7 +204,6 @@ public class SubscriberProfileForceUpdate extends SubscriberStreamOutput impleme
     Struct struct = new Struct(schema);
     packSubscriberStreamOutput(struct,subscriberProfileForceUpdate);
     struct.put("subscriberID", subscriberProfileForceUpdate.getSubscriberID());
-    struct.put("eventDate", subscriberProfileForceUpdate.getEventDate());
     struct.put("parameterMap", ParameterMap.pack(subscriberProfileForceUpdate.getParameterMap()));
     struct.put("subscriberProfileForceUpdateRequestID", subscriberProfileForceUpdate.getSubscriberProfileForceUpdateRequestID());
     return struct;
@@ -256,7 +237,6 @@ public class SubscriberProfileForceUpdate extends SubscriberStreamOutput impleme
 
     Struct valueStruct = (Struct) value;
     String subscriberID = valueStruct.getString("subscriberID");
-    Date eventDate = (Date) valueStruct.get("eventDate");
     ParameterMap parameterMap = ParameterMap.unpack(new SchemaAndValue(schema.field("parameterMap").schema(), valueStruct.get("parameterMap")));
     String subscriberProfileForceUpdateRequestID = (schema.field("subscriberProfileForceUpdateRequestID") != null) ? valueStruct.getString("subscriberProfileForceUpdateRequestID") : null;
     
@@ -264,7 +244,7 @@ public class SubscriberProfileForceUpdate extends SubscriberStreamOutput impleme
     //  return
     //
 
-    return new SubscriberProfileForceUpdate(schemaAndValue, subscriberID, eventDate, parameterMap, subscriberProfileForceUpdateRequestID);
+    return new SubscriberProfileForceUpdate(schemaAndValue, subscriberID, parameterMap, subscriberProfileForceUpdateRequestID);
   }
   
   @Override
