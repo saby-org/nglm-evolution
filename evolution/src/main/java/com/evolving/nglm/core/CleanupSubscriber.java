@@ -38,6 +38,7 @@ public class CleanupSubscriber extends SubscriberStreamOutput implements com.evo
     for (Field field : subscriberStreamOutputSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("subscriberAction", SchemaBuilder.string().defaultValue("standard").schema());
+    schemaBuilder.field("cleanExtESReady", Schema.OPTIONAL_BOOLEAN_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -63,6 +64,7 @@ public class CleanupSubscriber extends SubscriberStreamOutput implements com.evo
 
   private String subscriberID;
   private SubscriberAction subscriberAction;
+  private Boolean cleanExtESReady;
 
   /****************************************
   *
@@ -73,6 +75,8 @@ public class CleanupSubscriber extends SubscriberStreamOutput implements com.evo
   @Override public String getSubscriberID() { return subscriberID; }
   @Override public SubscriberAction getSubscriberAction() { return subscriberAction; }
   @Override public DeliveryRequest.DeliveryPriority getDeliveryPriority(){return DeliveryRequest.DeliveryPriority.Low; }
+  public Boolean getCleanExtESReady() { return cleanExtESReady; }
+  public void setCleanExtESReady(Boolean cleanExtESReady) { this.cleanExtESReady = cleanExtESReady; }
 
   /*****************************************
   *
@@ -91,6 +95,7 @@ public class CleanupSubscriber extends SubscriberStreamOutput implements com.evo
     super(assignSubscriberIDs);
     this.subscriberID = subscriberID;
     this.subscriberAction = subscriberAction;
+    this.cleanExtESReady = null;
   }
 
   /*****************************************
@@ -99,11 +104,12 @@ public class CleanupSubscriber extends SubscriberStreamOutput implements com.evo
   *
   *****************************************/
 
-  public CleanupSubscriber(SchemaAndValue schemaAndValue, String subscriberID, SubscriberAction subscriberAction)
+  public CleanupSubscriber(SchemaAndValue schemaAndValue, String subscriberID, SubscriberAction subscriberAction, Boolean cleanExtESReady)
   {
     super(schemaAndValue);
     this.subscriberID = subscriberID;
     this.subscriberAction = subscriberAction;
+    this.cleanExtESReady = cleanExtESReady;
   }
 
   /*****************************************
@@ -117,6 +123,7 @@ public class CleanupSubscriber extends SubscriberStreamOutput implements com.evo
     super(cleanupSubscriber);
     this.subscriberID = cleanupSubscriber.getSubscriberID();
     this.subscriberAction = cleanupSubscriber.getSubscriberAction();
+    this.cleanExtESReady = cleanupSubscriber.getCleanExtESReady();
   }
 
   /*****************************************
@@ -132,6 +139,7 @@ public class CleanupSubscriber extends SubscriberStreamOutput implements com.evo
     packSubscriberStreamOutput(struct, cleanupSubscriber);
     struct.put("subscriberID", cleanupSubscriber.getSubscriberID());
     struct.put("subscriberAction", cleanupSubscriber.getSubscriberAction().getExternalRepresentation());
+    struct.put("cleanExtESReady", cleanupSubscriber.getCleanExtESReady());
     return struct;
   }
 
@@ -164,11 +172,20 @@ public class CleanupSubscriber extends SubscriberStreamOutput implements com.evo
     Struct valueStruct = (Struct) value;
     String subscriberID = valueStruct.getString("subscriberID");
     SubscriberAction subscriberAction = schema.field("subscriberAction") != null ? SubscriberAction.fromExternalRepresentation(valueStruct.getString("subscriberAction")) : SubscriberAction.Cleanup;
+    
+    Boolean cleanExtESReady = schema.field("cleanExtESReady") != null ? valueStruct.getBoolean("cleanExtESReady") : null;
 
     //
     //  return
     //
 
-    return new CleanupSubscriber(schemaAndValue, subscriberID, subscriberAction);
+    return new CleanupSubscriber(schemaAndValue, subscriberID, subscriberAction, cleanExtESReady);
   }
+  @Override
+  public String toString()
+  {
+    return "CleanupSubscriber [subscriberID=" + subscriberID + ", subscriberAction=" + subscriberAction + ", cleanExtESReady=" + cleanExtESReady + "]";
+  }
+  
+  
 }
