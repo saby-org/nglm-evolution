@@ -2749,7 +2749,7 @@ public class EvolutionEngine
        //  changeSubscriberBadge
        //
        
-       boolean changed = changeSubscriberBadge(badgeChangeRequest, context.getSubscriberState(), context.now());
+       boolean changed = changeSubscriberBadge(badgeChangeRequest, context.getSubscriberState(), context.processingDate());
        
        //
        //  if badge got deleted (NOT JUST "suspended"), we need to remove to clean it from profile after a while
@@ -2763,7 +2763,7 @@ public class EvolutionEngine
            if (subscriberBadge != null && !subscriberBadge.getCustomerBadgeStatus().equals(CustomerBadgeStatus.PENDING))
              {
                subscriberBadge.setCustomerBadgeStatus(CustomerBadgeStatus.PENDING);
-               subscriberBadge.setBadgeRemoveDate(context.now());
+               subscriberBadge.setBadgeRemoveDate(context.processingDate());
                result = true;
              }
          }
@@ -9498,7 +9498,7 @@ public class EvolutionEngine
       *****************************************/
 
       BadgeChange badgeChangeRequest = new BadgeChange(evolutionEventContext.getSubscriberState().getSubscriberID(), "", SystemTime.getCurrentTime(), evolutionEventContext.getEventID(), operation, badgeID, moduleID, deliveryRequestSource, origin, RESTAPIGenericReturnCodes.SUCCESS, evolutionEventContext.getSubscriberState().getSubscriberProfile().getTenantID(), new ParameterMap());
-      boolean changed = changeSubscriberBadge(badgeChangeRequest, evolutionEventContext.getSubscriberState(), evolutionEventContext.now());
+      boolean changed = changeSubscriberBadge(badgeChangeRequest, evolutionEventContext.getSubscriberState(), evolutionEventContext.processingDate());
       if (changed)
         {
           subscriberEvaluationRequest.getJourneyState().getBadgeChanges().add(badgeChangeRequest);
