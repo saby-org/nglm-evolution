@@ -114,11 +114,20 @@ public class JourneyImpactReportDriver extends ReportDriver
 
     try
     {
-      Collection<GUIManagedObject> journeys = journeyService.getStoredJourneys(tenantID);
-      int nbJourneys = journeys.size();
+      Collection<GUIManagedObject> allJourneys = journeyService.getStoredJourneys(tenantID);
+      List<GUIManagedObject> activeJourneys = new ArrayList<>();
+      Date yesterdayAtZeroHour = ReportUtils.delayAtZeroHour(reportGenerationDate, Deployment.getReportManagerJourneysReportActiveNHoursAgo());
+      Date yesterdayAtMidnight = ReportUtils.delayAtMidnight(reportGenerationDate, Deployment.getReportManagerJourneysReportActiveNHoursAgo());
+      for (GUIManagedObject gmo : allJourneys) {
+        if (gmo.getEffectiveStartDate().before(yesterdayAtMidnight) && gmo.getEffectiveEndDate().after(yesterdayAtZeroHour)) {
+          activeJourneys.add(gmo);
+        }
+      }
+      
+      int nbJourneys = activeJourneys.size();
       log.info("journeys list size : " + nbJourneys);
 
-      for (GUIManagedObject guiManagedObject : journeys)
+      for (GUIManagedObject guiManagedObject : activeJourneys)
         {
           if (guiManagedObject != null && guiManagedObject instanceof Journey && !((Journey) guiManagedObject).isWorkflow()) {
             Journey journey = (Journey) guiManagedObject;

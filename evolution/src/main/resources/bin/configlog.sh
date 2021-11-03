@@ -109,6 +109,8 @@ elif [[ "$CONTAINERNAME" =~ ^${DOCKER_STACK}-reportscheduler_reportscheduler ]];
   FILE=reportscheduler
 elif [[ "$CONTAINERNAME" =~ ^${DOCKER_STACK}-datacubemanager_datacubemanager ]]; then
   FILE=datacubemanager
+elif [[ "$CONTAINERNAME" =~ ^${DOCKER_STACK}-elasticsearchmanager_elasticsearchmanager ]]; then
+  FILE=elasticsearchmanager
 elif [[ "$CONTAINERNAME" =~ ^${DOCKER_STACK}-connect_connect ]]; then
   FILE=connect
 else

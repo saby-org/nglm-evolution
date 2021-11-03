@@ -111,6 +111,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     super.targetService = targetService;
     super.tokenTypeService = tokenTypeService;
     super.ucgRuleService = ucgRuleService;
+    super.predictionSettingsService = guiManagerContext.getPredictionSettingsService();
     super.uploadedFileService = uploadedFileService;
     super.voucherService = voucherService;
     super.voucherTypeService = voucherTypeService;
@@ -1448,6 +1449,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     response.put("communicationChannelBlackoutCount", communicationChannelBlackoutService.getStoredCommunicationChannelBlackouts(includeArchived, tenantID).size());
     response.put("resellerCount", resellerService.getStoredResellers(includeArchived, tenantID).size());
     response.put("customCriteriaCount", customCriteriaService.getStoredCustomCriterias(includeArchived, tenantID).size());
+    response.put("criterionFieldAvailableValuesCount", criterionFieldAvailableValuesService.getStoredCriterionFieldAvailableValuesList(includeArchived, tenantID).size());
     
     //
     //  LoyaltyProgram
@@ -2168,13 +2170,13 @@ public class GUIManagerLoyaltyReporting extends GUIManager
         // Fields for DeliveryRequest
         request.put("deliveryRequestID", loyaltyProgramRequestID);
         request.put("subscriberID", subscriberID);
-        request.put("eventID", "0"); // No event here
+        request.put("eventID", loyaltyProgramRequestID);
         request.put("moduleID", moduleID);
         request.put("featureID", featureID);
         request.put("deliveryType", "loyaltyProgramFulfillment");
         JSONObject valueRes = JSONUtilities.encodeObject(request);
 
-        LoyaltyProgramRequest loyaltyProgramRequest = new LoyaltyProgramRequest(subscriberProfile,subscriberGroupEpochReader,valueRes, null, tenantID);
+        LoyaltyProgramRequest loyaltyProgramRequest = new LoyaltyProgramRequest(subscriberProfile,subscriberGroupEpochReader,valueRes, tenantID);
         loyaltyProgramRequest.forceDeliveryPriority(DELIVERY_REQUEST_PRIORITY);
         String topic = Deployment.getDeliveryManagers().get(loyaltyProgramRequest.getDeliveryType()).getRequestTopic(loyaltyProgramRequest.getDeliveryPriority());
 

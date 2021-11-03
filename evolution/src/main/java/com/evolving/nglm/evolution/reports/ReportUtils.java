@@ -37,16 +37,12 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-import org.I0Itec.zkclient.ZkClient;
-import org.I0Itec.zkclient.ZkConnection;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
-import org.apache.kafka.clients.admin.CreateTopicsResult;
 import org.apache.kafka.clients.admin.DeleteTopicsResult;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.KafkaFuture;
-import org.apache.kafka.common.errors.TopicExistsException;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
@@ -60,14 +56,6 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.EvolutionSetup;
 import com.evolving.nglm.core.JSONUtilities;
-
-import kafka.admin.AdminUtils;
-import kafka.admin.RackAwareMode;
-import kafka.utils.ZKStringSerializer$;
-import kafka.utils.ZkUtils;
-import scala.Option;
-import scala.collection.Iterator;
-import scala.collection.Set;
 
 /**
  * This class defines constants and utility functions than can be used in custom reports.
@@ -803,7 +791,7 @@ public class ReportUtils {
                               + fieldSurrounder + "]*\\" + fieldSurrounder + ")*[^\\" + fieldSurrounder + "]*$)";
                           String[] cols = line.split(regex, -1);
 
-                          for (int cpt = 0; cpt < indexOfColsToExtract.length; cpt++) 
+                          for (int cpt = 0; cpt < indexOfColsToExtract.length -1; cpt++) 
                             {
                               if (indexOfColsToExtract[cpt] != -1) 
                                 {
@@ -956,11 +944,11 @@ public class ReportUtils {
   }
 
   
-  public static Date yesterdayAtMidnight(Date currentDate)
+  public static Date delayAtMidnight(Date currentDate, int delay)
   {
     Calendar c = Calendar.getInstance();
     c.setTime(currentDate);
-    c.add(Calendar.HOUR_OF_DAY, -24); // go back 24 hours
+    c.add(Calendar.HOUR_OF_DAY, (-1)*delay); // go back delay hours
     c.set(Calendar.HOUR_OF_DAY, 23); // now set to one second before midnight
     c.set(Calendar.MINUTE, 59);
     c.set(Calendar.SECOND, 59);
@@ -968,11 +956,11 @@ public class ReportUtils {
     return yesterdayAtMidnight;
   }
 
-  public static Date yesterdayAtZeroHour(Date currentDate)
+  public static Date delayAtZeroHour(Date currentDate, int delay)
   {
     Calendar c = Calendar.getInstance();
     c.setTime(currentDate);
-    c.add(Calendar.HOUR_OF_DAY, -24); // go back 24 hours
+    c.add(Calendar.HOUR_OF_DAY, (-1)*delay); // go back delay hours
     c.set(Calendar.HOUR_OF_DAY, 0); // now set to one second after 0h
     c.set(Calendar.MINUTE, 0);
     c.set(Calendar.SECOND, 1);

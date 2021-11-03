@@ -6,7 +6,7 @@
       "org_id": null,
       "type": "elasticsearch",
       "access": "proxy",
-      "database": "t*_datacube_loyaltyChallengesChange",
+      "database": "t*_datacube_challengeschanges",
       "url": "http://<_MASTER_ESROUTER_HOST_>:<_MASTER_ESROUTER_PORT_>",
       "basicAuth": true,
       "withCredentials": true,

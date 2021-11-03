@@ -43,7 +43,6 @@ import org.slf4j.LoggerFactory;
  *  
  * @author Remi
  */
-
 public class DatacubeManager
 {
   private static final Logger log = LoggerFactory.getLogger(DatacubeManager.class);

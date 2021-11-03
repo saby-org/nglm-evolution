@@ -312,6 +312,8 @@ public class DeploymentCommon
   private static String offerObjectiveTopic;
   private static String productTypeTopic;
   private static String ucgRuleTopic;
+  private static String predictionSettingsTopic;
+  private static String predictionSettingsMetadataTopic;
   private static String deliverableTopic;
   private static String tokenTypeTopic;
   private static String otpTypeTopic;
@@ -336,6 +338,8 @@ public class DeploymentCommon
   private static String journeyMetricTopic;
   private static String presentationLogTopic;
   private static String acceptanceLogTopic;
+  private static String subscriberPredictionsPushTopic;
+  private static String subscriberPredictionsRequestTopic;
   private static String profileLoyaltyProgramChangeEventTopic;
   private static String profileChangeEventTopic;
   private static String profileSegmentChangeEventTopic;
@@ -481,14 +485,14 @@ public class DeploymentCommon
   private static int detailedrecordReportsArrearCount;
   private static int journeyReportsArrearCount;
   private static int subscriberprofileReportsArrearCount;
-  
+  private static int journeysReportActiveNHoursAgo;
   private static int guiConfigurationSoftRetentionDays;// "soft" this is the number of days after which we stopped loading in memory deleted GUIManagedObjects
   private static int guiConfigurationRetentionDays;// this is the number of days after which we delete record from topic deleted GUIManagedObjects
   private static long guiConfigurationCleanerThreadPeriodMs;
   private static int guiConfigurationInitialConsumerMaxPollRecords;
   private static int guiConfigurationInitialConsumerMaxFetchBytes;
-
   private static boolean addSubscribersToUcgByCounting;
+  private static int eventMaxDelayMs;
 
 
   
@@ -634,6 +638,8 @@ public class DeploymentCommon
   public static String getOfferObjectiveTopic() { return offerObjectiveTopic; }
   public static String getProductTypeTopic() { return productTypeTopic; }
   public static String getUCGRuleTopic() { return ucgRuleTopic; }
+  public static String getPredictionSettingsTopic() { return predictionSettingsTopic; }
+  public static String getPredictionSettingsMetadataTopic() { return predictionSettingsMetadataTopic; }
   public static String getDeliverableTopic() { return deliverableTopic; }
   public static String getTokenTypeTopic() { return tokenTypeTopic; }
   public static String getOTPTypeTopic() { return otpTypeTopic; }
@@ -658,6 +664,8 @@ public class DeploymentCommon
   public static String getJourneyMetricTopic() { return journeyMetricTopic; }
   public static String getPresentationLogTopic() { return presentationLogTopic; }
   public static String getAcceptanceLogTopic() { return acceptanceLogTopic; }
+  public static String getSubscriberPredictionsPushTopic() { return subscriberPredictionsPushTopic; }
+  public static String getSubscriberPredictionsRequestTopic() { return subscriberPredictionsRequestTopic; }
   public static String getProfileChangeEventTopic() { return profileChangeEventTopic;}
   public static String getProfileSegmentChangeEventTopic() { return profileSegmentChangeEventTopic;}
   public static String getProfileLoyaltyProgramChangeEventTopic() { return profileLoyaltyProgramChangeEventTopic;}
@@ -765,6 +773,7 @@ public class DeploymentCommon
   public static String getReportManagerCsvSeparator() { return reportManagerCsvSeparator; } // EVPRO-99 check for tenant and static
   public static String getReportManagerFieldSurrounder() { return reportManagerFieldSurrounder; } // EVPRO-99 check for tenant and static
   public static String getUploadedFileSeparator() { return uploadedFileSeparator; } // EVPRO-99 check for tenant and static
+  public static int getReportManagerJourneysReportActiveNHoursAgo() { return journeysReportActiveNHoursAgo; }
   public static String getReportManagerStreamsTempDir() { return reportManagerStreamsTempDir; }
   public static String getReportManagerTopicsCreationProperties() { return reportManagerTopicsCreationProperties; }
   public static CustomerMetaData getCustomerMetaData() { return customerMetaData; }
@@ -799,7 +808,8 @@ public class DeploymentCommon
   public static int getNodesTransitionsHistorySize() { return nodesTransitionsHistorySize; }
   public static int getFirstDayOfTheWeek() { return firstDayOfTheWeek; }
   public static boolean getAddSubscribersToUcgByCounting() { return addSubscribersToUcgByCounting; }
-  
+  public static int getEventMaxDelayMs() { return eventMaxDelayMs; }
+
   
   /****************************************
   *
@@ -936,6 +946,8 @@ public class DeploymentCommon
     offerObjectiveTopic = jsonReader.decodeString("offerObjectiveTopic");
     productTypeTopic = jsonReader.decodeString("productTypeTopic");
     ucgRuleTopic = jsonReader.decodeString("ucgRuleTopic");
+    predictionSettingsTopic = jsonReader.decodeString("predictionSettingsTopic");
+    predictionSettingsMetadataTopic = jsonReader.decodeString("predictionSettingsMetadataTopic");
     deliverableTopic = jsonReader.decodeString("deliverableTopic");
     tokenTypeTopic = jsonReader.decodeString("tokenTypeTopic");
     otpTypeTopic = jsonReader.decodeString("otpTypeTopic");
@@ -971,6 +983,8 @@ public class DeploymentCommon
     journeyMetricTopic = jsonReader.decodeString("journeyMetricTopic");
     presentationLogTopic = jsonReader.decodeString("presentationLogTopic");
     acceptanceLogTopic = jsonReader.decodeString("acceptanceLogTopic");
+    subscriberPredictionsPushTopic = jsonReader.decodeString("subscriberPredictionsPushTopic");
+    subscriberPredictionsRequestTopic = jsonReader.decodeString("subscriberPredictionsRequestTopic");
     segmentContactPolicyTopic = jsonReader.decodeString("segmentContactPolicyTopic");
     profileChangeEventTopic = jsonReader.decodeString("profileChangeEventTopic");
     profileSegmentChangeEventTopic = jsonReader.decodeString("profileSegmentChangeEventTopic");
@@ -1320,6 +1334,7 @@ public class DeploymentCommon
     journeyReportsArrearCount = JSONUtilities.decodeInteger(reportManager, "journeyReportsArrearCount", 2);
     subscriberprofileReportsArrearCount = JSONUtilities.decodeInteger(reportManager, "subscriberprofileReportsArrearCount", 2);
     reportManagerContentDateFormat = JSONUtilities.decodeString(reportManager, "reportManagerContentDateFormat", "yyyy-MM-dd'T'HH:mm:ssZZZZ");
+    journeysReportActiveNHoursAgo = JSONUtilities.decodeInteger(reportManager, "journeysReportActiveNHoursAgo", 24);
 
     if (reportManagerFieldSurrounder.length() > 1) {
       throw new ServerRuntimeException("reportManagerFieldSurrounder is not a single character, this would lead to errors in the reports, truncating, please fix this : " + reportManagerFieldSurrounder);
@@ -1443,7 +1458,8 @@ public class DeploymentCommon
       }
 
     addSubscribersToUcgByCounting = jsonReader.decodeBoolean("addSubscribersToUcgByCounting");
-    
+    eventMaxDelayMs = jsonReader.decodeInteger("eventMaxDelayMinutes") * 60 * 1000;
+
   }
 
   

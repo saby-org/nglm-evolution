@@ -170,6 +170,7 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
       documentMap.put("pointBalances", subscriberProfile.getPointsBalanceJSON());
       documentMap.put("vouchers", subscriberProfile.getVouchersJSON());
       documentMap.put("tokens", subscriberProfile.getTokensJSON());
+      documentMap.put("predictions", subscriberProfile.getPredictionsJSON());
       documentMap.put("subscriberJourneys", subscriberProfile.getSubscriberJourneysJSON());
       documentMap.put("lastUpdateDate", RLMDateUtils.formatDateForElasticsearchDefault(now));
       documentMap.put("relationships", subscriberProfile.getSubscriberRelationsJSON());

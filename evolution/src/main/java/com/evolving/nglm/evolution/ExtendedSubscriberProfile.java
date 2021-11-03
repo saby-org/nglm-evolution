@@ -551,7 +551,6 @@ public abstract class ExtendedSubscriberProfile implements StateStore
 
   public String toString(ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
   {
-    Date now = SystemTime.getCurrentTime();
     StringBuilder b = new StringBuilder();
     b.append("ExtendedSubscriberProfile:{");
     b.append(commonToString(subscriberGroupEpochReader));
