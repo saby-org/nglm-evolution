@@ -277,6 +277,7 @@
                     <include>bin/guimanager-run.sh</include>
                     <include>bin/update-subscribergroup.sh</include>
                     <include>bin/configlog.sh</include>
+                    <include>bin/restoreKafkaBackup.sh</include>
                     <include>bin/storeconfiguration.sh</include>
                     <include>bin/upgrade-run-preamble.sh</include>
                     <include>bin/upgrade-run-flyway.sh</include>
@@ -308,6 +309,7 @@
                     <include>config/dnboproxy_jmx.yml</include>
                     <include>config/evolution-prometheus-application.yml</include>
                     <include>config/extractmanager_jmx.yml</include>
+                    <include>config/backupmanager_jmx.yml</include>
                     <include>config/prometheus-core-alert.rules</include>
                     <include>config/prometheus-environment-alert.rules</include>
                     <include>config/prometheus-application-alert.rules</include>
@@ -360,6 +362,8 @@
                     <include>support/*</include>
                     <include>docker/extractmanager/*</include>
                     <include>docker/extractmanager.yml</include>
+                    <include>docker/backupmanager/*</include>
+                    <include>docker/backupmanager.yml</include>
                   </includes>
                   <filtering>false</filtering>
                 </resource>
@@ -392,6 +396,7 @@
                     <exclude>docker/upgrade-preamble.yml</exclude>
                     <exclude>docker/upgrade-postamble.yml</exclude>
                     <exclude>docker/extractmanager.yml</exclude>
+                    <exclude>docker/backupmanager.yml</exclude>
                   </excludes>
                   <filtering>true</filtering>
                 </resource>

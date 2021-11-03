@@ -65,6 +65,7 @@
     <common.build.phase.generate-elasticsearchmanager-image>none</common.build.phase.generate-elasticsearchmanager-image>
     <common.build.phase.generate-upgrade-image>none</common.build.phase.generate-upgrade-image>
     <common.build.phase.generate-extractmanager-image>none</common.build.phase.generate-extractmanager-image>
+    <common.build.phase.generate-backupmanager-image>none</common.build.phase.generate-backupmanager-image>
     <common.build.skip.docker-guimanager-image>true</common.build.skip.docker-guimanager-image>
     <common.build.skip.docker-thirdpartymanager-image>true</common.build.skip.docker-thirdpartymanager-image>
     <common.build.skip.docker-dnboproxy-image>true</common.build.skip.docker-dnboproxy-image>
@@ -86,6 +87,7 @@
     <common.build.skip.docker-elasticsearchmanager-image>true</common.build.skip.docker-elasticsearchmanager-image>
     <common.build.skip.docker-upgrade-image>true</common.build.skip.docker-upgrade-image>
     <common.build.skip.docker-extractmanager-image>true</common.build.skip.docker-extractmanager-image>
+    <common.build.skip.docker-backupmanager-image>true</common.build.skip.docker-backupmanager-image>
     
     <!-- topics -->
     <topic.journey>journey</topic.journey>

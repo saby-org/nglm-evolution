@@ -84,6 +84,10 @@ if [ "<_EXTRACTMANAGER_ENABLED_>" = "true" ]; then
   docker stack rm <_DOCKER_STACK_>-extractmanager
 fi
 
+if [ "<_BACKUPMANAGER_ENABLED_>" = "true" ]; then
+  docker stack rm <_DOCKER_STACK_>-backupmanager
+fi
+
 #
 #  hack -- remove gui containers
 #
