@@ -11,6 +11,7 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -476,6 +477,12 @@ public class DeploymentCommon
   private static String extractManagerFileExtension;
   private static String extractManagerCsvSeparator;
   private static String extractManagerFieldSurrounder;
+  private static String backupManagerOutputPath;
+  private static String backupManagerCronEntry;
+  private static String backupManagerDateFormat;
+  private static String backupManagerFileExtension;
+  private static int backupManagerRequestTimeoutMS;
+  private static List<String> backupManagerTopics;
   private static int recurrentCampaignCreationDaysRange;
   private static Map<String,Topic> allTopics;
   private static boolean isPreprocessorNeeded;
@@ -798,6 +805,12 @@ public class DeploymentCommon
   public static int getPropensityWriterRefreshPeriodMs() { return propensityWriterRefreshPeriodMs; }
   public static boolean getEnableContactPolicyProcessing(){ return  enableContactPolicyProcessing;}
   public static String getExtractManagerZookeeperDir() { return extractManagerZookeeperDir; }
+  public static String getBackupManagerOutputPath() {return backupManagerOutputPath;}
+  public static String getBackupManagerCronEntry() {return backupManagerCronEntry;}
+  public static String getBackupManagerDateFormat() {return backupManagerDateFormat;}
+  public static String getBackupManagerFileExtension() {return backupManagerFileExtension;}
+  public static int getBackupManagerRequestTimeoutMS() {return backupManagerRequestTimeoutMS;}
+  public static List<String> getBackupManagerTopics() {return backupManagerTopics;}
   public static String getExtractManagerOutputPath() { return extractManagerOutputPath; } // TODO EVPRO-99 check tenant ?
   public static String getExtractManagerDateFormat() { return extractManagerDateFormat; }// TODO EVPRO-99 check tenant ?
   public static String getExtractManagerFileExtension() { return extractManagerFileExtension; } // TODO EVPRO-99 check tenant ?
@@ -1361,6 +1374,20 @@ public class DeploymentCommon
       throw new ServerRuntimeException("extractManagerFieldSurrounder is not a single character, this would lead to errors in the extracts, truncating, please fix this : " + extractManagerFieldSurrounder);
     }
     
+    // backup manager
+    JSONObject backupManager = jsonReader.decodeJSONObject("backupManager");
+    backupManagerOutputPath = JSONUtilities.decodeString(backupManager, "backupManagerOutputPath");
+    backupManagerCronEntry = JSONUtilities.decodeString(backupManager, "backupManagerCronEntry");
+    backupManagerDateFormat = JSONUtilities.decodeString(backupManager, "backupManagerDateFormat");
+    backupManagerFileExtension = JSONUtilities.decodeString(backupManager, "backupManagerFileExtension");
+    backupManagerRequestTimeoutMS = JSONUtilities.decodeInteger(backupManager, "backupManagerRequestTimeoutMS", 120000);
+    backupManagerTopics = new ArrayList<>();
+    JSONArray topics = JSONUtilities.decodeJSONArray(backupManager, "backupManagerTopics");
+    for (int i = 0; i < topics.size(); i++) {
+      String topic = topics.get(i).toString();
+      backupManagerTopics.add(topic);
+    }
+
     customerMetaData = new CustomerMetaData(jsonReader.decodeJSONObject("customerMetaData"));
 
     uploadedFileSeparator = jsonReader.decodeString("uploadedFileSeparator");

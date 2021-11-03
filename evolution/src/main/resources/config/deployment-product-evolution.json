@@ -1162,6 +1162,16 @@
     "extractManagerFieldSurrounder": "'"
   },
 
+  "backupManager" :
+  {
+    "backupManagerOutputPath"      : "/app/backup",
+    "backupManagerCronEntry"       : "0 3 * * *",
+    "backupManagerDateFormat"      : "yyyy-MM-dd_HH-mm-ss",
+    "backupManagerFileExtension"   : "bin.gz",
+    "backupManagerRequestTimeoutMS": 120000,
+    "backupManagerTopics"          : ["journey", "streams-evolutionengine-subscriberstate-changelog"]
+  },
+
   "licenseManagement" :
   {
     "timeLimit" :
