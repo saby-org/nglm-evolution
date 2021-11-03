@@ -6,7 +6,6 @@
 
 package com.evolving.nglm.evolution;
 
-import java.util.Date;
 import java.util.HashMap;
 
 import com.evolving.nglm.core.*;
@@ -15,13 +14,8 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
-import org.apache.kafka.connect.data.Timestamp;
 import org.json.simple.JSONObject;
 
-import com.evolving.nglm.evolution.ActionManager.Action;
-import com.evolving.nglm.evolution.ActionManager.ActionType;
-import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
-import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramOperation;
 
@@ -42,12 +36,11 @@ public class LoyaltyProgramRequest extends BonusDelivery
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("loyalty_program_request");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),8));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),9));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("operation", Schema.STRING_SCHEMA);
     schemaBuilder.field("loyaltyProgramRequestID", Schema.STRING_SCHEMA);
     schemaBuilder.field("loyaltyProgramID", Schema.STRING_SCHEMA);
-    schemaBuilder.field("eventDate", Timestamp.SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -74,8 +67,6 @@ public class LoyaltyProgramRequest extends BonusDelivery
   private LoyaltyProgramOperation operation;
   private String loyaltyProgramRequestID;
   private String loyaltyProgramID;
-  private Date eventDate;
-
   /*****************************************
   *
   *  accessors
@@ -85,7 +76,6 @@ public class LoyaltyProgramRequest extends BonusDelivery
   public LoyaltyProgramOperation getOperation(){ return operation; }
   public String getLoyaltyProgramRequestID() { return loyaltyProgramRequestID; }
   public String getLoyaltyProgramID() { return loyaltyProgramID; }
-  public Date getEventDate() { return eventDate; }
   @Override public ActivityType getActivityType() { return ActivityType.LoyaltyProgram; }
   
   /*****************************************
@@ -100,7 +90,6 @@ public class LoyaltyProgramRequest extends BonusDelivery
     this.operation = operation;
     this.loyaltyProgramRequestID = context.getUniqueKey();
     this.loyaltyProgramID = loyaltyProgramID;
-    this.eventDate = context.now();
   }
   
   /*****************************************
@@ -109,13 +98,12 @@ public class LoyaltyProgramRequest extends BonusDelivery
   *
   *****************************************/
 
-  public LoyaltyProgramRequest(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JSONObject jsonRoot, DeliveryManagerDeclaration deliveryManager, int tenantID)
+  public LoyaltyProgramRequest(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JSONObject jsonRoot, int tenantID)
   {
     super(subscriberProfile,subscriberGroupEpochReader,jsonRoot, tenantID);
     this.operation = LoyaltyProgramOperation.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "operation", true));
     this.loyaltyProgramRequestID = JSONUtilities.decodeString(jsonRoot, "loyaltyProgramRequestID", true);
     this.loyaltyProgramID = JSONUtilities.decodeString(jsonRoot, "loyaltyProgramID", true);
-    this.eventDate = JSONUtilities.decodeDate(jsonRoot, "eventDate", true);
   }
 
   /*****************************************
@@ -124,13 +112,12 @@ public class LoyaltyProgramRequest extends BonusDelivery
   *
   *****************************************/
 
-  public LoyaltyProgramRequest(SchemaAndValue schemaAndValue, LoyaltyProgramOperation operation, String loyaltyProgramRequestID, String loyaltyProgramID, Date eventDate)
+  public LoyaltyProgramRequest(SchemaAndValue schemaAndValue, LoyaltyProgramOperation operation, String loyaltyProgramRequestID, String loyaltyProgramID)
   {
     super(schemaAndValue);
     this.operation = operation;
     this.loyaltyProgramRequestID = loyaltyProgramRequestID;
     this.loyaltyProgramID = loyaltyProgramID;
-    this.eventDate = eventDate;
   }
 
   /*****************************************
@@ -145,7 +132,6 @@ public class LoyaltyProgramRequest extends BonusDelivery
     this.operation = loyaltyProgramRequest.getOperation();
     this.loyaltyProgramRequestID = loyaltyProgramRequest.getLoyaltyProgramRequestID();
     this.loyaltyProgramID = loyaltyProgramRequest.getLoyaltyProgramID();
-    this.eventDate = loyaltyProgramRequest.getEventDate();
   }
 
   /*****************************************
@@ -173,7 +159,6 @@ public class LoyaltyProgramRequest extends BonusDelivery
     struct.put("operation", loyaltyProgramRequest.getOperation().getExternalRepresentation());
     struct.put("loyaltyProgramRequestID", loyaltyProgramRequest.getLoyaltyProgramRequestID());
     struct.put("loyaltyProgramID", loyaltyProgramRequest.getLoyaltyProgramID());
-    struct.put("eventDate", loyaltyProgramRequest.getEventDate());
     return struct;
   }
 
@@ -207,14 +192,13 @@ public class LoyaltyProgramRequest extends BonusDelivery
     LoyaltyProgramOperation operation = LoyaltyProgramOperation.fromExternalRepresentation(valueStruct.getString("operation"));
     String loyaltyProgramRequestID = valueStruct.getString("loyaltyProgramRequestID");
     String loyaltyProgramID = valueStruct.getString("loyaltyProgramID");
-    Date eventDate = (Date) valueStruct.get("eventDate");
 
     
     //
     //  return
     //
 
-    return new LoyaltyProgramRequest(schemaAndValue, operation, loyaltyProgramRequestID, loyaltyProgramID, eventDate);
+    return new LoyaltyProgramRequest(schemaAndValue, operation, loyaltyProgramRequestID, loyaltyProgramID);
   }
   
   /****************************************

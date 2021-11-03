@@ -816,15 +816,6 @@ public class GUIManager
 
   public static void main(String[] args) throws Exception
   {
-    ClassLoader cl = ClassLoader.getSystemClassLoader();
-
-    URL[] urls = ((URLClassLoader)cl).getURLs();
-
-    for(URL url: urls){
-      System.out.println(url.getFile());
-    }
-
-    
     NGLMRuntime.initialize(true);
     GUIManager guiManager = new GUIManager();
     new LoggerInitialization().initLogger();
@@ -16743,7 +16734,6 @@ public class GUIManager
 	String eventID=zuksVoucherChange.getStringKey();
     VoucherChange request = new VoucherChange(
             subscriberID,
-            SystemTime.getCurrentTime(),
             newExpiryDate,
             eventID,
             voucherChangeAction,
@@ -24379,7 +24369,7 @@ public class GUIManager
               String str = RESTAPIGenericReturnCodes.NO_TOKENS_RETURNED.getGenericResponseCode()+"";  //"No tokens returned";
               log.error(str);
               response.put("responseCode", str);
-              generateTokenChange(subscriberProfile, now, tokenCode, userID, TokenChange.ALLOCATE, str, tenantID);
+              generateTokenChange(subscriberProfile, tokenCode, userID, TokenChange.ALLOCATE, str, tenantID);
               return JSONUtilities.encodeObject(response);
             }
 
@@ -24387,7 +24377,7 @@ public class GUIManager
             String str =  RESTAPIGenericReturnCodes.TOKEN_RESEND_NO_ACTIVE_TOKENS.getGenericResponseCode()+"";//"Token expired";
             log.error(str);
             response.put("responseCode", str);
-            generateTokenChange(subscriberProfile, now, tokenCode, userID, TokenChange.REFUSE, str, tenantID);
+            generateTokenChange(subscriberProfile, tokenCode, userID, TokenChange.REFUSE, str, tenantID);
             return JSONUtilities.encodeObject(response);
           }
 
@@ -24397,7 +24387,7 @@ public class GUIManager
               String str = RESTAPIGenericReturnCodes.TOKEN_BAD_TYPE.getGenericResponseCode()+"";   //"Bad token type";
               log.error(str);
               response.put("responseCode", str);
-              generateTokenChange(subscriberProfile, now, tokenCode, userID, TokenChange.ALLOCATE, str, tenantID);
+              generateTokenChange(subscriberProfile, tokenCode, userID, TokenChange.ALLOCATE, str, tenantID);
               return JSONUtilities.encodeObject(response);
             }
 
@@ -24416,7 +24406,7 @@ public class GUIManager
               String str =RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericResponseCode()+"";//+presentationStrategyID;
               log.error(str);
               response.put("responseCode", str);
-              generateTokenChange(subscriberProfile, now, tokenCode, userID, TokenChange.ALLOCATE, str, tenantID);
+              generateTokenChange(subscriberProfile, tokenCode, userID, TokenChange.ALLOCATE, str, tenantID);
               return JSONUtilities.encodeObject(response);
             }
 
@@ -24438,7 +24428,7 @@ public class GUIManager
                   supplierService,
                   subscriberGroupEpochReader, tenantID);
               if (list.isEmpty()) {
-                generateTokenChange(subscriberProfile, now, tokenCode, userID, TokenChange.ALLOCATE, RESTAPIGenericReturnCodes.NO_OFFER_ALLOCATED.getGenericResponseCode()+"",tenantID);
+                generateTokenChange(subscriberProfile, tokenCode, userID, TokenChange.ALLOCATE, RESTAPIGenericReturnCodes.NO_OFFER_ALLOCATED.getGenericResponseCode()+"",tenantID);
               }
             }
 
@@ -24545,7 +24535,7 @@ public class GUIManager
               String str = RESTAPIGenericReturnCodes.NO_TOKENS_RETURNED.getGenericResponseCode()+"";
               log.error(str);
               response.put("responseCode", str);
-              generateTokenChange(subscriberProfile, now, tokenCode, userID, TokenChange.REDEEM, str, tenantID);
+              generateTokenChange(subscriberProfile, tokenCode, userID, TokenChange.REDEEM, str, tenantID);
               return JSONUtilities.encodeObject(response);
             }
 
@@ -24555,7 +24545,7 @@ public class GUIManager
               String str = RESTAPIGenericReturnCodes.TOKEN_BAD_TYPE.getGenericResponseCode()+"";
               log.error(str);
               response.put("responseCode", str);
-              generateTokenChange(subscriberProfile, now, tokenCode, userID, TokenChange.REDEEM, str, tenantID);
+              generateTokenChange(subscriberProfile, tokenCode, userID, TokenChange.REDEEM, str, tenantID);
               return JSONUtilities.encodeObject(response);
             }
 
@@ -24566,7 +24556,7 @@ public class GUIManager
               String str = RESTAPIGenericReturnCodes.INVALID_TOKEN_CODE.getGenericResponseCode()+"";
               log.error(str);
               response.put("responseCode", str);
-              generateTokenChange(subscriberProfile, now, tokenCode, userID, TokenChange.REDEEM, str, tenantID);
+              generateTokenChange(subscriberProfile, tokenCode, userID, TokenChange.REDEEM, str, tenantID);
               return JSONUtilities.encodeObject(response);
             }
 
@@ -24575,7 +24565,7 @@ public class GUIManager
               String str =  RESTAPIGenericReturnCodes.NO_OFFER_ALLOCATED.getGenericResponseCode()+"";
               log.error(str);
               response.put("responseCode", str);
-              generateTokenChange(subscriberProfile, now, tokenCode, userID, TokenChange.REDEEM, str, tenantID);
+              generateTokenChange(subscriberProfile, tokenCode, userID, TokenChange.REDEEM, str, tenantID);
               return JSONUtilities.encodeObject(response);
             }
 
@@ -24598,7 +24588,7 @@ public class GUIManager
               String str = RESTAPIGenericReturnCodes.NO_OFFERS_RETURNED.getGenericResponseCode()+"";
               log.error(str);
               response.put("responseCode", str);
-              generateTokenChange(subscriberProfile, now, tokenCode, userID, TokenChange.REDEEM, str, tenantID);
+              generateTokenChange(subscriberProfile, tokenCode, userID, TokenChange.REDEEM, str, tenantID);
               return JSONUtilities.encodeObject(response);
             }
           String salesChannelID = subscriberStoredToken.getPresentedOffersSalesChannel();
@@ -29559,13 +29549,13 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
   *
   *****************************************/
 
-  private void generateTokenChange(SubscriberProfile subscriberProfile, Date now, String tokenCode, String userID, String action, String str, int tenantID)
+  private void generateTokenChange(SubscriberProfile subscriberProfile, String tokenCode, String userID, String action, String str, int tenantID)
   {
     if (tokenCode != null) {
       String topic = Deployment.getTokenChangeTopic();
       Serializer<StringKey> keySerializer = StringKey.serde().serializer();
       Serializer<TokenChange> valueSerializer = TokenChange.serde().serializer();
-      TokenChange tokenChange = new TokenChange(subscriberProfile, now, "event from ".concat(Module.Customer_Care.toString()), tokenCode, action, str, "CC", Module.Customer_Care.getExternalRepresentation(), userID, tenantID);
+      TokenChange tokenChange = new TokenChange(subscriberProfile, tokenCode, action, str, "CC", Module.Customer_Care.getExternalRepresentation(), userID, tenantID);
       kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
           topic,
           keySerializer.serialize(topic, new StringKey(subscriberProfile.getSubscriberID())),
@@ -30374,7 +30364,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                               // SubscriberProfileForceUpdate
                               //
                               
-                              SubscriberProfileForceUpdate subscriberProfileForceUpdate = new SubscriberProfileForceUpdate(baseSubscriberProfile.getSubscriberID(), SystemTime.getCurrentTime(), new ParameterMap(), null);
+                              SubscriberProfileForceUpdate subscriberProfileForceUpdate = new SubscriberProfileForceUpdate(baseSubscriberProfile.getSubscriberID(), new ParameterMap(), null);
                               subscriberProfileForceUpdate.getParameterMap().put("score", scoreToDebit*-1);
                               subscriberProfileForceUpdate.getParameterMap().put("challengeID", challenge.getGUIManagedObjectID());
                               subscriberProfileForceUpdate.getParameterMap().put("isPeriodChange", Boolean.TRUE);
@@ -31765,7 +31755,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
             Serializer<StringKey> keySerializer = StringKey.serde().serializer();
             Serializer<NotificationEvent> valueSerializer = NotificationEvent.serde().serializer();
 			String eventID = zuks.getStringKey();
-            NotificationEvent notificationEvent = new NotificationEvent(subscriberID, now, eventID, templateID, tagValue, communicationChannelID, contactType, "CC", source, featureID, moduleID);
+            NotificationEvent notificationEvent = new NotificationEvent(subscriberID, templateID, tagValue, communicationChannelID, contactType, "CC", source, featureID, moduleID);
             
             kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
                 topic,

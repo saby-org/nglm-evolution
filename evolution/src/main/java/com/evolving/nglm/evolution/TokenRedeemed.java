@@ -40,10 +40,9 @@ public class TokenRedeemed extends SubscriberStreamOutput implements EvolutionEn
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("token_redeemed");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),2));
     for (Field field : subscriberStreamOutputSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
-    schemaBuilder.field("eventDate", Timestamp.SCHEMA);
     schemaBuilder.field("tokenType", Schema.STRING_SCHEMA);
     schemaBuilder.field("acceptedOfferId", Schema.STRING_SCHEMA);
     schema = schemaBuilder.build();
@@ -70,7 +69,6 @@ public class TokenRedeemed extends SubscriberStreamOutput implements EvolutionEn
   ****************************************/
 
   private String subscriberID;
-  private Date eventDate;
   private String tokenType;
   private String acceptedOfferId;
 
@@ -82,7 +80,6 @@ public class TokenRedeemed extends SubscriberStreamOutput implements EvolutionEn
 
   public String getEventName() { return "tokenRedeemed"; }
   public String getSubscriberID() { return subscriberID; }
-  public Date getEventDate() { return eventDate; }
   public String getTokenType() { return tokenType; }
   public String getAcceptedOfferId() { return acceptedOfferId; }
 
@@ -104,15 +101,6 @@ public class TokenRedeemed extends SubscriberStreamOutput implements EvolutionEn
     *****************************************/
 
     this.subscriberID = JSONUtilities.decodeString(jsonRoot, "subscriberID", true);
-    String date = JSONUtilities.decodeString(jsonRoot, "eventDate", false);
-    if(date != null)
-      {
-        this.eventDate = GUIManagedObject.parseDateField(date);
-      }
-    else
-      {
-        this.eventDate = SystemTime.getCurrentTime();
-      }
     this.tokenType = JSONUtilities.decodeString(jsonRoot, "tokenType", true);
     this.acceptedOfferId = JSONUtilities.decodeString(jsonRoot, "acceptedOfferId", true);
   }
@@ -123,19 +111,17 @@ public class TokenRedeemed extends SubscriberStreamOutput implements EvolutionEn
   *
   *****************************************/
 
-  public TokenRedeemed(SchemaAndValue schemaAndValue, String subscriberID, Date eventDate, String tokenType, String acceptedOfferId)
+  public TokenRedeemed(SchemaAndValue schemaAndValue, String subscriberID, String tokenType, String acceptedOfferId)
   {
     super(schemaAndValue);
     this.subscriberID = subscriberID;
-    this.eventDate = eventDate;
     this.tokenType = tokenType;
     this.acceptedOfferId = acceptedOfferId;
   }
 
-  public TokenRedeemed(String subscriberID, Date eventDate, String tokenType, String acceptedOfferId)
+  public TokenRedeemed(String subscriberID, String tokenType, String acceptedOfferId)
   {
     this.subscriberID = subscriberID;
-    this.eventDate = eventDate;
     this.tokenType = tokenType;
     this.acceptedOfferId = acceptedOfferId;
   }
@@ -152,7 +138,6 @@ public class TokenRedeemed extends SubscriberStreamOutput implements EvolutionEn
     Struct struct = new Struct(schema);
     packSubscriberStreamOutput(struct,tokenRedeemed);
     struct.put("subscriberID", tokenRedeemed.getSubscriberID());
-    struct.put("eventDate", tokenRedeemed.getEventDate());
     struct.put("tokenType", tokenRedeemed.getTokenType());
     struct.put("acceptedOfferId", tokenRedeemed.getAcceptedOfferId());
     return struct;
@@ -186,7 +171,6 @@ public class TokenRedeemed extends SubscriberStreamOutput implements EvolutionEn
 
     Struct valueStruct = (Struct) value;
     String subscriberID = valueStruct.getString("subscriberID");
-    Date eventDate = (Date) valueStruct.get("eventDate");
     String tokenType = valueStruct.getString("tokenType");
     String acceptedOfferId = valueStruct.getString("acceptedOfferId");
 
@@ -194,6 +178,6 @@ public class TokenRedeemed extends SubscriberStreamOutput implements EvolutionEn
     //  return
     //
 
-    return new TokenRedeemed(schemaAndValue, subscriberID, eventDate, tokenType, acceptedOfferId);
+    return new TokenRedeemed(schemaAndValue, subscriberID, tokenType, acceptedOfferId);
   }
 }

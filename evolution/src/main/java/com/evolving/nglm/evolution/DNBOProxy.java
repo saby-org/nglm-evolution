@@ -1031,7 +1031,7 @@ public class DNBOProxy
           }
         try
         {
-          JSONObject valueRes = getOffers(now, subscriberID, scoringStrategyID, salesChannelID, subscriberProfile, scoringStrategy,
+          JSONObject valueRes = getOffers(now, now, subscriberID, scoringStrategyID, salesChannelID, subscriberProfile, scoringStrategy,
               productService, productTypeService, voucherService, voucherTypeService,
               catalogCharacteristicService, subscriberGroupEpochReader,
               segmentationDimensionService, offerService, supplierService, rangeValue.doubleValue(), tenantID);
@@ -1104,7 +1104,7 @@ public class DNBOProxy
   *
   *****************************************/
 
-  private JSONObject getOffers(Date now, String subscriberID, String scoringStrategyID, String salesChannelID,
+  private JSONObject getOffers(Date processingDate, Date eventDate, String subscriberID, String scoringStrategyID, String salesChannelID,
       SubscriberProfile subscriberProfile, ScoringStrategy scoringStrategy,
       ProductService productService, ProductTypeService productTypeService,
       VoucherService voucherService, VoucherTypeService voucherTypeService,
@@ -1134,7 +1134,7 @@ public class DNBOProxy
 
       DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameters = new DNBOMatrixAlgorithmParameters(dnboMatrixService,rangeValue);
       Collection<ProposedOfferDetails> offerAvailabilityFromPropensityAlgo = TokenUtils.getOffersWithScoringStrategy(
-          now, salesChannelID, subscriberProfile, scoringStrategy,
+          processingDate, eventDate, salesChannelID, subscriberProfile, scoringStrategy,
           productService, productTypeService, voucherService, voucherTypeService,
           catalogCharacteristicService, subscriberGroupEpochReader, segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService,
           supplierService, returnedLog, msisdn, null, tenantID);

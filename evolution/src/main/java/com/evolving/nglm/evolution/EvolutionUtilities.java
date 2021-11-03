@@ -373,13 +373,6 @@ public class EvolutionUtilities
   public static boolean sendMessage(EvolutionEventContext context, Map<String, String> specificTags, String templateID, ContactType contactType, String origin, String sourceAddress, SubscriberEvaluationRequest subscriberEvaluationRequest, SubscriberState subscriberState, String featureID, Module moduleID)
   {
     boolean subscriberUpdated;
-    /*****************************************
-     *
-     * now
-     *
-     *****************************************/
-
-    Date now = SystemTime.getCurrentTime();
 
     // Enrich subscriber Evaluation Request with the tags specific to this message
     // type (by example voucherCode)
@@ -404,7 +397,7 @@ public class EvolutionUtilities
      *
      *****************************************/
     SubscriberMessageTemplateService subscriberMessageTemplateService = context.getSubscriberMessageTemplateService();
-    DialogTemplate template = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, now);
+    DialogTemplate template = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, context.eventDate());
 
     String language = subscriberEvaluationRequest.getLanguage();
 

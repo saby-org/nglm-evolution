@@ -521,7 +521,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       this.returnCode = PurchaseFulfillmentStatus.PENDING.getReturnCode();
       this.origin = origin;       
       this.resellerID = resellerID;
-      updatePurchaseFulfillmentRequest(context.getOfferService(), context.getPaymentMeanService(), context.getResellerService(), context.getProductService(), context.getSupplierService(), context.getVoucherService(), context.now(), tenantID);
+      updatePurchaseFulfillmentRequest(context.getOfferService(), context.getPaymentMeanService(), context.getResellerService(), context.getProductService(), context.getSupplierService(), context.getVoucherService(), context.eventDate(), tenantID);
     }
 
     /*****************************************
@@ -1263,7 +1263,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         *****************************************/
         
         DeliveryRequest deliveryRequest = nextRequest();
-        log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager : NEW REQUEST ("+deliveryRequest.getDeliveryRequestID()+") (thread name = "+Thread.currentThread().getName()+")");
+        if(log.isDebugEnabled()) log.debug("run() : NEW REQUEST "+deliveryRequest.getDeliveryRequestID());
         PurchaseFulfillmentRequest purchaseRequest = ((PurchaseFulfillmentRequest)deliveryRequest);
 
         /*****************************************
@@ -1275,7 +1275,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         String correlator = deliveryRequest.getDeliveryRequestID();
         deliveryRequest.setCorrelator(correlator);
         updateRequest(deliveryRequest);
-        log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager ("+deliveryRequest.getDeliveryRequestID()+") : correlator set ");
+        if(log.isDebugEnabled()) log.debug("run() : "+deliveryRequest.getDeliveryRequestID()+" correlator set ");
         
         /*****************************************
         *
@@ -1283,7 +1283,9 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         *
         *****************************************/
         
-        Date now = SystemTime.getCurrentTime();
+        Date processingDate = SystemTime.getCurrentTime();
+        Date eventDate = deliveryRequest.getEventDate();
+
         String offerID = purchaseRequest.getOfferID();
         int quantity = purchaseRequest.getQuantity();
         String subscriberID = purchaseRequest.getSubscriberID();
@@ -1295,7 +1297,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         //
         
         if(quantity < 1){
-          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : bad field value for quantity");
+          log.info("run() : (offer "+offerID+", subscriberID "+subscriberID+") : bad field value for quantity");
           submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.BAD_FIELD_VALUE, "bad field value for quantity");
           continue mainLoop;
         }
@@ -1305,7 +1307,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         //
         
         if(subscriberID == null){
-          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : bad field value for subscriberID");
+          log.info("run() : (offer "+offerID+", subscriberID "+subscriberID+") : bad field value for subscriberID");
           submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.MISSING_PARAMETERS, "missing mandatory field (subscriberID)");
           continue mainLoop;
         }
@@ -1313,14 +1315,14 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         try{
           subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID);
           if(subscriberProfile == null){
-            log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : subscriber " + subscriberID + " not found");
+            log.info("run() : (offer "+offerID+", subscriberID "+subscriberID+") : subscriber " + subscriberID + " not found");
             submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.CUSTOMER_NOT_FOUND, "customer " + subscriberID + " not found");
             continue mainLoop;
           }else{
-            log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : subscriber " + subscriberID + " found ("+subscriberProfile+")");
+            if(log.isDebugEnabled()) log.debug("run() : (offer "+offerID+", subscriberID "+subscriberID+") : subscriber " + subscriberID + " found ("+subscriberProfile+")");
           }
         }catch (SubscriberProfileServiceException e) {
-          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : subscriberService not available");
+          log.info("run() : (offer "+offerID+", subscriberID "+subscriberID+") : subscriberService not available");
           submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.SYSTEM_ERROR, "subscriberService not available");
           continue mainLoop;
         }
@@ -1330,30 +1332,30 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         //
         
         if(offerID == null){
-          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : bad field value for offerID");
+          log.info("run() : (offer "+offerID+", subscriberID "+subscriberID+") : bad field value for offerID");
           submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.MISSING_PARAMETERS, "missing mandatory field (offerID)");
           continue mainLoop;
         }
-        Offer offer = offerService.getActiveOffer(offerID, now); 
+        Offer offer = offerService.getActiveOffer(offerID, eventDate);
         if(offer == null){
-          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : offer " + offerID + " not found");
-          submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.OFFER_NOT_FOUND, "offer " + offerID + " not found or not active (date = "+now+")");
+          log.info("run() : (offer "+offerID+", subscriberID "+subscriberID+") : offer " + offerID + " not found");
+          submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.OFFER_NOT_FOUND, "offer " + offerID + " not found or not active (date = "+eventDate+")");
           continue mainLoop;
         }else{
-          if (log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : offer " + offerID + " found ("+offer+")");
+          if(log.isDebugEnabled()) log.debug("run() : (offer "+offerID+", subscriberID "+subscriberID+") : offer " + offerID + " found ("+offer+")");
         }
 
         //
         // Get sales channel
         //
 
-        SalesChannel salesChannel = salesChannelService.getActiveSalesChannel(salesChannelID, now);
+        SalesChannel salesChannel = salesChannelService.getActiveSalesChannel(salesChannelID, eventDate);
         if(salesChannel == null){
-          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : salesChannel " + salesChannelID + " not found");
+          log.info("run() : (offer "+offerID+", subscriberID "+subscriberID+") : salesChannel " + salesChannelID + " not found");
           submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.CHANNEL_DEACTIVATED, "salesChannel " + salesChannelID + " not activated");
           continue mainLoop;
         }else{
-          if (log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : salesChannel " + salesChannelID + " found ("+salesChannel+")");
+          if(log.isDebugEnabled()) log.debug("run() : (offer "+offerID+", subscriberID "+subscriberID+") : salesChannel " + salesChannelID + " found ("+salesChannel+")");
         }
 
         //
@@ -1369,13 +1371,13 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
             if (log.isDebugEnabled())
               {
                 String offerPriceStr = (offerPrice == null) ? "free" : offerPrice.getAmount()+" "+offerPrice.getPaymentMeanID();
-                log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.checkOffer (offer, subscriberProfile) : offer price for sales channel "+salesChannel.getSalesChannelID()+" found ("+offerPriceStr+")");
+                log.debug("run() : (offer, subscriberProfile) : offer price for sales channel "+salesChannel.getSalesChannelID()+" found ("+offerPriceStr+")");
               }
             break;
           }
         }
         if(!priceFound){ //need this boolean since price can be null (if offer is free)
-          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager (offer "+offerID+", subscriberID "+subscriberID+") : offer price for sales channel " + salesChannelID + " not found");
+          log.info("run() : (offer "+offerID+", subscriberID "+subscriberID+") : offer price for sales channel " + salesChannelID + " not found");
           submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.PRICE_NOT_APPLICABLE, "offer price for sales channel " + salesChannelID + " not found");
           continue mainLoop;
         }
@@ -1391,9 +1393,9 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         // check offer is active (should be since we used 'getActiveOffer' ...)
         //
 
-        if(!offerService.isActiveOffer(offer, now)){
-          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.checkOffer (offer, subscriberProfile) : offer " + offer.getOfferID() + " not active (date = "+now+")");
-          submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.BAD_OFFER_STATUS, "offer " + offer.getOfferID() + " not active (date = "+now+")");
+        if(!offerService.isActiveOffer(offer, eventDate)){
+          log.info("run() : (offer, subscriberProfile) : offer " + offer.getOfferID() + " not active (date = "+eventDate+")");
+          submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.BAD_OFFER_STATUS, "offer " + offer.getOfferID() + " not active (date = "+eventDate+")");
           continue mainLoop;
         }
         purchaseStatus.addOfferStockToBeDebited(offer.getOfferID());
@@ -1404,10 +1406,10 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
         if(offer.getOfferProducts()!=null){
           for(OfferProduct offerProduct : offer.getOfferProducts()){
-            Product product = productService.getActiveProduct(offerProduct.getProductID(), now);
+            Product product = productService.getActiveProduct(offerProduct.getProductID(), eventDate);
             if(product == null){
-              log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.checkOffer (offer, subscriberProfile) : product with ID " + offerProduct.getProductID() + " not found or not active (date = "+now+")");
-              submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.PRODUCT_NOT_FOUND, "product with ID " + offerProduct.getProductID() + " not found or not active (date = "+now+")");
+              log.info("run() : (offer, subscriberProfile) : product with ID " + offerProduct.getProductID() + " not found or not active (date = "+eventDate+")");
+              submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.PRODUCT_NOT_FOUND, "product with ID " + offerProduct.getProductID() + " not found or not active (date = "+eventDate+")");
               continue mainLoop;
             }else{
               purchaseStatus.addProductStockToBeDebited(offerProduct);
@@ -1418,10 +1420,10 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
         if(offer.getOfferVouchers()!=null){
           for(OfferVoucher offerVoucher : offer.getOfferVouchers()){
-            Voucher voucher = voucherService.getActiveVoucher(offerVoucher.getVoucherID(), now);
+            Voucher voucher = voucherService.getActiveVoucher(offerVoucher.getVoucherID(), eventDate);
             if(voucher==null){
-              log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.checkOffer (offer, subscriberProfile) : voucher with ID " + offerVoucher.getVoucherID() + "not found or not active (date = "+now+")");
-              submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.PRODUCT_NOT_FOUND, "voucher with ID " + offerVoucher.getVoucherID() + " not found or not active (date = "+now+")");
+              log.info("run() : (offer, subscriberProfile) : voucher with ID " + offerVoucher.getVoucherID() + "not found or not active (date = "+eventDate+")");
+              submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.PRODUCT_NOT_FOUND, "voucher with ID " + offerVoucher.getVoucherID() + " not found or not active (date = "+eventDate+")");
               continue mainLoop;
             }else{
               // more than 1 will ever be allowed ? trying to code like yes, but sure not really tested! (biggest problem I see, how do we "send" all codes)
@@ -1432,8 +1434,8 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
               }else if (voucher instanceof VoucherPersonal){
                 purchaseStatus.addVoucherPersonalToBeAllocated(offerVoucher);
               }else{
-                log.warn(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.checkOffer (offer, subscriberProfile) : voucher with ID " + offerVoucher.getVoucherID() + " voucher type not recognized (date = "+now+")");
-                submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.SYSTEM_ERROR, "voucher with ID " + offerVoucher.getVoucherID() + " voucher type not recognized (date = "+now+")");
+                log.info("run() : (offer, subscriberProfile) : voucher with ID " + offerVoucher.getVoucherID() + " voucher type not recognized (date = "+eventDate+")");
+                submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.SYSTEM_ERROR, "voucher with ID " + offerVoucher.getVoucherID() + " voucher type not recognized (date = "+eventDate+")");
                 continue mainLoop;
               }
             }
@@ -1444,10 +1446,10 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         // check offer criteria (for the specific subscriber)
         //
 
-        SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, now, offer.getTenantID());
+        SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, eventDate, offer.getTenantID());
         if(!offer.evaluateProfileCriteria(evaluationRequest)){
-          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.checkOffer (offer, subscriberProfile) : criteria of offer "+offer.getOfferID()+" not valid for subscriber "+subscriberProfile.getSubscriberID()+" (date = "+now+")");
-          submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.OFFER_NOT_APPLICABLE, "criteria of offer "+offer.getOfferID()+" not valid for subscriber "+subscriberProfile.getSubscriberID()+" (date = "+now+")");
+          log.info("run() : (offer, subscriberProfile) : criteria of offer "+offer.getOfferID()+" not valid for subscriber "+subscriberProfile.getSubscriberID()+" (date = "+eventDate+")");
+          submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.OFFER_NOT_APPLICABLE, "criteria of offer "+offer.getOfferID()+" not valid for subscriber "+subscriberProfile.getSubscriberID()+" (date = "+eventDate+")");
           continue mainLoop;
         }
         
@@ -1456,7 +1458,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         // check offer purchase limit for this subscriber
         //
         
-        Date earliestDateToKeep = EvolutionEngine.computeEarliestDateToKeep(now, offer, deliveryRequest.getTenantID());
+        Date earliestDateToKeep = EvolutionEngine.computeEarliestDateToKeep(processingDate, offer, deliveryRequest.getTenantID());
         List<Date> purchaseHistory = new ArrayList<Date>();
         
       //TODO: before EVPRO-1066 all the purchase were kept like Map<String,List<Date>, now it is Map<String, List<Pair<String, Date>>> <saleschnl, Date>
@@ -1496,8 +1498,8 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
             }
         }
         if (EvolutionEngine.isPurchaseLimitReached(offer, totalPurchased)) {
-          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.checkOffer():maximumAcceptances : " + offer.getMaximumAcceptances() + " of offer "+offer.getOfferID()+" exceeded for subscriber "+subscriberProfile.getSubscriberID()+" as totalPurchased = " + totalPurchased+" (date = "+now+")");
-          submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.CUSTOMER_OFFER_LIMIT_REACHED, "maximumAcceptances : " + offer.getMaximumAcceptances() + " of offer "+offer.getOfferID()+" exceeded for subscriber "+subscriberProfile.getSubscriberID()+" (date = "+now+")");
+          log.info("run() : maximumAcceptances : " + offer.getMaximumAcceptances() + " of offer "+offer.getOfferID()+" exceeded for subscriber "+subscriberProfile.getSubscriberID()+" as totalPurchased = " + totalPurchased+" (date = "+processingDate+")");
+          submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.CUSTOMER_OFFER_LIMIT_REACHED, "maximumAcceptances : " + offer.getMaximumAcceptances() + " of offer "+offer.getOfferID()+" exceeded for subscriber "+subscriberProfile.getSubscriberID()+" (date = "+processingDate+")");
           continue mainLoop;
         }
         
@@ -1528,13 +1530,13 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   }
   
   private void submitCorrelatorUpdate(PurchaseRequestStatus purchaseStatus){
-    log.info("PurchaseFulfillmentManager.submitCorrelatorUpdate("+purchaseStatus.getCorrelator()+", "+purchaseStatus.getJSONRepresentation()+") ");
+    if(log.isDebugEnabled()) log.debug("submitCorrelatorUpdate() : "+purchaseStatus.getCorrelator()+", "+purchaseStatus.getJSONRepresentation());
     submitCorrelatorUpdate(purchaseStatus.getCorrelator(), purchaseStatus.getJSONRepresentation());
   }
 
   @Override protected void processCorrelatorUpdate(DeliveryRequest deliveryRequest, JSONObject correlatorUpdate)
   {
-    log.info("PurchaseFulfillmentManager.processCorrelatorUpdate("+deliveryRequest.getDeliveryRequestID()+", "+correlatorUpdate+") : called ...");
+    if(log.isDebugEnabled()) log.debug("processCorrelatorUpdate() : "+deliveryRequest.getDeliveryRequestID()+", "+correlatorUpdate+") : called ...");
 
     PurchaseRequestStatus purchaseStatus = new PurchaseRequestStatus(correlatorUpdate);
     PurchaseFulfillmentRequest purchaseFulfillmentRequest = (PurchaseFulfillmentRequest) deliveryRequest;
@@ -1542,7 +1544,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       for(OfferVoucher offerVoucher:purchaseStatus.getVoucherSharedAllocated()){
         for(int i=0;i<offerVoucher.getQuantity();i++){
           VoucherDelivery voucherDelivery = new VoucherDelivery(offerVoucher.getVoucherID(),offerVoucher.getFileID(),offerVoucher.getVoucherCode(), VoucherDelivery.VoucherStatus.Delivered, offerVoucher.getVoucherExpiryDate());
-          log.info("PurchaseFulfillmentManager.processCorrelatorUpdate("+deliveryRequest.getDeliveryRequestID()+", "+correlatorUpdate+") adding voucherDelivery "+voucherDelivery);
+          if(log.isDebugEnabled()) log.debug("processCorrelatorUpdate() : "+deliveryRequest.getDeliveryRequestID()+", "+correlatorUpdate+") adding voucherDelivery "+voucherDelivery);
           purchaseFulfillmentRequest.addVoucherDelivery(voucherDelivery);
         }
       }
@@ -1550,7 +1552,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     if(purchaseStatus.getVoucherPersonalAllocated()!=null && !purchaseStatus.getVoucherPersonalAllocated().isEmpty()){
       for(OfferVoucher offerVoucher:purchaseStatus.getVoucherPersonalAllocated()){
         VoucherDelivery voucherDelivery = new VoucherDelivery(offerVoucher.getVoucherID(),offerVoucher.getFileID(),offerVoucher.getVoucherCode(), VoucherDelivery.VoucherStatus.Delivered, offerVoucher.getVoucherExpiryDate());
-        log.info("PurchaseFulfillmentManager.processCorrelatorUpdate("+deliveryRequest.getDeliveryRequestID()+", "+correlatorUpdate+") adding voucherDelivery "+voucherDelivery);
+        if(log.isDebugEnabled()) log.debug("processCorrelatorUpdate() : "+deliveryRequest.getDeliveryRequestID()+", "+correlatorUpdate+") adding voucherDelivery "+voucherDelivery);
         purchaseFulfillmentRequest.addVoucherDelivery(voucherDelivery);
       }
     }
@@ -1565,7 +1567,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
                 .withLabel(StatsBuilders.LABEL.tenant.name(), String.valueOf(purchaseFulfillmentRequest.getTenantID()))
                 .getStats().increment();
 
-    if (log.isDebugEnabled()) log.debug("PurchaseFulfillmentManager.processCorrelatorUpdate("+deliveryRequest.getDeliveryRequestID()+", "+correlatorUpdate+") : DONE");
+    if(log.isDebugEnabled()) log.debug("processCorrelatorUpdate() : "+deliveryRequest.getDeliveryRequestID()+", "+correlatorUpdate+") : DONE");
 
   }
 
@@ -1643,11 +1645,9 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     //
     // reserve all products (manage stock)
     //
-    
-    Date now = SystemTime.getCurrentTime();
-    
+
     if(purchaseStatus.getProductStockToBeDebited() != null && !purchaseStatus.getProductStockToBeDebited().isEmpty()){
-      boolean debitOK = debitProductStock(purchaseStatus, tenantID);
+      boolean debitOK = debitProductStock(originatingDeliveryRequest, purchaseStatus, tenantID);
       if(!debitOK){
         proceedRollback(originatingDeliveryRequest,purchaseStatus, PurchaseFulfillmentStatus.INSUFFICIENT_STOCK, "proceedPurchase : could not debit stock of product "+purchaseStatus.getProductStockDebitFailed().getProductID());
         return;
@@ -1659,7 +1659,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     //
 
     if(purchaseStatus.getVoucherSharedToBeAllocated() != null && !purchaseStatus.getVoucherSharedToBeAllocated().isEmpty()){
-      boolean allocatedOK = allocateVoucherShared(purchaseStatus);
+      boolean allocatedOK = allocateVoucherShared(originatingDeliveryRequest, purchaseStatus);
       if(!allocatedOK){
         proceedRollback(originatingDeliveryRequest,purchaseStatus, PurchaseFulfillmentStatus.INSUFFICIENT_STOCK, "proceedPurchase : could not debit stock of voucher "+purchaseStatus.getVoucherAllocateFailed().getVoucherID());
         return;
@@ -1671,7 +1671,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     //
 
     if(purchaseStatus.getVoucherPersonalToBeAllocated() != null && !purchaseStatus.getVoucherPersonalToBeAllocated().isEmpty()){
-      boolean allocatedOK = allocateVoucherPersonal(purchaseStatus, tenantID);
+      boolean allocatedOK = allocateVoucherPersonal(originatingDeliveryRequest, purchaseStatus, tenantID);
       if(!allocatedOK){
         proceedRollback(originatingDeliveryRequest,purchaseStatus, PurchaseFulfillmentStatus.INSUFFICIENT_STOCK, "proceedPurchase : could not debit stock of voucher "+purchaseStatus.getVoucherAllocateFailed().getVoucherID());
         return;
@@ -1683,7 +1683,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     //
     
     if(purchaseStatus.getOfferStockToBeDebited() != null && !purchaseStatus.getOfferStockToBeDebited().isEmpty()){
-      boolean debitOK = debitOfferStock(purchaseStatus);
+      boolean debitOK = debitOfferStock(originatingDeliveryRequest, purchaseStatus);
       if(!debitOK){
         proceedRollback(originatingDeliveryRequest,purchaseStatus, PurchaseFulfillmentStatus.INSUFFICIENT_STOCK, "proceedPurchase : could not debit stock of offer "+purchaseStatus.getOfferStockDebitFailed());
         return;
@@ -1725,10 +1725,10 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     Offer purchasedOffer = null;
     if(purchaseStatus.getProductStockDebited() != null && !purchaseStatus.getProductStockDebited().isEmpty()){
       for(OfferProduct offerProduct : purchaseStatus.getProductStockDebited()){
-        Product product = productService.getActiveProduct(offerProduct.getProductID(), SystemTime.getCurrentTime());
+        Product product = productService.getActiveProduct(offerProduct.getProductID(), originatingDeliveryRequest.getEventDate());
         purchasedProduct = product;
         if(product == null){
-          log.warn("PurchaseFulfillmentManager.proceedPurchase(offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not confirm reservation of product "+offerProduct.getProductID());
+          log.info("proceedPurchase() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not confirm reservation of product "+offerProduct.getProductID());
         }else{
           int quantity = offerProduct.getQuantity() * purchaseStatus.getQuantity();
           stockService.confirmReservation(product, quantity);
@@ -1739,13 +1739,13 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       for(OfferVoucher offerVoucher : purchaseStatus.getVoucherSharedAllocated()){
         VoucherShared voucher = null;
         try{
-          voucher = (VoucherShared) voucherService.getActiveVoucher(offerVoucher.getVoucherID(), SystemTime.getCurrentTime());
+          voucher = (VoucherShared) voucherService.getActiveVoucher(offerVoucher.getVoucherID(), originatingDeliveryRequest.getEventDate());
           purchasedVoucher = voucher;
         }catch(ClassCastException ex){
-          log.warn("PurchaseFulfillmentManager.proceedPurchase(offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not confirm reservation of bad voucher type "+offerVoucher.getVoucherID());
+          log.info("proceedPurchase() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not confirm reservation of bad voucher type "+offerVoucher.getVoucherID());
         }
         if(voucher == null){
-          log.warn("PurchaseFulfillmentManager.proceedPurchase(offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not confirm reservation of voucher "+offerVoucher.getVoucherID());
+          log.info("proceedPurchase() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not confirm reservation of voucher "+offerVoucher.getVoucherID());
         }else{
           offerVoucher.setVoucherCode(voucher.getSharedCode());
           stockService.confirmReservation(voucher, offerVoucher.getQuantity());
@@ -1754,10 +1754,10 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     }
     if(purchaseStatus.getOfferStockDebited() != null && !purchaseStatus.getOfferStockDebited().isEmpty()){
       for(String offerID : purchaseStatus.getOfferStockDebited()){
-        Offer offer = offerService.getActiveOffer(offerID, SystemTime.getCurrentTime());
+        Offer offer = offerService.getActiveOffer(offerID, originatingDeliveryRequest.getEventDate());
         purchasedOffer = offer;
         if(offer == null){
-          log.warn("PurchaseFulfillmentManager.proceedPurchase(offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not confirm reservation of offer "+offerID);
+          log.info("proceedPurchase() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not confirm reservation of offer "+offerID);
         }else{
           int quantity = purchaseStatus.getQuantity();
           stockService.confirmReservation(offer, quantity);
@@ -1775,11 +1775,11 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     //
    if (purchasedProduct != null && subscriberID != null && purchasedProduct.getWorkflowID() != null && purchasedOffer.getOfferID() != null)
       {
-        generateWorkflowEvent(subscriberID, now, purchasedProduct.getWorkflowID(), "" , purchasedOffer.getOfferID());
+        generateWorkflowEvent(originatingDeliveryRequest, subscriberID, purchasedProduct.getWorkflowID(), purchasedOffer.getOfferID());
       }
     if (purchasedVoucher != null && subscriberID != null && purchasedVoucher.getWorkflowID() != null && purchasedOffer.getOfferID() != null)
       {
-        generateWorkflowEvent(subscriberID, now, purchasedVoucher.getWorkflowID(), "" , purchasedOffer.getOfferID());
+        generateWorkflowEvent(originatingDeliveryRequest, subscriberID, purchasedVoucher.getWorkflowID(), purchasedOffer.getOfferID());
       }
     
     submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.PURCHASED, "Success");
@@ -1792,12 +1792,12 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   *
   *****************************************/
 
-  private void generateWorkflowEvent(String subscriberID, Date now, String workflowID, String module, String feature)
+  private void generateWorkflowEvent(SubscriberStreamOutput originatingEvent, String subscriberID, String workflowID, String feature)
   {
     String topic = Deployment.getWorkflowEventTopic();
     Serializer<StringKey> keySerializer = StringKey.serde().serializer();
     Serializer<WorkflowEvent> valueSerializer = WorkflowEvent.serde().serializer();
-    WorkflowEvent workflowEvent = new WorkflowEvent(subscriberID, now, "eventID", workflowID, Module.Offer_Catalog.getExternalRepresentation() , feature); 
+    WorkflowEvent workflowEvent = new WorkflowEvent(originatingEvent, subscriberID, workflowID, Module.Offer_Catalog.getExternalRepresentation() , feature);
     kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
         topic,
         keySerializer.serialize(topic, new StringKey(subscriberID)),
@@ -1811,102 +1811,100 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   *
   *****************************************/
 
-  private boolean debitProductStock(PurchaseRequestStatus purchaseStatus, int tenantID){
+  private boolean debitProductStock(DeliveryRequest originatingRequest, PurchaseRequestStatus purchaseStatus, int tenantID){
     if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.debitProductStock (offerID "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
     boolean allGood = true;
     if(purchaseStatus.getProductStockToBeDebited() != null && !purchaseStatus.getProductStockToBeDebited().isEmpty()){
       while(!purchaseStatus.getProductStockToBeDebited().isEmpty() && allGood){
         OfferProduct offerProduct = purchaseStatus.getProductStockToBeDebited().remove(0);
         purchaseStatus.setProductStockBeingDebited(offerProduct);
-        Product product = productService.getActiveProduct(offerProduct.getProductID(), SystemTime.getCurrentTime());
+        Product product = productService.getActiveProduct(offerProduct.getProductID(), originatingRequest.getEventDate());
         if(product == null){
           purchaseStatus.setProductStockDebitFailed(purchaseStatus.getProductStockBeingDebited());
           purchaseStatus.setProductStockBeingDebited(null);
           allGood = false;
         }else{
-          if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.debitProductStock (offerID "+purchaseStatus.getOfferID()+", productID "+product.getProductID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
+          if(log.isDebugEnabled()) log.debug("debitProductStock() : (offerID "+purchaseStatus.getOfferID()+", productID "+product.getProductID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
           int quantity = offerProduct.getQuantity() * purchaseStatus.getQuantity();
           boolean approved = stockService.reserve(product, quantity);
           if(approved){
             purchaseStatus.addProductStockDebited(purchaseStatus.getProductStockBeingDebited());
             purchaseStatus.setProductStockBeingDebited(null);
-            if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.debitProductStock : product with ID " + product.getProductID() + " reserved " + quantity);
+            if(log.isDebugEnabled()) log.debug("debitProductStock() : product with ID " + product.getProductID() + " reserved " + quantity);
           }else{
             purchaseStatus.setProductStockDebitFailed(purchaseStatus.getProductStockBeingDebited());
             purchaseStatus.setProductStockBeingDebited(null);
             allGood = false;
-            log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.debitProductStock : product with ID " + product.getProductID() + " reservation of " + quantity + " FAILED");
+            log.info("debitProductStock() :  product with ID " + product.getProductID() + " reservation of " + quantity + " FAILED");
           }
         }
       }
     }
-    if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.debitProductStock (offerID "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") DONE");
+    if(log.isDebugEnabled()) log.debug("debitProductStock() : (offerID "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") DONE");
     return allGood;
   }
 
-  private boolean allocateVoucherShared(PurchaseRequestStatus purchaseStatus){
-    if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.allocateVoucherShared (offerID "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
+  private boolean allocateVoucherShared(DeliveryRequest originatingRequest, PurchaseRequestStatus purchaseStatus){
+    if(log.isDebugEnabled()) log.debug("allocateVoucherShared() : (offerID "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
     if(purchaseStatus.getVoucherSharedToBeAllocated() != null && !purchaseStatus.getVoucherSharedToBeAllocated().isEmpty()){
-      Date now = SystemTime.getCurrentTime();
       while(!purchaseStatus.getVoucherSharedToBeAllocated().isEmpty()){
         OfferVoucher offerVoucher = purchaseStatus.getVoucherSharedToBeAllocated().remove(0);
         VoucherShared voucherShared = null;
         try{
-          voucherShared = (VoucherShared) voucherService.getActiveVoucher(offerVoucher.getVoucherID(), now);
+          voucherShared = (VoucherShared) voucherService.getActiveVoucher(offerVoucher.getVoucherID(), originatingRequest.getEventDate());
         }catch(ClassCastException ex){
-          log.warn(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.allocateVoucherShared : voucher with ID " + offerVoucher.getVoucherID() + " bad voucher type " + ex.getMessage());
+          log.info("allocateVoucherShared() : voucher with ID " + offerVoucher.getVoucherID() + " bad voucher type " + ex.getMessage());
           purchaseStatus.setVoucherAllocateFailed(offerVoucher);
           return false;
         }
         if(voucherShared == null){
-          log.warn(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.allocateVoucherShared : voucher with ID " + offerVoucher.getVoucherID() + " voucher does not exist");
+          log.info("allocateVoucherShared() : voucher with ID " + offerVoucher.getVoucherID() + " voucher does not exist");
           purchaseStatus.setVoucherAllocateFailed(offerVoucher);
           return false;
         }else{
-          if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.allocateVoucherShared (offerID "+purchaseStatus.getOfferID()+", voucherID "+voucherShared.getVoucherID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
+          if(log.isDebugEnabled()) log.debug("allocateVoucherShared() : (offerID "+purchaseStatus.getOfferID()+", voucherID "+voucherShared.getVoucherID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
           boolean approved = stockService.reserve(voucherShared, offerVoucher.getQuantity());
           if(approved){
-            VoucherType voucherType = voucherTypeService.getActiveVoucherType(voucherShared.getVoucherTypeId(),now);
+            VoucherType voucherType = voucherTypeService.getActiveVoucherType(voucherShared.getVoucherTypeId(),originatingRequest.getEventDate());
             if(voucherType == null){
-              log.warn(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.allocateVoucherPersonal : voucher type for voucher ID " + offerVoucher.getVoucherID() + " does not exist");
+              log.info("allocateVoucherShared() : voucher type for voucher ID " + offerVoucher.getVoucherID() + " does not exist");
               purchaseStatus.setVoucherAllocateFailed(offerVoucher);
               return false;
             }
             purchaseStatus.addVoucherSharedAllocated(offerVoucher);
-            if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.allocateVoucherShared : voucher with ID " + voucherShared.getVoucherID() + " reserved " + offerVoucher.getQuantity());
+            if(log.isDebugEnabled()) log.debug("allocateVoucherShared() : voucher with ID " + voucherShared.getVoucherID() + " reserved " + offerVoucher.getQuantity());
           }else{
-            log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.allocateVoucherShared : voucher with ID " + voucherShared.getVoucherID() + " reservation of "+offerVoucher.getQuantity()+" FAILED");
+            log.info("allocateVoucherShared() : voucher with ID " + voucherShared.getVoucherID() + " reservation of "+offerVoucher.getQuantity()+" FAILED");
             purchaseStatus.setVoucherAllocateFailed(offerVoucher);
             return false;
           }
         }
       }
     }
-    log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.allocateVoucherShared (offerID "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") DONE");
+    if(log.isDebugEnabled()) log.debug("allocateVoucherShared() : (offerID "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") DONE");
     return true;
   }
 
-  private boolean allocateVoucherPersonal(PurchaseRequestStatus purchaseStatus, int tenantID){
-    if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.allocateVoucherPersonal (offerID "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
+  private boolean allocateVoucherPersonal(DeliveryRequest originatingRequest, PurchaseRequestStatus purchaseStatus, int tenantID){
+    if(log.isDebugEnabled()) log.debug("allocateVoucherPersonal() : (offerID "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
     if(purchaseStatus.getVoucherPersonalToBeAllocated() != null && !purchaseStatus.getVoucherPersonalToBeAllocated().isEmpty()){
-      Date now = SystemTime.getCurrentTime();
       while(!purchaseStatus.getVoucherPersonalToBeAllocated().isEmpty()){
         OfferVoucher offerVoucher = purchaseStatus.getVoucherPersonalToBeAllocated().remove(0);
         VoucherPersonal voucherPersonal = null;
         try{
-          voucherPersonal = (VoucherPersonal) voucherService.getActiveVoucher(offerVoucher.getVoucherID(), now);
+          voucherPersonal = (VoucherPersonal) voucherService.getActiveVoucher(offerVoucher.getVoucherID(), originatingRequest.getEventDate());
         }catch(ClassCastException ex){
-          log.warn(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.allocateVoucherPersonal : voucher with ID " + offerVoucher.getVoucherID() + " bad voucher type " + ex.getMessage());
+          log.info("allocateVoucherPersonal() : voucher with ID " + offerVoucher.getVoucherID() + " bad voucher type " + ex.getMessage());
           purchaseStatus.setVoucherAllocateFailed(offerVoucher);
           return false;
         }
         if(voucherPersonal == null){
-          log.warn(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.allocateVoucherPersonal : voucher with ID " + offerVoucher.getVoucherID() + " voucher does not exist");
+          log.info("allocateVoucherPersonal() : voucher with ID " + offerVoucher.getVoucherID() + " voucher does not exist");
           purchaseStatus.setVoucherAllocateFailed(offerVoucher);
           return false;
         }else{
           for(int i=0;i<offerVoucher.getQuantity();i++){
-            if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.allocateVoucherPersonal (offerID "+purchaseStatus.getOfferID()+", voucherID "+voucherPersonal.getVoucherID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
+            if(log.isDebugEnabled()) log.debug("allocateVoucherPersonal() : (offerID "+purchaseStatus.getOfferID()+", voucherID "+voucherPersonal.getVoucherID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
             VoucherPersonalES esVoucher = voucherService.getVoucherPersonalESService().allocatePendingVoucher(voucherPersonal.getSupplierID(),voucherPersonal.getVoucherID(),purchaseStatus.getSubscriberID(), tenantID);
             if(esVoucher!=null && esVoucher.getSubscriberId()!=null && esVoucher.getVoucherCode()!=null && esVoucher.getFileId()!=null){
               OfferVoucher allocatedVoucher = new OfferVoucher(offerVoucher);
@@ -1915,9 +1913,9 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
               allocatedVoucher.setVoucherExpiryDate(esVoucher.getExpiryDate());
               allocatedVoucher.setFileID(esVoucher.getFileId());
               purchaseStatus.addVoucherPersonalAllocated(allocatedVoucher);
-              if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.allocateVoucherPersonal : voucher with ID " + voucherPersonal.getVoucherID() + " reserved " + allocatedVoucher.getQuantity()+ ", "+allocatedVoucher.getVoucherCode()+", "+allocatedVoucher.getVoucherExpiryDate());
+              if(log.isDebugEnabled()) log.debug("allocateVoucherPersonal() : voucher with ID " + voucherPersonal.getVoucherID() + " reserved " + allocatedVoucher.getQuantity()+ ", "+allocatedVoucher.getVoucherCode()+", "+allocatedVoucher.getVoucherExpiryDate());
             }else{
-              log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.allocateVoucherPersonal : voucher with ID " + voucherPersonal.getVoucherID() + " reservation of "+offerVoucher.getQuantity()+" FAILED");
+              log.info("allocateVoucherPersonal() : voucher with ID " + voucherPersonal.getVoucherID() + " reservation of "+offerVoucher.getQuantity()+" FAILED");
               purchaseStatus.setVoucherAllocateFailed(offerVoucher);
               return false;
             }
@@ -1925,18 +1923,18 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         }
       }
     }
-    log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.allocateVoucherPersonal (offerID "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") DONE");
+    if(log.isDebugEnabled()) log.debug("allocateVoucherPersonal() : (offerID "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") DONE");
     return true;
   }
 
-  private boolean debitOfferStock(PurchaseRequestStatus purchaseStatus){
-    log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.debitOfferStock (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
+  private boolean debitOfferStock(DeliveryRequest originatingRequest, PurchaseRequestStatus purchaseStatus){
+    if(log.isDebugEnabled()) log.debug("debitOfferStock() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
     boolean allGood = true;
     if(purchaseStatus.getOfferStockToBeDebited() != null && !purchaseStatus.getOfferStockToBeDebited().isEmpty()){
       while(!purchaseStatus.getOfferStockToBeDebited().isEmpty() && allGood){
         String offerID = purchaseStatus.getOfferStockToBeDebited().remove(0);
         purchaseStatus.setOfferStockBeingDebited(offerID);
-        Offer offer = offerService.getActiveOffer(offerID, SystemTime.getCurrentTime());
+        Offer offer = offerService.getActiveOffer(offerID, originatingRequest.getEventDate());
         if(offer == null){
           purchaseStatus.setOfferStockDebitFailed(purchaseStatus.getOfferStockBeingDebited());
           purchaseStatus.setOfferStockBeingDebited(null);
@@ -1955,7 +1953,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         }
       }
     }
-    log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.debitOfferStock (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") DONE");
+    if(log.isDebugEnabled()) log.debug("debitOfferStock() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") DONE "+allGood);
     return allGood;
   }
 
@@ -1985,15 +1983,15 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     if(purchaseStatus.getProductStockDebited() != null && !purchaseStatus.getProductStockDebited().isEmpty()){
       while(purchaseStatus.getProductStockDebited() != null && !purchaseStatus.getProductStockDebited().isEmpty()){
         OfferProduct offerProduct = purchaseStatus.getProductStockDebited().remove(0);
-        Product product = productService.getActiveProduct(offerProduct.getProductID(), SystemTime.getCurrentTime());
+        Product product = productService.getActiveProduct(offerProduct.getProductID(), originatingDeliveryRequest.getEventDate());
         if(product == null){
-          log.warn(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.proceedRollback (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not cancel reservation of product "+offerProduct.getProductID());
+          log.info("proceedRollback() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not cancel reservation of product "+offerProduct.getProductID());
           purchaseStatus.addProductStockRollbackFailed(offerProduct);
         }else{
           int quantity = offerProduct.getQuantity() * purchaseStatus.getQuantity();
           stockService.voidReservation(product, quantity);
           purchaseStatus.addProductStockRollbacked(offerProduct);
-          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.proceedRollback : reservation product " + product.getProductID() + " canceled " + quantity);
+          if(log.isDebugEnabled()) log.debug("proceedRollback() : reservation product " + product.getProductID() + " canceled " + quantity);
         }
       }
     }
@@ -2007,18 +2005,18 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         OfferVoucher offerVoucher = purchaseStatus.getVoucherSharedAllocated().remove(0);
         VoucherShared voucherShared = null;
         try{
-          voucherShared = (VoucherShared) voucherService.getActiveVoucher(offerVoucher.getVoucherID(), SystemTime.getCurrentTime());
+          voucherShared = (VoucherShared) voucherService.getActiveVoucher(offerVoucher.getVoucherID(), originatingDeliveryRequest.getEventDate());
         }catch(ClassCastException ex){
-          log.warn(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.proceedRollback (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not cancel reservation of bad type shared voucher "+offerVoucher.getVoucherID());
+          log.info("proceedRollback() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not cancel reservation of bad type shared voucher "+offerVoucher.getVoucherID());
           purchaseStatus.addVoucherSharedRollBackFailed(offerVoucher);
         }
         if(voucherShared == null){
-          log.warn(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.proceedRollback (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not cancel reservation of shared voucher "+offerVoucher.getVoucherID());
+          log.info("proceedRollback() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not cancel reservation of shared voucher "+offerVoucher.getVoucherID());
           purchaseStatus.addVoucherSharedRollBackFailed(offerVoucher);
         }else{
           stockService.voidReservation(voucherShared, offerVoucher.getQuantity());
           purchaseStatus.addVoucherSharedRollBacked(offerVoucher);
-          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.proceedRollback : reservation shared voucher " + voucherShared.getVoucherID() + " canceled " + offerVoucher.getQuantity());
+          if(log.isDebugEnabled()) log.debug("proceedRollback() : reservation shared voucher " + voucherShared.getVoucherID() + " canceled " + offerVoucher.getQuantity());
         }
       }
     }
@@ -2032,20 +2030,20 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         OfferVoucher offerVoucher = purchaseStatus.getVoucherPersonalAllocated().remove(0);
         VoucherPersonal voucherPersonal = null;
         try{
-          voucherPersonal = (VoucherPersonal) voucherService.getActiveVoucher(offerVoucher.getVoucherID(), SystemTime.getCurrentTime());
+          voucherPersonal = (VoucherPersonal) voucherService.getActiveVoucher(offerVoucher.getVoucherID(), originatingDeliveryRequest.getEventDate());
         }catch(ClassCastException ex){
-          log.warn(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.proceedRollback (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not cancel reservation of bad type Personal voucher "+offerVoucher.getVoucherID());
+          log.info("proceedRollback() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not cancel reservation of bad type Personal voucher "+offerVoucher.getVoucherID());
           purchaseStatus.addVoucherPersonalRollBackFailed(offerVoucher);
         }
         if(voucherPersonal == null){
-          log.warn(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.proceedRollback (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not cancel reservation of Personal voucher "+offerVoucher.getVoucherID());
+          log.info("proceedRollback() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not cancel reservation of Personal voucher "+offerVoucher.getVoucherID());
           purchaseStatus.addVoucherPersonalRollBackFailed(offerVoucher);
         }else{
           if(voucherService.getVoucherPersonalESService().voidReservation(voucherPersonal.getSupplierID(),offerVoucher.getVoucherCode())){
             purchaseStatus.addVoucherPersonalRollBacked(offerVoucher);
-            log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.proceedRollback : reservation Personal voucher " + voucherPersonal.getVoucherID() + " canceled " + offerVoucher.getVoucherCode());
+            if(log.isDebugEnabled()) log.debug("proceedRollback : reservation Personal voucher " + voucherPersonal.getVoucherID() + " canceled " + offerVoucher.getVoucherCode());
           }else{
-            log.warn(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.proceedRollback (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not cancel reservation in ES for Personal voucher "+offerVoucher.getVoucherID());
+            log.info("proceedRollback() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not cancel reservation in ES for Personal voucher "+offerVoucher.getVoucherID());
             purchaseStatus.addVoucherPersonalRollBackFailed(offerVoucher);
           }
         }
@@ -2059,15 +2057,15 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     if(purchaseStatus.getOfferStockDebited() != null && !purchaseStatus.getOfferStockDebited().isEmpty()){
       while(purchaseStatus.getOfferStockDebited() != null && !purchaseStatus.getOfferStockDebited().isEmpty()){
         String offerID = purchaseStatus.getOfferStockDebited().remove(0);
-        Offer offer = offerService.getActiveOffer(offerID, SystemTime.getCurrentTime());
+        Offer offer = offerService.getActiveOffer(offerID, originatingDeliveryRequest.getEventDate());
         if(offer == null){
           purchaseStatus.addOfferStockRollbackFailed(offerID);
-          log.warn(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.proceedRollback (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not cancel reservation of offer "+offerID);
+          log.info("proceedRollback() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not cancel reservation of offer "+offerID);
         }else{
           int quantity = purchaseStatus.getQuantity();
           stockService.voidReservation(offer, quantity);
           purchaseStatus.addOfferStockRollbacked(offerID);
-          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.proceedRollback : reservation offer " + offer.getOfferID() + " canceled");
+          if(log.isDebugEnabled()) log.debug("proceedRollback() : reservation offer " + offer.getOfferID() + " canceled");
         }
       }
     }
@@ -2120,8 +2118,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   *****************************************/
   
   private void requestCommodityDelivery(DeliveryRequest originatingRequest, PurchaseRequestStatus purchaseStatus){
-    log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
-    Date now = SystemTime.getCurrentTime();
+    if(log.isDebugEnabled()) log.debug("requestCommodityDelivery() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
     
     //
     // debit price
@@ -2129,17 +2126,17 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     
     OfferPrice offerPrice = purchaseStatus.getPaymentBeingDebited();
     if(offerPrice != null){
-      log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") debiting offer price ...");
+      if(log.isDebugEnabled()) log.debug("requestCommodityDelivery() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") debiting offer price ...");
       purchaseStatus.incrementNewRequestCounter();
       String deliveryRequestID = zookeeperUniqueKeyServer.getStringKey();
 		try {
-			CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(paymentMeanService,deliverableService,originatingRequest,purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), offerPrice.getProviderID(), offerPrice.getPaymentMeanID(), CommodityDeliveryOperation.Debit, offerPrice.getAmount() * purchaseStatus.getQuantity(), null, 0, "");
-			log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (deliveryReqID "+deliveryRequestID+", originatingDeliveryRequestID "+purchaseStatus.getCorrelator()+", offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") debiting offer price DONE");
+		  CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(paymentMeanService,deliverableService,originatingRequest,purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), offerPrice.getProviderID(), offerPrice.getPaymentMeanID(), CommodityDeliveryOperation.Debit, offerPrice.getAmount() * purchaseStatus.getQuantity(), null, 0, "");
+          if(log.isDebugEnabled()) log.debug("requestCommodityDelivery() : PurchaseFulfillmentManager.requestCommodityDelivery (deliveryReqID "+deliveryRequestID+", originatingDeliveryRequestID "+purchaseStatus.getCorrelator()+", offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") debiting offer price DONE");
 		} catch (CommodityDeliveryException e) {
-			log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") debiting paymentmean ("+offerPrice.getPaymentMeanID()+") FAILED => rollback");
-			purchaseStatus.setPaymentDebitFailed(offerPrice);
-			purchaseStatus.setPaymentBeingDebited(null);
-			proceedRollback(originatingRequest,purchaseStatus, PurchaseFulfillmentStatus.PRICE_NOT_APPLICABLE, "could not debit paymentmean "+offerPrice.getPaymentMeanID()+" "+e.getError().getGenericResponseMessage());
+          log.info("requestCommodityDelivery() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") debiting paymentmean ("+offerPrice.getPaymentMeanID()+") FAILED => rollback");
+		  purchaseStatus.setPaymentDebitFailed(offerPrice);
+		  purchaseStatus.setPaymentBeingDebited(null);
+		  proceedRollback(originatingRequest,purchaseStatus, PurchaseFulfillmentStatus.PRICE_NOT_APPLICABLE, "could not debit paymentmean "+offerPrice.getPaymentMeanID()+" "+e.getError().getGenericResponseMessage());
 		}
     }
     
@@ -2149,9 +2146,9 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     
     OfferProduct offerProduct = purchaseStatus.getProductBeingCredited();
     if(offerProduct != null){
-      Product product = productService.getActiveProduct(offerProduct.getProductID(), now);
+      Product product = productService.getActiveProduct(offerProduct.getProductID(), originatingRequest.getEventDate());
       if(product != null){
-        Deliverable deliverable = deliverableService.getActiveDeliverable(product.getDeliverableID(), now);
+        Deliverable deliverable = deliverableService.getActiveDeliverable(product.getDeliverableID(), originatingRequest.getEventDate());
         int deliverableQuantity = product.getDeliverableQuantity();
         TimeUnit deliverableValidityType = null;
         int deliverableValidityPeriod = 0;
@@ -2165,26 +2162,26 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           }
         
         if(deliverable != null){
-          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") delivering product ("+offerProduct.getProductID()+") ...");
+          if(log.isDebugEnabled()) log.debug("requestCommodityDelivery() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") delivering product ("+offerProduct.getProductID()+") ...");
           purchaseStatus.incrementNewRequestCounter();
           String deliveryRequestID = zookeeperUniqueKeyServer.getStringKey();
 			try {
-				CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(paymentMeanService,deliverableService,originatingRequest,purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), deliverable.getFulfillmentProviderID(), deliverable.getDeliverableID(), CommodityDeliveryOperation.Credit, deliverableQuantity * offerProduct.getQuantity() * purchaseStatus.getQuantity(), deliverableValidityType, deliverableValidityPeriod, "");
-				log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (deliveryReqID "+deliveryRequestID+", originatingDeliveryRequestID "+purchaseStatus.getCorrelator()+", offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") delivering product ("+offerProduct.getProductID()+") DONE");
+              CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(paymentMeanService,deliverableService,originatingRequest,purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), deliverable.getFulfillmentProviderID(), deliverable.getDeliverableID(), CommodityDeliveryOperation.Credit, deliverableQuantity * offerProduct.getQuantity() * purchaseStatus.getQuantity(), deliverableValidityType, deliverableValidityPeriod, "");
+              if(log.isDebugEnabled()) log.debug("requestCommodityDelivery() : (deliveryReqID "+deliveryRequestID+", originatingDeliveryRequestID "+purchaseStatus.getCorrelator()+", offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") delivering product ("+offerProduct.getProductID()+") DONE");
 			} catch (CommodityDeliveryException e) {
-				log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") delivering deliverable ("+offerProduct.getProductID()+") FAILED => rollback");
-				purchaseStatus.setProductCreditFailed(offerProduct);
-				purchaseStatus.setProductBeingCredited(null);
-				proceedRollback(originatingRequest,purchaseStatus, PurchaseFulfillmentStatus.INVALID_PRODUCT, "could not credit deliverable "+product.getDeliverableID()+" "+e.getError().getGenericResponseMessage());
+              log.info("requestCommodityDelivery() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") delivering deliverable ("+offerProduct.getProductID()+") FAILED => rollback");
+              purchaseStatus.setProductCreditFailed(offerProduct);
+              purchaseStatus.setProductBeingCredited(null);
+              proceedRollback(originatingRequest,purchaseStatus, PurchaseFulfillmentStatus.INVALID_PRODUCT, "could not credit deliverable "+product.getDeliverableID()+" "+e.getError().getGenericResponseMessage());
 			}
         }else{
-          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") delivering deliverable ("+offerProduct.getProductID()+") FAILED => rollback");
+          log.info("requestCommodityDelivery() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") delivering deliverable ("+offerProduct.getProductID()+") FAILED => rollback");
           purchaseStatus.setProductCreditFailed(offerProduct);
           purchaseStatus.setProductBeingCredited(null);
           proceedRollback(originatingRequest,purchaseStatus, PurchaseFulfillmentStatus.INVALID_PRODUCT, "could not credit deliverable "+product.getDeliverableID());
         }
       }else{
-        log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") delivering product ("+offerProduct.getProductID()+") FAILED => rollback");
+        log.info("requestCommodityDelivery() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") delivering product ("+offerProduct.getProductID()+") FAILED => rollback");
         purchaseStatus.setProductCreditFailed(offerProduct);
         purchaseStatus.setProductBeingCredited(null);
         proceedRollback(originatingRequest,purchaseStatus, PurchaseFulfillmentStatus.PRODUCT_NOT_FOUND, "could not credit product "+offerProduct.getProductID());
@@ -2197,17 +2194,17 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     
     OfferPrice offerPriceRollback = purchaseStatus.getPaymentBeingRollbacked();
     if(offerPriceRollback != null){
-      log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking offer price ...");
+      if(log.isDebugEnabled()) log.debug("requestCommodityDelivery() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking offer price ...");
       purchaseStatus.incrementNewRequestCounter();
       String deliveryRequestID = zookeeperUniqueKeyServer.getStringKey();
 		try {
-			CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(paymentMeanService,deliverableService,originatingRequest,purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), offerPriceRollback.getProviderID(), offerPriceRollback.getPaymentMeanID(), CommodityDeliveryOperation.Credit, offerPriceRollback.getAmount() * purchaseStatus.getQuantity(), null, 0, "");
-			log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (deliveryReqID "+deliveryRequestID+", originatingDeliveryRequestID "+purchaseStatus.getCorrelator()+", offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking offer price DONE");
+          CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(paymentMeanService,deliverableService,originatingRequest,purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), offerPriceRollback.getProviderID(), offerPriceRollback.getPaymentMeanID(), CommodityDeliveryOperation.Credit, offerPriceRollback.getAmount() * purchaseStatus.getQuantity(), null, 0, "");
+          if(log.isDebugEnabled()) log.debug("requestCommodityDelivery() : (deliveryReqID "+deliveryRequestID+", originatingDeliveryRequestID "+purchaseStatus.getCorrelator()+", offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking offer price DONE");
 		} catch (CommodityDeliveryException e) {
-			log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (deliveryReqID "+deliveryRequestID+", originatingDeliveryRequestID "+purchaseStatus.getCorrelator()+", offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking offer price FAILED "+e.getError().getGenericResponseMessage());
-			purchaseStatus.addPaymentRollbackFailed(offerPrice);
-			purchaseStatus.setPaymentBeingRollbacked(null);
-			proceedRollback(originatingRequest,purchaseStatus, null, null);
+          log.info("requestCommodityDelivery() : (deliveryReqID "+deliveryRequestID+", originatingDeliveryRequestID "+purchaseStatus.getCorrelator()+", offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking offer price FAILED "+e.getError().getGenericResponseMessage());
+          purchaseStatus.addPaymentRollbackFailed(offerPrice);
+          purchaseStatus.setPaymentBeingRollbacked(null);
+          proceedRollback(originatingRequest,purchaseStatus, null, null);
 		}
     }
     
@@ -2217,9 +2214,9 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     
     OfferProduct offerProductRollback = purchaseStatus.getProductBeingRollbacked();
     if(offerProductRollback != null){
-      Product product = productService.getActiveProduct(offerProductRollback.getProductID(), now);
+      Product product = productService.getActiveProduct(offerProductRollback.getProductID(), originatingRequest.getEventDate());
       if(product != null){
-        Deliverable deliverable = deliverableService.getActiveDeliverable(product.getDeliverableID(), now);
+        Deliverable deliverable = deliverableService.getActiveDeliverable(product.getDeliverableID(), originatingRequest.getEventDate());
         int deliverableQuantity = product.getDeliverableQuantity();
         TimeUnit deliverableValidityType = null;
         int deliverableValidityPeriod = 0;
@@ -2232,26 +2229,26 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
             deliverableValidityType = product.getDeliverableValidity().getValidityType();
           }
         if(deliverable != null){
-          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking product delivery ("+offerProductRollback.getProductID()+") ...");
+          if(log.isDebugEnabled()) log.debug("requestCommodityDelivery() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking product delivery ("+offerProductRollback.getProductID()+") ...");
           purchaseStatus.incrementNewRequestCounter();
           String deliveryRequestID = zookeeperUniqueKeyServer.getStringKey();
 			try {
-				CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(paymentMeanService,deliverableService,originatingRequest,purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), deliverable.getFulfillmentProviderID(), deliverable.getDeliverableID(), CommodityDeliveryOperation.Debit, deliverableQuantity * offerProduct.getQuantity() * purchaseStatus.getQuantity() , deliverableValidityType, deliverableValidityPeriod, "");
-				log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (deliveryReqID "+deliveryRequestID+", originatingDeliveryRequestID "+purchaseStatus.getCorrelator()+", offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking product delivery ("+offerProductRollback.getProductID()+") DONE");
+              CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(paymentMeanService,deliverableService,originatingRequest,purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), deliverable.getFulfillmentProviderID(), deliverable.getDeliverableID(), CommodityDeliveryOperation.Debit, deliverableQuantity * offerProduct.getQuantity() * purchaseStatus.getQuantity() , deliverableValidityType, deliverableValidityPeriod, "");
+              if(log.isDebugEnabled()) log.debug("requestCommodityDelivery() : (deliveryReqID "+deliveryRequestID+", originatingDeliveryRequestID "+purchaseStatus.getCorrelator()+", offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking product delivery ("+offerProductRollback.getProductID()+") DONE");
 			} catch (CommodityDeliveryException e) {
-				log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking deliverable delivery failed (product id "+offerProductRollback.getProductID()+")");
-				purchaseStatus.addProductRollbackFailed(offerProductRollback);
-				purchaseStatus.setProductBeingRollbacked(null);
-				proceedRollback(originatingRequest,purchaseStatus, null, null);
+              log.info("requestCommodityDelivery() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking deliverable delivery failed (product id "+offerProductRollback.getProductID()+")");
+              purchaseStatus.addProductRollbackFailed(offerProductRollback);
+              purchaseStatus.setProductBeingRollbacked(null);
+              proceedRollback(originatingRequest,purchaseStatus, null, null);
 			}
         }else{
-          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking deliverable delivery failed (product id "+offerProductRollback.getProductID()+")");
+          log.info("requestCommodityDelivery() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking deliverable delivery failed (product id "+offerProductRollback.getProductID()+")");
           purchaseStatus.addProductRollbackFailed(offerProductRollback);
           purchaseStatus.setProductBeingRollbacked(null);
           proceedRollback(originatingRequest,purchaseStatus, null, null);
         }
       }else{
-        log.warn(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking product delivery failed (product id "+offerProductRollback.getProductID()+")");
+        log.info("requestCommodityDelivery() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking product delivery failed (product id "+offerProductRollback.getProductID()+")");
         purchaseStatus.addProductRollbackFailed(offerProductRollback);
         purchaseStatus.setProductBeingRollbacked(null);
         proceedRollback(originatingRequest,purchaseStatus, null, null);
@@ -2259,7 +2256,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       
     }
 
-    log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.requestCommodityDelivery (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") DONE");
+    if(log.isDebugEnabled()) log.debug("requestCommodityDelivery() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") DONE");
   }
     
   /*****************************************
@@ -2270,12 +2267,12 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
   public void handleCommodityDeliveryResponse(DeliveryRequest response)
   {
-    
-    log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse() called with " + response);
+
+    if(log.isDebugEnabled()) log.debug("handleCommodityDeliveryResponse() : called with " + response);
 
     if(response.getDiplomaticBriefcase() == null || response.getDiplomaticBriefcase().get(CommodityDeliveryManager.APPLICATION_ID)==null || !response.getDiplomaticBriefcase().get(CommodityDeliveryManager.APPLICATION_ID).equals(application_ID)){
       // not a bonus for purchase
-      if(log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse(response) : not message for purchase, ignoring");
+      if(log.isDebugEnabled()) log.debug("handleCommodityDeliveryResponse() : not message for purchase, ignoring");
       return;
     }
 
@@ -2283,9 +2280,9 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     // Getting initial request status
     // ------------------------------------
 
-    if (log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse(...) : getting purchase status ");
+    if(log.isDebugEnabled()) log.debug("handleCommodityDeliveryResponse() : getting purchase status ");
     if(response.getDiplomaticBriefcase() == null || response.getDiplomaticBriefcase().get(CommodityDeliveryManager.APPLICATION_BRIEFCASE) == null || response.getDiplomaticBriefcase().get(CommodityDeliveryManager.APPLICATION_BRIEFCASE).isEmpty()){
-      log.warn(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse(response) : can not get purchase status => ignore this response");
+      log.info("handleCommodityDeliveryResponse() : can not get purchase status => ignore this response");
       return;
     }
     JSONParser parser = new JSONParser();
@@ -2296,10 +2293,10 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         purchaseStatus = new PurchaseRequestStatus(requestStatusJSON);
       } catch (ParseException e)
       {
-        log.error(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse(...) : ERROR while getting purchase status from '"+response.getDiplomaticBriefcase().get(CommodityDeliveryManager.APPLICATION_BRIEFCASE)+"' => IGNORED");
+        log.warn("handleCommodityDeliveryResponse() : ERROR while getting purchase status from '"+response.getDiplomaticBriefcase().get(CommodityDeliveryManager.APPLICATION_BRIEFCASE)+"' => IGNORED");
         return;
       }
-    if (log.isDebugEnabled()) log.debug(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse(...) : getting purchase status DONE : "+purchaseStatus);
+    if(log.isDebugEnabled()) log.debug("handleCommodityDeliveryResponse() : getting purchase status DONE : "+purchaseStatus);
     
     // ------------------------------------
     // Handling response
@@ -2317,12 +2314,12 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       if(purchaseStatus.getPaymentBeingRollbacked() != null){
         OfferPrice offerPrice = purchaseStatus.getPaymentBeingRollbacked();
         if(responseDeliveryStatus.equals(DeliveryStatus.Delivered)){
-          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse("+purchaseStatus.getOfferID()+", "+purchaseStatus.getSubscriberID()+") : price rollbacked");
+          if(log.isDebugEnabled()) log.debug("handleCommodityDeliveryResponse() : ("+purchaseStatus.getOfferID()+", "+purchaseStatus.getSubscriberID()+") : price rollbacked");
           purchaseStatus.addPaymentRollbacked(offerPrice);
           purchaseStatus.setPaymentBeingRollbacked(null);
         }else{
           //responseDeliveryStatus is one of those : Pending, FailedRetry, Delivered, Indeterminate, Failed, FailedTimeout, Unknown
-          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse("+purchaseStatus.getOfferID()+", "+purchaseStatus.getSubscriberID()+") : price rollback failed");
+          log.info("handleCommodityDeliveryResponse() : ("+purchaseStatus.getOfferID()+", "+purchaseStatus.getSubscriberID()+") : price rollback failed");
           purchaseStatus.addPaymentRollbackFailed(offerPrice);
           purchaseStatus.setPaymentBeingRollbacked(null);
         }
@@ -2332,19 +2329,19 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       if(purchaseStatus.getProductBeingRollbacked() != null){
         OfferProduct offerProduct = purchaseStatus.getProductBeingRollbacked();
         if(responseDeliveryStatus.equals(DeliveryStatus.Delivered)){
-          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse("+purchaseStatus.getOfferID()+", "+purchaseStatus.getSubscriberID()+") : product delivery rollbacked (product id "+offerProduct.getProductID()+")");
+          if(log.isDebugEnabled()) log.debug("handleCommodityDeliveryResponse() : e("+purchaseStatus.getOfferID()+", "+purchaseStatus.getSubscriberID()+") : product delivery rollbacked (product id "+offerProduct.getProductID()+")");
           purchaseStatus.addProductRollbacked(offerProduct);
           purchaseStatus.setProductBeingRollbacked(null);
         }else{
           //responseDeliveryStatus is one of those : Pending, FailedRetry, Delivered, Indeterminate, Failed, FailedTimeout, Unknown
-          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse("+purchaseStatus.getOfferID()+", "+purchaseStatus.getSubscriberID()+") : product delivery rollback failed (product id "+offerProduct.getProductID()+")");
+          log.info("handleCommodityDeliveryResponse() : ("+purchaseStatus.getOfferID()+", "+purchaseStatus.getSubscriberID()+") : product delivery rollback failed (product id "+offerProduct.getProductID()+")");
           purchaseStatus.addProductRollbackFailed(offerProduct);
           purchaseStatus.setProductBeingRollbacked(null);
         }
       }
 
       // continue rollback process
-      log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse("+purchaseStatus.getOfferID()+", "+purchaseStatus.getSubscriberID()+") : continue rollback process ...");
+      if(log.isDebugEnabled()) log.debug("handleCommodityDeliveryResponse() : ("+purchaseStatus.getOfferID()+", "+purchaseStatus.getSubscriberID()+") : continue rollback process ...");
       proceedRollback(response,purchaseStatus, null, null);
 
     }else{
@@ -2357,12 +2354,12 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       if(purchaseStatus.getPaymentBeingDebited() != null){
         OfferPrice offerPrice = purchaseStatus.getPaymentBeingDebited();
         if(responseDeliveryStatus.equals(DeliveryStatus.Delivered)){
-          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse("+purchaseStatus.getOfferID()+", "+purchaseStatus.getSubscriberID()+") : price debited");
+          if(log.isDebugEnabled()) log.debug("handleCommodityDeliveryResponse() : ("+purchaseStatus.getOfferID()+", "+purchaseStatus.getSubscriberID()+") : price debited");
           purchaseStatus.addPaymentDebited(offerPrice);
           purchaseStatus.setPaymentBeingDebited(null);
         }else{
           //responseDeliveryStatus is one of those : Pending, FailedRetry, Delivered, Indeterminate, Failed, FailedTimeout, Unknown
-          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse("+purchaseStatus.getOfferID()+", "+purchaseStatus.getSubscriberID()+") : price debit failed => initiate rollback ...");
+          log.info("handleCommodityDeliveryResponse() : ("+purchaseStatus.getOfferID()+", "+purchaseStatus.getSubscriberID()+") : price debit failed => initiate rollback ...");
           purchaseStatus.setPaymentDebitFailed(offerPrice);
           purchaseStatus.setPaymentBeingDebited(null);
           proceedRollback(response,purchaseStatus, PurchaseFulfillmentStatus.INSUFFICIENT_BALANCE, "handleCommodityDeliveryResponse : could not make payment of price "+offerPrice);
@@ -2374,12 +2371,12 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       if(purchaseStatus.getProductBeingCredited() != null){
         OfferProduct product = purchaseStatus.getProductBeingCredited();
         if(responseDeliveryStatus.equals(DeliveryStatus.Delivered)){
-          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse("+purchaseStatus.getOfferID()+", "+purchaseStatus.getSubscriberID()+") : product credited (product id "+product.getProductID()+")");
+          if(log.isDebugEnabled()) log.debug("handleCommodityDeliveryResponse() : ("+purchaseStatus.getOfferID()+", "+purchaseStatus.getSubscriberID()+") : product credited (product id "+product.getProductID()+")");
           purchaseStatus.addProductCredited(product);
           purchaseStatus.setProductBeingCredited(null);
         }else{
           //responseDeliveryStatus is one of those : Pending, FailedRetry, Delivered, Indeterminate, Failed, FailedTimeout, Unknown
-          log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse("+purchaseStatus.getOfferID()+", "+purchaseStatus.getSubscriberID()+") : product credit failed (product id "+product.getProductID()+") => initiate rollback ...");
+          log.info("handleCommodityDeliveryResponse() : ("+purchaseStatus.getOfferID()+", "+purchaseStatus.getSubscriberID()+") : product credit failed (product id "+product.getProductID()+") => initiate rollback ...");
           purchaseStatus.setProductCreditFailed(product);
           purchaseStatus.setProductBeingCredited(null);
           proceedRollback(response,purchaseStatus, PurchaseFulfillmentStatus.THIRD_PARTY_ERROR, "handleCommodityDeliveryResponse : could not credit product "+product.getProductID());
@@ -2388,12 +2385,12 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       }
 
       // continue purchase process
-      log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse("+purchaseStatus.getOfferID()+", "+purchaseStatus.getSubscriberID()+") : continue purchase process ...");
+      if(log.isDebugEnabled()) log.debug("handleCommodityDeliveryResponse() : ("+purchaseStatus.getOfferID()+", "+purchaseStatus.getSubscriberID()+") : continue purchase process ...");
       proceedPurchase(response,purchaseStatus, response.getTenantID(), response.getSubscriberID());
      
     }
 
-    log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager.handleCommodityDeliveryResponse(...) DONE");
+    if(log.isDebugEnabled()) log.debug("handleCommodityDeliveryResponse() :  DONE");
 
   }
   
@@ -2638,7 +2635,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       this.newRequestCounter = JSONUtilities.decodeInteger(jsonRoot, "newRequestCounter", true);
       
       this.correlator = JSONUtilities.decodeString(jsonRoot, "correlator", true);
-      this.eventID = JSONUtilities.decodeString(jsonRoot, "eventID", true);
+      this.eventID = JSONUtilities.decodeString(jsonRoot, "eventID");
       this.moduleID = JSONUtilities.decodeString(jsonRoot, "moduleID", true);
       this.featureID = JSONUtilities.decodeString(jsonRoot, "featureID", true);
       this.offerID = JSONUtilities.decodeString(jsonRoot, "offerID", true);
@@ -3202,7 +3199,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         }
       else
         {
-          for (SalesChannel salesChannel : evolutionEventContext.getSalesChannelService().getActiveSalesChannels(evolutionEventContext.now(), subscriberEvaluationRequest.getTenantID()))
+          for (SalesChannel salesChannel : evolutionEventContext.getSalesChannelService().getActiveSalesChannels(evolutionEventContext.eventDate(), subscriberEvaluationRequest.getTenantID()))
             {
               if (salesChannel.getGUIManagedObjectDisplay().equals(salesChannelDisplay))
                 {
@@ -3236,7 +3233,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       *
       *****************************************/
       String journeyID = subscriberEvaluationRequest.getJourneyState().getJourneyID();
-      Journey journey = evolutionEventContext.getJourneyService().getActiveJourney(journeyID, evolutionEventContext.now());
+      Journey journey = evolutionEventContext.getJourneyService().getActiveJourney(journeyID, evolutionEventContext.eventDate());
       String newModuleID = moduleID;
       if (journey != null && journey.getJSONRepresentation().get("areaAvailability") != null )
         {

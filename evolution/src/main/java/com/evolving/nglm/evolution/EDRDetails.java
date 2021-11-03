@@ -42,7 +42,7 @@ public class EDRDetails extends SubscriberStreamOutput implements SubscriberStre
   //
 
   private static Schema schema = null;
-  private static int currentSchemaVersion = 1;
+  private static int currentSchemaVersion = 2;
   static
     {
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
@@ -50,9 +50,7 @@ public class EDRDetails extends SubscriberStreamOutput implements SubscriberStre
       schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(), currentSchemaVersion));
       for (Field field : subscriberStreamOutputSchema().fields()) schemaBuilder.field(field.name(), field.schema());
       schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
-      schemaBuilder.field("eventID", Schema.STRING_SCHEMA);
       schemaBuilder.field("eventName", Schema.STRING_SCHEMA);
-      schemaBuilder.field("eventDate", Timestamp.builder().schema());
       schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
       schemaBuilder.field("parameterMap", ParameterMap.schema());
       schema = schemaBuilder.build();
@@ -79,9 +77,7 @@ public class EDRDetails extends SubscriberStreamOutput implements SubscriberStre
     *****************************************/
 
     private String subscriberID;
-    private String eventID;
     private String eventName;
-    private Date eventDate;
     private int tenantID;
     private ParameterMap parameterMap;
     
@@ -89,18 +85,9 @@ public class EDRDetails extends SubscriberStreamOutput implements SubscriberStre
     {
       return subscriberID;
     }
-    @Override
-    public String getEventID()
-    {
-      return eventID;
-    }
     public String getEventName()
     {
       return eventName;
-    }
-    public Date getEventDate()
-    {
-      return eventDate;
     }
     public ParameterMap getParameterMap()
     {
@@ -114,12 +101,10 @@ public class EDRDetails extends SubscriberStreamOutput implements SubscriberStre
     *
     *****************************************/
 
-    public EDRDetails(EvolutionEventContext context, String subscriberID, String eventID, String eventName, Date eventDate, ParameterMap parameterMap, int tenantID)
+    public EDRDetails(EvolutionEventContext context, EvolutionEngineEvent event, ParameterMap parameterMap, int tenantID)
     {
-      this.subscriberID = subscriberID;
-      this.eventID = eventID;
-      this.eventName = eventName;
-      this.eventDate = eventDate;
+      this.subscriberID = context.getSubscriberState().getSubscriberID();
+      this.eventName = event.getEventName();
       this.parameterMap = parameterMap;
       this.tenantID = tenantID;
     }
@@ -130,34 +115,15 @@ public class EDRDetails extends SubscriberStreamOutput implements SubscriberStre
     *
     *****************************************/
 
-    private EDRDetails(SchemaAndValue schemaAndValue, String subscriberID, String eventID, String eventName, Date eventDate, ParameterMap parameterMap, int tenantID)
+    private EDRDetails(SchemaAndValue schemaAndValue, String subscriberID, String eventName, ParameterMap parameterMap, int tenantID)
     {
       super(schemaAndValue);
       this.subscriberID = subscriberID;
-      this.eventID = eventID;
       this.eventName = eventName;
-      this.eventDate = eventDate;
       this.parameterMap = parameterMap;
       this.tenantID = tenantID;
     }
-    
-    /*****************************************
-    *
-    *  constructor -- copy
-    *
-    *****************************************/
 
-    public EDRDetails(EDRDetails edrDetails)
-    {
-      super(edrDetails);
-      this.subscriberID = edrDetails.getSubscriberID();
-      this.eventID = edrDetails.getEventID();
-      this.eventName = edrDetails.getEventName();
-      this.eventDate = edrDetails.getEventDate();
-      this.parameterMap = edrDetails.getParameterMap();
-      this.tenantID = edrDetails.getTenantID();
-    }
-    
     /*****************************************
     *
     *  pack
@@ -170,9 +136,7 @@ public class EDRDetails extends SubscriberStreamOutput implements SubscriberStre
       Struct struct = new Struct(schema);
       packSubscriberStreamOutput(struct, edrDetails);
       struct.put("subscriberID", edrDetails.getSubscriberID());
-      struct.put("eventID", edrDetails.getEventID());
       struct.put("eventName", edrDetails.getEventName());
-      struct.put("eventDate", edrDetails.getEventDate());
       struct.put("parameterMap", ParameterMap.pack(edrDetails.getParameterMap()));
       struct.put("tenantID", (short) edrDetails.getTenantID());
       return struct;
@@ -200,9 +164,7 @@ public class EDRDetails extends SubscriberStreamOutput implements SubscriberStre
 
       Struct valueStruct = (Struct) value;
       String subscriberID = valueStruct.getString("subscriberID");
-      String eventID = valueStruct.getString("eventID");
       String eventName = valueStruct.getString("eventName");
-      Date eventDate = (Date) valueStruct.get("eventDate");
       ParameterMap parameterMap = ParameterMap.unpack(new SchemaAndValue(schema.field("parameterMap").schema(), valueStruct.get("parameterMap")));
       int tenantID = valueStruct.getInt16("tenantID");
       
@@ -210,7 +172,7 @@ public class EDRDetails extends SubscriberStreamOutput implements SubscriberStre
       //  return
       //
 
-      return new EDRDetails(schemaAndValue, subscriberID, eventID, eventName, eventDate, parameterMap, tenantID);
+      return new EDRDetails(schemaAndValue, subscriberID, eventName, parameterMap, tenantID);
     }
     
     @Override public Object subscriberStreamEventPack(Object value) { return pack(value); }

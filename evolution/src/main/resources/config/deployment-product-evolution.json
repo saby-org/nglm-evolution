@@ -1279,23 +1279,19 @@
     ],
     
   "journeyMetrics" : {},
-    
   "subscriberProfileDatacubeMetrics" : [],
-    
   "enableProfileSegmentChange" : true,
   "enableEvaluateTargetRandomness" : false,
   "enableContactPolicyProcessing" : true,
-  
   "subscriberGroupLoaderAlternateID" : null,
   "subscriberGroupLoaderAutoProvision" : false,
   "subscriberTraceControlAlternateID" : null,
   "subscriberTraceControlAutoProvision" : false,
   "autoProvisionEvents" : [],
   "externalAPITopics" : [],
-  
   "generateSimpleProfileDimensions" : true,
   "recurrentCampaignCreationDaysRange" : 3,
-
-  "addSubscribersToUcgByCounting" : true
+  "addSubscribersToUcgByCounting" : true,
+  "eventMaxDelayMinutes" : 360
   
 }

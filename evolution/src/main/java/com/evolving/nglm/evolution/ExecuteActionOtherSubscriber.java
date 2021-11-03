@@ -144,11 +144,6 @@ public class ExecuteActionOtherSubscriber extends SubscriberStreamOutput impleme
   {
     this.subscriberID = subscriberID;
   }
-  
-  public Date getEventDate()
-  {
-    return SystemTime.getCurrentTime();
-  }
 
   /*****************************************
    *

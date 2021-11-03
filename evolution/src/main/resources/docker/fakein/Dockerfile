@@ -1,12 +1,19 @@
 FROM confluentinc/cp-kafka:${confluent.version}
 
+USER root
+
+RUN yum install -y perl
+
 #
 #  permissions
 #
 
 # confluent 5.0.x: 
+
 RUN chmod 0777 /var/log/kafka /var/log/confluent
 RUN chmod 0777 /var/lib/kafka /var/lib/zookeeper
+# confluent 6.2.0
+RUN chmod 0777 /home/appuser
 
 #
 #  core

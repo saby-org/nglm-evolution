@@ -493,14 +493,13 @@ public class DeploymentCommon
   private static int journeyReportsArrearCount;
   private static int subscriberprofileReportsArrearCount;
   private static int journeysReportActiveNHoursAgo;
-  
   private static int guiConfigurationSoftRetentionDays;// "soft" this is the number of days after which we stopped loading in memory deleted GUIManagedObjects
   private static int guiConfigurationRetentionDays;// this is the number of days after which we delete record from topic deleted GUIManagedObjects
   private static long guiConfigurationCleanerThreadPeriodMs;
   private static int guiConfigurationInitialConsumerMaxPollRecords;
   private static int guiConfigurationInitialConsumerMaxFetchBytes;
-
   private static boolean addSubscribersToUcgByCounting;
+  private static int eventMaxDelayMs;
 
 
   
@@ -822,7 +821,8 @@ public class DeploymentCommon
   public static int getNodesTransitionsHistorySize() { return nodesTransitionsHistorySize; }
   public static int getFirstDayOfTheWeek() { return firstDayOfTheWeek; }
   public static boolean getAddSubscribersToUcgByCounting() { return addSubscribersToUcgByCounting; }
-  
+  public static int getEventMaxDelayMs() { return eventMaxDelayMs; }
+
   
   /****************************************
   *
@@ -1348,8 +1348,7 @@ public class DeploymentCommon
     subscriberprofileReportsArrearCount = JSONUtilities.decodeInteger(reportManager, "subscriberprofileReportsArrearCount", 2);
     reportManagerContentDateFormat = JSONUtilities.decodeString(reportManager, "reportManagerContentDateFormat", "yyyy-MM-dd'T'HH:mm:ssZZZZ");
     journeysReportActiveNHoursAgo = JSONUtilities.decodeInteger(reportManager, "journeysReportActiveNHoursAgo", 24);
-    
-    
+
     if (reportManagerFieldSurrounder.length() > 1) {
       throw new ServerRuntimeException("reportManagerFieldSurrounder is not a single character, this would lead to errors in the reports, truncating, please fix this : " + reportManagerFieldSurrounder);
     }
@@ -1486,7 +1485,8 @@ public class DeploymentCommon
       }
 
     addSubscribersToUcgByCounting = jsonReader.decodeBoolean("addSubscribersToUcgByCounting");
-    
+    eventMaxDelayMs = jsonReader.decodeInteger("eventMaxDelayMinutes") * 60 * 1000;
+
   }
 
   
