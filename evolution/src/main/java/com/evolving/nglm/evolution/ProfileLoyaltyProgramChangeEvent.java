@@ -6,14 +6,11 @@
 
 package com.evolving.nglm.evolution;
 
-import java.util.Date;
-
 import org.apache.kafka.connect.data.*;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SubscriberStreamOutput;
-import com.evolving.nglm.evolution.EvolutionEngineEvent;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 
 public class ProfileLoyaltyProgramChangeEvent extends SubscriberStreamOutput implements EvolutionEngineEvent
@@ -33,10 +30,9 @@ public class ProfileLoyaltyProgramChangeEvent extends SubscriberStreamOutput imp
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("profileLoyaltyProgramChangeEvent");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),8));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),9));
     for (Field field : subscriberStreamOutputSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
-    schemaBuilder.field("eventDate", Timestamp.SCHEMA);
     schemaBuilder.field("loyaltyProgramID", Schema.STRING_SCHEMA);
     schemaBuilder.field("loyaltyProgramType", Schema.STRING_SCHEMA);
     schemaBuilder.field("infos", ParameterMap.schema());
@@ -74,7 +70,6 @@ public class ProfileLoyaltyProgramChangeEvent extends SubscriberStreamOutput imp
   *
   ****************************************/
 
-  private Date eventDate;
   private String subscriberID;
   private String loyaltyProgramID;
   private LoyaltyProgramType loyaltyProgramType;
@@ -88,7 +83,6 @@ public class ProfileLoyaltyProgramChangeEvent extends SubscriberStreamOutput imp
 
   public String getEventName() { return "tier update in loyalty program"; }
   public String getSubscriberID() { return subscriberID; }
-  public Date getEventDate() { return eventDate; }
   public String getLoyaltyProgramID() { return loyaltyProgramID; }
   public LoyaltyProgramType getLoyaltyProgramType() { return loyaltyProgramType; }
   public ParameterMap getInfos() { return infos; }
@@ -100,10 +94,9 @@ public class ProfileLoyaltyProgramChangeEvent extends SubscriberStreamOutput imp
   *
   *****************************************/
 
-  public ProfileLoyaltyProgramChangeEvent(String subscriberID, Date eventDate, String loyaltyProgramID, LoyaltyProgramType loyaltyProgramType, ParameterMap infos)
+  public ProfileLoyaltyProgramChangeEvent(String subscriberID, String loyaltyProgramID, LoyaltyProgramType loyaltyProgramType, ParameterMap infos)
   {
     this.subscriberID = subscriberID;
-    this.eventDate = eventDate;
     this.loyaltyProgramID = loyaltyProgramID;
     this.loyaltyProgramType = loyaltyProgramType;
     this.infos = infos;
@@ -115,11 +108,10 @@ public class ProfileLoyaltyProgramChangeEvent extends SubscriberStreamOutput imp
   *
   *****************************************/
 
-  public ProfileLoyaltyProgramChangeEvent(SchemaAndValue schemaAndValue, String subscriberID, Date eventDate, String loyaltyProgramID, LoyaltyProgramType loyaltyProgramType, ParameterMap infos)
+  public ProfileLoyaltyProgramChangeEvent(SchemaAndValue schemaAndValue, String subscriberID, String loyaltyProgramID, LoyaltyProgramType loyaltyProgramType, ParameterMap infos)
   {
     super(schemaAndValue);
     this.subscriberID = subscriberID;
-    this.eventDate = eventDate;
     this.loyaltyProgramID = loyaltyProgramID;
     this.loyaltyProgramType = loyaltyProgramType;
     this.infos = infos;
@@ -137,7 +129,6 @@ public class ProfileLoyaltyProgramChangeEvent extends SubscriberStreamOutput imp
     Struct struct = new Struct(schema);
     packSubscriberStreamOutput(struct,profileLoyaltyProgramChangeEvent);
     struct.put("subscriberID", profileLoyaltyProgramChangeEvent.getSubscriberID());
-    struct.put("eventDate", profileLoyaltyProgramChangeEvent.getEventDate());
     struct.put("loyaltyProgramID", profileLoyaltyProgramChangeEvent.getLoyaltyProgramID());
     struct.put("loyaltyProgramType", profileLoyaltyProgramChangeEvent.getLoyaltyProgramType().name());
     struct.put("infos", ParameterMap.pack(profileLoyaltyProgramChangeEvent.getInfos()));
@@ -172,7 +163,6 @@ public class ProfileLoyaltyProgramChangeEvent extends SubscriberStreamOutput imp
 
     Struct valueStruct = (Struct) value;
     String subscriberID = valueStruct.getString("subscriberID");
-    Date eventDate = (Date) valueStruct.get("eventDate");
     String loyaltyProgramID = valueStruct.getString("loyaltyProgramID");
     LoyaltyProgramType loyaltyProgramType = LoyaltyProgramType.valueOf(valueStruct.getString("loyaltyProgramType"));
     ParameterMap infos = ParameterMap.unpack(new SchemaAndValue(schema.field("infos").schema(), valueStruct.get("infos")));
@@ -181,6 +171,6 @@ public class ProfileLoyaltyProgramChangeEvent extends SubscriberStreamOutput imp
     // return
     //
 
-    return new ProfileLoyaltyProgramChangeEvent(schemaAndValue, subscriberID, eventDate, loyaltyProgramID, loyaltyProgramType, infos);
+    return new ProfileLoyaltyProgramChangeEvent(schemaAndValue, subscriberID, loyaltyProgramID, loyaltyProgramType, infos);
   }
 }

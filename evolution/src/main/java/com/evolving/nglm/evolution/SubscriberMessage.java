@@ -373,6 +373,6 @@ public abstract class SubscriberMessage
 
   protected SubscriberMessageTemplate resolveTemplate(EvolutionEventContext evolutionEventContext)
   {
-    return evolutionEventContext.getSubscriberMessageTemplateService().getActiveSubscriberMessageTemplate(getSubscriberMessageTemplateID(), evolutionEventContext.now());
+    return evolutionEventContext.getSubscriberMessageTemplateService().getActiveSubscriberMessageTemplate(getSubscriberMessageTemplateID(), evolutionEventContext.eventDate());
   }
 }

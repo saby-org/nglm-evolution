@@ -154,6 +154,7 @@ public class GUIManagerGeneral extends GUIManager
     super.targetService = targetService;
     super.tokenTypeService = tokenTypeService;
     super.ucgRuleService = ucgRuleService;
+    super.predictionSettingsService = guiManagerContext.getPredictionSettingsService();
     super.uploadedFileService = uploadedFileService;
     super.voucherService = voucherService;
     super.voucherTypeService = voucherTypeService;
@@ -3404,6 +3405,218 @@ public class GUIManagerGeneral extends GUIManager
     return JSONUtilities.encodeObject(response);
   }
 
+  /*****************************************
+  *
+  *  processGetPredictionSettingsList
+  *
+  *****************************************/
+
+  JSONObject processGetPredictionSettingsList(String userID, JSONObject jsonRoot, boolean fullDetails, boolean includeArchived, int tenantID)
+  {
+    //
+    // retrieve and convert ucg rules
+    //
+    Date now = SystemTime.getCurrentTime();
+    List<JSONObject> orders = new ArrayList<JSONObject>();
+    Collection <GUIManagedObject> orderObjects = new ArrayList<GUIManagedObject>();
+    
+    if (jsonRoot.containsKey("ids")) {
+      JSONArray orderIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids");
+      for (int i = 0; i < orderIDs.size(); i++) {
+        String orderID = orderIDs.get(i).toString();
+        GUIManagedObject predictionSettings = predictionSettingsService.getStoredPredictionSettings(orderID, includeArchived);
+        if (predictionSettings == null)
+          {
+            HashMap<String, Object> response = new HashMap<String, Object>();
+            String responseCode;
+            responseCode = "predictionSettingsNotFound";
+            response.put("responseCode", responseCode);
+            return JSONUtilities.encodeObject(response);
+          }
+        orderObjects.add(predictionSettings);
+      }
+    }
+    else {
+      orderObjects = predictionSettingsService.getStoredPredictionSettings(includeArchived, tenantID);
+    }
+    
+    for (GUIManagedObject predictionSettings : orderObjects) {
+      orders.add(predictionSettingsService.generateResponseJSON(predictionSettings, fullDetails, now));
+    }
+    
+    //
+    // response
+    //
+    HashMap<String,Object> response = new HashMap<String,Object>();;
+    response.put("responseCode", "ok");
+    response.put("predictionSettings", JSONUtilities.encodeArray(orders));
+    return JSONUtilities.encodeObject(response);
+    
+  }
+  
+  /*****************************************
+  *
+  *  processGetPredictionSettings
+  *
+  *****************************************/
+
+  JSONObject processGetPredictionSettings(String userID, JSONObject jsonRoot, boolean includeArchived, int tenantID)
+  {
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    String predictionSettingsID = JSONUtilities.decodeString(jsonRoot, "id", true);
+
+    //
+    // retrieve and decorate ucg rule
+    //
+    GUIManagedObject predictionSettings = predictionSettingsService.getStoredPredictionSettings(predictionSettingsID, includeArchived);
+    JSONObject orderJson = predictionSettingsService.generateResponseJSON(predictionSettings, true, SystemTime.getCurrentTime());
+
+    //
+    // response
+    //
+    response.put("responseCode", (predictionSettings != null) ? "ok" : "predictionSettingsNotFound");
+    if (predictionSettings != null) response.put("predictionSettings", orderJson);
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /*****************************************
+  *
+  *  processPutPredictionSettings
+  *
+  *****************************************/
+
+  JSONObject processPutPredictionSettings(String userID, JSONObject jsonRoot, int tenantID)
+  {
+
+    Date now = SystemTime.getCurrentTime();
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    boolean dryRun = JSONUtilities.decodeBoolean(jsonRoot, "dryRun", Boolean.FALSE); // false by default
+    String predictionSettingsID = JSONUtilities.decodeString(jsonRoot, "id", false);
+    
+    if (predictionSettingsID == null) {
+      predictionSettingsID = predictionSettingsService.generatePredictionSettingsID();
+      jsonRoot.put("id", predictionSettingsID);
+    }
+    
+    //
+    // existing ?
+    //
+    GUIManagedObject existingPredictionSettings = predictionSettingsService.getStoredPredictionSettings(predictionSettingsID);
+
+    //
+    // read-only
+    //
+    if (existingPredictionSettings != null && existingPredictionSettings.getReadOnly()) {
+      response.put("id", existingPredictionSettings.getGUIManagedObjectID());
+      response.put("accepted", existingPredictionSettings.getAccepted());
+      response.put("valid", existingPredictionSettings.getAccepted());
+      response.put("processing", predictionSettingsService.isActivePredictionSettings(existingPredictionSettings, now));
+      response.put("responseCode", "failedReadOnly");
+      return JSONUtilities.encodeObject(response);
+    }
+
+    //
+    // process
+    //
+    long epoch = epochServer.getKey();
+    try
+      {
+        PredictionSettings predictionSettings = new PredictionSettings(jsonRoot, epoch, existingPredictionSettings, tenantID);
+        
+        //
+        // store
+        //
+        if (!dryRun) {
+          predictionSettingsService.putPredictionSettings(predictionSettings, (existingPredictionSettings == null), userID);
+        }
+
+        //
+        // response
+        //
+        response.put("id", predictionSettings.getGUIManagedObjectID());
+        response.put("accepted", predictionSettings.getAccepted());
+        response.put("valid", predictionSettings.getAccepted());
+        response.put("processing", predictionSettingsService.isActivePredictionSettings(predictionSettings, now));
+        response.put("responseCode", "ok");
+        return JSONUtilities.encodeObject(response);
+      }
+    catch (JSONUtilitiesException|GUIManagerException e)
+      {
+        //
+        //  log
+        //
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  response
+        //
+
+        response.put("responseCode", "predictionSettingsNotValid");
+        response.put("responseMessage", e.getMessage());
+        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+        return JSONUtilities.encodeObject(response);
+      }
+  }
+  
+  /*****************************************
+  *
+  *  processRemovePredictionSettings
+  *
+  *****************************************/
+
+  JSONObject processRemovePredictionSettings(String userID, JSONObject jsonRoot, int tenantID)
+  {
+    HashMap<String,Object> response = new HashMap<String,Object>();
+    Date now = SystemTime.getCurrentTime();
+    boolean force = JSONUtilities.decodeBoolean(jsonRoot, "force", Boolean.FALSE);
+    List<String> predictionSettingsIDs = new LinkedList<String>();
+    
+    //
+    // remove single item
+    //
+    if (jsonRoot.containsKey("id")) {
+      String predictionSettingsID = JSONUtilities.decodeString(jsonRoot, "id", false);
+      predictionSettingsIDs.add(predictionSettingsID);
+    }
+    
+    //
+    // multiple deletion
+    //
+    if (jsonRoot.containsKey("ids")) {
+      predictionSettingsIDs = JSONUtilities.decodeJSONArray(jsonRoot, "ids", false);
+    }
+    
+    //
+    // check ids
+    //
+    for(String predictionSettingsID: predictionSettingsIDs){
+      GUIManagedObject predictionSettings = predictionSettingsService.getStoredPredictionSettings(predictionSettingsID);
+      if (predictionSettings == null){
+        response.put("responseCode", "predictionSettingsNotFound");
+        return JSONUtilities.encodeObject(response);
+      }
+      else if (predictionSettings != null && !force && predictionSettings.getReadOnly()) {
+        response.put("responseCode", "failedReadOnly");
+        return JSONUtilities.encodeObject(response);
+      }
+    }
+    
+    //
+    // remove
+    //
+    for(String predictionSettingsID: predictionSettingsIDs){
+      predictionSettingsService.removePredictionSettings(predictionSettingsID, userID, tenantID);
+    }
+    
+    //
+    // response
+    //
+    response.put("responseCode", "ok");
+    return JSONUtilities.encodeObject(response);
+  }
+  
   /*****************************************
   *
   *  processGetDeliverable

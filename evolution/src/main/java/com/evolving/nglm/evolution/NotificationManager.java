@@ -831,14 +831,6 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
 
       /*****************************************
        *
-       * now
-       *
-       *****************************************/
-
-      Date now = SystemTime.getCurrentTime();
-
-      /*****************************************
-       *
        * template parameters
        *
        *****************************************/
@@ -855,7 +847,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       
       String origin = subscriberEvaluationRequest.getJourneyNode().getNodeName() != null ? subscriberEvaluationRequest.getJourneyNode().getNodeName() : "unknown";
       String journeyID = subscriberEvaluationRequest.getJourneyState().getJourneyID();
-      Journey journey = evolutionEventContext.getJourneyService().getActiveJourney(journeyID, evolutionEventContext.now());
+      Journey journey = evolutionEventContext.getJourneyService().getActiveJourney(journeyID, evolutionEventContext.eventDate());
       String newModuleID = moduleID;
       
       if (journey != null && journey.getGUIManagedObjectType() == GUIManagedObjectType.Workflow && journey.getJSONRepresentation().get("areaAvailability") != null )
@@ -891,7 +883,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       String deliveryRequestSource = extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, journeyID);
       String language = subscriberEvaluationRequest.getLanguage();
       SubscriberMessageTemplateService subscriberMessageTemplateService = evolutionEventContext.getSubscriberMessageTemplateService();
-      DialogTemplate baseTemplate = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateParameters.getSubscriberMessageTemplateID(), now);
+      DialogTemplate baseTemplate = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateParameters.getSubscriberMessageTemplateID(), evolutionEventContext.eventDate());
       DialogTemplate template = (baseTemplate != null) ? ((DialogTemplate) baseTemplate.getReadOnlyCopy(evolutionEventContext)) : null;
 
       String destAddress = null;
@@ -914,7 +906,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
           //
 
           CriterionField criterionField = Deployment.getProfileCriterionFields().get(communicationChannel.getProfileAddressField());
-          destAddress = (String) criterionField.retrieveNormalized(subscriberEvaluationRequest);
+          destAddress = (String) criterionField.retrieve(subscriberEvaluationRequest);
 
           //
           // get dialogMessageTags
@@ -1007,8 +999,19 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
       NotificationTemplateParameters templateParameters = (NotificationTemplateParameters) CriterionFieldRetriever.getJourneyNodeParameter(new SubscriberEvaluationRequest(null, null, null, null, journeyNode, null, null, SystemTime.getCurrentTime(), tenantID), "node.parameter.dialog_template");
       String dialogueTemplateID = (String) templateParameters.getSubscriberMessageTemplateID();
       String fromAddressID = (String) journeyNode.getNodeParameters().get("node.parameter.fromaddress");
-      if (dialogueTemplateID != null) result.put("dialogtemplate", dialogueTemplateID);
       if (fromAddressID != null) result.put("sourceaddress", fromAddressID);
+      if (dialogueTemplateID != null) {
+    	  result.put("dialogtemplate", dialogueTemplateID);
+    	  SimpleParameterMap paramMap = templateParameters.getParameterTags();
+    	  String customCriteria = "";
+    	  if (paramMap != null) {
+    	    for (String paramKey : paramMap.keySet()) {
+    	      Object param = paramMap.get(paramKey);
+    	      customCriteria += ",toto";
+    	    }
+    	    if (customCriteria.length() > 0) result.put("customcriteria", customCriteria.substring(1)); // remove leading ','
+    	  }
+      }
       return result;
     }
   }

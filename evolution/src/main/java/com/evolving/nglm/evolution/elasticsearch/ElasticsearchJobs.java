@@ -12,15 +12,15 @@ import com.evolving.nglm.evolution.datacubes.AsyncScheduledJob;
 
 public class ElasticsearchJobs
 {
-  public static ScheduledJob createElasticsearchJob(ScheduledJobConfiguration config, ElasticsearchManager elasticsearchManager) throws ServerRuntimeException {
+  public static ScheduledJob createElasticsearchJob(ScheduledJobConfiguration config) throws ServerRuntimeException {
     switch(config.getType())
     {
       case SubscriberProfileSnapshot:
-        return Snapshot(config, elasticsearchManager);
+        return Snapshot(config);
       case JourneystatisticCleanUp:
-        return JourneystatisticCleanUp(config, elasticsearchManager);
+        return JourneystatisticCleanUp(config);
       case ExpiredVoucherCleanUp:
-        return VoucherCleanUp(config, elasticsearchManager);
+        return VoucherCleanUp(config);
       default:
         throw new ServerRuntimeException("Trying to create an Elasticsearch scheduled job of unknown type.");
     }
@@ -31,8 +31,8 @@ public class ElasticsearchJobs
    * Snapshot 
    *
    *****************************************/
-  private static ScheduledJob Snapshot(ScheduledJobConfiguration config, ElasticsearchManager elasticsearchManager) {
-    SnapshotTask snapshotTask = new SnapshotTask("Snapshot:subscriberprofile", "subscriberprofile", "subscriberprofile_snapshot", elasticsearchManager.getElasticsearchClientAPI(), config.getTimeZone());
+  private static ScheduledJob Snapshot(ScheduledJobConfiguration config) {
+    SnapshotTask snapshotTask = new SnapshotTask("Snapshot:subscriberprofile", "subscriberprofile", "subscriberprofile_snapshot", ElasticsearchManager.getElasticsearchClientAPI(), config.getTimeZone());
 
     return new AsyncScheduledJob(config)
     {
@@ -52,8 +52,8 @@ public class ElasticsearchJobs
    * Snapshot 
    *
    *****************************************/
-  private static ScheduledJob JourneystatisticCleanUp(ScheduledJobConfiguration config, ElasticsearchManager elasticsearchManager) {
-    JourneyCleanUpTask journeyCleanUpTask = new JourneyCleanUpTask(elasticsearchManager.getJourneyService(), elasticsearchManager.getElasticsearchClientAPI(), config.getTenantID());
+  private static ScheduledJob JourneystatisticCleanUp(ScheduledJobConfiguration config) {
+    JourneyCleanUpTask journeyCleanUpTask = new JourneyCleanUpTask(ElasticsearchManager.getJourneyService(), ElasticsearchManager.getElasticsearchClientAPI(), config.getTenantID());
 
     return new AsyncScheduledJob(config)
     {
@@ -70,8 +70,8 @@ public class ElasticsearchJobs
    * Snapshot 
    *
    *****************************************/
-  private static ScheduledJob VoucherCleanUp(ScheduledJobConfiguration config, ElasticsearchManager elasticsearchManager) {
-    VoucherService voucherService = elasticsearchManager.getVoucherService();
+  private static ScheduledJob VoucherCleanUp(ScheduledJobConfiguration config) {
+    VoucherService voucherService = ElasticsearchManager.getVoucherService();
 
     return new AsyncScheduledJob(config)
     {

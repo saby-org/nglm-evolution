@@ -90,7 +90,10 @@ public class VoucherPersonalESService{
 
   // bulk delete all expired vouchers
   public boolean deleteExpiredVoucher(Date expiryDate, int tenantID){
-    if(elasticsearch==null) log.error("VoucherPersonalESService.deleteExpiredVoucher : called with no elasticsearch client init");
+    if(elasticsearch==null) {
+      log.error("VoucherPersonalESService.deleteExpiredVoucher : called with no elasticsearch client init");
+      return false;
+    }
     try{
       for(int i=0;i<maxTries;i++){
         try{

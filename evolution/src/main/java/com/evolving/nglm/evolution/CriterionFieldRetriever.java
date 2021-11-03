@@ -16,6 +16,7 @@ import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
 import com.evolving.nglm.evolution.LoyaltyProgramMission.MissionStep;
 import com.evolving.nglm.evolution.LoyaltyProgramMissionHistory.StepHistory;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
+import com.evolving.nglm.evolution.SubscriberPredictions.Prediction;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectException;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectInstance;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectUtils;
@@ -44,6 +45,7 @@ import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.evolution.Badge.BadgeType;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
+import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.LoyaltyProgramChallengeHistory.LevelHistory;
@@ -465,6 +467,73 @@ public abstract class CriterionFieldRetriever
     return result;
   }
 
+  /**
+   * getPredictionCurrentRank
+   * 
+   * @param evaluationRequest
+   * @param fieldName           UNUSED - filled with null in deployment-product-evolution settings (see: evolutionProfileCriterionFields).
+   * @param subcriteriaVal      Here we are expecting a singleton list with predictionID value (String)
+   * @return
+   */
+  public static Object getPredictionCurrentRank(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
+  {
+    SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+    String predictionID = (String) subcriteriaVal.get(0);
+    
+    Prediction prediction = subscriberProfile.getPredictions().getCurrent().get(predictionID);
+    if(prediction != null) {
+      return prediction.getNcileInterval(100);
+    }
+    else {
+      return null;
+    }
+  }
+
+  /**
+   * getPredictionCurrentScore
+   * 
+   * @param evaluationRequest
+   * @param fieldName           UNUSED - filled with null in deployment-product-evolution settings (see: evolutionProfileCriterionFields).
+   * @param subcriteriaVal      Here we are expecting a singleton list with predictionID value (String)
+   * @return
+   */
+  public static Object getPredictionCurrentScore(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
+  {
+    SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+    String predictionID = (String) subcriteriaVal.get(0);
+    
+    Prediction prediction = subscriberProfile.getPredictions().getCurrent().get(predictionID);
+    if(prediction != null) {
+      return prediction.score;
+    }
+    else {
+      return null;
+    }
+  }
+
+  /**
+   * getPredictionRankEvolution
+   * 
+   * @param evaluationRequest
+   * @param fieldName           UNUSED - filled with null in deployment-product-evolution settings (see: evolutionProfileCriterionFields).
+   * @param subcriteriaVal      Here we are expecting a singleton list with predictionID value (String)
+   * @return
+   */
+  public static Object getPredictionRankEvolution(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
+  {
+    SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+    String predictionID = (String) subcriteriaVal.get(0);
+    
+    Prediction current = subscriberProfile.getPredictions().getCurrent().get(predictionID);
+    Prediction previous = subscriberProfile.getPredictions().getPrevious().get(predictionID);
+    if(previous != null && current != null) {
+      return current.getNcileInterval(100) - previous.getNcileInterval(100);
+    }
+    else {
+      return null;
+    }
+  }
+  
   /*****************************************
   *
   *  simple
@@ -928,6 +997,35 @@ public abstract class CriterionFieldRetriever
      res.add(voucher.getVoucherCode());
    }
    return res;
+  }
+
+  //
+  //  getCustomCriterionField (dynamic)
+  //
+
+  public static Object getCustomCriterionField(SubscriberEvaluationRequest evaluationRequest, String fieldName) throws CriterionException
+  {
+    Object result = null;
+    
+    Pattern criterionIDPattern = Pattern.compile("^customCriteria\\.(.*)$");
+    Matcher criterionIDMatcher = criterionIDPattern.matcher(fieldName);
+    if (! criterionIDMatcher.find()) throw new CriterionException("invalid custom criterion field " + fieldName);
+    String criterionID = criterionIDMatcher.group(1);
+
+    // retrieve customCriteria
+    EvolutionEventContext context = evaluationRequest.geEvolutionEventContext();
+    if (context != null) {
+      CustomCriteriaService customCriteriaService = context.getCustomCriteriaService();
+      if (customCriteriaService != null) {
+        CustomCriteria customCriteria = customCriteriaService.getActiveCustomCriteria(criterionID, evaluationRequest.getEvaluationDate());
+        if (customCriteria == null) {
+          log.info("Refering to customCriteria " + criterionID + " which does not exist");
+        } else {
+          result = customCriteria.getExpression().evaluate(evaluationRequest, null);
+        }
+      }
+    }
+    return result;
   }
 
   //

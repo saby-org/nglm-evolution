@@ -80,10 +80,9 @@ public class DNBOUtils
       }
     String subscriberID = evolutionEventContext.getSubscriberState().getSubscriberID();
     int tenantID = evolutionEventContext.getSubscriberState().getSubscriberProfile().getTenantID();
-    Date date = evolutionEventContext.now();
     String featureID = subscriberEvaluationRequest.getJourneyState().getJourneyID();
     featureID = ActionManager.extractWorkflowFeatureID(evolutionEventContext, subscriberEvaluationRequest, featureID);
-    return new TokenChange(evolutionEventContext.getSubscriberState().getSubscriberProfile(), date, evolutionEventContext.getEventID(), tokenCode, action, str, origin, Module.Journey_Manager.getExternalRepresentation(), featureID, tenantID);
+    return new TokenChange(evolutionEventContext.getSubscriberState().getSubscriberProfile(), tokenCode, action, str, origin, Module.Journey_Manager.getExternalRepresentation(), featureID, tenantID);
   }
   
   /*****************************************
@@ -129,7 +128,7 @@ public class DNBOUtils
       *  scoring strategy
       *
       *****************************************/
-      PresentationStrategy presentationStrategy = evolutionEventContext.getPresentationStrategyService().getActivePresentationStrategy(strategyID, evolutionEventContext.now());
+      PresentationStrategy presentationStrategy = evolutionEventContext.getPresentationStrategyService().getActivePresentationStrategy(strategyID, evolutionEventContext.eventDate());
       if (presentationStrategy == null)
         {
           String str = RESTAPIGenericReturnCodes.INVALID_STRATEGY.getGenericResponseCode()+"";//"invalid presentation strategy " + strategyID;
@@ -144,7 +143,7 @@ public class DNBOUtils
       *  token type
       *
       *****************************************/
-      TokenType tokenType = evolutionEventContext.getTokenTypeService().getActiveTokenType(tokenTypeID, evolutionEventContext.now());
+      TokenType tokenType = evolutionEventContext.getTokenTypeService().getActiveTokenType(tokenTypeID, evolutionEventContext.eventDate());
       if (tokenType == null)
         {
           String str =  RESTAPIGenericReturnCodes.INVALID_TOKEN_TYPE.getGenericResponseCode()+"";//"unknown token type " + tokenTypeID; 
@@ -161,7 +160,7 @@ public class DNBOUtils
       *****************************************/
       Supplier supplier = null;
       if (supplierID != null) {
-        supplier = evolutionEventContext.getSupplierService().getActiveSupplier(supplierID, evolutionEventContext.now());
+        supplier = evolutionEventContext.getSupplierService().getActiveSupplier(supplierID, evolutionEventContext.eventDate());
       }
       
       /*****************************************
@@ -181,7 +180,7 @@ public class DNBOUtils
       token.setPresentationStrategyID(presentationStrategy.getPresentationStrategyID());
       // TODO : which sales channel to use ?
       token.setPresentedOffersSalesChannel(presentationStrategy.getSalesChannelIDs().iterator().next());
-      token.setCreationDate(evolutionEventContext.now());
+      token.setCreationDate(evolutionEventContext.processingDate());
 
       /*****************************************
       *
@@ -250,7 +249,8 @@ public class DNBOUtils
       SupplierService supplierService = evolutionEventContext.getSupplierService();
       ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader = evolutionEventContext.getSubscriberGroupEpochReader();
 
-      Date now = evolutionEventContext.now();
+      Date processingDate = evolutionEventContext.processingDate();
+
       String subscriberID = evolutionEventContext.getSubscriberState().getSubscriberID();
 
       StringBuffer returnedLog = new StringBuffer();
@@ -264,7 +264,7 @@ public class DNBOUtils
       Collection<ProposedOfferDetails> presentedOffers;
       try
         {
-          presentedOffers = TokenUtils.getOffers(now, token, subscriberEvaluationRequest, subscriberProfile, strategy, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, scoringStrategyService, subscriberGroupEpochReader, segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, supplierService, returnedLog, subscriberID, supplier, subscriberEvaluationRequest.getTenantID());
+          presentedOffers = TokenUtils.getOffers(processingDate, token, subscriberEvaluationRequest, subscriberProfile, strategy, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, scoringStrategyService, subscriberGroupEpochReader, segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, supplierService, returnedLog, subscriberID, supplier, subscriberEvaluationRequest.getTenantID());
         }
       catch (GetOfferException e)
         {
@@ -292,7 +292,7 @@ public class DNBOUtils
         {
           String offerId = presentedOffer.getOfferId();
           presentedOfferIDs.add(offerId);
-          Offer offer = offerService.getActiveOffer(offerId, now);
+          Offer offer = offerService.getActiveOffer(offerId, evolutionEventContext.eventDate());
           if (offer == null)
             {
               String str = "invalid offer returned by scoring " + offerId;
@@ -311,9 +311,9 @@ public class DNBOUtils
       List<ProposedOfferDetails> proposedOfferDetails = presentedOffers.stream().collect(Collectors.toList());
       token.setPresentedOffers(proposedOfferDetails);
       // TODO token.setPresentedOffersSalesChannel(salesChannelID);
-      token.setBoundDate(now);
+      token.setBoundDate(evolutionEventContext.processingDate());
       // add a new presentation in the token
-      Presentation presentation = new Presentation(now, presentedOfferIDs);
+      Presentation presentation = new Presentation(evolutionEventContext.processingDate(), presentedOfferIDs);
       List<Presentation> currentPresentationHistory = token.getPresentationHistory();
       currentPresentationHistory.add(presentation);
       token.setPresentationHistory(currentPresentationHistory);
@@ -596,7 +596,7 @@ public class DNBOUtils
       ProposedOfferDetails acceptedOfferDetail = presentedOfferDetailsList.iterator().next();
       String offerID = acceptedOfferDetail.getOfferId();
       token.setAcceptedOfferID(offerID);
-      Offer offer = evolutionEventContext.getOfferService().getActiveOffer(offerID, evolutionEventContext.now());
+      Offer offer = evolutionEventContext.getOfferService().getActiveOffer(offerID, evolutionEventContext.eventDate());
       if (offer == null)
         {
           String str = "invalid offer returned by scoring " + offerID; 
@@ -608,7 +608,7 @@ public class DNBOUtils
       token.setTokenStatus(TokenStatus.Redeemed);
       token.setAutoBound(true);
       token.setAutoRedeemed(true);
-      token.setRedeemedDate(evolutionEventContext.now());
+      token.setRedeemedDate(evolutionEventContext.processingDate());
       
       /*****************************************
       *
@@ -621,6 +621,8 @@ public class DNBOUtils
       String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
 
       PurchaseFulfillmentRequest request = new PurchaseFulfillmentRequest(evolutionEventContext,  deliveryRequestSource, offerID, quantity, salesChannelID, "", "", subscriberEvaluationRequest.getTenantID());
+      token.setPurchaseDeliveryRequestID(request.getDeliveryRequestID());
+      token.setPurchaseStatus(request.getStatus()); // PENDING
       request.setModuleID(DeliveryRequest.Module.Journey_Manager.getExternalRepresentation());
       request.setFeatureID(deliveryRequestSource);
       result.add(request);
@@ -761,7 +763,7 @@ public class DNBOUtils
       
       List<Action> result = new ArrayList<>();
       token.setAcceptedOfferID(offerID);
-      Offer offer = evolutionEventContext.getOfferService().getActiveOffer(offerID, evolutionEventContext.now());
+      Offer offer = evolutionEventContext.getOfferService().getActiveOffer(offerID, evolutionEventContext.eventDate());
       if (offer == null)
         {
           String str = RESTAPIGenericReturnCodes.INVALID_TOKEN_CODE.getGenericResponseCode()+"";//"invalid offer returned by scoring " + offerID; 
@@ -779,7 +781,7 @@ public class DNBOUtils
       token.setTokenStatus(TokenStatus.Redeemed);
       token.setAutoBound(true);
       token.setAutoRedeemed(true);
-      token.setRedeemedDate(evolutionEventContext.now());
+      token.setRedeemedDate(evolutionEventContext.eventDate());
       
       /*****************************************
       *
@@ -792,6 +794,8 @@ public class DNBOUtils
       String deliveryRequestSource = subscriberEvaluationRequest.getJourneyState().getJourneyID();
 
       PurchaseFulfillmentRequest request = new PurchaseFulfillmentRequest(evolutionEventContext, deliveryRequestSource, offerID, quantity, salesChannelID, "", "", subscriberEvaluationRequest.getTenantID());
+      token.setPurchaseDeliveryRequestID(request.getDeliveryRequestID());
+      token.setPurchaseStatus(request.getStatus()); // PENDING
       request.setModuleID(DeliveryRequest.Module.Journey_Manager.getExternalRepresentation());
       request.setFeatureID(deliveryRequestSource);
       result.add(request);

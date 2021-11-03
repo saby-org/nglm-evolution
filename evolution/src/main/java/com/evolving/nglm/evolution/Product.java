@@ -33,7 +33,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-@GUIDependencyDef(objectType = "product", serviceClass = ProductService.class, dependencies = { "supplier" , "point" , "campaign" , "producttype", "workflow" })
+@GUIDependencyDef(objectType = "product", serviceClass = ProductService.class, dependencies = { "supplier" , "point" , "campaign" , "producttype", "workflow", "deliverable" })
 public class Product extends GUIManagedObject implements StockableItem
 {
   /*****************************************
@@ -416,22 +416,26 @@ public class Product extends GUIManagedObject implements StockableItem
     List<String> campaignIDs = new ArrayList<String>();
     List<String> productTypeIDs = new ArrayList<String>();
     List<String> wrkflowIDs = new ArrayList<String>();
+    List<String> deliverableIDs = new ArrayList<String>();
     
     supplierIDs.add(getSupplierID());
-    result.put("supplier", supplierIDs);
     String pointID=getDeliverableID().startsWith(CommodityDeliveryManager.POINT_PREFIX)?getDeliverableID().replace(CommodityDeliveryManager.POINT_PREFIX, ""):"";
     pointIDs.add(pointID);
     String campaignID=getDeliverableID().startsWith(CommodityDeliveryManager.JOURNEY_PREFIX)?getDeliverableID().replace(CommodityDeliveryManager.JOURNEY_PREFIX, ""):"";
     campaignIDs.add(campaignID);
-    for(ProductTypeInstance prdIn:getProductTypes()) {
-    	productTypeIDs.add(prdIn.getProductTypeID());	
-    }
+    for (ProductTypeInstance prdIn : getProductTypes())
+      {
+        productTypeIDs.add(prdIn.getProductTypeID());
+      }
     if (getWorkflowID() != null && !getWorkflowID().isEmpty()) wrkflowIDs.add(getWorkflowID());
+    if (getDeliverableID() != null && !getDeliverableID().isEmpty()) deliverableIDs.add(getDeliverableID());
     
+    result.put("supplier", supplierIDs);
     result.put("workflow", wrkflowIDs);
     result.put("point", pointIDs);
     result.put("campaign", campaignIDs);
     result.put("producttype", productTypeIDs);
+    result.put("deliverable", deliverableIDs);
     return result;
   }
 }

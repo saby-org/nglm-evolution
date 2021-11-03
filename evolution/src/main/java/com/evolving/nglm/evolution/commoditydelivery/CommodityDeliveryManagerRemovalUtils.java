@@ -91,7 +91,7 @@ public class CommodityDeliveryManagerRemovalUtils {
 
 		// debit case, provider is in paymentMean
 		if(operation.equals(CommodityDeliveryManager.CommodityDeliveryOperation.Debit)){
-			paymentMean = paymentMeanService.getActivePaymentMean(commodityID, SystemTime.getCurrentTime());
+			paymentMean = paymentMeanService.getActivePaymentMean(commodityID, commodityDeliveryRequest.getEventDate());
 			if(paymentMean == null){
 				log.info("CommodityDeliveryManagerRemovalUtils.createCommodityDeliveryRequest (commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : paymentMean not found ");
 				throw new CommodityDeliveryException(RESTAPIGenericReturnCodes.BONUS_NOT_FOUND, "unknown payment mean");
@@ -100,7 +100,7 @@ public class CommodityDeliveryManagerRemovalUtils {
 			provider = Deployment.getFulfillmentProviders().get(paymentMean.getFulfillmentProviderID());
 		// all other are in deliverable
 		}else{
-			deliverable = deliverableService.getActiveDeliverable(commodityID, SystemTime.getCurrentTime());
+			deliverable = deliverableService.getActiveDeliverable(commodityID, commodityDeliveryRequest.getEventDate());
 			if(deliverable == null){
 				log.info("CommodityDeliveryManagerRemovalUtils.createCommodityDeliveryRequest (commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : commodity not found ");
 				throw new CommodityDeliveryException(RESTAPIGenericReturnCodes.BONUS_NOT_FOUND, "unknown commodity");
@@ -241,14 +241,14 @@ public class CommodityDeliveryManagerRemovalUtils {
 				journeyRequestData.put("journeyRequestID", commodityDeliveryRequest.getDeliveryRequestID());
 
 				journeyRequestData.put("subscriberID", commodityDeliveryRequest.getSubscriberID());
-				journeyRequestData.put("eventDate", SystemTime.getCurrentTime());
+				journeyRequestData.put("eventDate", commodityDeliveryRequest.getEventDate());
 				journeyRequestData.put("journeyID", externalAccountID);
 
 				if(commodityDeliveryRequest.getDiplomaticBriefcase()!=null) journeyRequestData.put("diplomaticBriefcase", commodityDeliveryRequest.getDiplomaticBriefcase());
 
 				if(log.isDebugEnabled()) log.debug("CommodityDeliveryManager.proceedCommodityDeliveryRequest(...) : generating "+ CommodityDeliveryManager.CommodityType.JOURNEY+" request DONE");
 
-				JourneyRequest journeyRequest = new JourneyRequest(commodityDeliveryRequest, JSONUtilities.encodeObject(journeyRequestData), Deployment.getDeliveryManagers().get(deliveryType), commodityDeliveryRequest.getTenantID());
+				JourneyRequest journeyRequest = new JourneyRequest(commodityDeliveryRequest, JSONUtilities.encodeObject(journeyRequestData), commodityDeliveryRequest.getTenantID());
 				return journeyRequest;
 
 			default:

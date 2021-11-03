@@ -34,10 +34,9 @@ public class CleanupSubscriber extends SubscriberStreamOutput implements com.evo
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("cleanup_subscriber");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(), 3));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(), 4));
     for (Field field : subscriberStreamOutputSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
-    schemaBuilder.field("eventDate", Timestamp.SCHEMA);
     schemaBuilder.field("subscriberAction", SchemaBuilder.string().defaultValue("standard").schema());
     schema = schemaBuilder.build();
   };
@@ -63,7 +62,6 @@ public class CleanupSubscriber extends SubscriberStreamOutput implements com.evo
   ****************************************/
 
   private String subscriberID;
-  private Date eventDate;
   private SubscriberAction subscriberAction;
 
   /****************************************
@@ -73,7 +71,6 @@ public class CleanupSubscriber extends SubscriberStreamOutput implements com.evo
   ****************************************/
 
   @Override public String getSubscriberID() { return subscriberID; }
-  @Override public Date getEventDate() { return eventDate; }
   @Override public SubscriberAction getSubscriberAction() { return subscriberAction; }
   @Override public DeliveryRequest.DeliveryPriority getDeliveryPriority(){return DeliveryRequest.DeliveryPriority.Low; }
 
@@ -83,24 +80,29 @@ public class CleanupSubscriber extends SubscriberStreamOutput implements com.evo
   *
   *****************************************/
 
-  public CleanupSubscriber(String subscriberID, Date eventDate, SubscriberAction subscriberAction)
+  public CleanupSubscriber(String subscriberID, SubscriberAction subscriberAction)
   {
     this.subscriberID = subscriberID;
-    this.eventDate = eventDate;
     this.subscriberAction = subscriberAction;
   }
-  
+
+  public CleanupSubscriber(String subscriberID, AssignSubscriberIDs assignSubscriberIDs, SubscriberAction subscriberAction)
+  {
+    super(assignSubscriberIDs);
+    this.subscriberID = subscriberID;
+    this.subscriberAction = subscriberAction;
+  }
+
   /*****************************************
   *
   *  constructor (simple/unpack)
   *
   *****************************************/
 
-  public CleanupSubscriber(SchemaAndValue schemaAndValue, String subscriberID, Date eventDate, SubscriberAction subscriberAction)
+  public CleanupSubscriber(SchemaAndValue schemaAndValue, String subscriberID, SubscriberAction subscriberAction)
   {
     super(schemaAndValue);
     this.subscriberID = subscriberID;
-    this.eventDate = eventDate;
     this.subscriberAction = subscriberAction;
   }
 
@@ -112,8 +114,8 @@ public class CleanupSubscriber extends SubscriberStreamOutput implements com.evo
 
   public CleanupSubscriber(CleanupSubscriber cleanupSubscriber)
   {
+    super(cleanupSubscriber);
     this.subscriberID = cleanupSubscriber.getSubscriberID();
-    this.eventDate = cleanupSubscriber.getEventDate();
     this.subscriberAction = cleanupSubscriber.getSubscriberAction();
   }
 
@@ -129,7 +131,6 @@ public class CleanupSubscriber extends SubscriberStreamOutput implements com.evo
     Struct struct = new Struct(schema);
     packSubscriberStreamOutput(struct, cleanupSubscriber);
     struct.put("subscriberID", cleanupSubscriber.getSubscriberID());
-    struct.put("eventDate", cleanupSubscriber.getEventDate());
     struct.put("subscriberAction", cleanupSubscriber.getSubscriberAction().getExternalRepresentation());
     return struct;
   }
@@ -162,14 +163,12 @@ public class CleanupSubscriber extends SubscriberStreamOutput implements com.evo
 
     Struct valueStruct = (Struct) value;
     String subscriberID = valueStruct.getString("subscriberID");
-    Date eventDate = (Date) valueStruct.get("eventDate");
-    
     SubscriberAction subscriberAction = schema.field("subscriberAction") != null ? SubscriberAction.fromExternalRepresentation(valueStruct.getString("subscriberAction")) : SubscriberAction.Cleanup;
 
     //
     //  return
     //
 
-    return new CleanupSubscriber(schemaAndValue, subscriberID, eventDate, subscriberAction);
+    return new CleanupSubscriber(schemaAndValue, subscriberID, subscriberAction);
   }
 }

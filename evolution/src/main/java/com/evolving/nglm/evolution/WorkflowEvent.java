@@ -1,22 +1,11 @@
-/****************************************************************************
-*
-*  TokenChange.java
-*
-****************************************************************************/
-
 package com.evolving.nglm.evolution;
-
-import java.util.Date;
 
 import org.apache.kafka.connect.data.*;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SubscriberStreamOutput;
-import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.ActionManager.ActionType;
-import com.evolving.nglm.evolution.DeliveryRequest.Module;
-
 
 public class WorkflowEvent extends SubscriberStreamOutput implements EvolutionEngineEvent
 {
@@ -36,11 +25,9 @@ public class WorkflowEvent extends SubscriberStreamOutput implements EvolutionEn
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("workflow_change");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),2));
     for (Field field : subscriberStreamOutputSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
-    schemaBuilder.field("eventDateTime", Timestamp.builder().schema());
-    schemaBuilder.field("eventID", Schema.STRING_SCHEMA);
     schemaBuilder.field("workflowID", Schema.STRING_SCHEMA);
     schemaBuilder.field("moduleID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("featureID", Schema.OPTIONAL_STRING_SCHEMA);
@@ -67,8 +54,6 @@ public class WorkflowEvent extends SubscriberStreamOutput implements EvolutionEn
   ****************************************/
 
   private String subscriberID;
-  private Date eventDateTime;
-  private String eventID;
   private String workflowID;
   private String moduleID;
   private String featureID;
@@ -83,10 +68,7 @@ public class WorkflowEvent extends SubscriberStreamOutput implements EvolutionEn
   // accessor
   //
 
-  @Override
-  public String getSubscriberID() { return subscriberID; }
-  public Date geteventDateTime() { return eventDateTime; }
-  public String getEventID() { return eventID; }
+  @Override public String getSubscriberID() { return subscriberID; }
   public String getWorkflowID() { return workflowID; }
   public String getModuleID() { return moduleID; }
   public String getFeatureID() { return featureID; }
@@ -114,11 +96,10 @@ public class WorkflowEvent extends SubscriberStreamOutput implements EvolutionEn
   *
   *****************************************/
 
-  public WorkflowEvent(String subscriberID, Date eventDateTime, String eventID, String workflowID, String moduleID, String featureID)
+  public WorkflowEvent(SubscriberStreamOutput originatingRequest, String subscriberID, String workflowID, String moduleID, String featureID)
   {
+    super(originatingRequest);
     this.subscriberID = subscriberID;
-    this.eventDateTime = eventDateTime;
-    this.eventID = eventID;
     this.workflowID = workflowID;
     this.moduleID = moduleID;
     this.featureID = featureID;
@@ -129,12 +110,10 @@ public class WorkflowEvent extends SubscriberStreamOutput implements EvolutionEn
    * constructor unpack
    *
    *****************************************/
-  public WorkflowEvent(SchemaAndValue schemaAndValue, String subscriberID, Date eventDateTime, String eventID, String workflowID, String moduleID, String featureID)
+  public WorkflowEvent(SchemaAndValue schemaAndValue, String subscriberID, String workflowID, String moduleID, String featureID)
   {
     super(schemaAndValue);
     this.subscriberID = subscriberID;
-    this.eventDateTime = eventDateTime;
-    this.eventID = eventID;
     this.workflowID = workflowID;
     this.moduleID = moduleID;
     this.featureID = featureID;
@@ -152,8 +131,6 @@ public class WorkflowEvent extends SubscriberStreamOutput implements EvolutionEn
     Struct struct = new Struct(schema);
     packSubscriberStreamOutput(struct,tokenChange);
     struct.put("subscriberID",tokenChange.getSubscriberID());
-    struct.put("eventDateTime",tokenChange.geteventDateTime());
-    struct.put("eventID", tokenChange.getEventID());
     struct.put("workflowID", tokenChange.getWorkflowID());
     struct.put("moduleID", tokenChange.getModuleID());
     struct.put("featureID", tokenChange.getFeatureID());
@@ -182,8 +159,6 @@ public class WorkflowEvent extends SubscriberStreamOutput implements EvolutionEn
 
     Struct valueStruct = (Struct) value;
     String subscriberID = valueStruct.getString("subscriberID");
-    Date eventDateTime = (Date) valueStruct.get("eventDateTime");
-    String eventID = valueStruct.getString("eventID");
     String workflowID = valueStruct.getString("workflowID");
     String moduleID =  valueStruct.getString("moduleID") ;
     String featureID = valueStruct.getString("featureID");
@@ -196,16 +171,9 @@ public class WorkflowEvent extends SubscriberStreamOutput implements EvolutionEn
     // return
     //
 
-    return new WorkflowEvent(schemaAndValue, subscriberID, eventDateTime, eventID, workflowID, moduleID, featureID);
+    return new WorkflowEvent(schemaAndValue, subscriberID, workflowID, moduleID, featureID);
   }
-  
-  
-  @Override
-  public Date getEventDate()
-  {
-    return geteventDateTime();
-  }
-  
+
   @Override
   public Schema subscriberStreamEventSchema()
   {

@@ -79,7 +79,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
   
   private static final Logger log = LoggerFactory.getLogger(GUIManagerLoyaltyReporting.class);
 
-  public GUIManagerLoyaltyReporting(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, BadgeService badgeService, BadgeObjectiveService badgeObjectiveService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService, DNBOMatrixService dnboMatrixService, DynamicCriterionFieldService dynamicCriterionFieldService, DynamicEventDeclarationsService dynamicEventDeclarationsService, JourneyTemplateService journeyTemplateService, KafkaResponseListenerService<StringKey,PurchaseFulfillmentRequest> purchaseResponseListenerService, SharedIDService subscriberGroupSharedIDService, ZookeeperUniqueKeyServer zuks, int httpTimeout, KafkaProducer<byte[], byte[]> kafkaProducer, ElasticsearchClientAPI elasticsearch, SubscriberMessageTemplateService subscriberMessageTemplateService, String getCustomerAlternateID, GUIManagerContext guiManagerContext, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader)
+  public GUIManagerLoyaltyReporting(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, BadgeService badgeService, BadgeObjectiveService badgeObjectiveService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService, DNBOMatrixService dnboMatrixService, DynamicCriterionFieldService dynamicCriterionFieldService, DynamicEventDeclarationsService dynamicEventDeclarationsService, JourneyTemplateService journeyTemplateService, KafkaResponseListenerService<StringKey,PurchaseFulfillmentRequest> purchaseResponseListenerService, CustomCriteriaService customCriteriaService, SharedIDService subscriberGroupSharedIDService, ZookeeperUniqueKeyServer zuks, int httpTimeout, KafkaProducer<byte[], byte[]> kafkaProducer, ElasticsearchClientAPI elasticsearch, SubscriberMessageTemplateService subscriberMessageTemplateService, String getCustomerAlternateID, GUIManagerContext guiManagerContext, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader)
   {
     super.callingChannelService = callingChannelService;
     super.catalogCharacteristicService = catalogCharacteristicService;
@@ -115,6 +115,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     super.targetService = targetService;
     super.tokenTypeService = tokenTypeService;
     super.ucgRuleService = ucgRuleService;
+    super.predictionSettingsService = guiManagerContext.getPredictionSettingsService();
     super.uploadedFileService = uploadedFileService;
     super.voucherService = voucherService;
     super.voucherTypeService = voucherTypeService;
@@ -125,6 +126,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     super.purchaseResponseListenerService = purchaseResponseListenerService;
     super.subscriberGroupSharedIDService = subscriberGroupSharedIDService;
     super.purchaseResponseListenerService = purchaseResponseListenerService;
+    super.customCriteriaService = customCriteriaService;
 
     super.zuks = zuks;
     super.httpTimeout = httpTimeout;
@@ -2576,6 +2578,8 @@ protected JSONObject processSetStatusBadge(String userID, JSONObject jsonRoot, i
     response.put("resellerCount", resellerService.getStoredResellers(includeArchived, tenantID).size());
     response.put("badgeCount", badgeService.getStoredBadges(includeArchived, tenantID).size());
     response.put("badgeObjectiveCount", badgeObjectiveService.getStoredBadgeObjectives(includeArchived, tenantID).size());
+    response.put("customCriteriaCount", customCriteriaService.getStoredCustomCriterias(includeArchived, tenantID).size());
+    response.put("criterionFieldAvailableValuesCount", criterionFieldAvailableValuesService.getStoredCriterionFieldAvailableValuesList(includeArchived, tenantID).size());
     
     //
     //  LoyaltyProgram
@@ -3296,13 +3300,13 @@ protected JSONObject processSetStatusBadge(String userID, JSONObject jsonRoot, i
         // Fields for DeliveryRequest
         request.put("deliveryRequestID", loyaltyProgramRequestID);
         request.put("subscriberID", subscriberID);
-        request.put("eventID", "0"); // No event here
+        request.put("eventID", loyaltyProgramRequestID);
         request.put("moduleID", moduleID);
         request.put("featureID", featureID);
         request.put("deliveryType", "loyaltyProgramFulfillment");
         JSONObject valueRes = JSONUtilities.encodeObject(request);
 
-        LoyaltyProgramRequest loyaltyProgramRequest = new LoyaltyProgramRequest(subscriberProfile,subscriberGroupEpochReader,valueRes, null, tenantID);
+        LoyaltyProgramRequest loyaltyProgramRequest = new LoyaltyProgramRequest(subscriberProfile,subscriberGroupEpochReader,valueRes, tenantID);
         loyaltyProgramRequest.forceDeliveryPriority(DELIVERY_REQUEST_PRIORITY);
         String topic = Deployment.getDeliveryManagers().get(loyaltyProgramRequest.getDeliveryType()).getRequestTopic(loyaltyProgramRequest.getDeliveryPriority());
 

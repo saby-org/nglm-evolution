@@ -1,27 +1,14 @@
-/****************************************************************************
-*
-*  SubscriberStreamEvent.java
-*
-****************************************************************************/
-
 package com.evolving.nglm.core;
 
 import org.apache.kafka.connect.data.Schema;
 
-import java.util.Collections;
 import java.util.Date;
-import java.util.Map;
 import java.util.UUID;
 
-public interface SubscriberStreamEvent extends SubscriberStreamPriority
+public interface SubscriberStreamEvent extends SubscriberStreamPriority, SubscriberStreamTimeStamped
 {
-  /*****************************************
-  *
-  *  enum
-  *
-  *****************************************/
-  
-  public enum SubscriberAction
+
+  enum SubscriberAction
   {
     Standard("standard"),
     Delete("delete"), // this is for subscriber manager, evolution engine ignores it
@@ -35,16 +22,11 @@ public interface SubscriberStreamEvent extends SubscriberStreamPriority
     public static SubscriberAction fromExternalRepresentation(String externalRepresentation) { for (SubscriberAction enumeratedValue : SubscriberAction.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return null; }
   }
 
-  /*****************************************
-  *
-  *  interface
-  *
-  *****************************************/
-
-  public String getSubscriberID();
-  public Date getEventDate();
-  public Schema subscriberStreamEventSchema();
-  public Object subscriberStreamEventPack(Object value);
-  default public SubscriberAction getSubscriberAction() { return SubscriberAction.Standard; }
-  default public UUID getTrackingID() { return null; }
+  String getSubscriberID();
+  Schema subscriberStreamEventSchema();
+  Object subscriberStreamEventPack(Object value);
+  default SubscriberAction getSubscriberAction() { return SubscriberAction.Standard; }
+  default UUID getTrackingID() { return null; }
+  @Override default Date getEventDate() { return null; }
+  @Override default String getEventID() { return null; }
 }

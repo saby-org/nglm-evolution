@@ -13,10 +13,13 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -55,6 +58,7 @@ import org.apache.kafka.clients.admin.TopicListing;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.TopicPartitionInfo;
 import org.apache.kafka.common.utils.Time;
+import org.apache.zookeeper.client.ZKClientConfig;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -63,6 +67,7 @@ import org.json.simple.parser.ParseException;
 import com.evolving.nglm.evolution.CommunicationChannel;
 import com.evolving.nglm.evolution.DeliveryManagerDeclaration;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager;
+import com.evolving.nglm.evolution.SubscriberPredictions;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchUpgrade;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchUpgrade.IndexPatch;
 import com.evolving.nglm.evolution.kafka.Topic;
@@ -70,6 +75,8 @@ import com.google.common.net.HttpHeaders;
 
 import kafka.zk.AdminZkClient;
 import kafka.zk.KafkaZkClient;
+
+import scala.Option;
 
 public class EvolutionSetup
 {
@@ -85,6 +92,19 @@ public class EvolutionSetup
    ****************************************/
   public static void main(String[] args) throws InterruptedException, ExecutionException
   {
+    
+//    ClassLoader cl = ClassLoader.getSystemClassLoader();
+//
+//    URL[] urls = ((URLClassLoader)cl).getURLs();
+//    System.out.println("Classpath");
+//    for(URL url: urls){
+//      System.out.println(url.getFile());
+//    }
+    
+    Class klass = scala.collection.JavaConverters.class;
+    URL location = klass.getResource('/' + klass.getName().replace('.', '/') + ".class");
+    System.out.println("JAR Converters 1 " + location);
+    
     try {
       //
       // extracts files from args
@@ -118,9 +138,18 @@ public class EvolutionSetup
       //
       System.out.println("");
       System.out.println("================================================================================");
-      System.out.println("= KAFKA                                                                        =");
+      System.out.println("= KAFKA TOPIC                                                                  =");
       System.out.println("================================================================================");
       handleTopicSetup(topicsFolderPath);
+
+      //
+      // kafka topics
+      //
+      System.out.println("");
+      System.out.println("================================================================================");
+      System.out.println("= KAFKA SCHEMAS                                                                =");
+      System.out.println("================================================================================");
+      handleSpecialSchemasSetup();
   
       //
       // elasticSearch index setup
@@ -663,7 +692,9 @@ public class EvolutionSetup
     // kafka topics setup
     //
 
-    KafkaZkClient zkClient = KafkaZkClient.apply(System.getProperty("zookeeper.connect"), false, 10000, 100000, 30, Time.SYSTEM, "foo", "bar", null);
+    Option<String> zkClientInstanceName = Option.apply("zkInstance"); 
+    Option<ZKClientConfig> zkClientConfig = Option.apply(new ZKClientConfig());
+    KafkaZkClient zkClient = KafkaZkClient.apply(System.getProperty("zookeeper.connect"), false, 10000, 100000, 30, Time.SYSTEM, "foo", "bar", zkClientInstanceName, zkClientConfig);
     AdminZkClient adminZkClient = new AdminZkClient(zkClient);
 
     //
@@ -742,6 +773,39 @@ public class EvolutionSetup
     return null;
   }
 
+  /****************************************
+   *
+   * Kafka Special Schemas
+   *
+   ****************************************/
+  /**
+   * Force push schemas for topic that are read-only for Evolution (filled by third party processes, Spark for example)
+   * 
+   * Special topics that need a schema push :
+   * - subscriberpredictionspush
+   */
+  private static void handleSpecialSchemasSetup() throws EvolutionSetupException 
+  {
+    // Call .serialize() (with fake object) in order to force push schema in Schema Registry if not already present.
+    // The object passed as parameter will not be pushed in the topic. 
+    // The serialize() function only return a byte[] that we do not use nor push.
+    //
+    // if isKey = true   in ConnectSerde -> push in topic-key
+    // if isKey = false  in ConnectSerde -> push in topic-value
+    
+    // isKey = true (topic-key)
+    StringKey.serde().serializer().serialize(
+        DeploymentCommon.getSubscriberPredictionsPushTopic(), 
+        new StringKey("001")
+      );
+
+    // isKey = false (topic-key)
+    SubscriberPredictions.Prediction.serde().serializer().serialize(
+        DeploymentCommon.getSubscriberPredictionsPushTopic(), 
+        new SubscriberPredictions.Prediction("001", "2", 0.0, 0.0, new Date())
+      );
+  }
+  
   /****************************************
    *
    * Kafka Connectors

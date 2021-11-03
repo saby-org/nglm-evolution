@@ -213,7 +213,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
 
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("delivery_request");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),13));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),14));
     for (Field field : subscriberStreamOutputSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("deliveryRequestID", Schema.STRING_SCHEMA);
     schemaBuilder.field("deliveryRequestSource", Schema.STRING_SCHEMA);
@@ -226,7 +226,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     schemaBuilder.field("originatingSubscriberID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("targetedSubscriberID", Schema.OPTIONAL_STRING_SCHEMA);
 
-    schemaBuilder.field("eventID", Schema.STRING_SCHEMA);
     schemaBuilder.field("moduleID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("featureID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("retries", Schema.INT32_SCHEMA);
@@ -291,7 +290,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   private String subscriberID;
   private String originatingSubscriberID;   // in case of executeActionForOtherSubscriber
   private String targetedSubscriberID; // in case of executeActionForOtherSubscriber
-  private String eventID;
   private String moduleID;
   private String featureID;
   private int retries;
@@ -326,7 +324,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   public String getSubscriberID() { return subscriberID; }
   public String getOriginatingSubscriberID() { return originatingSubscriberID; }
   public String getTargetedSubscriberID() { return targetedSubscriberID; }
-  public String getEventID() { return eventID; }
   public String getModuleID() { return moduleID; }
   public String getFeatureID() { return featureID; }
   public int getRetries() { return retries; }
@@ -337,7 +334,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   public String getDeliveryType() { return deliveryType; }
   public DeliveryStatus getDeliveryStatus() { return deliveryStatus; }
   public Date getDeliveryDate() { return deliveryDate; }
-  public Date getEventDate() { return (deliveryDate != null) ? deliveryDate : creationDate; }
   public Map<String, String> getDiplomaticBriefcase() { return diplomaticBriefcase; }
   public ActionType getActionType() { return ActionType.DeliveryRequest; }
   public boolean isPending() { return deliveryStatus == DeliveryStatus.Pending; }
@@ -367,7 +363,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   public void setDeliveryStatus(DeliveryStatus deliveryStatus) { this.deliveryStatus = deliveryStatus; }
   public void setDeliveryDate(Date deliveryDate) { this.deliveryDate = deliveryDate; }
   public void setCreationDate(Date creationDate) { this.creationDate = creationDate; }
-  public void setEventID(String eventID) { this.eventID = eventID; }
   public void setFeatureID(String featureID) { this.featureID = featureID; }
   public void setModuleID(String moduleID) { this.moduleID = moduleID; }
   public void setDiplomaticBriefcase(Map<String, String> diplomaticBriefcase) { this.diplomaticBriefcase = (diplomaticBriefcase != null) ? diplomaticBriefcase : new HashMap<String,String>(); }
@@ -442,10 +437,8 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.deliveryRequestSource = deliveryRequestSource;
     this.originatingDeliveryRequestID = null;
     this.originatingRequest = true;
-    this.creationDate = context.now();
+    this.creationDate = context.processingDate();
     this.subscriberID = context.getSubscriberState().getSubscriberID();
-    //this.eventID = this.deliveryRequestID;
-    this.eventID = context.getEventID();
     this.moduleID = null;
     this.featureID = null;
     this.retries = 0;
@@ -487,8 +480,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.subscriberID = subscriberID;
     this.originatingSubscriberID = null; // consider from GUIManager no delivery request delegation
     this.targetedSubscriberID = null; // consider from GUIManager no delivery request delegation
-    //this.eventID = this.deliveryRequestID;
-    this.eventID = "event from " + Module.Customer_Care.toString();
     this.moduleID = null;
     this.featureID = null;
     this.retries = 0;
@@ -525,7 +516,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.subscriberID = deliveryRequest.getSubscriberID();
     this.originatingSubscriberID = deliveryRequest.getOriginatingSubscriberID();
     this.targetedSubscriberID = deliveryRequest.getTargetedSubscriberID();
-    this.eventID = deliveryRequest.getEventID();
     this.moduleID = deliveryRequest.getModuleID();
     this.featureID = deliveryRequest.getFeatureID();
     this.retries = deliveryRequest.getRetries();
@@ -568,7 +558,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.originatingRequest = JSONUtilities.decodeBoolean(jsonRoot, "originatingRequest", Boolean.TRUE);
     this.creationDate = SystemTime.getCurrentTime();
     this.subscriberID = JSONUtilities.decodeString(jsonRoot, "subscriberID", true);
-    this.eventID = JSONUtilities.decodeString(jsonRoot, "eventID", true);
     this.moduleID = JSONUtilities.decodeString(jsonRoot, "moduleID", true);
     this.featureID = JSONUtilities.decodeString(jsonRoot, "featureID", true);
     this.retries = 0;
@@ -611,7 +600,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.subscriberID = JSONUtilities.decodeString(jsonRoot, "subscriberID", true);
     this.originatingSubscriberID = JSONUtilities.decodeString(jsonRoot, "originatingSubscriberID", false);
     this.targetedSubscriberID = JSONUtilities.decodeString(jsonRoot, "targetedSubscriberID", false);
-    this.eventID = JSONUtilities.decodeString(jsonRoot, "eventID", true);
     this.moduleID = JSONUtilities.decodeString(jsonRoot, "moduleID", true);
     this.featureID = JSONUtilities.decodeString(jsonRoot, "featureID", true);
     this.retries = 0;
@@ -647,7 +635,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.originatingRequest = true;
     this.creationDate = null;
     this.subscriberID = null;
-    this.eventID = null;
     this.moduleID = null;
     this.featureID = null;
     this.retries = 0;
@@ -684,7 +671,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     struct.put("subscriberID", deliveryRequest.getSubscriberID());
     struct.put("originatingSubscriberID", deliveryRequest.getOriginatingSubscriberID());
     struct.put("targetedSubscriberID", deliveryRequest.getTargetedSubscriberID());
-    struct.put("eventID", deliveryRequest.getEventID());
     struct.put("moduleID", deliveryRequest.getModuleID());
     struct.put("featureID", deliveryRequest.getFeatureID());
     struct.put("retries", deliveryRequest.getRetries()); 
@@ -733,7 +719,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     String subscriberID = valueStruct.getString("subscriberID");
     String originatingSubscriberID = (schemaVersion >=9) ? valueStruct.getString("originatingSubscriberID") : null;
     String targetedSubscriberID = (schemaVersion >=9) ? valueStruct.getString("targetedSubscriberID") : null;
-    String eventID = valueStruct.getString("eventID");
     String moduleID = valueStruct.getString("moduleID");
     String featureID = valueStruct.getString("featureID");
     int retries = valueStruct.getInt32("retries");
@@ -748,7 +733,13 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     Date rescheduledDate = (schemaVersion >= 4) ? (valueStruct.get("rescheduledDate") != null ? new Date(valueStruct.getInt64("rescheduledDate")) : null) : null;
     MetricHistory notificationHistory = schemaVersion >= 4 ?  MetricHistory.serde().unpackOptional(new SchemaAndValue(schema.field("notificationHistory").schema(),valueStruct.get("notificationHistory"))) : null;
     Map<String,String> subscriberFields = (schemaVersion >= 8 && schema.field("subscriberFields")!=null && valueStruct.get("subscriberFields") != null) ? (Map<String,String>) valueStruct.get("subscriberFields") : new LinkedHashMap<>();
-    Map<Pair<String,String>, Integer> segments = (schemaVersion >= 13) ? unpackSegments(valueStruct.get("segments")) : unpackSegmentsV1(valueStruct.get("subscriberGroups"));
+    Map<Pair<String,String>, Integer> segments = new HashMap<Pair<String,String>, Integer> ();
+    if( schemaVersion >= 13 ){
+    	segments = unpackSegments(valueStruct.get("segments"));
+    }else if (valueStruct.schema().field("subscriberGroups") != null){
+    	segments = unpackSegmentsV1(valueStruct.get("subscriberGroups"));
+		}
+
     int tenantID = schema.field("tenantID") != null ? valueStruct.getInt16("tenantID") : 1; // by default tenant id 1 
     //
     //  return
@@ -762,7 +753,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     this.subscriberID = subscriberID;
     this.originatingSubscriberID = originatingSubscriberID;
     this.targetedSubscriberID = targetedSubscriberID;
-    this.eventID = eventID;
     this.moduleID = moduleID;
     this.featureID = featureID;
     this.retries = retries;
@@ -790,10 +780,10 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   
   public DeliveryRequest(Map<String, Object> esFields)
   {
+    super(esFields);
     this.subscriberID = (String) esFields.get("subscriberID");
     this.deliveryRequestID = (String) esFields.get("deliveryRequestID");
     this.originatingDeliveryRequestID = (String) esFields.get("originatingDeliveryRequestID");
-    this.eventID = (String) esFields.get("eventID");
     this.moduleID = (String) esFields.get("moduleID");
     this.featureID = (String) esFields.get("featureID");
     this.originatingRequest = true;
@@ -974,7 +964,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     b.append("," + originatingRequest);
     b.append("," + creationDate);
     b.append("," + subscriberID);
-    b.append("," + eventID);
     b.append("," + moduleID);
     b.append("," + featureID);
     b.append("," + retries);

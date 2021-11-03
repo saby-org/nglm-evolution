@@ -3,6 +3,7 @@ package com.evolving.nglm.evolution.elasticsearch;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -88,6 +89,8 @@ import com.evolving.nglm.evolution.reports.notification.NotificationReportDriver
 import com.evolving.nglm.evolution.reports.notification.NotificationReportMonoPhase;
 import com.evolving.nglm.evolution.reports.odr.ODRReportDriver;
 import com.evolving.nglm.evolution.reports.odr.ODRReportMonoPhase;
+import com.evolving.nglm.evolution.reports.vdr.VDRReportDriver;
+import com.evolving.nglm.evolution.reports.vdr.VDRReportMonoPhase;
 
 public class ElasticsearchClientAPI extends RestHighLevelClient
 {
@@ -1199,6 +1202,27 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
             index = ODRReportMonoPhase.getESAllIndices(ODRReportDriver.ES_INDEX_ODR_INITIAL);
           }
         break;
+      
+      case getCustomerVDRs:
+          if (startDate != null)
+            {
+              if (indexFilterDate.before(startDate))
+                {
+                  Set<String> esIndexWks = ReportCsvFactory.getEsIndexWeeks(startDate, SystemTime.getCurrentTime(), true);
+                  String indexCSV = ODRReportMonoPhase.getESIndices(VDRReportDriver.ES_INDEX_VDR_INITIAL, esIndexWks);
+                  index = getExistingIndices(indexCSV, ODRReportMonoPhase.getESAllIndices(VDRReportDriver.ES_INDEX_VDR_INITIAL));
+                }
+              else
+                {
+                  index = ODRReportMonoPhase.getESAllIndices(VDRReportDriver.ES_INDEX_VDR_INITIAL);
+                }
+              query = query.filter(QueryBuilders.rangeQuery("eventDatetime").gte(RLMDateUtils.formatDateForElasticsearchDefault(startDate)));
+            }
+          else
+            {
+              index = ODRReportMonoPhase.getESAllIndices(VDRReportDriver.ES_INDEX_VDR_INITIAL);
+            }
+          break;
         
       case getCustomerBGDRs:
         index = "detailedrecords_badges-*";
@@ -1262,6 +1286,8 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
         return getSearchRequest(GUIManager.API.getCustomerEDRs, subscriberId, startDate, filters, tenantID);
       case getCustomerODRs:
         return getSearchRequest(GUIManager.API.getCustomerODRs, subscriberId, startDate, filters, tenantID);
+      case getCustomerVDRs:
+          return getSearchRequest(GUIManager.API.getCustomerVDRs, subscriberId, startDate, filters, tenantID);
       case getCustomerMessages:
         return getSearchRequest(GUIManager.API.getCustomerMessages, subscriberId, startDate, filters, tenantID);
       case getCustomerCampaigns:
@@ -1366,7 +1392,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
             //  add
             //
             
-            hits.addAll(new ArrayList<SearchHit>(Arrays.asList(searchHits)));
+            hits.addAll(Arrays.asList(searchHits));
             
             //
             //  scroll
@@ -1381,7 +1407,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
       } 
     catch (IOException e)
       {
-        log.error("IOException in ES qurery {}", e.getMessage());
+        log.error("IOException in ES query {}", e.getMessage());
         throw new GUIManagerException(e);
       }
     
@@ -1400,7 +1426,6 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
   
   public List<SearchHit> getESHits(SearchRequest searchRequest) throws GUIManagerException
   {
-    List<SearchHit> hits = new ArrayList<SearchHit>();
     searchRequest.source().size(10000);
     try
       {
@@ -1412,20 +1437,18 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
             //  add
             //
             
-            hits.addAll(new ArrayList<SearchHit>(Arrays.asList(searchHits)));
+            return Arrays.asList(searchHits);
+          }
+        else 
+          {
+            return Collections.emptyList();
           }
       } 
     catch (IOException e)
       {
-        log.error("IOException in ES qurery {}", e.getMessage());
+        log.error("IOException in ES query {}", e.getMessage());
         throw new GUIManagerException(e);
       }
-    
-    //
-    //  return
-    //
-    
-    return hits;
   }
   
 
