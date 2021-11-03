@@ -5667,6 +5667,11 @@ public class ThirdPartyManager
     if(supplier==null){
       throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.PARTNER_NOT_FOUND);
     }
+    
+    if(supplier.getTenantID() != tenantID)
+      {
+        throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_CODE_NOT_FOUND);
+      }
 
     String subscriberID=null;
     try
@@ -6652,6 +6657,7 @@ public class ThirdPartyManager
   {
     // "customerID" parameter is mapped internally to subscriberID 
     String subscriberID = JSONUtilities.decodeString(jsonRoot, CUSTOMER_ID, false);
+    
     String alternateSubscriberID = null;
     
     // support the possibility: customerIDType and customerIDValue...
@@ -6680,6 +6686,27 @@ public class ThirdPartyManager
               log.error("SubscriberIDServiceException can not resolve subscriberID from type {} and value {} error is {}", customerIDType, customerIDValue, e.getMessage());
             }
         }
+      }
+    
+    // ensure this subscriberID has the good tenant
+    if(subscriberID != null)
+      {
+        try
+          {
+            SubscriberProfile profile = subscriberProfileService.getSubscriberProfile(subscriberID);
+            if(profile == null)
+              {
+                throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND); 
+              }
+            else if(profile.getTenantID() != tenantID)
+              {
+                throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND); 
+              }              
+          }
+        catch (SubscriberProfileServiceException e)
+          {
+            log.warn("SubscriberIDServiceException can not resolve subscriberID {} ", subscriberID, e.getMessage());
+          }
       }
   
     if(alternateSubscriberID == null && subscriberID == null) 
