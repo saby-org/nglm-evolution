@@ -194,10 +194,9 @@ public class BadgeChange extends SubscriberStreamOutput implements EvolutionEngi
   
   public BadgeChange(BadgeChange badgeChange)
   {
+    super(badgeChange);
     this.subscriberID = badgeChange.getSubscriberID();
     this.deliveryRequestID = badgeChange.getDeliveryRequestID();
-    this.setEventDate(badgeChange.getEventDate());
-    this.setEventID(badgeChange.getEventID());
     this.action = badgeChange.getAction();
     this.badgeID = badgeChange.getBadgeID();
     this.moduleID = badgeChange.getModuleID();
@@ -209,13 +208,11 @@ public class BadgeChange extends SubscriberStreamOutput implements EvolutionEngi
     this.responseEvent = badgeChange.IsResponseEvent();
   }
   
-  public BadgeChange(String subscriberID, String deliveryRequestID, Date eventDate, String eventID, BadgeAction action, String badgeID, String moduleID, String featureID, String origin, RESTAPIGenericReturnCodes returnStatus, int tenantID, ParameterMap infos)
+  public BadgeChange(String subscriberID, String deliveryRequestID, BadgeAction action, String badgeID, String moduleID, String featureID, String origin, RESTAPIGenericReturnCodes returnStatus, int tenantID, ParameterMap infos)
   {
     super();
     this.subscriberID = subscriberID;
     this.deliveryRequestID = deliveryRequestID;
-    this.setEventDate(eventDate);
-    this.setEventID(eventID);
     this.action = action;
     this.badgeID = badgeID;
     this.moduleID = moduleID;
