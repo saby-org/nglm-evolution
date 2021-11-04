@@ -2094,7 +2094,7 @@ protected JSONObject processSetStatusBadge(String userID, JSONObject jsonRoot, i
        //
        
        String deliveryRequestID = zuks.getStringKey();
-       BadgeChange badgeChangeRequest = new BadgeChange(subscriberID, deliveryRequestID, SystemTime.getCurrentTime(), eventID, action, activeBadgeID, moduleID, featureID, origin, RESTAPIGenericReturnCodes.SUCCESS, tenantID, new ParameterMap());
+       BadgeChange badgeChangeRequest = new BadgeChange(subscriberID, deliveryRequestID, eventID, action, activeBadgeID, moduleID, featureID, origin, RESTAPIGenericReturnCodes.SUCCESS, tenantID, new ParameterMap());
        Serializer<StringKey> keySerializer = StringKey.serde().serializer();
        Serializer<BadgeChange> valueSerializer = BadgeChange.serde().serializer();
        kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getBadgeChangeRequestTopic(), keySerializer.serialize(Deployment.getBadgeChangeRequestTopic(), new StringKey(subscriberID)), valueSerializer.serialize(Deployment.getBadgeChangeRequestTopic(), badgeChangeRequest)));

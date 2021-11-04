@@ -5228,7 +5228,7 @@ public class ThirdPartyManager
         *
         *****************************************/
        
-       BadgeChange badgeChangeRequest = new BadgeChange(subscriberID, deliveryRequestID, SystemTime.getCurrentTime(), eventID, action, activeBadge.getGUIManagedObjectID(), moduleID, featureID, origin, RESTAPIGenericReturnCodes.SUCCESS, tenantID, new ParameterMap());
+       BadgeChange badgeChangeRequest = new BadgeChange(subscriberID, deliveryRequestID, eventID, action, activeBadge.getGUIManagedObjectID(), moduleID, featureID, origin, RESTAPIGenericReturnCodes.SUCCESS, tenantID, new ParameterMap());
        Serializer<StringKey> keySerializer = StringKey.serde().serializer();
        Serializer<BadgeChange> valueSerializer = BadgeChange.serde().serializer();
        

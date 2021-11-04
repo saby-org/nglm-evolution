@@ -208,11 +208,13 @@ public class BadgeChange extends SubscriberStreamOutput implements EvolutionEngi
     this.responseEvent = badgeChange.IsResponseEvent();
   }
   
-  public BadgeChange(String subscriberID, String deliveryRequestID, BadgeAction action, String badgeID, String moduleID, String featureID, String origin, RESTAPIGenericReturnCodes returnStatus, int tenantID, ParameterMap infos)
+  
+  public BadgeChange(String subscriberID, String deliveryRequestID, String eventID, BadgeAction action, String badgeID, String moduleID, String featureID, String origin, RESTAPIGenericReturnCodes returnStatus, int tenantID, ParameterMap infos)
   {
     super();
     this.subscriberID = subscriberID;
     this.deliveryRequestID = deliveryRequestID;
+    this.setEventID(eventID);
     this.action = action;
     this.badgeID = badgeID;
     this.moduleID = moduleID;
