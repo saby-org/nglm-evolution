@@ -29733,7 +29733,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     if (offer != null && offer.getJSONRepresentation().get("vouchers") != null) {
       offerVouchers = (JSONArray) offer.getJSONRepresentation().get("vouchers");
     }
-    OfferProduct test = null;
     HashMap<String,Object> response = new HashMap<String,Object>();
     String supplierID = null;
     if (offerProducts != null && offerProducts.size() != 0)
@@ -29748,7 +29747,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                     GUIManagedObject productObject = productService.getStoredProduct(productId);
                     if (productObject != null && productObject.getJSONRepresentation().get("supplierID") != null)
                       {
-                            OfferProduct product = null;
                             supplierID = productObject.getJSONRepresentation().get("supplierID").toString();
                             response.put("supplierID", supplierID);
                             response.put("offerProduct", offerProduct);
