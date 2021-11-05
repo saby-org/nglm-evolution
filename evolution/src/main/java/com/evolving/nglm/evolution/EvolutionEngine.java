@@ -20,14 +20,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import com.evolving.nglm.evolution.kafka.EvolutionProductionExceptionHandler;
 import com.evolving.nglm.evolution.otp.OTPInstanceChangeEvent;
 import com.evolving.nglm.evolution.otp.OTPTypeService;
 import com.evolving.nglm.evolution.otp.OTPUtils;
-import com.evolving.nglm.evolution.notification.NotificationTemplateParameters;
 import com.evolving.nglm.evolution.offeroptimizer.ProposedOfferDetails;
 import com.evolving.nglm.evolution.preprocessor.Preprocessor;
 import com.evolving.nglm.evolution.propensity.PropensityService;
@@ -38,7 +36,6 @@ import com.evolving.nglm.evolution.statistics.StatBuilder;
 import com.evolving.nglm.evolution.statistics.StatsBuilders;
 import io.confluent.kafka.formatter.AvroMessageFormatter;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.SerializationUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
@@ -3825,7 +3822,7 @@ public class EvolutionEngine
                 currentUCGState.calculateAndApplyShiftProbabilityForUCGGroup(subscriberUCGGroup);
                 subscriberProfile.setUniversalControlGroupPrevious(true);
                 subscriberProfile.setUniversalControlGroupChangeDate(now);
-                subscriberProfile.SetUniversalControlGroupHistoryAuditInfo(formatter.format(now) + ";" + subscriberProfile.getUniversalControlGroup() + ";" + changeStateOperation);
+                subscriberProfile.setUniversalControlGroupHistoryAuditInfo(formatter.format(now) + ";" + subscriberProfile.getUniversalControlGroup() + ";" + changeStateOperation);
                 context.getSubscriberState().setUCGState(ucgState, now, tenantID);
               }
             }
@@ -4004,7 +4001,7 @@ public class EvolutionEngine
             currentUCGState.calculateAndApplyShiftProbabilityForUCGGroup(subscriberUCGGroup);
             subscriberProfile.setUniversalControlGroupPrevious(isInUCG);
             subscriberProfile.setUniversalControlGroupChangeDate(now);
-            subscriberProfile.SetUniversalControlGroupHistoryAuditInfo(formatter.format(now)+";"+subscriberProfile.getUniversalControlGroup()+";"+changeStateOperation);
+            subscriberProfile.setUniversalControlGroupHistoryAuditInfo(formatter.format(now)+";"+subscriberProfile.getUniversalControlGroup()+";"+changeStateOperation);
             context.getSubscriberState().setUCGState(ucgState, now, tenantID);
           }
       }

@@ -1757,7 +1757,7 @@ public abstract class SubscriberProfile
       }
   }
 
-  public void SetUniversalControlGroupHistoryAuditInfo(String ucgAuditInfo)
+  public void setUniversalControlGroupHistoryAuditInfo(String ucgAuditInfo)
   {
     universalControlGroupHistoryAuditInfo.add(ucgAuditInfo);
   }
