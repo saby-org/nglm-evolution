@@ -152,7 +152,7 @@ public abstract class SubscriberProfile
     //
 
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(14));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(15));
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("subscriberTraceEnabled", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("evolutionSubscriberStatus", Schema.OPTIONAL_STRING_SCHEMA);
@@ -181,6 +181,7 @@ public abstract class SubscriberProfile
     schemaBuilder.field("otps",   SchemaBuilder.array(OTPInstance.serde().schema()).defaultValue(Collections.<OTPInstance>emptyList()).schema());
     schemaBuilder.field("universalControlGroupPrevious",Schema.OPTIONAL_BOOLEAN_SCHEMA);
     schemaBuilder.field("universalControlGroupChangeDate",Timestamp.builder().optional().schema());
+    schemaBuilder.field("universalControlGroupHistoryAuditInfo",SchemaBuilder.array(Schema.STRING_SCHEMA).defaultValue(new ArrayList<String>()).schema());
 
     commonSchema = schemaBuilder.build();
   };
@@ -271,6 +272,7 @@ public abstract class SubscriberProfile
   // the field unknownRelationships does not mean to be serialized, it is only used as a temporary parameter to handle the case where, in a journey, 
   // the required relationship does not exist and must go out of the box through a special connector.
   private List<Pair<String, String>> unknownRelationships = new ArrayList<>();
+  private List<String> universalControlGroupHistoryAuditInfo;
   
  
 
@@ -324,6 +326,7 @@ public abstract class SubscriberProfile
       }
     return result;
   }
+  public List<String> getUniversalControlGroupHistoryAuditInfo() {return universalControlGroupHistoryAuditInfo; }
   
   //
   //  temporary (until we can update nglm-kazakhstan)
@@ -1754,6 +1757,11 @@ public abstract class SubscriberProfile
       }
   }
 
+  public void SetUniversalControlGroupHistoryAuditInfo(String ucgAuditInfo)
+  {
+    universalControlGroupHistoryAuditInfo.add(ucgAuditInfo);
+  }
+
   /*****************************************
   *
   *  constructor (simple)
@@ -1789,6 +1797,7 @@ public abstract class SubscriberProfile
     this.tenantID = tenantID;
     this.universalControlGroupPrevious = null;
     this.universalControlGroupChangeDate = null;
+    this.universalControlGroupHistoryAuditInfo = new ArrayList<>();
   }
 
   /*****************************************
@@ -1842,7 +1851,8 @@ public abstract class SubscriberProfile
     Date universalControlGroupChangeDate = (schemaVersion >= 12) ? (Date)valueStruct.get("universalControlGroupChangeDate") : null;
     Map<String,MetricHistory> scoreBalances = schema.field("scoreBalances") != null ? unpackScoreBalances(schema.field("scoreBalances").schema(), (Map<String,Object>) valueStruct.get("scoreBalances")): Collections.<String,MetricHistory>emptyMap();
     Map<String,MetricHistory> progressionBalances = schema.field("progressionBalances") != null ? unpackProgressionBalances(schema.field("progressionBalances").schema(), (Map<String,Object>) valueStruct.get("progressionBalances")): Collections.<String,MetricHistory>emptyMap();
-    
+    List<String> universalControlGroupHistoryAuditInfo = (schemaVersion >= 15) ? valueStruct.getArray("universalControlGroupHistoryAuditInfo") : null;
+
     //
     //  return
     //
@@ -1875,6 +1885,7 @@ public abstract class SubscriberProfile
     this.offerPurchaseSalesChannelHistory = offerPurchaseSalesChannelHistory;
     this.universalControlGroupPrevious = universalControlGroupPrevious;
     this.universalControlGroupChangeDate = universalControlGroupChangeDate;
+    this.universalControlGroupHistoryAuditInfo = universalControlGroupHistoryAuditInfo;
   }
 
   /*****************************************
@@ -2321,6 +2332,7 @@ public abstract class SubscriberProfile
     this.tenantID = subscriberProfile.getTenantID();
     this.universalControlGroupPrevious = subscriberProfile.getUniversalControlGroupPrevious();
     this.universalControlGroupChangeDate = subscriberProfile.getUniversalControlGroupChangeDate();
+    this.universalControlGroupHistoryAuditInfo = subscriberProfile.getUniversalControlGroupHistoryAuditInfo();
   }
 
   /*****************************************
@@ -2359,6 +2371,7 @@ public abstract class SubscriberProfile
     struct.put("otps", packOTPInstances(subscriberProfile.getOTPInstances()));
     struct.put("universalControlGroupPrevious",subscriberProfile.getUniversalControlGroupPrevious());
     struct.put("universalControlGroupChangeDate",subscriberProfile.getUniversalControlGroupChangeDate());
+    struct.put("universalControlGroupHistoryAuditInfo",subscriberProfile.getUniversalControlGroupHistoryAuditInfo());
   }
 
   /*****************************************

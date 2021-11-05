@@ -24,9 +24,7 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import com.evolving.nglm.evolution.kafka.EvolutionProductionExceptionHandler;
-import com.evolving.nglm.evolution.otp.OTPInstance;
 import com.evolving.nglm.evolution.otp.OTPInstanceChangeEvent;
-import com.evolving.nglm.evolution.otp.OTPType;
 import com.evolving.nglm.evolution.otp.OTPTypeService;
 import com.evolving.nglm.evolution.otp.OTPUtils;
 import com.evolving.nglm.evolution.notification.NotificationTemplateParameters;
@@ -40,6 +38,7 @@ import com.evolving.nglm.evolution.statistics.StatBuilder;
 import com.evolving.nglm.evolution.statistics.StatsBuilders;
 import io.confluent.kafka.formatter.AvroMessageFormatter;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.SerializationUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
@@ -78,7 +77,6 @@ import com.evolving.nglm.core.AutoProvisionSubscriberStreamEvent;
 import com.evolving.nglm.core.CleanupSubscriber;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.Deployment;
-import com.evolving.nglm.core.DeploymentCommon;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.KStreamsUniqueKeyServer;
 import com.evolving.nglm.core.NGLMKafkaClientSupplier;
@@ -100,7 +98,6 @@ import com.evolving.nglm.core.SubscriberStreamEvent.SubscriberAction;
 import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.ActionManager.ActionType;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
-import com.evolving.nglm.evolution.ContactPolicyCommunicationChannels.ContactType;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.DeliveryRequest.DeliveryPriority;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
@@ -112,7 +109,6 @@ import com.evolving.nglm.evolution.Expression.ExpressionEvaluationException;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.MetricHistory.BucketRepresentation;
-import com.evolving.nglm.evolution.NotificationManager.NotificationManagerRequest;
 import com.evolving.nglm.evolution.Journey.ContextUpdate;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatusField;
@@ -145,6 +141,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+
+import java.text.Format;
+import java.text.SimpleDateFormat;
 
 public class EvolutionEngine
 {
@@ -260,6 +259,8 @@ public class EvolutionEngine
   //keeps current ucg state for recalculating shift probability after add/remove subs to ucg
   private static UCGState currentUCGState;
   private static HashMap<String,Integer> ucgSegmentEvaluationCount = new HashMap<>();
+  //keeps the count of subscribers eligible for removing in segment not removed in order to gather the right percent of refresh
+  private static HashMap<String,Integer> ucgSegmentsRefreshNotReplacedCount = new HashMap<>();
 
   static
     {
@@ -3742,13 +3743,12 @@ public class EvolutionEngine
     *  ucg evaluation
     *
     *****************************************/
-
     UCGState ucgState = ucgStateReader.get(UCGState.getSingletonKey());
     //at start or when a new state were calculated the current ucg state is replaced
 
     if(currentUCGState == null || currentUCGState.getEvaluationDate().compareTo(ucgState.getEvaluationDate()) < 0)
     {
-      currentUCGState = ucgState;
+      currentUCGState = (ucgState != null) ? new UCGState(ucgState) : null;
     }
     if (currentUCGState != null && currentUCGState.getRefreshEpoch() != null)
       {
@@ -3759,6 +3759,8 @@ public class EvolutionEngine
         boolean refreshUCG = false;
         refreshUCG = refreshUCG || context.getSubscriberState().getUCGEpoch() == null;
         refreshUCG = refreshUCG || ! Objects.equals(context.getSubscriberState().getUCGRuleID(), currentUCGState.getUCGRuleID());
+        //yake care at ucgState getRefreshEpoch is returning ucg rule epoch.
+        //If you intend to change code to be based on ucg state epoch be carefull because this can affect adding to ucg
         refreshUCG = refreshUCG || context.getSubscriberState().getUCGEpoch() < currentUCGState.getRefreshEpoch();
 
 
@@ -3770,11 +3772,71 @@ public class EvolutionEngine
         refreshWindow = refreshWindow || context.getSubscriberState().getUCGRefreshDay() == null;
         refreshWindow = refreshWindow || RLMDateUtils.addDays(context.getSubscriberState().getUCGRefreshDay(), currentUCGState.getRefreshWindowDays(), Deployment.getDeployment(tenantID).getTimeZone()).compareTo(now) <= 0;
 
+        boolean isInUCG = subscriberProfile.getUniversalControlGroup();
+
+        Set<String> userStratum = new HashSet<String>();
+        Map<String, String> userSegmentsMap = subscriberProfile.getSegmentsMap(subscriberGroupEpochReader);
+
+        boolean addToUCG = false;
+        boolean removeFromUCG = false;
+        //will be used for ucg audit list. In order to reduce space used only one char will be used
+        // N = no operation performed (when subscriber is added and no operation performed
+        // A = change state based on add
+        // R = change state based on replace at refresh
+        // O = change state based on overload removal
+
+        char changeStateOperation = 'N';
+
+        Format formatter = new SimpleDateFormat("yyyyMMdd-HHmmss.SSS");
+
+        //in case that user is in ucg because identifying if shift probability is negative that means we had to remove subscribers from ucg
+        //we'll verify if quick conditions are  accomplished (quick refresh is performing, and no of days in ucg allows to remove subscriber)
+        //to identify right shift probablity means to iteration in 2 lists so we'll do that pnly if is necessary
+        if(isInUCG && ! Deployment.getUcgQuickRemovalAtRefresh() && RLMDateUtils.addDays(context.getSubscriberState().getUCGRefreshDay(), Deployment.getMinDaysInUCGForQuickRemoval(), Deployment.getDeployment(tenantID).getTimeZone()).compareTo(now) <= 0)
+        {
+          for (String dimensionID : currentUCGState.getUCGRule().getSelectedDimensions())
+          {
+            userStratum.add(userSegmentsMap.get(dimensionID));
+          }
+          UCGGroup subscriberUCGGroup = currentUCGState.getUCGGroups().stream().filter(p -> p.getSegmentIDs().equals(userStratum)).findFirst().get();
+          UCGGroup elasticSubscriberUCGGroup = ucgState.getUCGGroups().stream().filter(p -> p.getSegmentIDs().equals(userStratum)).findFirst().get();
+          //the subscriber will be removed only if currentProbabilityShift that is managed by engine and shiftProbability received from elastic are negative
+          //currentShiftProbability is not sufficient because if adding is working based on counting the shift probability can become negative and if min days for quick removal is zero subscribers can be added and removed almost instant
+          if(subscriberUCGGroup !=null && elasticSubscriberUCGGroup != null && subscriberUCGGroup.getShiftProbability() !=null && elasticSubscriberUCGGroup.getShiftProbability() != null)
+          {
+            if (subscriberUCGGroup.getShiftProbability() < 0 && elasticSubscriberUCGGroup.getShiftProbability() < 0)
+            {
+              log.info("remove overload --->" + subscriberUCGGroup.getShiftProbability());
+              if (Deployment.getUcgQuickOverloadRemoval())
+              {
+                removeFromUCG = true;
+              }
+              else
+              {
+                ThreadLocalRandom random = ThreadLocalRandom.current();
+                removeFromUCG = (random.nextDouble() < -subscriberUCGGroup.getShiftProbability());
+              }
+              if (removeFromUCG)
+              {
+                subscriberProfile.setUniversalControlGroup(false);
+                changeStateOperation = 'O';
+                //decrease number of subscribers in ucg for ucg group assigned to current user
+                subscriberUCGGroup.decrementUCGSubscribers(1);
+                currentUCGState.calculateAndApplyShiftProbabilityForUCGGroup(subscriberUCGGroup);
+                subscriberProfile.setUniversalControlGroupPrevious(true);
+                subscriberProfile.setUniversalControlGroupChangeDate(now);
+                subscriberProfile.SetUniversalControlGroupHistoryAuditInfo(formatter.format(now) + ";" + subscriberProfile.getUniversalControlGroup() + ";" + changeStateOperation);
+                context.getSubscriberState().setUCGState(ucgState, now, tenantID);
+              }
+            }
+          }
+        }
+
         //
         //  refresh if necessary
         //
 
-        if (refreshUCG && refreshWindow)
+        else if (refreshUCG)
           {
             /*****************************************
             *
@@ -3782,16 +3844,12 @@ public class EvolutionEngine
             *
             *****************************************/
 
-            boolean addToUCG = false;
-            boolean removeFromUCG = false;
-
             //
             // Retrieve the user stratum for UCG dimensions only 
             //
             
-            boolean isInUCG = subscriberProfile.getUniversalControlGroup();
-            Set<String> userStratum = new HashSet<String>();
-            Map<String, String> userSegmentsMap = subscriberProfile.getSegmentsMap(subscriberGroupEpochReader);
+
+
             for (String dimensionID : currentUCGState.getUCGRule().getSelectedDimensions())
               {
                 userStratum.add(userSegmentsMap.get(dimensionID));
@@ -3805,60 +3863,122 @@ public class EvolutionEngine
             //
             
             double shiftProbability = 0.0d;
+            double elasticShiftProbability = 0.0d;
             UCGGroup subscriberUCGGroup = null;
+            UCGGroup elasticUcgGroup = ucgState.getUCGGroups().stream().filter(p -> p.getSegmentIDs().equals(userStratum)).findFirst().get();
             Iterator<UCGGroup> iterator = currentUCGState.getUCGGroups().iterator();
             while(iterator.hasNext()) 
               {
                 UCGGroup g = iterator.next();
                 if(g.getSegmentIDs().equals(userStratum)) 
                   {
-                    //if (g.getShiftProbability() != null)
-                    //  {
-                    //    shiftProbability = g.getShiftProbability();
-                    //  }
-                    // TODO What if shift probability is null ? manually re-compute it ?
                     subscriberUCGGroup = g;
                     break;
                   }
               }
 
-            if(subscriberUCGGroup !=null && subscriberUCGGroup.getShiftProbability() != null)
+            if(subscriberUCGGroup != null && elasticUcgGroup != null)
             {
-              shiftProbability = subscriberUCGGroup.getShiftProbability();
+              if (subscriberUCGGroup.getShiftProbability() != null)
+              {
+                shiftProbability = subscriberUCGGroup.getShiftProbability();
+              }
+              if (elasticUcgGroup.getShiftProbability() != null)
+              {
+                elasticShiftProbability = elasticUcgGroup.getShiftProbability();
+              }
+              if (isInUCG)
+              {
+                //here remove subscribers in order to be replaced with new subscribers based on percent of refresh only if subscriber is in refresh window
+                //will replace subscribers based on refresh percent In hash map the key will be segment_id-segment_id foreach strata
+                if(refreshWindow)
+                {
+                  String key = String.join("-", subscriberUCGGroup.getSegmentIDs());
+                  //counting is starting from 1
+                  if (ucgSegmentsRefreshNotReplacedCount.getOrDefault(key, 1) < 100 / ucgState.getUCGRule().getPercentageOfRefresh())
+                  {
+                    //increment value of count (or put ititial record if it not exist
+                    ucgSegmentsRefreshNotReplacedCount.put(key,
+                        ucgSegmentsRefreshNotReplacedCount.getOrDefault(key, 1) + 1);
+                  }
+                  else
+                  {
+                    //mark remove from UCG ucg true and reset counter to 1
+                    removeFromUCG = true;
+                    changeStateOperation = 'R';
+                    ucgSegmentsRefreshNotReplacedCount.put(key, 1);
+                  }
+                }
+                //is subscriber were not removed at refresh and we have overload for UCG
+                // If there is already too much customers in the Universal Control Group
+                if (!removeFromUCG && shiftProbability < 0 && elasticShiftProbability < 0 && Deployment.getUcgQuickRemovalAtRefresh())
+                {
+                  //verify if subscriber stayed eligible no of days to be removed (different than refresh days period)
+                  if (RLMDateUtils.addDays(context.getSubscriberState().getUCGRefreshDay(), Deployment.getMinDaysInUCGForQuickRemoval(), Deployment.getDeployment(tenantID).getTimeZone()).compareTo(now) <= 0)
+                  {
+                    if (Deployment.getUcgQuickOverloadRemoval())
+                    {
+                      removeFromUCG = true;
+                    }
+                    else
+                    {
+                      ThreadLocalRandom random = ThreadLocalRandom.current();
+                      removeFromUCG = (random.nextDouble() < -shiftProbability);
+                    }
+                  }
+                  if (removeFromUCG)
+                  {
+                    changeStateOperation = 'O';
+                  }
+                }
+              }
+              if (!isInUCG)
+              {
+                //if shift probability is less than zero means that ucg overload correction mechanism should work, so no subsscriber will be added
+                //here itś considered probability comming from elastic search because if this probability is negative means that things are going wrong
+                //also shift probability is considered and this is changed inside of engine. elastic shift and shift are equal equal when new value comming in ucgstate topic
+                //if elasticShiftProbability and shiftProbability are negative we'ĺl wait until one of these become positive. Normally the first will be shiftProbability. This means that overload were corrected
+                //IMPORTANT normally any add kind of add (by counting or random) does not generate overloading. This overload can come only from external sources like import or something else
+                //even if this is blocked overload correction mechanism above will work so the number of subscribers will be corrected
+                if (elasticShiftProbability >= 0 || shiftProbability >= 0)
+                {
+                  if (!Deployment.getAddSubscribersToUcgByCounting())
+                  {
+                    // If there is not enough customers in the Universal Control Group.
+                    ThreadLocalRandom random = ThreadLocalRandom.current();
+                    addToUCG = (random.nextDouble() < shiftProbability);
+                  }
+                  else
+                  {
+
+                    //will add subscribers based on count. In hash map the key will be segment_id-segment_id foreach strata
+                    String key = String.join("-", subscriberUCGGroup.getSegmentIDs());
+                    //counting is starting from 1
+                    if (ucgSegmentEvaluationCount.getOrDefault(key, 1) < 1 / ucgState.getTargetRatio())
+                    {
+                      //increment value of count (or put ititial record if it not exist
+                      ucgSegmentEvaluationCount.put(key, ucgSegmentEvaluationCount.getOrDefault(key, 1) + 1);
+                    }
+                    else
+                    {
+                      //mark add to ucg true and reset counter to 1
+                      addToUCG = true;
+                      ucgSegmentEvaluationCount.put(key, 1);
+                    }
+                  }
+                }
+                else
+                {
+                  log.error("Adding subscriber to ucg error. Shift probability from es for strata is negative, (" + elasticShiftProbability
+                      + ") thats means to much subscribers in ucg for this strata. This need urgent investigation !!!" + String.join(" ", elasticUcgGroup.getSegmentIDs()));
+                }
+              }
+              else
+              {
+                log.warn("no subscriber group found for" + subscriberProfile.getSubscriberID());
+              }
             }
 
-            if(shiftProbability < 0 && isInUCG) 
-              {
-                // If there is already too much customers in the Universal Control Group.
-                ThreadLocalRandom random = ThreadLocalRandom.current();
-                removeFromUCG = (random.nextDouble() < -shiftProbability);
-              }
-            else if(shiftProbability > 0 && !isInUCG && !Deployment.getAddSubscribersToUcgByCounting())
-              {
-                // If there is not enough customers in the Universal Control Group.
-                ThreadLocalRandom random = ThreadLocalRandom.current();
-                addToUCG = (random.nextDouble() < shiftProbability);
-              }
-            else if(subscriberUCGGroup != null)
-            {
-              //will add subscribers based on count. In hash map the key will be segment_id-segment_id foreach strata
-              String key = String.join("-",subscriberUCGGroup.getSegmentIDs());
-              //counting is starting from 1
-              if(ucgSegmentEvaluationCount.getOrDefault(key,1) < 1/ucgState.getTargetRatio())
-              {
-                //increment value of count (or put ititial record if it not exist
-                ucgSegmentEvaluationCount.put(key,ucgSegmentEvaluationCount.getOrDefault(key,1)+1);
-              }else
-              {
-                //mark add to ucg true and reset counter to 1
-                addToUCG = true;
-                ucgSegmentEvaluationCount.put(key,1);
-              }
-            }
-            else
-            {
-              log.warn("no subscriber group found for"+subscriberProfile.getSubscriberID());
-            }
 
             /*****************************************
             *
@@ -3869,19 +3989,22 @@ public class EvolutionEngine
             if (addToUCG)
             {
               subscriberProfile.setUniversalControlGroup(true);
+              changeStateOperation = 'A';
               //increase number of subscribers in ucg for ucg group assigned to current user
               subscriberUCGGroup.incrementUCGSubscribers(1);
-              currentUCGState.calculateAndApplyShiftProbabilityForUCGGroup(subscriberUCGGroup);
             }
             if (removeFromUCG)
             {
               subscriberProfile.setUniversalControlGroup(false);
               //decrease number of subscribers in ucg for ucg group assigned to current user
               subscriberUCGGroup.decrementUCGSubscribers(1);
-              currentUCGState.calculateAndApplyShiftProbabilityForUCGGroup(subscriberUCGGroup);
+
             }
+            subscriberUCGGroup.incrementTotalSubscribers(1);
+            currentUCGState.calculateAndApplyShiftProbabilityForUCGGroup(subscriberUCGGroup);
             subscriberProfile.setUniversalControlGroupPrevious(isInUCG);
             subscriberProfile.setUniversalControlGroupChangeDate(now);
+            subscriberProfile.SetUniversalControlGroupHistoryAuditInfo(formatter.format(now)+";"+subscriberProfile.getUniversalControlGroup()+";"+changeStateOperation);
             context.getSubscriberState().setUCGState(ucgState, now, tenantID);
           }
       }
