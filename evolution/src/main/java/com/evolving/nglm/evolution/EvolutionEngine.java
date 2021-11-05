@@ -3969,8 +3969,8 @@ public class EvolutionEngine
                 }
                 else
                 {
-                  log.error("Adding subscriber to ucg error. Shift probability from es for strata is negative, (" + elasticShiftProbability
-                      + ") thats means to much subscribers in ucg for this strata. This need urgent investigation !!!" + String.join(" ", elasticUcgGroup.getSegmentIDs()));
+                  log.warn("Adding subscriber to ucg error. Shift probability from es for strata is negative, (" + elasticShiftProbability
+                      + ") thats means to much subscribers in ucg for this strata. Strata = " + String.join(" ", elasticUcgGroup.getSegmentIDs()));
                 }
               }
               else
