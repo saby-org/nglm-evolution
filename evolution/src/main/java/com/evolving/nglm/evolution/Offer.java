@@ -135,6 +135,8 @@ public class Offer extends GUIManagedObject implements StockableItem
   private Integer maximumAcceptances;
   private Integer maximumAcceptancesPeriodDays;
   private Integer maximumAcceptancesPeriodMonths;
+  private String notEligibilityReason;
+  private String limitsReachedReason;
 
   //
   //  derived
@@ -170,7 +172,9 @@ public class Offer extends GUIManagedObject implements StockableItem
   public Integer getMaximumAcceptances() { return maximumAcceptances; }
   public Integer getMaximumAcceptancesPeriodDays() { return maximumAcceptancesPeriodDays; }
   public Integer getMaximumAcceptancesPeriodMonths() { return maximumAcceptancesPeriodMonths; }
- 
+  public String getNotEligibilityReason() { return notEligibilityReason; }
+  public String getLimitsReachedReason() {	return limitsReachedReason; }
+  
   /*****************************************
   *
   *  evaluateProfileCriteria
@@ -180,6 +184,30 @@ public class Offer extends GUIManagedObject implements StockableItem
   public boolean evaluateProfileCriteria(SubscriberEvaluationRequest evaluationRequest)
   {
     return EvaluationCriterion.evaluateCriteria(evaluationRequest, profileCriteria);
+  }
+  
+  /*****************************************
+  *
+  *  evaluateProfileCriteriaWithReason
+  *
+  *****************************************/
+  public boolean evaluateProfileCriteriaWithReason(SubscriberEvaluationRequest evaluationRequest)
+  {
+	    //
+	    //  clear evaluationVariables
+	    //
+	    evaluationRequest.getEvaluationVariables().clear();
+	    //
+	    //  evaluate
+	    //
+	    for (EvaluationCriterion criterion : profileCriteria)
+	      {
+	        if(!criterion.evaluate(evaluationRequest)) {
+	        	setNotEligibilityReason(criterion.getCriterionField().getName());
+	        }
+	        
+	      }
+	    return true;
   }
 
   /*****************************************
@@ -1188,4 +1216,12 @@ public class Offer extends GUIManagedObject implements StockableItem
     }
     return result;
   }
+  
+  public void setNotEligibilityReason(String notEligibilityReason) {
+		this.notEligibilityReason = notEligibilityReason;
+	}
+  
+  public void setLimitsReachedReason(String limitsReachedReason) {
+		this.limitsReachedReason = limitsReachedReason;
+	}
 }
