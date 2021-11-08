@@ -291,7 +291,8 @@ public class ThirdPartyManager
     getCustomerVDRs(42),
     getOfferDetails(43),
     loyaltyAwardBadge(44),
-    loyaltyRemoveBadge(45);
+    loyaltyRemoveBadge(45),
+    getCustomerBGDRs(46);
     private int methodIndex;
     private API(int methodIndex) { this.methodIndex = methodIndex; }
     public int getMethodIndex() { return methodIndex; }
@@ -635,6 +636,7 @@ public class ThirdPartyManager
       restServer.createContext("/nglm-thirdpartymanager/getOfferDetails", new APIHandler(API.getOfferDetails));
       restServer.createContext("/nglm-thirdpartymanager/loyaltyAwardBadge", new APIHandler(API.loyaltyAwardBadge));
       restServer.createContext("/nglm-thirdpartymanager/loyaltyRemoveBadge", new APIHandler(API.loyaltyRemoveBadge));
+      restServer.createContext("/nglm-thirdpartymanager/getCustomerBGDRs", new APIHandler(API.getCustomerBGDRs));
       restServer.setExecutor(Executors.newFixedThreadPool(threadPoolSize));
       restServer.start();
 
@@ -899,6 +901,9 @@ public class ThirdPartyManager
               break;
             case getCustomerBDRs:
               jsonResponse = processGetCustomerBDRs(jsonRoot, tenantID);
+              break;
+            case getCustomerBGDRs:
+              jsonResponse = processGetCustomerBGDRs(jsonRoot, tenantID);
               break;
             case getCustomerEDRs:
               jsonResponse = processGetCustomerEDRs(jsonRoot, tenantID);
@@ -1418,6 +1423,95 @@ public class ThirdPartyManager
     }
     return JSONUtilities.encodeObject(response);
   }
+  
+  /*****************************************
+  *
+  *  processGetCustomerBGDRs
+  *
+  *****************************************/
+
+ private JSONObject processGetCustomerBGDRs(JSONObject jsonRoot, int tenantID) throws ThirdPartyManagerException
+ {
+
+   /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+   Map<String,Object> response = new HashMap<String,Object>();
+
+   /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+   String startDateReq = readString(jsonRoot, "startDate", false);
+   String moduleID = JSONUtilities.decodeString(jsonRoot, "moduleID", false);
+   String featureID = JSONUtilities.decodeString(jsonRoot, "featureID", false);
+   
+   //
+   //  filters
+   //
+   
+   List<QueryBuilder> filters = new ArrayList<QueryBuilder>();
+   if (moduleID != null && !moduleID.isEmpty()) filters.add(QueryBuilders.matchQuery("moduleID", moduleID));
+   if (featureID != null && !featureID.isEmpty()) filters.add(QueryBuilders.matchQuery("featureID", featureID));
+
+   //
+   // process
+   //
+   
+   String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
+   try
+   {
+     SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
+     if (baseSubscriberProfile == null)
+       {
+         updateResponse(response, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND);
+       }
+     else
+       {
+
+         List<JSONObject> BGDRsJson = new ArrayList<JSONObject>();
+         List<BadgeChange> BGDRs = new ArrayList<BadgeChange>();
+         
+         //
+         // read history
+         //
+
+         SearchRequest searchRequest = this.elasticsearch.getSearchRequest(API.getCustomerBGDRs, subscriberID, startDateReq == null ? null : RLMDateUtils.parseDateFromDay(startDateReq, Deployment.getDeployment(tenantID).getTimeZone()), filters, tenantID);
+         List<SearchHit> hits = this.elasticsearch.getESHits(searchRequest);
+         for (SearchHit hit : hits)
+           {
+             BadgeChange badgeChange = new BadgeChange(hit.getSourceAsMap());
+             BGDRs.add(badgeChange);
+           }
+         
+         //
+         // prepare json
+         //
+
+         for (BadgeChange bgdr : BGDRs)
+           {
+             Map<String, Object> presentationMap = bgdr.getThirdPartyPresentationMap(badgeService, journeyService, offerService, loyaltyProgramService);
+             BGDRsJson.add(JSONUtilities.encodeObject(presentationMap));
+           }
+         
+         response.put("BGDRs", JSONUtilities.encodeArray(BGDRsJson));
+         response.putAll(resolveAllSubscriberIDs(baseSubscriberProfile, tenantID));
+         updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
+       }
+   } 
+   catch (SubscriberProfileServiceException | java.text.ParseException | GUIManagerException e)
+   {
+     log.error("SubscriberProfileServiceException ", e.getMessage());
+     throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
+   }
+   return JSONUtilities.encodeObject(response);
+ }
+ 
   
   /*****************************************
    *
@@ -5221,8 +5315,8 @@ public class ThirdPartyManager
 
        String featureID = JSONUtilities.decodeString(jsonRoot, "loginName", DEFAULT_FEATURE_ID);
        String moduleID = DeliveryRequest.Module.REST_API.getExternalRepresentation();
-       String eventID = "event from " + Module.fromExternalRepresentation(moduleID).toString();
        String deliveryRequestID = zuks.getStringKey();
+       String eventID = deliveryRequestID;
 
        /*****************************************
         *

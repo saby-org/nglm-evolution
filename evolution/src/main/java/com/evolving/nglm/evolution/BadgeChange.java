@@ -12,7 +12,6 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
-import org.apache.kafka.connect.data.Timestamp;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.Deployment;
@@ -22,7 +21,7 @@ import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.ActionManager.ActionType;
 import com.evolving.nglm.evolution.Badge.BadgeAction;
-import com.evolving.nglm.evolution.DeliveryManagerForNotifications.MessageStatus;
+import com.evolving.nglm.evolution.DeliveryRequest.Module;
 
 public class BadgeChange extends SubscriberStreamOutput implements EvolutionEngineEvent, Action
 {
@@ -256,7 +255,7 @@ public class BadgeChange extends SubscriberStreamOutput implements EvolutionEngi
   //  getGUIPresentationMap
   //
   
-  public Map<String, Object> getGUIPresentationMap(BadgeService badgeService)
+  public Map<String, Object> getGUIPresentationMap(BadgeService badgeService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService)
   {
     Map<String, Object> result = new HashMap<String, Object>();
     result.put("eventID", getEventID());
@@ -264,9 +263,9 @@ public class BadgeChange extends SubscriberStreamOutput implements EvolutionEngi
     result.put("action", action.getExternalRepresentation());
     result.put("badgeID", badgeID);
     result.put("moduleID", moduleID);
-    result.put("moduleName", moduleID);
+    result.put("moduleName", getModule().toString());
     result.put("featureID", featureID);
-    result.put("featureName", featureID);
+    result.put("featureName", DeliveryRequest.getFeatureName(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
     result.put("tenantID", tenantID);
     result.put("returnCode", returnStatus.getGenericResponseCode());
     result.put("returnCodeDetails", returnStatus.getGenericResponseMessage());
@@ -285,7 +284,7 @@ public class BadgeChange extends SubscriberStreamOutput implements EvolutionEngi
   //  getThirdPartyPresentationMap
   //
   
-  public Map<String, Object> getThirdPartyPresentationMap(BadgeService badgeService)
+  public Map<String, Object> getThirdPartyPresentationMap(BadgeService badgeService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService)
   {
     Map<String, Object> result = new HashMap<String, Object>();
     result.put("eventID", getEventID());
@@ -293,9 +292,9 @@ public class BadgeChange extends SubscriberStreamOutput implements EvolutionEngi
     result.put("action", action.getExternalRepresentation());
     result.put("badgeID", badgeID);
     result.put("moduleID", moduleID);
-    result.put("moduleName", moduleID);
+    result.put("moduleName", getModule().toString());
     result.put("featureID", featureID);
-    result.put("featureName", featureID);
+    result.put("featureName", DeliveryRequest.getFeatureName(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
     result.put("tenantID", tenantID);
     result.put("returnCode", returnStatus.getGenericResponseCode());
     result.put("returnCodeDetails", returnStatus.getGenericResponseMessage());
@@ -309,6 +308,8 @@ public class BadgeChange extends SubscriberStreamOutput implements EvolutionEngi
       }
     return result;
   }
+  
+  public Module getModule(){return Module.fromExternalRepresentation(getModuleID());}
   
   /*****************************************
   *
