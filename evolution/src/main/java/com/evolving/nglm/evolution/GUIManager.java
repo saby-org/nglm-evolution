@@ -25983,7 +25983,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
 
         List<JSONObject> offersJson = offers.stream()
             .map(offer -> ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService,
-                offerObjectiveService, productService, voucherService, salesChannelService, catalogCharacteristicService))
+                offerObjectiveService, productService, voucherService, salesChannelService, catalogCharacteristicService,false,false))
             .collect(Collectors.toList());
 
         response.put("simpleOffers", JSONUtilities.encodeArray(offersJson));
