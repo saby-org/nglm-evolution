@@ -2087,13 +2087,13 @@ protected JSONObject processSetStatusBadge(String userID, JSONObject jsonRoot, i
 
        String featureID = (userName != null) ? userName : "administrator"; // for PTT tests, never happens when called by browser
        String moduleID = DeliveryRequest.Module.Customer_Care.getExternalRepresentation();
-       String eventID = "event from " + Module.fromExternalRepresentation(moduleID).toString();
 
        //
        //  badgeChangeRequest
        //
        
        String deliveryRequestID = zuks.getStringKey();
+       String eventID = deliveryRequestID;
        BadgeChange badgeChangeRequest = new BadgeChange(subscriberID, deliveryRequestID, eventID, action, activeBadgeID, moduleID, featureID, origin, RESTAPIGenericReturnCodes.SUCCESS, tenantID, new ParameterMap());
        Serializer<StringKey> keySerializer = StringKey.serde().serializer();
        Serializer<BadgeChange> valueSerializer = BadgeChange.serde().serializer();

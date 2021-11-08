@@ -19566,7 +19566,7 @@ public class GUIManager
 
                 for (BadgeChange bgdr : BGDRs)
                   {
-                    Map<String, Object> presentationMap = bgdr.getGUIPresentationMap(badgeService);
+                    Map<String, Object> presentationMap = bgdr.getGUIPresentationMap(badgeService, journeyService, offerService, loyaltyProgramService);
                     BGDRsJson.add(JSONUtilities.encodeObject(presentationMap));
                   }
 

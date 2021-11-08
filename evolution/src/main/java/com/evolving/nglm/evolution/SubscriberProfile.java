@@ -1491,8 +1491,8 @@ public abstract class SubscriberProfile
             badgeJSONMap.put("badgeDisplay", badge.getGUIManagedObjectDisplay());
             badgeJSONMap.put("badgeType", badgeState.getBadgeType().getExternalRepresentation());
             badgeJSONMap.put("customerBadgeStatus", badgeState.getCustomerBadgeStatus().getExternalRepresentation());
-            badgeJSONMap.put("badgeAwardDate", badgeState.getBadgeAwardDate());
-            badgeJSONMap.put("badgeRemoveDate", badgeState.getBadgeRemoveDate());
+            badgeJSONMap.put("badgeAwardDate",getDateString(badgeState.getBadgeAwardDate()));
+            badgeJSONMap.put("badgeRemoveDate", getDateString(badgeState.getBadgeRemoveDate()));
             badgesPresentation.add(JSONUtilities.encodeObject(badgeJSONMap));
           }
       }

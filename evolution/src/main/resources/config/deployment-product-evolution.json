@@ -1007,6 +1007,11 @@
       "id"           : "loyaltyRemoveBadge",
       "methodName"   : "loyaltyRemoveBadge",
       "permissions"  : ["API-LOYALTY-BADGE-REMOVE"]
+    },
+    {
+      "id"           : "getCustomerBGDRs",
+      "methodName"   : "getCustomerBGDRs",
+      "permissions"  : ["API-GET-CUSTOMER-BGDRS"]
     }
   ],
 
