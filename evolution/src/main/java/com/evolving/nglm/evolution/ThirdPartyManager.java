@@ -5309,7 +5309,7 @@ public class ThirdPartyManager
        Badge activeBadge = badgeService.getActiveBadges(now, tenantID).stream().filter(badgeObj -> badgeDisplay.equals(badgeObj.getGUIManagedObjectDisplay())).findFirst().orElse(null);
        if (activeBadge == null)
          {
-           updateResponse(response, RESTAPIGenericReturnCodes.LOYALTY_PROJECT_NOT_FOUND);
+           updateResponse(response, RESTAPIGenericReturnCodes.BADGE_NOT_FOUND);
            return JSONUtilities.encodeObject(response);
          }
 
