@@ -2219,7 +2219,6 @@ public class EvolutionEngine
     *****************************************/
 
     subscriberStateUpdated = updateJourneys(context, evolutionEvent, context.getSubscriberState().getSubscriberProfile().getTenantID()) || subscriberStateUpdated;
-    log.info("RAJ K subscriberStateUpdated updateJourneys {}", subscriberStateUpdated);
     
     /*****************************************
     *
@@ -2371,7 +2370,6 @@ public class EvolutionEngine
     
     if(subscriberStateUpdated){
         log.trace("updateSubscriberState : subscriberStateUpdated enriching event with it for down stream processing");
-        log.info("RAJ K subscriberStateUpdated {}", subscriberStateUpdated);
         evolutionHackyEvent.enrichWithSubscriberState(subscriberState);
     }
 
@@ -2878,7 +2876,6 @@ public class EvolutionEngine
        badgeChangeResponse.setReturnStatus(RESTAPIGenericReturnCodes.BADGE_NOT_FOUND);
        changed = false;
      }
-   log.info("RAJ K badgeChangeResponse {}", badgeChangeResponse);
    
    //
    //  add this response - need to sink
@@ -4393,10 +4390,8 @@ public class EvolutionEngine
     // 
     // Tag the subscriber state with the event's information, log a warn if a conflict appears (is the date enough to segregate 2 
     //
-    log.info("RAJ K triggerBadgeWorflow badgeWorflowID {}", badgeWorflowID);
     if(badgeWorflowID == null) { return false; }
     String toBeAdded = eventToTrigWorkflow.getClass().getName() + ":" + eventToTrigWorkflow.getEventDate().getTime() + ":" + badgeWorflowID + ":" + featureID + ":" + "Badge_workflow" + ":" + origin ;
-    log.info("RAJ K triggerBadgeWorflow toBeAdded {}", toBeAdded);
     List<String> workflowTriggering = subscriberState.getWorkflowTriggering();
     if(workflowTriggering.contains(toBeAdded))
       {
@@ -7587,11 +7582,6 @@ public class EvolutionEngine
               
             case BadgeChange:
               BadgeChange badgeChange = (BadgeChange) action;
-              
-              //
-              // RAJ K workflowTriggering
-              //
-              
               break;
 
             default:
@@ -9536,9 +9526,7 @@ public class EvolutionEngine
       *
       *****************************************/
 
-      log.info("RAJ K evolutionEventContext.getEventID() {}", evolutionEventContext.getEventID());
       BadgeChange badgeChangeRequest = new BadgeChange(evolutionEventContext.getSubscriberState().getSubscriberID(), "", evolutionEventContext.getEventID(), operation, badgeID, moduleID, deliveryRequestSource, origin, RESTAPIGenericReturnCodes.SUCCESS, evolutionEventContext.getSubscriberState().getSubscriberProfile().getTenantID(), new ParameterMap());
-      log.info("RAJ K badgeChangeRequest {}", badgeChangeRequest);
       boolean changed = changeSubscriberBadge(badgeChangeRequest, evolutionEventContext.getSubscriberState(), evolutionEventContext.processingDate());
       if (changed)
         {
