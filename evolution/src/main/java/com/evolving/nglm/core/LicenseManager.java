@@ -1572,15 +1572,7 @@ public class LicenseManager
 
       byte [] decodedBytes = Base64.getDecoder().decode(bytesToDeobfuscate);
 
-      //
-      //  swap back
-      //
-<<<<<<< HEAD
 //      for (int i=0; i<swapPos.length; i++)
-=======
-
-      //for (int i=0; i<swapPos.length; i++)
->>>>>>> EVPRO-1147-v210_pre_0
       for (int i=swapPos.length-1; i > -1; i--)
         {
           byte tmp = decodedBytes[swapPos[i]];
