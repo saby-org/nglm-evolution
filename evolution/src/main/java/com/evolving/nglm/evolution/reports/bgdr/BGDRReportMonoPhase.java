@@ -249,7 +249,7 @@ public class BGDRReportMonoPhase implements ReportCsvFactory
         bgdrRecs.put(operation, operationESVal);
         bgdrRecs.put(moduleId, moduleIdESVal);
         bgdrRecs.put(featureId, featureIdESVal);
-        bgdrRecs.put(moduleName, module.getExternalRepresentation());
+        bgdrRecs.put(moduleName, module.toString());
         bgdrRecs.put(featureName, featureESVal);
         bgdrRecs.put(origin, originESVal);
         bgdrRecs.put(eventID, eventIDESVal);
