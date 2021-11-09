@@ -4398,6 +4398,7 @@ public class EvolutionEngine
         log.warn("triggerLoyaltyWorflow already has " + toBeAdded);
         return false;
       }
+    log.info("RAJ K triggerBadgeWorflow toBeAdded {}", toBeAdded);
     workflowTriggering.add(toBeAdded);
     return true;
   }
@@ -6078,46 +6079,53 @@ public class EvolutionEngine
             // check if this workflow has to be triggered
             for(String currentWFToTrigger : workflowTriggering)
               {
+                log.info("RAJ K currentWFToTrigger {}, evolutionEvent.getClass().getName() {}, journey.getJourneyID() {}", currentWFToTrigger, evolutionEvent.getClass().getName(), journey.getJourneyID());
                 String[] elements = currentWFToTrigger.split(":");
                 String eventClass = elements[0];
                 if(eventClass.equals(evolutionEvent.getClass().getName()))
-				          {
-				            String eventDateLong = elements[1];
-				            if(eventDateLong.equals("" + evolutionEvent.getEventDate().getTime())) 
-				              {
-				                // let compare the workflowID:
-				                String workflowID = elements[2];
-				                if(workflowID.equals(journey.getJourneyID()))
-				                  {
-				                    // this is the workflow to trig (good event, good date, good required workflow
-				                    calledJourney = true;
-				                    toBeRemoved.add(currentWFToTrigger);
-				                    sourceFeatureIDFromWorkflowTriggering=elements[3];
-                                                    if (elements.length > 4) { sourceModuleIDFromWorkflowTriggering=elements[4]; }
-                                                    if (elements.length > 5) { origin = elements[5]; }
-				                  }
-				              }
-				            else 
-				              {
-				                // make a cleanup if the date is too old and log a warn because that should not happen
-				                try 
-				                  {
-				                    long dateLong = Long.parseLong(eventDateLong);
-				                    if(SystemTime.getCurrentTime().getTime() > dateLong + 432000000)
-				                      {
-				                        // 5 days too old
-				                        toBeRemoved.add(currentWFToTrigger);
-		                            log.warn("currentWFToTrigger's date is too old " + currentWFToTrigger);
-				                      }				                  
-				                  }
-				                catch(NumberFormatException e)
-				                  {
-				                    // should normally never happen
-				                    toBeRemoved.add(currentWFToTrigger);
-				                    log.warn("currentWFToTrigger's date is not parsable " + currentWFToTrigger);
-				                  }				                
-				              }
-				          }
+                  {
+                    String eventDateLong = elements[1];
+                    if (eventDateLong.equals("" + evolutionEvent.getEventDate().getTime()))
+                      {
+                        // let compare the workflowID:
+                        String workflowID = elements[2];
+                        if (workflowID.equals(journey.getJourneyID()))
+                          {
+                            // this is the workflow to trig (good event, good date, good required workflow
+                            calledJourney = true;
+                            toBeRemoved.add(currentWFToTrigger);
+                            sourceFeatureIDFromWorkflowTriggering = elements[3];
+                            if (elements.length > 4)
+                              {
+                                sourceModuleIDFromWorkflowTriggering = elements[4];
+                              }
+                            if (elements.length > 5)
+                              {
+                                origin = elements[5];
+                              }
+                          }
+                      } 
+                    else
+                      {
+                        // make a cleanup if the date is too old and log a warn because that should not happen
+                        try
+                          {
+                            long dateLong = Long.parseLong(eventDateLong);
+                            if (SystemTime.getCurrentTime().getTime() > dateLong + 432000000)
+                              {
+                                // 5 days too old
+                                toBeRemoved.add(currentWFToTrigger);
+                                log.warn("currentWFToTrigger's date is too old " + currentWFToTrigger);
+                              }
+                          } 
+                        catch (NumberFormatException e)
+                          {
+                            // should normally never happen
+                            toBeRemoved.add(currentWFToTrigger);
+                            log.warn("currentWFToTrigger's date is not parsable " + currentWFToTrigger);
+                          }
+                      }
+                  }
 			        }
            }
         subscriberStateUpdated = subscriberStateUpdated || workflowTriggering.removeAll(toBeRemoved);
