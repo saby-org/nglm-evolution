@@ -2762,7 +2762,7 @@ public class EvolutionEngine
            
            boolean changed = changeSubscriberBadge(badgeChangeRequest, context.getSubscriberState(), context.processingDate(), false);
          }
-       else if ((boolean) badgeChangeRequest.getInfos().get("executeWorkFlow")) // delegate false event from Journey only to trigger workflow - other codes in action manager
+       else if ((boolean) badgeChangeRequest.getInfos().get("executeWorkFlowOnly")) // delegate false event from Journey only to trigger workflow - other codes in action manager
          {
            Badge badge = badgeService.getActiveBadge(badgeChangeRequest.getBadgeID(), SystemTime.getCurrentTime());
            if (badge != null)
@@ -2776,6 +2776,9 @@ public class EvolutionEngine
                    break;
                  case REMOVE:
                    workFlowId = badge.getRemoveWorkflowID();
+                   break;
+                default:
+                  break;
                }
                triggerBadgeWorflow(badgeChangeRequest, context.getSubscriberState(), workFlowId, badgeChangeRequest.getFeatureID(), badgeChangeRequest.getOrigin());
              }
@@ -9566,14 +9569,12 @@ public class EvolutionEngine
       *
       *****************************************/
 
-      ParameterMap infos = new ParameterMap();
-      infos.put("workflowOnly", false);
-      BadgeChange badgeChangeRequest = new BadgeChange(evolutionEventContext.getSubscriberState().getSubscriberID(), "", evolutionEventContext.getEventID(), operation, badgeID, moduleID, deliveryRequestSource, origin, RESTAPIGenericReturnCodes.SUCCESS, evolutionEventContext.getSubscriberState().getSubscriberProfile().getTenantID(), infos);
+      BadgeChange badgeChangeRequest = new BadgeChange(evolutionEventContext.getSubscriberState().getSubscriberID(), uniqueKeyServer.getKey(), evolutionEventContext.getEventID(), operation, badgeID, moduleID, deliveryRequestSource, origin, RESTAPIGenericReturnCodes.SUCCESS, evolutionEventContext.getSubscriberState().getSubscriberProfile().getTenantID(), new ParameterMap());
       boolean changed = changeSubscriberBadge(badgeChangeRequest, evolutionEventContext.getSubscriberState(), evolutionEventContext.processingDate(), true);
       if (changed)
         {
           subscriberEvaluationRequest.getJourneyState().getBadgeChanges().add(badgeChangeRequest);
-          badgeChangeRequest.getInfos().put("executeWorkFlow", changed);
+          badgeChangeRequest.getInfos().put("executeWorkFlowOnly", changed);
         }
 
       /*****************************************
