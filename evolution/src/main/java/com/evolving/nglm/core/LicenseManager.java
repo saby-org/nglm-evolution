@@ -401,7 +401,7 @@ public class LicenseManager
               }
             catch (Exception e)
               {
-                log.error("Error decrypting license. Access will be removed.");
+                log.error("Error decrypting license. Access will be removed.", e);
               }
           }
 
@@ -1576,7 +1576,8 @@ public class LicenseManager
       //  swap back
       //
 
-      for (int i=0; i<swapPos.length; i++)
+      //for (int i=0; i<swapPos.length; i++)
+      for (int i=swapPos.length-1; i > -1; i--)
         {
           byte tmp = decodedBytes[swapPos[i]];
           decodedBytes[swapPos[i]] = decodedBytes[i];
