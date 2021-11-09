@@ -81,6 +81,7 @@ public abstract class FileSourceConnector extends SourceConnector
   private String bootstrapServers = null;
   private String internalTopic = null;
   private File archiveDirectory = null;
+  private boolean parseSubfolders = true; 
   private boolean pollOnce;
   
   //
@@ -281,6 +282,25 @@ public abstract class FileSourceConnector extends SourceConnector
     //
 
     pollOnce = (pollOnceString != null) && pollOnceString.equalsIgnoreCase("true");
+
+    /*****************************************
+    *
+    *  configuration -- parseSubfolders
+    *
+    *****************************************/
+
+    //
+    //  get the parameter
+    //
+
+    String parseSubfoldersString = properties.get("parseSubfolders");
+
+    //
+    //  set the parameter
+    //
+
+    parseSubfolders = (parseSubfoldersString != null) ? parseSubfoldersString.equalsIgnoreCase("true") : true ; // defaults to true
+    log.info("parseSubfolders = " + parseSubfolders);
     
     /*****************************************
     *
@@ -665,12 +685,32 @@ public abstract class FileSourceConnector extends SourceConnector
           public boolean accept(File file)
           {
             Matcher m = p.matcher(file.getName());
-            return m.matches();
+            return file.isFile() && m.matches();
           }
         };
-        File[] initialFilesArray = directory.listFiles(filter);
+        File[] filesInDirectory = directory.listFiles(filter);
+        List<File> fullList = new ArrayList<>();
+        if (filesInDirectory != null) Arrays.stream(filesInDirectory).forEach( f -> fullList.add(f));
+        
+        // then add all files in sub-directories
+
+        if (parseSubfolders) {
+          for (File file : directory.listFiles()) {
+            if (file.isDirectory()) {
+              File[] subFiles = file.listFiles(filter);
+              if (subFiles.length != 0) {
+                if (log.isDebugEnabled()) {
+                  log.debug("  Adding {} files :",subFiles.length);
+                  for (File f : subFiles) log.debug("   {}", f.getAbsolutePath());
+                }
+                Arrays.stream(subFiles).forEach( f -> fullList.add(f));
+              }
+            }
+          }
+        }
+        
         Set<String> initialFiles = new HashSet<String>();
-        for (File file : (initialFilesArray != null) ? Arrays.asList(initialFilesArray) : Collections.<File>emptyList())
+        for (File file : fullList)
           {
             initialFiles.add(file.getName());
           }
@@ -821,7 +861,7 @@ public abstract class FileSourceConnector extends SourceConnector
               public boolean accept(File file)
               {
                 Matcher m = p.matcher(file.getName());
-                return m.matches();
+                return file.isFile() && m.matches();
               }
             };
 
@@ -837,7 +877,27 @@ public abstract class FileSourceConnector extends SourceConnector
               stopRequested=true;
               NGLMRuntime.failureShutdown();
             }
-            Set<File> files = new HashSet<File>(filesInDirectory != null ? Arrays.asList(filesInDirectory) : Collections.<File>emptyList());
+            List<File> fullList = new ArrayList<>();
+            if (filesInDirectory != null) Arrays.stream(filesInDirectory).forEach( f -> fullList.add(f));
+
+            // then add all files in sub-directories
+
+            if (parseSubfolders) {
+              for (File file : directory.listFiles()) {
+                if (file.isDirectory()) {
+                  File[] subFiles = file.listFiles(filter);
+                  if (subFiles.length != 0) {
+                    if (log.isDebugEnabled()) {
+                      log.debug("  Adding {} files :",subFiles.length);
+                      for (File f : subFiles) log.debug("   {}", f.getAbsolutePath());
+                    }
+                    Arrays.stream(subFiles).forEach( f -> fullList.add(f));
+                  }
+                }
+              }
+            }
+
+            Set<File> files = new HashSet<File>(fullList);
 
             //
             //  log
@@ -980,7 +1040,7 @@ public abstract class FileSourceConnector extends SourceConnector
 
         for (File file : filesToProcess)
           {
-            producer.send(new ProducerRecord<byte[], byte[]>(internalTopic, stringKeySerde.serializer().serialize(internalTopic, new StringKey(file.getName())), stringValueSerde.serializer().serialize(internalTopic, new StringValue(file.getName()))));
+            producer.send(new ProducerRecord<byte[], byte[]>(internalTopic, stringKeySerde.serializer().serialize(internalTopic, new StringKey(file.getAbsolutePath())), stringValueSerde.serializer().serialize(internalTopic, new StringValue(file.getAbsolutePath()))));
           }
         if(!filesToProcess.isEmpty())
           {

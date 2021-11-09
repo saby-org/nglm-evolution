@@ -467,7 +467,7 @@ public abstract class FileSourceTask extends SourceTask {
 				// delete/archive files as necessary
 				if (processed.exists()) {
 					try {
-						boolean successfullyRemoved = (archiveDirectory != null) ? processed.getFile().renameTo(new File(archiveDirectory, processed.getName())) : processed.getFile().delete();
+						boolean successfullyRemoved = (archiveDirectory != null) ? processed.getFile().renameTo(new File(archiveDirectory, processed.getAbsolutePath().replace(File.separator, "_"))) : processed.getFile().delete();
 						if (!successfullyRemoved) {
 							log.error("{} -- commit COULD NOT REMOVE FILE {}", taskName, processed.getAbsolutePath());
 						}
@@ -607,7 +607,7 @@ public abstract class FileSourceTask extends SourceTask {
 		// call it only from kafka consumer
 		private SourceFile(ConsumerRecord<byte[], byte[]> record) {
 			StringValue filename = stringValueSerde.deserializer().deserialize(record.topic(), record.value());
-			this.file = new File(directory, filename.getValue());
+			this.file = new File(filename.getValue());
 			this.partition = new TopicPartition(record.topic(), record.partition());
 			this.offset = record.offset();
 
