@@ -213,7 +213,7 @@ public class BadgeChange extends SubscriberStreamOutput implements EvolutionEngi
     super();
     this.subscriberID = subscriberID;
     this.deliveryRequestID = deliveryRequestID;
-    this.setEventID(eventID);
+    setEventID(eventID);
     this.action = action;
     this.badgeID = badgeID;
     this.moduleID = moduleID;

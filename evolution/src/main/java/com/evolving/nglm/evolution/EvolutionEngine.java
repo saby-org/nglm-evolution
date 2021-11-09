@@ -2219,6 +2219,7 @@ public class EvolutionEngine
     *****************************************/
 
     subscriberStateUpdated = updateJourneys(context, evolutionEvent, context.getSubscriberState().getSubscriberProfile().getTenantID()) || subscriberStateUpdated;
+    log.info("RAJ K subscriberStateUpdated updateJourneys {}", subscriberStateUpdated);
     
     /*****************************************
     *
@@ -2370,6 +2371,7 @@ public class EvolutionEngine
     
     if(subscriberStateUpdated){
         log.trace("updateSubscriberState : subscriberStateUpdated enriching event with it for down stream processing");
+        log.info("RAJ K subscriberStateUpdated {}", subscriberStateUpdated);
         evolutionHackyEvent.enrichWithSubscriberState(subscriberState);
     }
 
