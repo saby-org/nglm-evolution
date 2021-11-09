@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.Deployment;
+import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.evolution.CatalogCharacteristic;
 import com.evolving.nglm.evolution.CatalogCharacteristicInstance;
 import com.evolving.nglm.evolution.CatalogCharacteristicService;
@@ -42,6 +43,8 @@ import com.evolving.nglm.evolution.Report;
 import com.evolving.nglm.evolution.SalesChannel;
 import com.evolving.nglm.evolution.SalesChannelService;
 import com.evolving.nglm.evolution.SupportedCurrency;
+import com.evolving.nglm.evolution.Voucher;
+import com.evolving.nglm.evolution.VoucherService;
 import com.evolving.nglm.evolution.reports.FilterObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportDriver.ReportTypeDef;
@@ -57,6 +60,7 @@ public class OfferReportDriver extends ReportDriver
   private SalesChannelService salesChannelService;
   private OfferObjectiveService offerObjectiveService;
   private ProductService productService;
+  private VoucherService voucherService;
   private PaymentMeanService paymentmeanservice;
   private CatalogCharacteristicService catalogCharacteristicService;
   
@@ -118,6 +122,9 @@ public class OfferReportDriver extends ReportDriver
 
     productService = new ProductService(kafka, "offerReportDriver-productService-" + apiProcessKey, Deployment.getProductTopic(), false);
     productService.start();
+    
+    voucherService = new VoucherService(kafka, "offerReportDriver-voucherService-" + apiProcessKey, Deployment.getVoucherTopic(), null);
+    voucherService.start();
 
     paymentmeanservice = new PaymentMeanService(kafka, "offerReportDriver-paymentmeanservice-" + apiProcessKey, Deployment.getPaymentMeanTopic(), false);
     paymentmeanservice.start();
@@ -178,6 +185,7 @@ public class OfferReportDriver extends ReportDriver
       salesChannelService.stop();
       offerObjectiveService.stop();
       productService.stop();
+      voucherService.stop();
       paymentmeanservice.stop();
       catalogCharacteristicService.stop();
 
@@ -222,8 +230,14 @@ public class OfferReportDriver extends ReportDriver
         offerFields.put(offerName, recordJson.get("display"));
           {
             List<Map<String, Object>> offerContentJSON = new ArrayList<>();
-            JSONArray elements = (JSONArray) recordJson.get("products");
-            for (Object obj : elements)
+            JSONArray productsElements = (JSONArray) recordJson.get("products");
+            JSONArray vouchersElements = (JSONArray) recordJson.get("vouchers");
+            
+            //
+            //  productsElements
+            //
+            
+            for (Object obj : productsElements)
               {
                 JSONObject element = (JSONObject) obj;
                 if (element != null)
@@ -235,6 +249,27 @@ public class OfferReportDriver extends ReportDriver
                       {
                         Product product = (Product) guiManagedObject;
                         outputJSON.put(product.getDisplay(), element.get("quantity"));
+                      }
+                    offerContentJSON.add(outputJSON);
+                  }
+              }
+            
+            //
+            //  vouchersElements
+            //
+            
+            for (Object obj : vouchersElements)
+              {
+                JSONObject element = (JSONObject) obj;
+                if (element != null)
+                  {
+                    Map<String, Object> outputJSON = new HashMap<>();
+                    String objectid = (String) (element.get("voucherID"));
+                    GUIManagedObject guiManagedObject = (GUIManagedObject) voucherService.getStoredVoucher(objectid);
+                    if (guiManagedObject != null && guiManagedObject instanceof Voucher)
+                      {
+                        Voucher voucher = (Voucher) guiManagedObject;
+                        outputJSON.put(voucher.getVoucherDisplay(), element.get("quantity"));
                       }
                     offerContentJSON.add(outputJSON);
                   }
@@ -356,12 +391,7 @@ public class OfferReportDriver extends ReportDriver
                             JSONObject price = (JSONObject) element.get("price");
                             if (price != null)
                               {
-                                long amount = 0; // free by default
-                                Object amountObject = price.get("amount");
-                                if (amountObject != null && amountObject instanceof Long)
-                                  {
-                                    amount = (Long) amountObject;
-                                  }
+                                Long amount = JSONUtilities.decodeLong(price, "amount", Long.valueOf(0L)); // free by default
                                 String id = "" + price.get("supportedCurrencyID");
                                 String meansOfPayment = "" + price.get("paymentMeanID");
                                 if (id != null && meansOfPayment != null)
@@ -376,8 +406,7 @@ public class OfferReportDriver extends ReportDriver
                                             JSONObject supportedCurrencyJSON = supportedCurrency.getJSONRepresentation();
                                             if (id.equals(supportedCurrencyJSON.get("id")))
                                               {
-                                                currency = "" + supportedCurrencyJSON.get("display"); // TODO : not used
-                                                                                                      // ??
+                                                currency = "" + supportedCurrencyJSON.get("display"); // TODO : not used ??
                                                 break;
                                               }
                                           }
@@ -387,8 +416,8 @@ public class OfferReportDriver extends ReportDriver
                                         salesChannelJSON.put("currency", currency);
                                       }
                                   }
-                          }
-                        else
+                              } 
+                            else
                               {
                                 salesChannelJSON.put("amount", 0);
                               }
