@@ -26,7 +26,7 @@ public class BGDRReportDriver extends ReportDriver
     log.debug("Processing " + report.getName());
     String defaultReportPeriodUnit = report.getDefaultReportPeriodUnit();
     int defaultReportPeriodQuantity = report.getDefaultReportPeriodQuantity();
-    BGDRReportMonoPhase.main(new String[] { elasticSearch, ES_INDEX_BGDR_INITIAL, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit }, reportGenerationDate);
+    BGDRReportMonoPhase.main(new String[] { elasticSearch, ES_INDEX_BGDR_INITIAL, csvFilename, String.valueOf(defaultReportPeriodQuantity), defaultReportPeriodUnit, tenantID+"" }, reportGenerationDate);
     log.debug("Finished with BGDR Report");
   }
 

@@ -49,6 +49,7 @@ public class BGDRReportMonoPhase implements ReportCsvFactory
   private JourneyService journeyService;
   private OfferService offerService;
   private LoyaltyProgramService loyaltyProgramService;
+  private int tenantID = 0;
 
   private final static String badgeID = "badgeID";
   private final static String badgeDisplay = "badgeDisplay";
@@ -336,6 +337,7 @@ public class BGDRReportMonoPhase implements ReportCsvFactory
         reportPeriodQuantity = Integer.parseInt(args[3]);
         reportPeriodUnit = args[4];
       }
+    if (args.length > 5) tenantID = Integer.parseInt(args[5]);
     Date fromDate = getFromDate(reportGenerationDate, reportPeriodUnit, reportPeriodQuantity);
     Date toDate = reportGenerationDate;
 
@@ -352,7 +354,9 @@ public class BGDRReportMonoPhase implements ReportCsvFactory
       }
     log.info("Reading data from ES in (" + esIndexBgdrList.toString() + ")  index and writing to " + csvfile);
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
-    esIndexWithQuery.put(esIndexBgdrList.toString(), QueryBuilders.rangeQuery("eventDatetime").gte(RLMDateUtils.formatDateForElasticsearchDefault(fromDate)).lte(RLMDateUtils.formatDateForElasticsearchDefault(toDate)));
+    esIndexWithQuery.put(esIndexBgdrList.toString(), QueryBuilders.boolQuery()
+        .filter(QueryBuilders.termQuery("tenantID", tenantID))
+        .filter(QueryBuilders.rangeQuery("eventDatetime").gte(RLMDateUtils.formatDateForElasticsearchDefault(fromDate)).lte(RLMDateUtils.formatDateForElasticsearchDefault(toDate))));
 
     String salesChannelTopic = Deployment.getSalesChannelTopic();
     String offerTopic = Deployment.getOfferTopic();
