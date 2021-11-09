@@ -94,28 +94,28 @@ public abstract class SubscriberStreamOutput implements SubscriberStreamPriority
 		this.eventID = eventID;
 	}
 	// with subscriberprofile context constructor
-	public SubscriberStreamOutput(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, DeliveryPriority deliveryPriority, int tenantID){
-		this.alternateIDs = buildAlternateIDs(subscriberProfile,subscriberGroupEpochReader, tenantID);
-		this.deliveryPriority = deliveryPriority;
-		this.eventDate = SystemTime.getCurrentTime();
-	}
+	public SubscriberStreamOutput(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, DeliveryPriority deliveryPriority){
+      this.alternateIDs = buildAlternateIDs(subscriberProfile,subscriberGroupEpochReader);
+      this.deliveryPriority = deliveryPriority;
+      this.eventDate = SystemTime.getCurrentTime();
+  }
 	// from ES
 	public SubscriberStreamOutput(Map<String, Object> esFields){
 		this();
 		this.eventID = (String) esFields.get("eventID");
 	}
 	// enrich directly
-	public void enrichSubscriberStreamOutput(SubscriberStreamEvent originatingEvent, SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, int tenantID){
-		this.alternateIDs = buildAlternateIDs(subscriberProfile,subscriberGroupEpochReader, tenantID);
-		this.deliveryPriority = originatingEvent.getDeliveryPriority();
-		this.eventDate = originatingEvent.getEventDate();
-		this.eventID = originatingEvent.getEventID();
-	}
+	public void enrichSubscriberStreamOutput(SubscriberStateOutputWrapper subscriberStateOutputWrapper){
+      this.alternateIDs = buildAlternateIDs(subscriberStateOutputWrapper.getEvolutionEventContext().getSubscriberState().getSubscriberProfile(),subscriberStateOutputWrapper.getEvolutionEventContext().getSubscriberGroupEpochReader());
+      this.deliveryPriority = subscriberStateOutputWrapper.getOriginalEvent().getDeliveryPriority();
+      this.eventDate = subscriberStateOutputWrapper.getEvolutionEventContext().eventDate();
+      this.eventID = subscriberStateOutputWrapper.getEvolutionEventContext().getEventID();
+  }
 
 	// build alternateIDs populated
-	private Map<String,String> buildAlternateIDs(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, int tenantID) {
+	private Map<String,String> buildAlternateIDs(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader) {
 		Map<String,String> alternateIDs = new LinkedHashMap<>();
-		SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, SystemTime.getCurrentTime(), tenantID);
+		SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, SystemTime.getCurrentTime(), subscriberProfile.getTenantID());
 
 		for (Map.Entry<String,AlternateID> entry:Deployment.getAlternateIDs().entrySet()) {
 			AlternateID alternateID = entry.getValue();

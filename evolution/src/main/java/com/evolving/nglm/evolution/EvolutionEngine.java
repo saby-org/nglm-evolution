@@ -1055,7 +1055,7 @@ public class EvolutionEngine
     //  get outputs
     //
 
-    KStream<StringKey, SubscriberStateOutputWrapper> evolutionEngineOutputsWithSubscriberState = forOutputsStream.filter((key,value)->value.getSubscriberState()!=null);
+    KStream<StringKey, SubscriberStateOutputWrapper> evolutionEngineOutputsWithSubscriberState = forOutputsStream.filter((key,value)->value.getEvolutionEventContext()!=null);
     KStream<StringKey, SubscriberStreamOutput> evolutionEngineOutputs = evolutionEngineOutputsWithSubscriberState.flatMapValues(EvolutionEngine::getEvolutionEngineOutputs);
 
     //
@@ -2370,7 +2370,7 @@ public class EvolutionEngine
     
     if(subscriberStateUpdated){
         log.trace("updateSubscriberState : subscriberStateUpdated enriching event with it for down stream processing");
-        evolutionHackyEvent.enrichWithSubscriberState(subscriberState);
+        evolutionHackyEvent.enrichWithContext(context);
     }
 
     return subscriberState;
@@ -7858,7 +7858,7 @@ public class EvolutionEngine
 
   private static List<SubscriberStreamOutput> getEvolutionEngineOutputs(SubscriberStateOutputWrapper subscriberStateHackyWrapper)
   {
-    SubscriberState subscriberState = subscriberStateHackyWrapper.getSubscriberState();
+    SubscriberState subscriberState = subscriberStateHackyWrapper.getEvolutionEventContext().getSubscriberState();
     List<SubscriberStreamOutput> result = new ArrayList<SubscriberStreamOutput>();
     if (subscriberState != null)
       {
@@ -7903,9 +7903,9 @@ public class EvolutionEngine
     }
 
     // enrich with needed output all here
-    result.stream().forEach(subscriberStreamOutput -> subscriberStreamOutput.enrichSubscriberStreamOutput(subscriberStateHackyWrapper.getOriginalEvent(),subscriberState.getSubscriberProfile(),subscriberGroupEpochReader, subscriberState.getSubscriberProfile().getTenantID()));
+    result.stream().forEach(subscriberStreamOutput -> subscriberStreamOutput.enrichSubscriberStreamOutput(subscriberStateHackyWrapper));
     // as well as output wrapped in
-    subscriberState.getJourneyTriggerEventActions().forEach(journeyTriggerEventAction -> ((SubscriberStreamOutput)journeyTriggerEventAction.getEventToTrigger()).enrichSubscriberStreamOutput(subscriberStateHackyWrapper.getOriginalEvent(),subscriberState.getSubscriberProfile(),subscriberGroupEpochReader, subscriberState.getSubscriberProfile().getTenantID()));
+    subscriberState.getJourneyTriggerEventActions().forEach(journeyTriggerEventAction -> ((SubscriberStreamOutput)journeyTriggerEventAction.getEventToTrigger()).enrichSubscriberStreamOutput(subscriberStateHackyWrapper));
     return result;
   }
 
@@ -8348,15 +8348,7 @@ public class EvolutionEngine
       this.processingDate = now;
       this.eventDate = event.getEventDate() != null ? event.getEventDate() : now;
       this.subscriberTraceDetails = new ArrayList<String>();
-      this.eventID = generateEventID();
-    }
-
-    private String generateEventID()
-    {
-      //  propagate the eventID as long as we can track - if campaign is configureID like chain of bonus/message
-      if(this.event.getEventID() != null) return this.event.getEventID();
-      // or create one
-      return getUniqueKey();
+      this.eventID = event.getEventID() != null ? event.getEventID() : getUniqueKey();
     }
 
     /*****************************************

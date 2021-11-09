@@ -7,28 +7,21 @@ import java.util.Date;
 
 public class SubscriberStateOutputWrapper implements SubscriberStreamEvent {
 
-	SubscriberState subscriberState;
 	SubscriberStreamEvent event;
+	EvolutionEngine.EvolutionEventContext evolutionEventContext;
 	SubscriberStateOutputWrapper(SubscriberStreamEvent event){
 		this.event=event;
 	}
 
 	public SubscriberStreamEvent getOriginalEvent() {return event;}
-	public void enrichWithSubscriberState(SubscriberState subscriberState){this.subscriberState=subscriberState;}
-	public SubscriberState getSubscriberState() {return subscriberState;}
-
+	public void enrichWithContext(EvolutionEngine.EvolutionEventContext evolutionEventContext){this.evolutionEventContext=evolutionEventContext;}
+    public EvolutionEngine.EvolutionEventContext getEvolutionEventContext() {return evolutionEventContext;}
+    
 	@Override
 	public String getSubscriberID() {
 		return event.getSubscriberID();
 	}
 	
-	
-
-	@Override
-	public Date getEventDate() {
-		return event.getEventDate();
-	}
-
 	@Override
 	public Schema subscriberStreamEventSchema() {
 		return event.subscriberStreamEventSchema();
