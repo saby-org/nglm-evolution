@@ -34,6 +34,7 @@ public abstract class SubscriberStreamOutput implements SubscriberStreamPriority
 
 	// the common pack
 	public static void  packSubscriberStreamOutput(Struct struct, SubscriberStreamOutput subscriberStreamOutput){
+	  log.info("RAJ K subscriberStreamOutput eventID {}", subscriberStreamOutput.getEventID());
 		struct.put("alternateIDs",subscriberStreamOutput.getAlternateIDs());
 		struct.put("deliveryPriority", subscriberStreamOutput.getDeliveryPriority().getExternalRepresentation());
 		struct.put("eventDate", subscriberStreamOutput.getEventDate().getTime());

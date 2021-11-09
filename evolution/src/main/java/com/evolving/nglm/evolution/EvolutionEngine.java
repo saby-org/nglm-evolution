@@ -2703,8 +2703,7 @@ public class EvolutionEngine
             }
           }
 
-        String toBeAdded = evolutionEvent.getClass().getName() + ":" + evolutionEvent.getEventDate().getTime() + ":"
-            + workflowID + ":" + workflowEvent.getFeatureID();
+        String toBeAdded = evolutionEvent.getClass().getName() + ":" + evolutionEvent.getEventDate().getTime() + ":" + workflowID + ":" + workflowEvent.getFeatureID();
         List<String> workflowTriggering = subscriberState.getWorkflowTriggering();
         if (workflowTriggering.contains(toBeAdded))
           {
