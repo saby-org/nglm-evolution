@@ -138,6 +138,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     Delivery_Manager("4"),
     Customer_Care("5"),
     REST_API("6"),
+    Loyalty_Badge("7"),
     Unknown("999");
     private String externalRepresentation;
     private Module(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }

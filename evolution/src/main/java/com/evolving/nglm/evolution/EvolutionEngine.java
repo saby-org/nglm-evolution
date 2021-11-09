@@ -4391,7 +4391,7 @@ public class EvolutionEngine
     // Tag the subscriber state with the event's information, log a warn if a conflict appears (is the date enough to segregate 2 
     //
     if(badgeWorflowID == null) { return false; }
-    String toBeAdded = eventToTrigWorkflow.getClass().getName() + ":" + eventToTrigWorkflow.getEventDate().getTime() + ":" + badgeWorflowID + ":" + featureID + ":" + "Badge_workflow" + ":" + origin ;
+    String toBeAdded = eventToTrigWorkflow.getClass().getName() + ":" + eventToTrigWorkflow.getEventDate().getTime() + ":" + badgeWorflowID + ":" + featureID + ":" + DeliveryRequest.Module.Loyalty_Badge.getExternalRepresentation() + ":" + origin ;
     List<String> workflowTriggering = subscriberState.getWorkflowTriggering();
     if(workflowTriggering.contains(toBeAdded))
       {
@@ -6067,7 +6067,7 @@ public class EvolutionEngine
         calledJourney = calledJourney && ! journey.getAutoTargeted();
 
         //
-        // In case of Workflow, it can be triggered through a JourneyRequest or from a loyalty program
+        // In case of Workflow, it can be triggered through a JourneyRequest or from a loyalty program or from a Badge
         //
         
         String sourceFeatureIDFromWorkflowTriggering = null;
@@ -6390,8 +6390,15 @@ public class EvolutionEngine
                 String sourceFeatureID;
                 String sourceModuleID;
                 ParameterMap boundParameters;
+                log.info("RAJ K calledJourney {}", calledJourney);
+                log.info("RAJ K evolutionEvent instanceof JourneyRequest {}", evolutionEvent instanceof JourneyRequest);
                 if (calledJourney && evolutionEvent instanceof JourneyRequest)
                   {
+                    log.info("RAJ K 1");
+                    //
+                    //  RAJ K
+                    //
+                    
                     journeyRequest = (JourneyRequest) evolutionEvent;
                     boundParameters = new ParameterMap(journey.getBoundParameters());
                     boundParameters.putAll(journeyRequest.getBoundParameters());
@@ -6401,6 +6408,7 @@ public class EvolutionEngine
                   }
                 else
                   {
+                    log.info("RAJ K 2");
                     journeyRequest = null;
                     boundParameters = journey.getBoundParameters();
                     // get the featureID from the CalledJourney computation
