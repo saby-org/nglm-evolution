@@ -1086,7 +1086,8 @@ public class EvolutionEngine
         (key,value) -> (value instanceof OTPInstanceChangeEvent),
         (key,value) -> (value instanceof CleanupSubscriber),
         (key,value) -> (value instanceof AssignSubscriberIDs),
-        (key,value) -> (value instanceof BadgeChange)
+        (key,value) -> (value instanceof BadgeChange && ((BadgeChange) value).IsResponseEvent()),
+        (key,value) -> (value instanceof BadgeChange && !((BadgeChange) value).IsResponseEvent())
     );
 
     KStream<StringKey, DeliveryRequest> deliveryRequestStream = (KStream<StringKey, DeliveryRequest>) branchedEvolutionEngineOutputs[0];
@@ -1112,6 +1113,7 @@ public class EvolutionEngine
     KStream<StringKey, CleanupSubscriber> immediateCleanupStream = (KStream<StringKey, CleanupSubscriber>) branchedEvolutionEngineOutputs[18];
     KStream<StringKey, AssignSubscriberIDs> deleteActionStream = (KStream<StringKey, AssignSubscriberIDs>) branchedEvolutionEngineOutputs[19];
     KStream<StringKey, BadgeChange> badgeChangeResponseStream = (KStream<StringKey, BadgeChange>) branchedEvolutionEngineOutputs[20];
+    KStream<StringKey, BadgeChange> badgeChangeRequestStream = (KStream<StringKey, BadgeChange>) branchedEvolutionEngineOutputs[21];
     
     /*****************************************
     *
@@ -1142,6 +1144,7 @@ public class EvolutionEngine
     immediateCleanupStream.to(Deployment.getCleanupSubscriberTopic(), Produced.with(stringKeySerde, cleanupSubscriberSerde));
     deleteActionStream.to(Deployment.getAssignSubscriberIDsTopic(), Produced.with(stringKeySerde, assignSubscriberIDsSerde));
     badgeChangeResponseStream.to(Deployment.getBadgeChangeResponseTopic(), Produced.with(stringKeySerde, badgeChangeEventSerde));
+    badgeChangeRequestStream.to(Deployment.getBadgeChangeRequestTopic(), Produced.with(stringKeySerde, badgeChangeEventSerde));
 
     //
     //  sink DeliveryRequest
@@ -2751,12 +2754,34 @@ public class EvolutionEngine
    if (result)
      {
        BadgeChange badgeChangeRequest = (BadgeChange) evolutionEvent;
+       if (badgeChangeRequest.getInfos().get("executeWorkFlow") == null) // original request from topic 
+         {
+           //
+           //  changeSubscriberBadge
+           //
+           
+           boolean changed = changeSubscriberBadge(badgeChangeRequest, context.getSubscriberState(), context.processingDate(), false);
+         }
+       else if ((boolean) badgeChangeRequest.getInfos().get("executeWorkFlow")) // delegate false event from Journey only to trigger workflow - other codes in action manager
+         {
+           Badge badge = badgeService.getActiveBadge(badgeChangeRequest.getBadgeID(), SystemTime.getCurrentTime());
+           if (badge != null)
+             {
+               String workFlowId = null;
+               BadgeAction actionRequest = badgeChangeRequest.getAction();
+               switch (actionRequest)
+               {
+                 case AWARD:
+                   workFlowId = badge.getAwardedWorkflowID();
+                   break;
+                 case REMOVE:
+                   workFlowId = badge.getRemoveWorkflowID();
+               }
+               triggerBadgeWorflow(badgeChangeRequest, context.getSubscriberState(), workFlowId, badgeChangeRequest.getFeatureID(), badgeChangeRequest.getOrigin());
+             }
+         }
        
-       //
-       //  changeSubscriberBadge
-       //
        
-       boolean changed = changeSubscriberBadge(badgeChangeRequest, context.getSubscriberState(), context.processingDate(), evolutionEvent);
        
        //
        //  if badge got deleted (NOT JUST "suspended"), we need to remove to clean it from profile after a while
@@ -2779,9 +2804,8 @@ public class EvolutionEngine
  }
  
  
- private static boolean changeSubscriberBadge(BadgeChange badgeChangeRequest, SubscriberState subscriberState, Date now, SubscriberStreamEvent eventToTrigWorkflow)
+ private static boolean changeSubscriberBadge(BadgeChange badgeChangeRequest, SubscriberState subscriberState, Date now, boolean executeOnEntry)
  {
-
    boolean changed = true;
    BadgeChange badgeChangeResponse = new BadgeChange(badgeChangeRequest);
    badgeChangeResponse.changeToBadgeChangeResponse();
@@ -2794,6 +2818,7 @@ public class EvolutionEngine
        switch (actionRequest)
        {
          case AWARD:
+           boolean triggerWorkflow = badgeChangeRequest.getInfos().get("") == null ? true : (boolean) badgeChangeRequest.getInfos().get("");
            if (subscriberBadge == null)
              {
                //
@@ -2808,7 +2833,7 @@ public class EvolutionEngine
                //  triggerBadgeWorflow AwardedWorkflow
                //
                
-               triggerBadgeWorflow(eventToTrigWorkflow, subscriberState, badge.getAwardedWorkflowID(), badgeChangeRequest.getFeatureID(), badgeChangeRequest.getOrigin());
+               if (!executeOnEntry) triggerBadgeWorflow(badgeChangeRequest, subscriberState, badge.getAwardedWorkflowID(), badgeChangeRequest.getFeatureID(), badgeChangeRequest.getOrigin());
              }
            else if (subscriberBadge.getCustomerBadgeStatus().equals(CustomerBadgeStatus.PENDING))
              {
@@ -2826,7 +2851,7 @@ public class EvolutionEngine
                //  triggerBadgeWorflow AwardedWorkflow
                //
                
-               triggerBadgeWorflow(eventToTrigWorkflow, subscriberState, badge.getAwardedWorkflowID(), badgeChangeRequest.getFeatureID(), badgeChangeRequest.getOrigin());
+               if (!executeOnEntry) triggerBadgeWorflow(badgeChangeRequest, subscriberState, badge.getAwardedWorkflowID(), badgeChangeRequest.getFeatureID(), badgeChangeRequest.getOrigin());
              }
            else
              {
@@ -2861,7 +2886,7 @@ public class EvolutionEngine
                //  triggerBadgeWorflow RemoveWorkflow
                //
                
-               triggerBadgeWorflow(eventToTrigWorkflow, subscriberState, badge.getRemoveWorkflowID(), badgeChangeRequest.getFeatureID(), badgeChangeRequest.getOrigin());
+               if (!executeOnEntry) triggerBadgeWorflow(badgeChangeRequest, subscriberState, badge.getRemoveWorkflowID(), badgeChangeRequest.getFeatureID(), badgeChangeRequest.getOrigin());
              }
            break;
 
@@ -7603,6 +7628,7 @@ public class EvolutionEngine
               
             case BadgeChange:
               BadgeChange badgeChange = (BadgeChange) action;
+              subscriberState.getBadgeChangeRequests().add(badgeChange);
               break;
 
             default:
@@ -7909,6 +7935,7 @@ public class EvolutionEngine
         result.addAll(subscriberState.getImmediateCleanupActions());
         result.addAll(subscriberState.getDeleteActions());
         result.addAll(subscriberState.getBadgeChangeResponses());
+        result.addAll(subscriberState.getBadgeChangeRequests());
       }
 
     // add stats about voucherChange done
@@ -9539,11 +9566,14 @@ public class EvolutionEngine
       *
       *****************************************/
 
-      BadgeChange badgeChangeRequest = new BadgeChange(evolutionEventContext.getSubscriberState().getSubscriberID(), "", evolutionEventContext.getEventID(), operation, badgeID, moduleID, deliveryRequestSource, origin, RESTAPIGenericReturnCodes.SUCCESS, evolutionEventContext.getSubscriberState().getSubscriberProfile().getTenantID(), new ParameterMap());
-      boolean changed = changeSubscriberBadge(badgeChangeRequest, evolutionEventContext.getSubscriberState(), evolutionEventContext.processingDate(), evolutionEventContext.getEvent());
+      ParameterMap infos = new ParameterMap();
+      infos.put("workflowOnly", false);
+      BadgeChange badgeChangeRequest = new BadgeChange(evolutionEventContext.getSubscriberState().getSubscriberID(), "", evolutionEventContext.getEventID(), operation, badgeID, moduleID, deliveryRequestSource, origin, RESTAPIGenericReturnCodes.SUCCESS, evolutionEventContext.getSubscriberState().getSubscriberProfile().getTenantID(), infos);
+      boolean changed = changeSubscriberBadge(badgeChangeRequest, evolutionEventContext.getSubscriberState(), evolutionEventContext.processingDate(), true);
       if (changed)
         {
           subscriberEvaluationRequest.getJourneyState().getBadgeChanges().add(badgeChangeRequest);
+          badgeChangeRequest.getInfos().put("executeWorkFlow", changed);
         }
 
       /*****************************************
