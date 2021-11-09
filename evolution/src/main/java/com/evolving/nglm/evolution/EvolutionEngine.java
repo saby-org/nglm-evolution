@@ -6662,6 +6662,11 @@ public class EvolutionEngine
             case Loyalty_Program:
               caller = loyaltyProgramService.getStoredLoyaltyProgram(featureID);
               break;
+              
+            case Loyalty_Badge:
+              caller = badgeService.getStoredBadge(featureID);
+              break;
+              
             case Unknown:
               log.debug("Unknown moduleID : " + moduleID.getExternalRepresentation());
               mustCheck = false;

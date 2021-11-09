@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.BadgeService;
 import com.evolving.nglm.evolution.DeliveryRequest;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.GUIManagedObject;
@@ -94,6 +95,7 @@ public class TokenReportMonoPhase implements ReportCsvFactory
   private ScoringStrategyService scoringStrategyService = null;
   private JourneyService journeyService = null;
   private LoyaltyProgramService loyaltyProgramService = null;
+  private BadgeService badgeService;
   private int tenantID = 0;
 
   /****************************************
@@ -215,7 +217,7 @@ public class TokenReportMonoPhase implements ReportCsvFactory
                             String featureID = (String) token.get("featureID");
                             if (featureID != null)
                               {
-                                String featureDisplay = DeliveryRequest.getFeatureDisplay(module, featureID, journeyService, offerService, loyaltyProgramService);
+                                String featureDisplay = DeliveryRequest.getFeatureDisplay(module, featureID, journeyService, offerService, loyaltyProgramService, badgeService);
                                 result.put(featureName, featureDisplay);
                               }
                             else
@@ -322,6 +324,7 @@ public class TokenReportMonoPhase implements ReportCsvFactory
     tokenTypeService = new TokenTypeService(Deployment.getBrokerServers(), "report-tokentypeservice-tokenReportMonoPhase", Deployment.getTokenTypeTopic(), false);
     journeyService = new JourneyService(Deployment.getBrokerServers(), "report-journeyservice-tokenReportMonoPhase",Deployment.getJourneyTopic(), false);
     loyaltyProgramService = new LoyaltyProgramService(Deployment.getBrokerServers(), "report-loyaltyprogramservice-tokenReportMonoPhase", Deployment.getLoyaltyProgramTopic(), false);
+    badgeService = new BadgeService(Deployment.getBrokerServers(), "report-badgeService-tokenReportMonoPhase", Deployment.getBadgeTopic(), false);
 
     offerService.start();
     scoringStrategyService.start();
@@ -329,6 +332,7 @@ public class TokenReportMonoPhase implements ReportCsvFactory
     tokenTypeService.start();
     journeyService.start();
     loyaltyProgramService.start();
+    badgeService.start();
 
     try {
       if (!reportMonoPhase.startOneToOne())
@@ -343,6 +347,7 @@ public class TokenReportMonoPhase implements ReportCsvFactory
       tokenTypeService.stop();
       journeyService.stop();
       loyaltyProgramService.stop();
+      badgeService.stop();
     }
   }
 

@@ -19217,7 +19217,7 @@ public class GUIManager
                   {
                     Map<String, Object> esFields = hit.getSourceAsMap();
                     CommodityDeliveryRequest commodityDeliveryRequest = new CommodityDeliveryRequest(esFields);
-                    Map<String, Object> esbdrMap = commodityDeliveryRequest.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, tenantID);
+                    Map<String, Object> esbdrMap = commodityDeliveryRequest.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, badgeService, tenantID);
                     // EVPRO-1249 do not return a pseudo-expiration date (now+1 year) if not set
                     if (esFields.get("deliverableExpirationDate") == null) {
                       esbdrMap.put(DeliveryRequest.DELIVERABLEEXPIRATIONDATE, null);
@@ -19462,7 +19462,7 @@ public class GUIManager
 
                 for (DeliveryRequest odr : ODRs)
                   {
-                    Map<String, Object> presentationMap = odr.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, tenantID);
+                    Map<String, Object> presentationMap = odr.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, badgeService, tenantID);
                     ODRsJson.add(JSONUtilities.encodeObject(presentationMap));
                   }
 
@@ -19684,7 +19684,7 @@ public class GUIManager
                                 DeliveryRequest notification = ElasticsearchClientAPI.getNotificationDeliveryRequest(requestClass, hit);
                                 if (notification != null)
                                   {
-                                    Map<String, Object> esNotificationMap = notification.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, tenantID);
+                                    Map<String, Object> esNotificationMap = notification.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, badgeService, tenantID);
                                     messagesJson.add(JSONUtilities.encodeObject(esNotificationMap));
                                   }
                               }
@@ -24463,7 +24463,7 @@ public class GUIManager
                   tokenStream = tokenStream.filter(token -> tokenStatusForStreams.equalsIgnoreCase(token.getTokenStatus().getExternalRepresentation()));
                 }
               tokensJson = tokenStream
-                  .map(token -> ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService, tenantID))
+                  .map(token -> ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService, badgeService, tenantID))
                   .collect(Collectors.toList());
             }
 
@@ -24646,7 +24646,7 @@ public class GUIManager
            *  decorate and response
            *
            *****************************************/
-          response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(subscriberStoredToken, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService, tenantID);
+          response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(subscriberStoredToken, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService, badgeService, tenantID);
           response.put("responseCode", "ok");
         }
     }
@@ -24973,7 +24973,7 @@ public class GUIManager
         else
           {
             purchaseResponse = purchaseOffer(subscriberProfile,true,subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, origin, resellerID, kafkaProducer);
-            response.put("offer",purchaseResponse.getGUIPresentationMap(subscriberMessageTemplateService,salesChannelService,journeyService,offerService,loyaltyProgramService,productService,voucherService,deliverableService,paymentMeanService, resellerService, tenantID));
+            response.put("offer",purchaseResponse.getGUIPresentationMap(subscriberMessageTemplateService,salesChannelService,journeyService,offerService,loyaltyProgramService,productService,voucherService,deliverableService,paymentMeanService, resellerService, badgeService, tenantID));
           }
       }
    }

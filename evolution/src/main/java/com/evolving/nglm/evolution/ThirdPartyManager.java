@@ -1404,7 +1404,7 @@ public class ThirdPartyManager
             {
               Map<String, Object> esFields = hit.getSourceAsMap();
               CommodityDeliveryRequest commodityDeliveryRequest = new CommodityDeliveryRequest(esFields);
-              Map<String, Object> esbdrMap = commodityDeliveryRequest.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, tenantID);
+              Map<String, Object> esbdrMap = commodityDeliveryRequest.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, badgeService, tenantID);
               // EVPRO-1249 do not return a pseudo-expiration date (now+1 year) if not set
               if (esFields.get("deliverableExpirationDate") == null) {
                 esbdrMap.put(DeliveryRequest.DELIVERABLEEXPIRATIONDATE, null);
@@ -1687,7 +1687,7 @@ public class ThirdPartyManager
 
           for (DeliveryRequest odr : ODRs)
             {
-              Map<String, Object> presentationMap = odr.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, tenantID);
+              Map<String, Object> presentationMap = odr.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, badgeService, tenantID);
               ODRsJson.add(JSONUtilities.encodeObject(presentationMap));
             }
           response.put("ODRs", JSONUtilities.encodeArray(ODRsJson));
@@ -2077,7 +2077,7 @@ public class ThirdPartyManager
                           DeliveryRequest notification = ElasticsearchClientAPI.getNotificationDeliveryRequest(requestClass, hit);
                           if (notification != null)
                             {
-                              Map<String, Object> esNotificationMap = notification.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, tenantID);
+                              Map<String, Object> esNotificationMap = notification.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, badgeService, tenantID);
                               messagesJson.add(JSONUtilities.encodeObject(esNotificationMap));
                             }
                         }
@@ -4222,7 +4222,7 @@ public class ThirdPartyManager
                      if (status != null && (status.equals(TokenStatus.New) || status.equals(TokenStatus.Bound)) && !token.getTokenExpirationDate().before(now))
                        {
                          List<ProposedOfferDetails> proposedOfferDetails = dnboToken.getProposedOfferDetails();
-                         response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService, callingChannel, proposedOfferDetails, paymentMeanService, tenantID);
+                         response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService, callingChannel, proposedOfferDetails, paymentMeanService, badgeService, tenantID);
                          response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
                          response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
                          return JSONUtilities.encodeObject(response);
@@ -4271,7 +4271,7 @@ public class ThirdPartyManager
       *  decorate and response
       *
       *****************************************/
-     response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(newToken, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService, callingChannel, presentedOffers, paymentMeanService, tenantID);
+     response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(newToken, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService, callingChannel, presentedOffers, paymentMeanService, badgeService, tenantID);
      response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
      response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
    }
@@ -4445,7 +4445,7 @@ public class ThirdPartyManager
       *  decorate and response
       *
       *****************************************/
-     response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(subscriberStoredToken, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService, tenantID);
+     response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(subscriberStoredToken, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService, badgeService, tenantID);
      response.putAll(resolveAllSubscriberIDs(subscriberProfile, tenantID));
      updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
      return JSONUtilities.encodeObject(response);
@@ -5047,7 +5047,7 @@ public class ThirdPartyManager
                 {
                   purchaseResponse = purchaseOffer(subscriberProfile,true,subscriberID, offerID, salesChannelID, quantity, moduleID, featureID,
                           origin, resellerID, kafkaProducer, tenantID);
-                  response.put("offer",purchaseResponse.getThirdPartyPresentationMap(subscriberMessageTemplateService,salesChannelService,journeyService,offerService,loyaltyProgramService,productService,voucherService,deliverableService,paymentMeanService, resellerService, tenantID));
+                  response.put("offer",purchaseResponse.getThirdPartyPresentationMap(subscriberMessageTemplateService,salesChannelService,journeyService,offerService,loyaltyProgramService,productService,voucherService,deliverableService,paymentMeanService, resellerService, badgeService, tenantID));
                 }
             }
           else
@@ -5068,7 +5068,7 @@ public class ThirdPartyManager
             {
               purchaseResponse = purchaseOffer(subscriberProfile,true,subscriberID, offerID, salesChannelID, quantity, moduleID, featureID,
                       origin, resellerID, kafkaProducer, tenantID);
-              response.put("offer",purchaseResponse.getThirdPartyPresentationMap(subscriberMessageTemplateService,salesChannelService,journeyService,offerService,loyaltyProgramService,productService,voucherService,deliverableService,paymentMeanService, resellerService, tenantID));
+              response.put("offer",purchaseResponse.getThirdPartyPresentationMap(subscriberMessageTemplateService,salesChannelService,journeyService,offerService,loyaltyProgramService,productService,voucherService,deliverableService,paymentMeanService, resellerService, badgeService, tenantID));
             }
           }
       
@@ -5439,7 +5439,7 @@ public class ThirdPartyManager
               tokenStream = tokenStream.filter(token -> tokenStatusForStreams.equalsIgnoreCase(token.getTokenStatus().getExternalRepresentation()));
             }
           tokensJson = tokenStream
-              .map(token -> ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService, tenantID))
+              .map(token -> ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService, badgeService, tenantID))
               .collect(Collectors.toList());
         }
 

@@ -236,7 +236,7 @@ public class BGDRReportMonoPhase implements ReportCsvFactory
             badgeObjectivesValue = badgeObjectives.toString().substring(0, badgeObjectives.toString().length() - 1);
           }
         Module module = Module.fromExternalRepresentation(String.valueOf(moduleIdESVal));
-        String featureESVal = DeliveryRequest.getFeatureDisplay(module, String.valueOf(bgdrFields.get(featureId).toString()), journeyService, offerService, loyaltyProgramService);
+        String featureESVal = DeliveryRequest.getFeatureDisplay(module, String.valueOf(bgdrFields.get(featureId).toString()), journeyService, offerService, loyaltyProgramService, badgeService);
 
         //
         //  bgdrRecs

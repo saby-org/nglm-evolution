@@ -25,6 +25,7 @@ import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.BadgeService;
 import com.evolving.nglm.evolution.Deliverable;
 import com.evolving.nglm.evolution.DeliverableService;
 import com.evolving.nglm.evolution.DeliveryManager;
@@ -51,6 +52,7 @@ public class BDRReportMonoPhase implements ReportCsvFactory
   private JourneyService journeyService;
   private OfferService offerService;
   private LoyaltyProgramService loyaltyProgramService;
+  private BadgeService badgeService;
   private int tenantID = 0;
 
   private static final String moduleId = "moduleID";
@@ -289,7 +291,7 @@ public class BDRReportMonoPhase implements ReportCsvFactory
         if (bdrFields.containsKey(moduleId) && bdrFields.containsKey(featureId))
           {
             Module module = Module.fromExternalRepresentation(String.valueOf(bdrFields.get(moduleId)));
-            String featureDis = DeliveryRequest.getFeatureDisplay(module, String.valueOf(bdrFields.get(featureId).toString()), journeyService, offerService, loyaltyProgramService);                
+            String featureDis = DeliveryRequest.getFeatureDisplay(module, String.valueOf(bdrFields.get(featureId).toString()), journeyService, offerService, loyaltyProgramService, badgeService);                
             bdrRecs.put(featureDisplay, featureDis);
             bdrRecs.put(moduleName, module.toString());
             bdrRecs.put(featureId, bdrFields.get(featureId));
@@ -476,16 +478,20 @@ public class BDRReportMonoPhase implements ReportCsvFactory
     String offerTopic = Deployment.getOfferTopic();
     String journeyTopic = Deployment.getJourneyTopic();
     String loyaltyProgramTopic = Deployment.getLoyaltyProgramTopic();
+    String badgeTopic = Deployment.getBadgeTopic();
 
     deliverableService    = new DeliverableService(Deployment.getBrokerServers(), "bdrreportcsvwriter-deliverableserviceservice-BDRReportMonoPhase", deliverableServiceTopic, false);
     journeyService        = new JourneyService(Deployment.getBrokerServers(), "bdrreportcsvwriter-journeyservice-BDRReportMonoPhase", journeyTopic, false);
     offerService          = new OfferService(Deployment.getBrokerServers(), "bdrreportcsvwriter-offerservice-BDRReportMonoPhase", offerTopic, false);
     loyaltyProgramService = new LoyaltyProgramService(Deployment.getBrokerServers(), "bdrreportcsvwriter-loyaltyprogramservice-BDRReportMonoPhase", loyaltyProgramTopic, false);
+    badgeService = new BadgeService(Deployment.getBrokerServers(), "bdrreportcsvwriter-badgeService-BDRReportMonoPhase", badgeTopic, false);
+    
 
     deliverableService.start();
     journeyService.start();
     offerService.start();
     loyaltyProgramService.start();
+    badgeService.start();
 
     try {
       ReportMonoPhase reportMonoPhase = new ReportMonoPhase(
@@ -513,6 +519,7 @@ public class BDRReportMonoPhase implements ReportCsvFactory
       journeyService.stop();
       offerService.stop();
       loyaltyProgramService.stop();
+      badgeService.stop();
       log.info("The report " + csvfile + " is finished");
     }
   }

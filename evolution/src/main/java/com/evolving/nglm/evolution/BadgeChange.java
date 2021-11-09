@@ -265,7 +265,7 @@ public class BadgeChange extends SubscriberStreamOutput implements EvolutionEngi
     result.put("moduleID", moduleID);
     result.put("moduleName", getModule().toString());
     result.put("featureID", featureID);
-    result.put("featureName", DeliveryRequest.getFeatureName(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
+    result.put("featureName", DeliveryRequest.getFeatureName(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService, badgeService));
     result.put("tenantID", tenantID);
     result.put("returnCode", returnStatus.getGenericResponseCode());
     result.put("returnCodeDetails", returnStatus.getGenericResponseMessage());
@@ -294,7 +294,8 @@ public class BadgeChange extends SubscriberStreamOutput implements EvolutionEngi
     result.put("moduleID", moduleID);
     result.put("moduleName", getModule().toString());
     result.put("featureID", featureID);
-    result.put("featureName", DeliveryRequest.getFeatureName(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
+    result.put("featureName", DeliveryRequest.getFeatureName(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService, badgeService));
+    result.put("featureDisplay", DeliveryRequest.getFeatureDisplay(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService, badgeService));
     result.put("tenantID", tenantID);
     result.put("returnCode", returnStatus.getGenericResponseCode());
     result.put("returnCodeDetails", returnStatus.getGenericResponseMessage());
