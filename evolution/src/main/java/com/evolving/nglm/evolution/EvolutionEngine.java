@@ -6047,6 +6047,7 @@ public class EvolutionEngine
 
     for (Journey journey : activeJourneys)
       {
+        log.info("RAJ K journey-loop start for {}", journey.getGUIManagedObjectDisplay());
         //
         //  entry period
         //
@@ -6080,7 +6081,7 @@ public class EvolutionEngine
             // check if this workflow has to be triggered
             for(String currentWFToTrigger : workflowTriggering)
               {
-                log.info("RAJ K currentWFToTrigger {}, evolutionEvent.getClass().getName() {}, journey.getJourneyID() {}", currentWFToTrigger, evolutionEvent.getClass().getName(), journey.getJourneyID());
+                log.info("RAJ K journey {}, currentWFToTrigger {}, evolutionEvent.getClass().getName() {}, journey.getJourneyID() {}", journey.getGUIManagedObjectDisplay(), currentWFToTrigger, evolutionEvent.getClass().getName(), journey.getJourneyID());
                 String[] elements = currentWFToTrigger.split(":");
                 String eventClass = elements[0];
                 if(eventClass.equals(evolutionEvent.getClass().getName()))
@@ -6128,6 +6129,7 @@ public class EvolutionEngine
                       }
                   }
 			        }
+            log.info("RAJ K calledJourney {}", calledJourney);
            }
         subscriberStateUpdated = subscriberStateUpdated || workflowTriggering.removeAll(toBeRemoved);
         
@@ -6568,6 +6570,7 @@ public class EvolutionEngine
                   }
               }
           }
+        log.info("RAJ K journey-loop end for {}", journey.getGUIManagedObjectDisplay());
       }
 
     /*****************************************
