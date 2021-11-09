@@ -1383,6 +1383,8 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
     {
       case getCustomerBDRs:
         return getSearchRequest(GUIManager.API.getCustomerBDRs, subscriberId, startDate, filters, tenantID);
+      case getCustomerBGDRs:
+        return getSearchRequest(GUIManager.API.getCustomerBGDRs, subscriberId, startDate, filters, tenantID);
       case getCustomerEDRs:
         return getSearchRequest(GUIManager.API.getCustomerEDRs, subscriberId, startDate, filters, tenantID);
       case getCustomerODRs:

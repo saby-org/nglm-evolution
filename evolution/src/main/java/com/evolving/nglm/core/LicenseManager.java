@@ -1572,9 +1572,6 @@ public class LicenseManager
 
       byte [] decodedBytes = Base64.getDecoder().decode(bytesToDeobfuscate);
 
-      //
-      //  swap back
-      //
 //      for (int i=0; i<swapPos.length; i++)
       for (int i=swapPos.length-1; i > -1; i--)
         {

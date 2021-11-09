@@ -2703,8 +2703,7 @@ public class EvolutionEngine
             }
           }
 
-        String toBeAdded = evolutionEvent.getClass().getName() + ":" + evolutionEvent.getEventDate().getTime() + ":"
-            + workflowID + ":" + workflowEvent.getFeatureID();
+        String toBeAdded = evolutionEvent.getClass().getName() + ":" + evolutionEvent.getEventDate().getTime() + ":" + workflowID + ":" + workflowEvent.getFeatureID();
         List<String> workflowTriggering = subscriberState.getWorkflowTriggering();
         if (workflowTriggering.contains(toBeAdded))
           {
@@ -4391,9 +4390,7 @@ public class EvolutionEngine
     // 
     // Tag the subscriber state with the event's information, log a warn if a conflict appears (is the date enough to segregate 2 
     //
-    
     if(badgeWorflowID == null) { return false; }
-    
     String toBeAdded = eventToTrigWorkflow.getClass().getName() + ":" + eventToTrigWorkflow.getEventDate().getTime() + ":" + badgeWorflowID + ":" + featureID + ":" + "Badge_workflow" + ":" + origin ;
     List<String> workflowTriggering = subscriberState.getWorkflowTriggering();
     if(workflowTriggering.contains(toBeAdded))
