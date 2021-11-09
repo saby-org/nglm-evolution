@@ -9,7 +9,6 @@ public class SubscriberStateOutputWrapper implements SubscriberStreamEvent {
 
 	SubscriberStreamEvent event;
 	EvolutionEngine.EvolutionEventContext evolutionEventContext;
-
 	SubscriberStateOutputWrapper(SubscriberStreamEvent event){
 		this.event=event;
 	}
@@ -22,7 +21,6 @@ public class SubscriberStateOutputWrapper implements SubscriberStreamEvent {
 	public String getSubscriberID() {
 		return event.getSubscriberID();
 	}
-
 	@Override
 	public Schema subscriberStreamEventSchema() {
 		return event.subscriberStreamEventSchema();
