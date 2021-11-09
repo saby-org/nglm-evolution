@@ -6045,6 +6045,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
+    log.info("RAJ K evolutionEvent.getClass().getName() {}", evolutionEvent.getClass().getName());
     for (Journey journey : activeJourneys)
       {
         log.info("RAJ K journey-loop start for {}", journey.getGUIManagedObjectDisplay());
