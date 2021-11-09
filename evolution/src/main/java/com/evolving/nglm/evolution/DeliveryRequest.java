@@ -551,7 +551,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
      *
      *****************************************/
 
-    super(subscriberProfile,subscriberGroupEpochReader,DeliveryPriority.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "deliveryPriority", DeliveryPriority.Standard.getExternalRepresentation())), tenantID);
+    super(subscriberProfile,subscriberGroupEpochReader,DeliveryPriority.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "deliveryPriority", DeliveryPriority.Standard.getExternalRepresentation())));
     this.deliveryRequestID = JSONUtilities.decodeString(jsonRoot, "deliveryRequestID", true);
     this.deliveryRequestSource = "external";
     this.originatingDeliveryRequestID = JSONUtilities.decodeString(jsonRoot, "originatingDeliveryRequestID", false);
