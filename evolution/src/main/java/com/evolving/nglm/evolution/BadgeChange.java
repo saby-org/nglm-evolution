@@ -213,7 +213,7 @@ public class BadgeChange extends SubscriberStreamOutput implements EvolutionEngi
     super();
     this.subscriberID = subscriberID;
     this.deliveryRequestID = deliveryRequestID;
-    this.setEventID(eventID);
+    setEventID(eventID);
     this.action = action;
     this.badgeID = badgeID;
     this.moduleID = moduleID;
@@ -337,4 +337,11 @@ public class BadgeChange extends SubscriberStreamOutput implements EvolutionEngi
   {
     return ActionType.BadgeChange;
   }
+  @Override
+  public String toString()
+  {
+    return "BadgeChange [subscriberID=" + subscriberID + ", deliveryRequestID=" + deliveryRequestID + ", action=" + action + ", badgeID=" + badgeID + ", moduleID=" + moduleID + ", featureID=" + featureID + ", origin=" + origin + ", returnStatus=" + returnStatus + ", tenantID=" + tenantID + ", infos=" + infos + ", responseEvent=" + responseEvent + ", getEventDate()=" + getEventDate() + ", getEventID()=" + getEventID() + "]";
+  }
+  
+  
 }
