@@ -2756,7 +2756,6 @@ public class EvolutionEngine
        BadgeChange badgeChangeRequest = (BadgeChange) evolutionEvent;
        if (badgeChangeRequest.getInfos().get("executeWorkFlowOnly") == null) // original request from topic 
          {
-           log.info("RAJ K executing a real BadgeChange event");
            //
            //  changeSubscriberBadge
            //
@@ -2765,7 +2764,6 @@ public class EvolutionEngine
          }
        else if ((boolean) badgeChangeRequest.getInfos().get("executeWorkFlowOnly")) // delegate false event from Journey only to trigger workflow - other codes in action manager
          {
-           log.info("RAJ K executing a fake BadgeChange event");
            Badge badge = badgeService.getActiveBadge(badgeChangeRequest.getBadgeID(), SystemTime.getCurrentTime());
            if (badge != null)
              {
@@ -4421,7 +4419,6 @@ public class EvolutionEngine
     // Tag the subscriber state with the event's information, log a warn if a conflict appears (is the date enough to segregate 2 
     //
     if(badgeWorflowID == null) { return false; }
-    log.info("RAJ K executing triggerBadgeWorflow badgeWorflowID {}", badgeWorflowID);
     String toBeAdded = eventToTrigWorkflow.getClass().getName() + ":" + eventToTrigWorkflow.getEventDate().getTime() + ":" + badgeWorflowID + ":" + featureID + ":" + DeliveryRequest.Module.Loyalty_Badge.getExternalRepresentation() + ":" + origin ;
     List<String> workflowTriggering = subscriberState.getWorkflowTriggering();
     if(workflowTriggering.contains(toBeAdded))
@@ -4429,7 +4426,6 @@ public class EvolutionEngine
         log.warn("triggerLoyaltyWorflow already has " + toBeAdded);
         return false;
       }
-    log.info("RAJ K triggerBadgeWorflow toBeAdded {}", toBeAdded);
     workflowTriggering.add(toBeAdded);
     return true;
   }
@@ -6076,10 +6072,8 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    log.info("RAJ K evolutionEvent.getClass().getName() {}", evolutionEvent.getClass().getName());
     for (Journey journey : activeJourneys)
       {
-        log.info("RAJ K journey-loop start for {}", journey.getGUIManagedObjectDisplay());
         //
         //  entry period
         //
@@ -6113,7 +6107,6 @@ public class EvolutionEngine
             // check if this workflow has to be triggered
             for(String currentWFToTrigger : workflowTriggering)
               {
-                log.info("RAJ K journey {}, currentWFToTrigger {}, evolutionEvent.getClass().getName() {}, journey.getJourneyID() {}", journey.getGUIManagedObjectDisplay(), currentWFToTrigger, evolutionEvent.getClass().getName(), journey.getJourneyID());
                 String[] elements = currentWFToTrigger.split(":");
                 String eventClass = elements[0];
                 if(eventClass.equals(evolutionEvent.getClass().getName()))
@@ -6161,7 +6154,6 @@ public class EvolutionEngine
                       }
                   }
 			        }
-            log.info("RAJ K calledJourney {}", calledJourney);
            }
         subscriberStateUpdated = subscriberStateUpdated || workflowTriggering.removeAll(toBeRemoved);
         
@@ -6424,15 +6416,8 @@ public class EvolutionEngine
                 String sourceFeatureID;
                 String sourceModuleID;
                 ParameterMap boundParameters;
-                log.info("RAJ K calledJourney {}", calledJourney);
-                log.info("RAJ K evolutionEvent instanceof JourneyRequest {}", evolutionEvent instanceof JourneyRequest);
                 if (calledJourney && evolutionEvent instanceof JourneyRequest)
                   {
-                    log.info("RAJ K 1");
-                    //
-                    //  RAJ K
-                    //
-                    
                     journeyRequest = (JourneyRequest) evolutionEvent;
                     boundParameters = new ParameterMap(journey.getBoundParameters());
                     boundParameters.putAll(journeyRequest.getBoundParameters());
@@ -6442,7 +6427,6 @@ public class EvolutionEngine
                   }
                 else
                   {
-                    log.info("RAJ K 2");
                     journeyRequest = null;
                     boundParameters = journey.getBoundParameters();
                     // get the featureID from the CalledJourney computation
@@ -6602,7 +6586,6 @@ public class EvolutionEngine
                   }
               }
           }
-        log.info("RAJ K journey-loop end for {}", journey.getGUIManagedObjectDisplay());
       }
 
     /*****************************************
@@ -6668,7 +6651,6 @@ public class EvolutionEngine
               
             case Loyalty_Badge:
               caller = badgeService.getStoredBadge(featureID);
-              log.info("RAJ K caller {}", caller.getGUIManagedObjectDisplay());
               break;
               
             case Unknown:
