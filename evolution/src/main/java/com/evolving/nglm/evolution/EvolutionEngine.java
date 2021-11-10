@@ -2754,7 +2754,7 @@ public class EvolutionEngine
    if (result)
      {
        BadgeChange badgeChangeRequest = (BadgeChange) evolutionEvent;
-       if (badgeChangeRequest.getInfos().get("executeWorkFlow") == null) // original request from topic 
+       if (badgeChangeRequest.getInfos().get("executeWorkFlowOnly") == null) // original request from topic 
          {
            log.info("RAJ K executing a real BadgeChange event");
            //
