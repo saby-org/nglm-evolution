@@ -3795,8 +3795,8 @@ public class EvolutionEngine
           {
             userStratum.add(userSegmentsMap.get(dimensionID));
           }
-          UCGGroup subscriberUCGGroup = currentUCGState.getUCGGroups().stream().filter(p -> p.getSegmentIDs().equals(userStratum)).findFirst().get();
-          UCGGroup elasticSubscriberUCGGroup = ucgState.getUCGGroups().stream().filter(p -> p.getSegmentIDs().equals(userStratum)).findFirst().get();
+          UCGGroup subscriberUCGGroup = currentUCGState.getUCGGroups().stream().filter(p -> p.getSegmentIDs().equals(userStratum)).findFirst().orElse(null);
+          UCGGroup elasticSubscriberUCGGroup = ucgState.getUCGGroups().stream().filter(p -> p.getSegmentIDs().equals(userStratum)).findFirst().orElse(null);
           //the subscriber will be removed only if currentProbabilityShift that is managed by engine and shiftProbability received from elastic are negative
           //currentShiftProbability is not sufficient because if adding is working based on counting the shift probability can become negative and if min days for quick removal is zero subscribers can be added and removed almost instant
           if(subscriberUCGGroup !=null && elasticSubscriberUCGGroup != null && subscriberUCGGroup.getShiftProbability() !=null && elasticSubscriberUCGGroup.getShiftProbability() != null)
@@ -3862,7 +3862,7 @@ public class EvolutionEngine
             double shiftProbability = 0.0d;
             double elasticShiftProbability = 0.0d;
             UCGGroup subscriberUCGGroup = null;
-            UCGGroup elasticUcgGroup = ucgState.getUCGGroups().stream().filter(p -> p.getSegmentIDs().equals(userStratum)).findFirst().get();
+            UCGGroup elasticUcgGroup = ucgState.getUCGGroups().stream().filter(p -> p.getSegmentIDs().equals(userStratum)).findFirst().orElse(null);
             Iterator<UCGGroup> iterator = currentUCGState.getUCGGroups().iterator();
             while(iterator.hasNext()) 
               {
