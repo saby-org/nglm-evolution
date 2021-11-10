@@ -2756,6 +2756,7 @@ public class EvolutionEngine
        BadgeChange badgeChangeRequest = (BadgeChange) evolutionEvent;
        if (badgeChangeRequest.getInfos().get("executeWorkFlow") == null) // original request from topic 
          {
+           log.info("RAJ K executing a real BadgeChange event");
            //
            //  changeSubscriberBadge
            //
@@ -2764,6 +2765,7 @@ public class EvolutionEngine
          }
        else if ((boolean) badgeChangeRequest.getInfos().get("executeWorkFlowOnly")) // delegate false event from Journey only to trigger workflow - other codes in action manager
          {
+           log.info("RAJ K executing a fake BadgeChange event");
            Badge badge = badgeService.getActiveBadge(badgeChangeRequest.getBadgeID(), SystemTime.getCurrentTime());
            if (badge != null)
              {
@@ -4419,6 +4421,7 @@ public class EvolutionEngine
     // Tag the subscriber state with the event's information, log a warn if a conflict appears (is the date enough to segregate 2 
     //
     if(badgeWorflowID == null) { return false; }
+    log.info("RAJ K executing triggerBadgeWorflow badgeWorflowID {}", badgeWorflowID);
     String toBeAdded = eventToTrigWorkflow.getClass().getName() + ":" + eventToTrigWorkflow.getEventDate().getTime() + ":" + badgeWorflowID + ":" + featureID + ":" + DeliveryRequest.Module.Loyalty_Badge.getExternalRepresentation() + ":" + origin ;
     List<String> workflowTriggering = subscriberState.getWorkflowTriggering();
     if(workflowTriggering.contains(toBeAdded))
