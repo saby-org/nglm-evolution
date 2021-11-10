@@ -152,7 +152,7 @@ public abstract class SubscriberProfile
     //
 
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(15)); //badge
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(15));
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("subscriberTraceEnabled", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("evolutionSubscriberStatus", Schema.OPTIONAL_STRING_SCHEMA);
@@ -182,6 +182,7 @@ public abstract class SubscriberProfile
     schemaBuilder.field("universalControlGroupPrevious",Schema.OPTIONAL_BOOLEAN_SCHEMA);
     schemaBuilder.field("universalControlGroupChangeDate",Timestamp.builder().optional().schema());
     schemaBuilder.field("badges", SchemaBuilder.array(BadgeState.schema()).name("subscriber_profile_badges").optional().schema());
+    schemaBuilder.field("universalControlGroupHistoryAuditInfo",SchemaBuilder.array(Schema.STRING_SCHEMA).defaultValue(new ArrayList<String>()).schema());
 
     commonSchema = schemaBuilder.build();
   };
@@ -273,6 +274,7 @@ public abstract class SubscriberProfile
   // the required relationship does not exist and must go out of the box through a special connector.
   private List<Pair<String, String>> unknownRelationships = new ArrayList<>();
   private List<BadgeState> badges;
+  private List<String> universalControlGroupHistoryAuditInfo;
   
  
 
@@ -331,6 +333,7 @@ public abstract class SubscriberProfile
   { 
     return badges.stream().filter(badge -> badge.getBadgeID().equals(badgeID)).findFirst().orElse(null); 
   }
+  public List<String> getUniversalControlGroupHistoryAuditInfo() {return universalControlGroupHistoryAuditInfo; }
   
   //
   //  temporary (until we can update nglm-kazakhstan)
@@ -1834,6 +1837,11 @@ public abstract class SubscriberProfile
       }
   }
 
+  public void setUniversalControlGroupHistoryAuditInfo(String ucgAuditInfo)
+  {
+    universalControlGroupHistoryAuditInfo.add(ucgAuditInfo);
+  }
+
   /*****************************************
   *
   *  constructor (simple)
@@ -1870,6 +1878,7 @@ public abstract class SubscriberProfile
     this.universalControlGroupPrevious = null;
     this.universalControlGroupChangeDate = null;
     this.badges = new LinkedList<BadgeState>();
+    this.universalControlGroupHistoryAuditInfo = new ArrayList<>();
   }
 
   /*****************************************
@@ -1923,7 +1932,8 @@ public abstract class SubscriberProfile
     Map<String,MetricHistory> scoreBalances = schema.field("scoreBalances") != null ? unpackScoreBalances(schema.field("scoreBalances").schema(), (Map<String,Object>) valueStruct.get("scoreBalances")): Collections.<String,MetricHistory>emptyMap();
     Map<String,MetricHistory> progressionBalances = schema.field("progressionBalances") != null ? unpackProgressionBalances(schema.field("progressionBalances").schema(), (Map<String,Object>) valueStruct.get("progressionBalances")): Collections.<String,MetricHistory>emptyMap();
     List<BadgeState> badges = schema.field("badges") != null ? unpackBadges(schema.field("badges").schema(), valueStruct.get("badges")) : new LinkedList<BadgeState>();
-    
+    List<String> universalControlGroupHistoryAuditInfo = schema.field("universalControlGroupHistoryAuditInfo") != null ? valueStruct.getArray("universalControlGroupHistoryAuditInfo") : null;
+
     //
     //  return
     //
@@ -1957,6 +1967,7 @@ public abstract class SubscriberProfile
     this.universalControlGroupPrevious = universalControlGroupPrevious;
     this.universalControlGroupChangeDate = universalControlGroupChangeDate;
     this.badges = badges;
+    this.universalControlGroupHistoryAuditInfo = universalControlGroupHistoryAuditInfo;
   }
 
   /*****************************************
@@ -2436,6 +2447,7 @@ public abstract class SubscriberProfile
     this.universalControlGroupPrevious = subscriberProfile.getUniversalControlGroupPrevious();
     this.universalControlGroupChangeDate = subscriberProfile.getUniversalControlGroupChangeDate();
     this.badges = new LinkedList<BadgeState>(subscriberProfile.getBadges());
+    this.universalControlGroupHistoryAuditInfo = subscriberProfile.getUniversalControlGroupHistoryAuditInfo();
   }
 
   /*****************************************
@@ -2475,6 +2487,7 @@ public abstract class SubscriberProfile
     struct.put("universalControlGroupPrevious",subscriberProfile.getUniversalControlGroupPrevious());
     struct.put("universalControlGroupChangeDate",subscriberProfile.getUniversalControlGroupChangeDate());
     struct.put("badges", packBadges(subscriberProfile.getBadges()));
+    struct.put("universalControlGroupHistoryAuditInfo",subscriberProfile.getUniversalControlGroupHistoryAuditInfo());
   }
 
   /*****************************************

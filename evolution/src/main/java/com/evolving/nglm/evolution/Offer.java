@@ -174,7 +174,7 @@ public class Offer extends GUIManagedObject implements StockableItem
   public Integer getMaximumAcceptancesPeriodMonths() { return maximumAcceptancesPeriodMonths; }
   public String getNotEligibilityReason() { return notEligibilityReason; }
   public String getLimitsReachedReason() {	return limitsReachedReason; }
- 
+  
   /*****************************************
   *
   *  evaluateProfileCriteria
@@ -1223,11 +1223,12 @@ public class Offer extends GUIManagedObject implements StockableItem
     }
     return result;
   }
-
-public void setNotEligibilityReason(String notEligibilityReason) {
-	this.notEligibilityReason = notEligibilityReason;
-}
-public void setLimitsReachedReason(String limitsReachedReason) {
-	this.limitsReachedReason = limitsReachedReason;
-}
+  
+  public void setNotEligibilityReason(String notEligibilityReason) {
+		this.notEligibilityReason = notEligibilityReason;
+	}
+  
+  public void setLimitsReachedReason(String limitsReachedReason) {
+		this.limitsReachedReason = limitsReachedReason;
+	}
 }

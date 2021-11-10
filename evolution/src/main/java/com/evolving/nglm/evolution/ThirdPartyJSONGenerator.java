@@ -106,7 +106,7 @@ public class ThirdPartyJSONGenerator
   *
   *****************************************/
   
-  public static JSONObject generateOfferJSONForThirdParty(Offer offer, OfferService offerService, OfferObjectiveService offerObjectiveService, ProductService productService, VoucherService voucherService, SalesChannelService salesChannelService, CatalogCharacteristicService catalogCharacteristicService, boolean notEligible, boolean limitsReached )
+  public static JSONObject generateOfferJSONForThirdParty(Offer offer, OfferService offerService, OfferObjectiveService offerObjectiveService, ProductService productService, VoucherService voucherService, SalesChannelService salesChannelService, CatalogCharacteristicService catalogCharacteristicService, boolean notEligible, boolean limitsReached)
   {
     HashMap<String, Object> offerMap = new HashMap<String, Object>();
     if ( null == offer ) return JSONUtilities.encodeObject(offerMap);

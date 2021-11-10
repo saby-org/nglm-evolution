@@ -3114,13 +3114,13 @@ public class ThirdPartyManager
     String endDateString = readString(jsonRoot, "endDate", false);
     String offerObjective = readString(jsonRoot, "objective", false);
     String supplier = readString(jsonRoot, "supplier", false);
+    //EVPRO-1353: add salesChannel filter
+    String salesChannelName = readString(jsonRoot, "salesChannel", false);
     //EVPRO-1260: add filtering parameters
     boolean outOfStock = JSONUtilities.decodeBoolean(jsonRoot, "outOfStock", Boolean.FALSE);
     boolean notEligible = JSONUtilities.decodeBoolean(jsonRoot, "notEligible", Boolean.FALSE);
     boolean limitsReached = JSONUtilities.decodeBoolean(jsonRoot, "limitsReached", Boolean.FALSE);
     
-    //EVPRO-1353: add salesChannel filter
-    String salesChannelName = readString(jsonRoot, "salesChannel", false);
     JSONObject offerObjectivesCharacteristicsJSON = JSONUtilities.decodeJSONObject(jsonRoot, "offerObjectivesCharacteristics", false);
     JSONObject offerCharacteristicsJSON = JSONUtilities.decodeJSONObject(jsonRoot, "offerCharacteristics", false);
     final OfferObjectiveInstance objectiveInstanceReq = offerObjectivesCharacteristicsJSON != null ? decodeOfferObjectiveInstance(offerObjectivesCharacteristicsJSON, offerObjectiveService, catalogCharacteristicService, tenantID) : null;
@@ -5973,6 +5973,11 @@ public class ThirdPartyManager
     if(supplier==null){
       throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.PARTNER_NOT_FOUND);
     }
+    
+    if(supplier.getTenantID() != tenantID)
+      {
+        throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_CODE_NOT_FOUND);
+      }
 
     String subscriberID=null;
     try
@@ -6956,6 +6961,7 @@ public class ThirdPartyManager
   {
     // "customerID" parameter is mapped internally to subscriberID 
     String subscriberID = JSONUtilities.decodeString(jsonRoot, CUSTOMER_ID, false);
+    
     String alternateSubscriberID = null;
     
     // support the possibility: customerIDType and customerIDValue...
@@ -6984,6 +6990,27 @@ public class ThirdPartyManager
               log.error("SubscriberIDServiceException can not resolve subscriberID from type {} and value {} error is {}", customerIDType, customerIDValue, e.getMessage());
             }
         }
+      }
+    
+    // ensure this subscriberID has the good tenant
+    if(subscriberID != null)
+      {
+        try
+          {
+            SubscriberProfile profile = subscriberProfileService.getSubscriberProfile(subscriberID);
+            if(profile == null)
+              {
+                throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND); 
+              }
+            else if(profile.getTenantID() != tenantID)
+              {
+                throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND); 
+              }              
+          }
+        catch (SubscriberProfileServiceException e)
+          {
+            log.warn("SubscriberIDServiceException can not resolve subscriberID {} ", subscriberID, e.getMessage());
+          }
       }
   
     if(alternateSubscriberID == null && subscriberID == null) 

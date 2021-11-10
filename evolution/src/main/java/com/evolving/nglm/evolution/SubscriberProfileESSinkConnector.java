@@ -188,6 +188,7 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
       documentMap.put("universalControlGroupPrevious",subscriberProfile.getUniversalControlGroupPrevious());
       documentMap.put("universalControlGroupChangeDate",RLMDateUtils.formatDateForElasticsearchDefault(subscriberProfile.getUniversalControlGroupChangeDate()));
       documentMap.put("badges", subscriberProfile.getBadgesJSON());
+      documentMap.put("universalControlGroupHistoryAuditInfo",subscriberProfile.getUniversalControlGroupHistoryAuditInfo());
       addToDocumentMap(documentMap, subscriberProfile, now);
       
       //
