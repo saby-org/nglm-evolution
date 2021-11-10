@@ -3168,73 +3168,16 @@ public class ThirdPartyManager
             offers = offers.stream().filter(offer -> (offer.getApproximateRemainingStock()!=null && offer.getApproximateRemainingStock()>0)).collect(Collectors.toList());
           }
           
-          if (limitsReached)
-          {
+
             //
             //  filter on limitsReached
             //
-        	  for (Offer offer: offers) {
-              	Date earliestDateToKeepForCriteria = EvolutionEngine.computeEarliestDateForAdvanceCriteria(now, tenantID);
-                  Date earliestDateToKeep = EvolutionEngine.computeEarliestDateToKeep(now, offer, tenantID);
-                  Date earliestDateToKeepInHistory = earliestDateToKeep.after(earliestDateToKeepForCriteria) ? earliestDateToKeepForCriteria : earliestDateToKeep; // this is advance criteria - we must have data for 4months EVPRO-1066
-                  List<Pair<String, Date>> cleanPurchaseHistory = new ArrayList<Pair<String, Date>>();
-                  
-                //TODO: before EVPRO-1066 all the purchase were kept like Map<String,List<Date>, now it is Map<String, List<Pair<String, Date>>> <saleschnl, Date>
-                  // so it is important to migrate data, but once all customer run over this version, this should be removed
-                  // ------ START DATA MIGRATION COULD BE REMOVED
-                  Map<String,List<Date>> oldFullPurchaseHistory = subscriberProfile.getOfferPurchaseHistory();
-                  List<Date> oldPurchaseHistory = oldFullPurchaseHistory.get(offer.getOfferID());
-                  
-                  //
-                  //  oldPurchaseHistory migration TO BE removed
-                  //
-                  if (oldPurchaseHistory != null)
-                  {
-                    String salesChannelIDMigration = "migrating-ActualWasntAvlbl";
-                    // only keep earliestDateToKeepInHistory purchase dates (discard dates that are too old)
-                    for (Date purchaseDate : oldPurchaseHistory)
-                      {
-                    	if (purchaseDate.after(earliestDateToKeepInHistory))
-                        {
-                          cleanPurchaseHistory.add(new Pair<String, Date>(salesChannelIDMigration, purchaseDate));
-                        }
-	                  }
-	                  oldFullPurchaseHistory.put(offer.getOfferID(), new ArrayList<Date>()); // old will be blank - will be removed future
-                  }
-                  // ------ END DATA MIGRATION COULD BE REMOVED
-                  
-                  //
-                  //  newPurchaseHistory
-                  //
-                  Map<String, List<Pair<String, Date>>> newFullPurchaseHistory = subscriberProfile.getOfferPurchaseSalesChannelHistory();
-                  List<Pair<String, Date>> newPurchaseHistory = newFullPurchaseHistory.get(offer.getOfferID());
-                  if (newPurchaseHistory != null)
-                    {
-                	  for (Pair<String, Date> purchaseDatePair : newPurchaseHistory)
-                      {
-                        Date purchaseDate = purchaseDatePair.getSecondElement();
-                        if (purchaseDate.after(earliestDateToKeepInHistory))
-                          {
-                            cleanPurchaseHistory.add(new Pair<String, Date>(purchaseDatePair.getFirstElement(), purchaseDatePair.getSecondElement()));
-                          }
-                      }
-                    }
-                  //
-                  //  filter on earliestDateToKeep (this is for offer purchase limitation - not adv criteria)
-                  //
-                  
-                  long previousPurchseCount = cleanPurchaseHistory.stream().filter(history -> history.getSecondElement().after(earliestDateToKeep)).count();
-                  int totalPurchased = (int) (previousPurchseCount) + 1; //put +1 to check if possible to purchase now a new offer
-                  
-                  if (EvolutionEngine.isPurchaseLimitReached(offer, totalPurchased))
-                  {
-                	  if (log.isTraceEnabled()) log.trace("maximumAcceptances : " + offer.getMaximumAcceptances() + " of offer " + offer.getOfferID() + " exceeded for subscriber " + subscriberProfile.getSubscriberID() + " as totalPurchased = " + totalPurchased + " (" + cleanPurchaseHistory.size() + ") earliestDateToKeep : " + earliestDateToKeep);
-                      offer.setLimitsReachedReason("purchases limit reached");
-                    }
-                  
-              }
-            }    
+          Map<String,List<Date>> oldFullPurchaseHistory = subscriberProfile.getOfferPurchaseHistory();
+          Map<String, List<Pair<String, Date>>> newFullPurchaseHistory = subscriberProfile.getOfferPurchaseSalesChannelHistory();
           
+           offers = offers.stream().filter(offer -> offer.evaluateLimitsReachedWithReason(oldFullPurchaseHistory,newFullPurchaseHistory,tenantID,limitsReached)).collect(Collectors.toList());
+            
+      
           
           //
           //filter using supplier
