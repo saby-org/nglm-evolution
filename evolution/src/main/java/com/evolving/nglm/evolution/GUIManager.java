@@ -1694,7 +1694,7 @@ public class GUIManager
     //  journeyTemplates do not change the ID - still this is a bug, how two different tenant have the obj with sameID
     //
     
-    for(Tenant tenant : Deployment.getTenants())
+    for(Tenant tenant : Deployment.getRealTenants())
       {
         int tenantID = tenant.getTenantID();
         if (journeyTemplateService.getStoredJourneyTemplates(tenantID).size() == 0)
@@ -1705,6 +1705,7 @@ public class GUIManager
               for (int i=0; i<initialJourneyTemplatesJSONArray.size(); i++)
                 {
                   JSONObject journeyTemplateJSON = (JSONObject) initialJourneyTemplatesJSONArray.get(i);
+                  journeyTemplateJSON.put("tenantID", tenantID); // this info is missing in deployment.json
                   processPutJourneyTemplate("0", journeyTemplateJSON, tenantID);
                 }
             }
