@@ -3172,7 +3172,7 @@ public class ThirdPartyManager
             //
             //  filter on limitsReached
             //
-          if(limitsReached) {
+          if(limitsReached && subscriberProfile != null) {
 	          Map<String,List<Date>> oldFullPurchaseHistory = subscriberProfile.getOfferPurchaseHistory();
 	          Map<String, List<Pair<String, Date>>> newFullPurchaseHistory = subscriberProfile.getOfferPurchaseSalesChannelHistory();
 	          
