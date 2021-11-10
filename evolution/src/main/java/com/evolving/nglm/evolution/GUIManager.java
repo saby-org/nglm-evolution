@@ -1708,6 +1708,8 @@ public class GUIManager
                   // duplicate object so that it is not modified
                   JSONObject journeyTemplateJSON = new JSONObject();
                   journeyTemplateJSON.putAll(journeyTemplateJSONOrig);
+                  // Make sure there is no ID
+                  journeyTemplateJSON.remove("id");
                   journeyTemplateJSON.put("tenantID", tenantID); // this info is missing in deployment.json
                   processPutJourneyTemplate("0", journeyTemplateJSON, tenantID);
                 }
