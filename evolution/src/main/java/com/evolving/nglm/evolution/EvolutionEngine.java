@@ -2782,7 +2782,7 @@ public class EvolutionEngine
                 default:
                   break;
                }
-               triggerBadgeWorflow(badgeChangeRequest, context.getSubscriberState(), workFlowId, badgeChangeRequest.getFeatureID(), badgeChangeRequest.getOrigin());
+               triggerBadgeWorflow(badgeChangeRequest, context.getSubscriberState(), workFlowId, badgeChangeRequest.getBadgeID(), badgeChangeRequest.getOrigin());
              }
          }
        
@@ -2838,7 +2838,7 @@ public class EvolutionEngine
                //  triggerBadgeWorflow AwardedWorkflow
                //
                
-               if (!executeOnEntry) triggerBadgeWorflow(badgeChangeRequest, subscriberState, badge.getAwardedWorkflowID(), badgeChangeRequest.getFeatureID(), badgeChangeRequest.getOrigin());
+               if (!executeOnEntry) triggerBadgeWorflow(badgeChangeRequest, subscriberState, badge.getAwardedWorkflowID(), badgeChangeRequest.getBadgeID(), badgeChangeRequest.getOrigin());
              }
            else if (subscriberBadge.getCustomerBadgeStatus().equals(CustomerBadgeStatus.PENDING))
              {
@@ -2856,7 +2856,7 @@ public class EvolutionEngine
                //  triggerBadgeWorflow AwardedWorkflow
                //
                
-               if (!executeOnEntry) triggerBadgeWorflow(badgeChangeRequest, subscriberState, badge.getAwardedWorkflowID(), badgeChangeRequest.getFeatureID(), badgeChangeRequest.getOrigin());
+               if (!executeOnEntry) triggerBadgeWorflow(badgeChangeRequest, subscriberState, badge.getAwardedWorkflowID(), badgeChangeRequest.getBadgeID(), badgeChangeRequest.getOrigin());
              }
            else
              {
@@ -2891,7 +2891,7 @@ public class EvolutionEngine
                //  triggerBadgeWorflow RemoveWorkflow
                //
                
-               if (!executeOnEntry) triggerBadgeWorflow(badgeChangeRequest, subscriberState, badge.getRemoveWorkflowID(), badgeChangeRequest.getFeatureID(), badgeChangeRequest.getOrigin());
+               if (!executeOnEntry) triggerBadgeWorflow(badgeChangeRequest, subscriberState, badge.getRemoveWorkflowID(), badgeChangeRequest.getBadgeID(), badgeChangeRequest.getOrigin());
              }
            break;
 
@@ -6668,6 +6668,7 @@ public class EvolutionEngine
               
             case Loyalty_Badge:
               caller = badgeService.getStoredBadge(featureID);
+              log.info("RAJ K caller {}", caller.getGUIManagedObjectDisplay());
               break;
               
             case Unknown:
