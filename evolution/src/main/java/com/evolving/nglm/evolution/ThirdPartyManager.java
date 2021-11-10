@@ -3172,11 +3172,12 @@ public class ThirdPartyManager
             //
             //  filter on limitsReached
             //
-          Map<String,List<Date>> oldFullPurchaseHistory = subscriberProfile.getOfferPurchaseHistory();
-          Map<String, List<Pair<String, Date>>> newFullPurchaseHistory = subscriberProfile.getOfferPurchaseSalesChannelHistory();
-          
-           offers = offers.stream().filter(offer -> offer.evaluateLimitsReachedWithReason(oldFullPurchaseHistory,newFullPurchaseHistory,tenantID,limitsReached)).collect(Collectors.toList());
-            
+          if(limitsReached && subscriberProfile != null) {
+	          Map<String,List<Date>> oldFullPurchaseHistory = subscriberProfile.getOfferPurchaseHistory();
+	          Map<String, List<Pair<String, Date>>> newFullPurchaseHistory = subscriberProfile.getOfferPurchaseSalesChannelHistory();
+	          
+	           offers = offers.stream().filter(offer -> offer.evaluateLimitsReachedWithReason(oldFullPurchaseHistory,newFullPurchaseHistory,tenantID,limitsReached)).collect(Collectors.toList());
+          } 
       
           
           //
