@@ -1704,7 +1704,10 @@ public class GUIManager
               JSONArray initialJourneyTemplatesJSONArray = Deployment.getDeployment(tenantID).getInitialJourneyTemplatesJSONArray();
               for (int i=0; i<initialJourneyTemplatesJSONArray.size(); i++)
                 {
-                  JSONObject journeyTemplateJSON = (JSONObject) initialJourneyTemplatesJSONArray.get(i);
+                  JSONObject journeyTemplateJSONOrig = (JSONObject) initialJourneyTemplatesJSONArray.get(i);
+                  // duplicate object so that it is not modified
+                  JSONObject journeyTemplateJSON = new JSONObject();
+                  journeyTemplateJSON.putAll(journeyTemplateJSONOrig);
                   journeyTemplateJSON.put("tenantID", tenantID); // this info is missing in deployment.json
                   processPutJourneyTemplate("0", journeyTemplateJSON, tenantID);
                 }
