@@ -3243,7 +3243,15 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
             {
               if (!(areaAvailability.get(i).equals("realtime")) && !(areaAvailability.get(i).equals("journeymanager")))
                 {
-                  newModuleID = Module.Loyalty_Program.getExternalRepresentation();
+                  newModuleID = subscriberEvaluationRequest.getJourneyState().getSourceModuleID();
+                  if (newModuleID != null && Module.fromExternalRepresentation(newModuleID) == Module.Loyalty_Badge)
+                    {
+                      newModuleID = Module.fromExternalRepresentation(newModuleID).getExternalRepresentation();
+                    }
+                  else
+                    {
+                      newModuleID = Module.Loyalty_Program.getExternalRepresentation();
+                    }
                   if (subscriberEvaluationRequest.getJourneyState() != null && subscriberEvaluationRequest.getJourneyState().getsourceOrigin() != null)
                     {
                       origin = subscriberEvaluationRequest.getJourneyState().getsourceOrigin();
