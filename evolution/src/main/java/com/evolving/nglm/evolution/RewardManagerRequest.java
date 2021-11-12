@@ -451,12 +451,7 @@ public class RewardManagerRequest extends BonusDelivery
             {
               if (!(areaAvailability.get(i).equals("realtime")) && !(areaAvailability.get(i).equals("journeymanager")))
                 {
-                  //
-                  //  RAJ K need to check here
-                  //
-                  
                   newModuleID = subscriberEvaluationRequest.getJourneyState().getSourceModuleID();
-                  log.info("RAJ K newModuleID {}", newModuleID);
                   if (newModuleID != null && Module.fromExternalRepresentation(newModuleID) == Module.Loyalty_Badge)
                     {
                       newModuleID = Module.fromExternalRepresentation(newModuleID).getExternalRepresentation();
