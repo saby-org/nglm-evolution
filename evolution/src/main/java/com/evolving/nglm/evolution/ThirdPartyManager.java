@@ -3165,7 +3165,7 @@ public class ThirdPartyManager
             //  filter on remaningStock
             //
             
-            offers = offers.stream().filter(offer -> (offer.getApproximateRemainingStock()!=null && offer.getApproximateRemainingStock()>0)).collect(Collectors.toList());
+            offers = offers.stream().filter(offer -> (offer.getApproximateRemainingStock()==null || ( offer.getApproximateRemainingStock()!=null && offer.getApproximateRemainingStock()>0))).collect(Collectors.toList());
           }
           
 
