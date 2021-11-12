@@ -858,7 +858,20 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
             {
               if (!(areaAvailability.get(i).equals("realtime")) && !(areaAvailability.get(i).equals("journeymanager")))
                 {
-                  newModuleID = Module.Loyalty_Program.getExternalRepresentation();
+                  //
+                  //  RAJ K need to check here
+                  //
+                  
+                  newModuleID = subscriberEvaluationRequest.getJourneyState().getSourceModuleID();
+                  log.info("RAJ K newModuleID {}", newModuleID);
+                  if (newModuleID != null && Module.fromExternalRepresentation(newModuleID) == Module.Loyalty_Badge)
+                    {
+                      newModuleID = Module.fromExternalRepresentation(newModuleID).getExternalRepresentation();
+                    }
+                  else
+                    {
+                      newModuleID = Module.Loyalty_Program.getExternalRepresentation();
+                    }
                   if (subscriberEvaluationRequest.getJourneyState() != null && subscriberEvaluationRequest.getJourneyState().getsourceOrigin() != null) origin = subscriberEvaluationRequest.getJourneyState().getsourceOrigin();
                   break;
                 }
