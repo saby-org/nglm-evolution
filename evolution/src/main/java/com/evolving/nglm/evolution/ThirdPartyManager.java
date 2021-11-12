@@ -3281,18 +3281,20 @@ public class ThirdPartyManager
             //  filter on remaningStock
             //
             
-            offers = offers.stream().filter(offer -> (offer.getApproximateRemainingStock()!=null && offer.getApproximateRemainingStock()>0)).collect(Collectors.toList());
+            offers = offers.stream().filter(offer -> (offer.getApproximateRemainingStock()==null || (offer.getApproximateRemainingStock()!=null  && offer.getApproximateRemainingStock()>0))).collect(Collectors.toList());
           }
           
 
             //
             //  filter on limitsReached
             //
-          Map<String,List<Date>> oldFullPurchaseHistory = subscriberProfile.getOfferPurchaseHistory();
-          Map<String, List<Pair<String, Date>>> newFullPurchaseHistory = subscriberProfile.getOfferPurchaseSalesChannelHistory();
-          
-
-          offers = offers.stream().filter(offer -> offer.evaluateLimitsReachedWithReason(oldFullPurchaseHistory,newFullPurchaseHistory,tenantID,limitsReached)).collect(Collectors.toList());
+          if(subscriberProfile != null) {
+	          Map<String,List<Date>> oldFullPurchaseHistory = subscriberProfile.getOfferPurchaseHistory();
+	          Map<String, List<Pair<String, Date>>> newFullPurchaseHistory = subscriberProfile.getOfferPurchaseSalesChannelHistory();
+	          
+	           offers = offers.stream().filter(offer -> offer.evaluateLimitsReachedWithReason(oldFullPurchaseHistory,newFullPurchaseHistory,tenantID,limitsReached)).collect(Collectors.toList());
+          } 
+      
           
           //
           //filter using supplier
