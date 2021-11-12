@@ -2825,7 +2825,6 @@ public class EvolutionEngine
        switch (actionRequest)
        {
          case AWARD:
-           boolean triggerWorkflow = badgeChangeRequest.getInfos().get("") == null ? true : (boolean) badgeChangeRequest.getInfos().get("");
            if (subscriberBadge == null)
              {
                //
@@ -9688,10 +9687,10 @@ public class EvolutionEngine
 
       BadgeChange badgeChangeRequest = new BadgeChange(evolutionEventContext.getSubscriberState().getSubscriberID(), uniqueKeyServer.getKey(), evolutionEventContext.getEventID(), operation, badgeID, moduleID, deliveryRequestSource, origin, RESTAPIGenericReturnCodes.SUCCESS, evolutionEventContext.getSubscriberState().getSubscriberProfile().getTenantID(), new ParameterMap());
       boolean changed = changeSubscriberBadge(badgeChangeRequest, evolutionEventContext.getSubscriberState(), evolutionEventContext.processingDate(), true);
+      badgeChangeRequest.getInfos().put("executeWorkFlowOnly", changed);
       if (changed)
         {
           subscriberEvaluationRequest.getJourneyState().getBadgeChanges().add(badgeChangeRequest);
-          badgeChangeRequest.getInfos().put("executeWorkFlowOnly", changed);
         }
 
       /*****************************************
