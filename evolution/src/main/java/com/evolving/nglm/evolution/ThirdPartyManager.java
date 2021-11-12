@@ -2999,6 +2999,11 @@ public class ThirdPartyManager
     String supplier = readString(jsonRoot, "supplier", false);
     //EVPRO-1353: add salesChannel filter
     String salesChannelName = readString(jsonRoot, "salesChannel", false);
+    //EVPRO-1260: add filtering parameters
+    boolean outOfStock = JSONUtilities.decodeBoolean(jsonRoot, "outOfStock", Boolean.FALSE);
+    boolean notEligible = JSONUtilities.decodeBoolean(jsonRoot, "notEligible", Boolean.FALSE);
+    boolean limitsReached = JSONUtilities.decodeBoolean(jsonRoot, "limitsReached", Boolean.FALSE);
+    
     JSONObject offerObjectivesCharacteristicsJSON = JSONUtilities.decodeJSONObject(jsonRoot, "offerObjectivesCharacteristics", false);
     JSONObject offerCharacteristicsJSON = JSONUtilities.decodeJSONObject(jsonRoot, "offerCharacteristics", false);
     final OfferObjectiveInstance objectiveInstanceReq = offerObjectivesCharacteristicsJSON != null ? decodeOfferObjectiveInstance(offerObjectivesCharacteristicsJSON, offerObjectiveService, catalogCharacteristicService, tenantID) : null;
@@ -3082,7 +3087,11 @@ public class ThirdPartyManager
           if (subscriberID != null)
             {
               SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, SystemTime.getCurrentTime(), tenantID);
-              offers = offers.stream().filter(offer -> offer.evaluateProfileCriteria(evaluationRequest)).collect(Collectors.toList());
+              if(!notEligible) {
+            	  offers = offers.stream().filter(offer -> offer.evaluateProfileCriteria(evaluationRequest)).collect(Collectors.toList());
+              } else {
+            	  offers = offers.stream().filter(offer -> offer.evaluateProfileCriteriaWithReason(evaluationRequest)).collect(Collectors.toList());
+              }
             }
 
           //
@@ -3148,6 +3157,27 @@ public class ThirdPartyManager
               
               offers = offers.stream().filter(offer -> offer.hasThisOfferCharacteristics(offerCharacteristicsReq)).collect(Collectors.toList());
             }
+          
+          
+          if (outOfStock)
+          {
+            //
+            //  filter on remaningStock
+            //
+            
+            offers = offers.stream().filter(offer -> (offer.getApproximateRemainingStock()==null || ( offer.getApproximateRemainingStock()!=null && offer.getApproximateRemainingStock()>0))).collect(Collectors.toList());
+          }
+          
+
+            //
+            //  filter on limitsReached
+            //
+          if(subscriberProfile != null) {
+	          Map<String,List<Date>> oldFullPurchaseHistory = subscriberProfile.getOfferPurchaseHistory();
+	          Map<String, List<Pair<String, Date>>> newFullPurchaseHistory = subscriberProfile.getOfferPurchaseSalesChannelHistory();
+	          
+	           offers = offers.stream().filter(offer -> offer.evaluateLimitsReachedWithReason(oldFullPurchaseHistory,newFullPurchaseHistory,tenantID,limitsReached)).collect(Collectors.toList());
+          }
           
           //
           //filter using supplier
@@ -3283,7 +3313,7 @@ public class ThirdPartyManager
            *
            *****************************************/
 
-          List<JSONObject> offersJson = offers.stream().map(offer -> ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService, offerObjectiveService, productService, voucherService, salesChannelService, catalogCharacteristicService)).collect(Collectors.toList());
+          List<JSONObject> offersJson = offers.stream().map(offer -> ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService, offerObjectiveService, productService, voucherService, salesChannelService, catalogCharacteristicService,notEligible,limitsReached)).collect(Collectors.toList());
           response.put("offers", JSONUtilities.encodeArray(offersJson));
           updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
         }
@@ -5502,7 +5532,7 @@ public class ThirdPartyManager
     GUIManagedObject offerObject = offerService.getStoredOffer(offerID);
     if (offerObject instanceof Offer) {
       Offer offer = (Offer) offerObject;
-      offerJSON = ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService, offerObjectiveService, productService, voucherService, salesChannelService, catalogCharacteristicService);
+      offerJSON = ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService, offerObjectiveService, productService, voucherService, salesChannelService, catalogCharacteristicService,false,false);
     }
     response.put("offerDetails",offerJSON);
     return constructThirdPartyResponse(RESTAPIGenericReturnCodes.SUCCESS,response);
@@ -5521,7 +5551,7 @@ public class ThirdPartyManager
     GUIManagedObject offerObject = offerService.getStoredOffer(offerID);
     if (offerObject instanceof Offer) {
       Offer offer = (Offer) offerObject;
-      offerJSON = ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService, offerObjectiveService, productService, voucherService, salesChannelService, catalogCharacteristicService);
+      offerJSON = ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService, offerObjectiveService, productService, voucherService, salesChannelService, catalogCharacteristicService,false,false);
     }
     Map<String,Object> offerResponse = new HashMap<>();
     offerResponse.put("offerDetails", offerJSON);
@@ -5667,6 +5697,11 @@ public class ThirdPartyManager
     if(supplier==null){
       throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.PARTNER_NOT_FOUND);
     }
+    
+    if(supplier.getTenantID() != tenantID)
+      {
+        throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_CODE_NOT_FOUND);
+      }
 
     String subscriberID=null;
     try
@@ -6652,6 +6687,7 @@ public class ThirdPartyManager
   {
     // "customerID" parameter is mapped internally to subscriberID 
     String subscriberID = JSONUtilities.decodeString(jsonRoot, CUSTOMER_ID, false);
+    
     String alternateSubscriberID = null;
     
     // support the possibility: customerIDType and customerIDValue...
@@ -6680,6 +6716,27 @@ public class ThirdPartyManager
               log.error("SubscriberIDServiceException can not resolve subscriberID from type {} and value {} error is {}", customerIDType, customerIDValue, e.getMessage());
             }
         }
+      }
+    
+    // ensure this subscriberID has the good tenant
+    if(subscriberID != null)
+      {
+        try
+          {
+            SubscriberProfile profile = subscriberProfileService.getSubscriberProfile(subscriberID);
+            if(profile == null)
+              {
+                throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND); 
+              }
+            else if(profile.getTenantID() != tenantID)
+              {
+                throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND); 
+              }              
+          }
+        catch (SubscriberProfileServiceException e)
+          {
+            log.warn("SubscriberIDServiceException can not resolve subscriberID {} ", subscriberID, e.getMessage());
+          }
       }
   
     if(alternateSubscriberID == null && subscriberID == null) 

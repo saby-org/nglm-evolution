@@ -1293,6 +1293,9 @@
   "generateSimpleProfileDimensions" : true,
   "recurrentCampaignCreationDaysRange" : 3,
 
-  "addSubscribersToUcgByCounting" : true
+  "addSubscribersToUcgByCounting" : true,
+  "ucgQuickRemovalAtRefresh" : true,
+  "minDaysInUCGForQuickRemoval" : 0,
+  "ucgQuickOverloadRemoval" : true
   
 }
