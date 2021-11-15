@@ -141,6 +141,7 @@ import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionOperator;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.GUIService.GUIManagedObjectListener;
 import com.evolving.nglm.evolution.INFulfillmentManager.INFulfillmentRequest;
 import com.evolving.nglm.evolution.Journey.GUINode;
@@ -777,7 +778,6 @@ public class GUIManager
   protected CommunicationChannelTimeWindowService communicationChannelTimeWindowService;
   protected CommunicationChannelService communicationChannelService;
   protected LoyaltyProgramService loyaltyProgramService;
-  protected BadgeService badgeService;
   protected BadgeObjectiveService badgeObjectiveService;
   protected ExclusionInclusionTargetService exclusionInclusionTargetService;
   protected ResellerService resellerService;
@@ -901,7 +901,6 @@ public class GUIManager
     String communicationChannelBlackoutTopic = Deployment.getCommunicationChannelBlackoutTopic();
     String communicationChannelTimeWindowTopic = Deployment.getCommunicationChannelTimeWindowTopic();
     String loyaltyProgramTopic = Deployment.getLoyaltyProgramTopic();
-    String badgeTopic = Deployment.getBadgeTopic();
     String badgeObjectiveTopic = Deployment.getBadgeObjectiveTopic();
     String exclusionInclusionTargetTopic = Deployment.getExclusionInclusionTargetTopic();
     String resellerTopic = Deployment.getResellerTopic();
@@ -1132,7 +1131,6 @@ public class GUIManager
     communicationChannelTimeWindowService = new CommunicationChannelTimeWindowService(bootstrapServers, "guimanager-timewindowservice-" + apiProcessKey, communicationChannelTimeWindowTopic, true);
     communicationChannelService = new CommunicationChannelService(bootstrapServers, "guimanager-communicationchannelservice-" + apiProcessKey, communicationChannelTopic, true);
     loyaltyProgramService = new LoyaltyProgramService(bootstrapServers, "guimanager-loyaltyprogramservice-"+apiProcessKey, loyaltyProgramTopic, true);
-    badgeService = new BadgeService(bootstrapServers, "guimanager-badgeservice-"+apiProcessKey, badgeTopic, true);
     badgeObjectiveService = new BadgeObjectiveService(bootstrapServers, "guimanager-badgeobjectiveservice-"+apiProcessKey, badgeObjectiveTopic, true);
     exclusionInclusionTargetService = new ExclusionInclusionTargetService(bootstrapServers, "guimanager-exclusioninclusiontargetservice-" + apiProcessKey, exclusionInclusionTargetTopic, true);
     resellerService = new ResellerService(bootstrapServers, "guimanager-resellerservice-"+apiProcessKey, resellerTopic, true);
@@ -1152,10 +1150,10 @@ public class GUIManager
     voucherChangeResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),Deployment.getVoucherChangeResponseTopic(),StringKey.serde(),VoucherChange.serde());
     voucherChangeResponseListenerService.start();
 
-    guiManagerContext = new GUIManagerContext(journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, predictionSettingsService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, badgeService, badgeObjectiveService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, customCriteriaService);
-    guiManagerBaseManagement = new GUIManagerBaseManagement(journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService,badgeService, badgeObjectiveService,  resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, dnboMatrixService, dynamicCriterionFieldService, dynamicEventDeclarationsService, journeyTemplateService, purchaseResponseListenerService, subscriberGroupSharedIDService, zuks, httpTimeout, kafkaProducer, elasticsearch, subscriberMessageTemplateService, getCustomerAlternateID, guiManagerContext, subscriberGroupEpochReader, renamedProfileCriterionFieldReader);
-    guiManagerLoyaltyReporting = new GUIManagerLoyaltyReporting(journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, badgeService, badgeObjectiveService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, dnboMatrixService, dynamicCriterionFieldService, dynamicEventDeclarationsService, journeyTemplateService, purchaseResponseListenerService, customCriteriaService, subscriberGroupSharedIDService, zuks, httpTimeout, kafkaProducer, elasticsearch, subscriberMessageTemplateService, getCustomerAlternateID, guiManagerContext, subscriberGroupEpochReader, renamedProfileCriterionFieldReader);
-    guiManagerGeneral = new GUIManagerGeneral(journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, badgeService, badgeObjectiveService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, dnboMatrixService, dynamicCriterionFieldService, dynamicEventDeclarationsService, journeyTemplateService, purchaseResponseListenerService, subscriberGroupSharedIDService, zuks, httpTimeout, kafkaProducer, elasticsearch, subscriberMessageTemplateService, getCustomerAlternateID, guiManagerContext, subscriberGroupEpochReader, renamedProfileCriterionFieldReader);
+    guiManagerContext = new GUIManagerContext(journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, predictionSettingsService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, badgeObjectiveService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, customCriteriaService);
+    guiManagerBaseManagement = new GUIManagerBaseManagement(journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService,badgeObjectiveService,  resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, dnboMatrixService, dynamicCriterionFieldService, dynamicEventDeclarationsService, journeyTemplateService, purchaseResponseListenerService, subscriberGroupSharedIDService, zuks, httpTimeout, kafkaProducer, elasticsearch, subscriberMessageTemplateService, getCustomerAlternateID, guiManagerContext, subscriberGroupEpochReader, renamedProfileCriterionFieldReader);
+    guiManagerLoyaltyReporting = new GUIManagerLoyaltyReporting(journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, badgeObjectiveService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, dnboMatrixService, dynamicCriterionFieldService, dynamicEventDeclarationsService, journeyTemplateService, purchaseResponseListenerService, customCriteriaService, subscriberGroupSharedIDService, zuks, httpTimeout, kafkaProducer, elasticsearch, subscriberMessageTemplateService, getCustomerAlternateID, guiManagerContext, subscriberGroupEpochReader, renamedProfileCriterionFieldReader);
+    guiManagerGeneral = new GUIManagerGeneral(journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, badgeObjectiveService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, dnboMatrixService, dynamicCriterionFieldService, dynamicEventDeclarationsService, journeyTemplateService, purchaseResponseListenerService, subscriberGroupSharedIDService, zuks, httpTimeout, kafkaProducer, elasticsearch, subscriberMessageTemplateService, getCustomerAlternateID, guiManagerContext, subscriberGroupEpochReader, renamedProfileCriterionFieldReader);
     
     /*****************************************
     *
@@ -2048,7 +2046,6 @@ public class GUIManager
     voucherService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);
     communicationChannelBlackoutService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);
     loyaltyProgramService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);
-    badgeService.start();
     badgeObjectiveService.start();
     exclusionInclusionTargetService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);
     resellerService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);
@@ -19058,7 +19055,7 @@ public class GUIManager
               }
             else
               {
-                response = baseSubscriberProfile.getProfileMapForGUIPresentation(subscriberProfileService, loyaltyProgramService, badgeService, segmentationDimensionService, targetService, pointService, complexObjectTypeService, voucherService, voucherTypeService, exclusionInclusionTargetService, subscriberGroupEpochReader);
+                response = baseSubscriberProfile.getProfileMapForGUIPresentation(subscriberProfileService, loyaltyProgramService, segmentationDimensionService, targetService, pointService, complexObjectTypeService, voucherService, voucherTypeService, exclusionInclusionTargetService, subscriberGroupEpochReader);
                 response.put("responseCode", "ok");
               }
           }
@@ -19217,7 +19214,7 @@ public class GUIManager
                   {
                     Map<String, Object> esFields = hit.getSourceAsMap();
                     CommodityDeliveryRequest commodityDeliveryRequest = new CommodityDeliveryRequest(esFields);
-                    Map<String, Object> esbdrMap = commodityDeliveryRequest.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, badgeService, tenantID);
+                    Map<String, Object> esbdrMap = commodityDeliveryRequest.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, tenantID);
                     // EVPRO-1249 do not return a pseudo-expiration date (now+1 year) if not set
                     if (esFields.get("deliverableExpirationDate") == null) {
                       esbdrMap.put(DeliveryRequest.DELIVERABLEEXPIRATIONDATE, null);
@@ -19462,7 +19459,7 @@ public class GUIManager
 
                 for (DeliveryRequest odr : ODRs)
                   {
-                    Map<String, Object> presentationMap = odr.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, badgeService, tenantID);
+                    Map<String, Object> presentationMap = odr.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, tenantID);
                     ODRsJson.add(JSONUtilities.encodeObject(presentationMap));
                   }
 
@@ -19566,7 +19563,7 @@ public class GUIManager
 
                 for (BadgeChange bgdr : BGDRs)
                   {
-                    Map<String, Object> presentationMap = bgdr.getGUIPresentationMap(badgeService, journeyService, offerService, loyaltyProgramService);
+                    Map<String, Object> presentationMap = bgdr.getGUIPresentationMap(journeyService, offerService, loyaltyProgramService);
                     BGDRsJson.add(JSONUtilities.encodeObject(presentationMap));
                   }
 
@@ -19684,7 +19681,7 @@ public class GUIManager
                                 DeliveryRequest notification = ElasticsearchClientAPI.getNotificationDeliveryRequest(requestClass, hit);
                                 if (notification != null)
                                   {
-                                    Map<String, Object> esNotificationMap = notification.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, badgeService, tenantID);
+                                    Map<String, Object> esNotificationMap = notification.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, tenantID);
                                     messagesJson.add(JSONUtilities.encodeObject(esNotificationMap));
                                   }
                               }
@@ -24463,7 +24460,7 @@ public class GUIManager
                   tokenStream = tokenStream.filter(token -> tokenStatusForStreams.equalsIgnoreCase(token.getTokenStatus().getExternalRepresentation()));
                 }
               tokensJson = tokenStream
-                  .map(token -> ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService, badgeService, tenantID))
+                  .map(token -> ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService, tenantID))
                   .collect(Collectors.toList());
             }
 
@@ -24646,7 +24643,7 @@ public class GUIManager
            *  decorate and response
            *
            *****************************************/
-          response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(subscriberStoredToken, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService, badgeService, tenantID);
+          response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(subscriberStoredToken, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService, tenantID);
           response.put("responseCode", "ok");
         }
     }
@@ -24973,7 +24970,7 @@ public class GUIManager
         else
           {
             purchaseResponse = purchaseOffer(subscriberProfile,true,subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, origin, resellerID, kafkaProducer);
-            response.put("offer",purchaseResponse.getGUIPresentationMap(subscriberMessageTemplateService,salesChannelService,journeyService,offerService,loyaltyProgramService,productService,voucherService,deliverableService,paymentMeanService, resellerService, badgeService, tenantID));
+            response.put("offer",purchaseResponse.getGUIPresentationMap(subscriberMessageTemplateService,salesChannelService,journeyService,offerService,loyaltyProgramService,productService,voucherService,deliverableService,paymentMeanService, resellerService, tenantID));
           }
       }
    }
@@ -27924,17 +27921,17 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
         case "badges":
           if (includeDynamic)
           {
-            for (GUIManagedObject badgeUnchecked : badgeService.getStoredBadges(tenantID))
-            {
-              if (badgeUnchecked.getAccepted())
+            for (GUIManagedObject badgeUnchecked : loyaltyProgramService.getStoredLoyaltyPrograms(tenantID))
               {
-                Badge badge = (Badge) badgeUnchecked;
-                HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                availableValue.put("id", badge.getBadgeID());
-                availableValue.put("display", badge.getGUIManagedObjectDisplay());
-                result.add(JSONUtilities.encodeObject(availableValue));
+                if (badgeUnchecked.getAccepted() && ((LoyaltyProgram) badgeUnchecked).getLoyaltyProgramType() == LoyaltyProgramType.BADGE)
+                  {
+                    LoyaltyProgram loyaltyProgram = (LoyaltyProgram) badgeUnchecked;
+                    HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                    availableValue.put("id", loyaltyProgram.getLoyaltyProgramID());
+                    availableValue.put("display", loyaltyProgram.getGUIManagedObjectDisplay());
+                    result.add(JSONUtilities.encodeObject(availableValue));
+                  }
               }
-            }
           }
           break;
           
@@ -28523,40 +28520,49 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     *  identify
     *
     ****************************************/
+
     Set<GUIManagedObject> modifiedBadges = new HashSet<GUIManagedObject>();
-    for (GUIManagedObject existingBadge : badgeService.getStoredBadges(tenantID))
+    for (GUIManagedObject existingBadge : loyaltyProgramService.getStoredLoyaltyPrograms(tenantID))
       {
+        JSONObject loyaltyProFull = loyaltyProgramService.generateResponseJSON(existingBadge, true, date);
+        if (LoyaltyProgramType.BADGE != LoyaltyProgramType.fromExternalRepresentation(JSONUtilities.decodeString(loyaltyProFull, "loyaltyProgramType"))) continue;
+          
         //
         //  modifiedBadge
         //
+
         long epoch = epochServer.getKey();
         GUIManagedObject modifiedBadge;
         try
           {
-            Badge badge = new Badge(existingBadge.getJSONRepresentation(), epoch, existingBadge, catalogCharacteristicService, tenantID);
-            //badge.validate(callingChannelService, salesChannelService, productService, voucherService, date);
+            LoyaltyProgram badge = new Badge(existingBadge.getJSONRepresentation(), epoch, existingBadge, catalogCharacteristicService, tenantID);
+            badge.validate();
             modifiedBadge = badge;
           }
         catch (JSONUtilitiesException|GUIManagerException e)
           {
             modifiedBadge = new IncompleteObject(existingBadge.getJSONRepresentation(), epoch, tenantID);
           }
+
         //
         //  changed?
         //
+
         if (existingBadge.getAccepted() != modifiedBadge.getAccepted())
           {
             modifiedBadges.add(modifiedBadge);
           }
       }
+
     /****************************************
     *
     *  update
     *
     ****************************************/
+
     for (GUIManagedObject modifiedBadge : modifiedBadges)
       {
-        badgeService.putGUIManagedObject(modifiedBadge, date, false, null);
+        loyaltyProgramService.putGUIManagedObject(modifiedBadge, date, false, null);
       }
   }
 
@@ -29687,7 +29693,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     private TargetService targetService;
     private CommunicationChannelBlackoutService communicationChannelBlackoutService;
     private LoyaltyProgramService loyaltyProgramService;
-    private BadgeService badgeService;
     private BadgeObjectiveService badgeObjectiveService;
     private ExclusionInclusionTargetService exclusionInclusionTargetService;
     private ResellerService resellerService;
@@ -29733,7 +29738,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     public TargetService getTargetService() { return targetService; }
     public CommunicationChannelBlackoutService getCommunicationChannelBlackoutService() { return communicationChannelBlackoutService; }
     public LoyaltyProgramService getLoyaltyProgramService() { return loyaltyProgramService; }
-    public BadgeService getBadgeService() { return badgeService; }
     public BadgeObjectiveService getbBadgeObjectiveService() { return badgeObjectiveService; }
     public ExclusionInclusionTargetService getExclusionInclusionTargetService() { return exclusionInclusionTargetService; }
     public ResellerService getPartnerService() { return resellerService; }
@@ -29748,7 +29752,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     *
     *****************************************/
 
-    public GUIManagerContext(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, PredictionSettingsService predictionSettingsService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, BadgeService badgeService, BadgeObjectiveService badgeObjectiveService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService, CustomCriteriaService customCriteriaService)
+    public GUIManagerContext(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, PredictionSettingsService predictionSettingsService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, BadgeObjectiveService badgeObjectiveService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService, CustomCriteriaService customCriteriaService)
     {
       this.journeyService = journeyService;
       this.segmentationDimensionService = segmentationDimensionService;
@@ -29782,7 +29786,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
       this.targetService = targetService;
       this.communicationChannelBlackoutService = communicationChannelBlackoutService;
       this.loyaltyProgramService = loyaltyProgramService;
-      this.badgeService = badgeService;
       this.badgeObjectiveService = badgeObjectiveService;
       this.exclusionInclusionTargetService = exclusionInclusionTargetService;
       this.resellerService = resellerService;

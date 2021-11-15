@@ -249,7 +249,6 @@ public class EvolutionEngine
   private static ProductService productService;
   private static ProductTypeService productTypeService;
   private static VoucherService voucherService;
-  private static BadgeService badgeService;
   private static VoucherTypeService voucherTypeService;
   private static CatalogCharacteristicService catalogCharacteristicService;
   private static DNBOMatrixService dnboMatrixService;
@@ -520,13 +519,6 @@ public class EvolutionEngine
 
     voucherService = new VoucherService(bootstrapServers, "evolutionengine-voucher-" + evolutionEngineKey, Deployment.getVoucherTopic());
     voucherService.start();
-    
-    //
-    //  badgeService
-    //
-
-    badgeService = new BadgeService(bootstrapServers, "evolutionengine-badge-" + evolutionEngineKey, Deployment.getBadgeTopic(), false);
-    badgeService.start();
     
     //
     //  voucherTypeService
@@ -1438,7 +1430,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(streams, subscriberGroupEpochReader, ucgStateReader, dynamicCriterionFieldService, journeyService, loyaltyProgramService, targetService, journeyObjectiveService, segmentationDimensionService, presentationStrategyService, scoringStrategyService, offerService, salesChannelService, tokenTypeService, subscriberMessageTemplateService, deliverableService, segmentContactPolicyService, timerService, pointService, exclusionInclusionTargetService, productService, productTypeService, voucherService, badgeService, voucherTypeService, catalogCharacteristicService, dnboMatrixService, paymentMeanService, subscriberProfileServer, internalServer, stockService, resellerService, supplierService));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(streams, subscriberGroupEpochReader, ucgStateReader, dynamicCriterionFieldService, journeyService, loyaltyProgramService, targetService, journeyObjectiveService, segmentationDimensionService, presentationStrategyService, scoringStrategyService, offerService, salesChannelService, tokenTypeService, subscriberMessageTemplateService, deliverableService, segmentContactPolicyService, timerService, pointService, exclusionInclusionTargetService, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, dnboMatrixService, paymentMeanService, subscriberProfileServer, internalServer, stockService, resellerService, supplierService));
 
     /*****************************************
     *
@@ -1725,7 +1717,6 @@ public class EvolutionEngine
     private ProductService productService;
     private ProductTypeService productTypeService;
     private VoucherService voucherService;
-    private BadgeService badgeService;
     private VoucherTypeService voucherTypeService;
     private CatalogCharacteristicService catalogCharacteristicService;
     private DNBOMatrixService dnboMatrixService;
@@ -1746,7 +1737,7 @@ public class EvolutionEngine
     //  constructor
     //
 
-    private ShutdownHook(KafkaStreams kafkaStreams, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,UCGState> ucgStateReader, DynamicCriterionFieldService dynamicCriterionFieldsService, JourneyService journeyService, LoyaltyProgramService loyaltyProgramService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, SegmentationDimensionService segmentationDimensionService, PresentationStrategyService presentationStrategyService, ScoringStrategyService scoringStrategyService, OfferService offerService, SalesChannelService salesChannelService, TokenTypeService tokenTypeService, SubscriberMessageTemplateService subscriberMessageTemplateService, DeliverableService deliverableService, SegmentContactPolicyService segmentContactPolicyService, TimerService timerService, PointService pointService, ExclusionInclusionTargetService exclusionInclusionTargetService, ProductService productService, ProductTypeService productTypeService, VoucherService voucherService, BadgeService badgeService, VoucherTypeService voucherTypeService, CatalogCharacteristicService catalogCharacteristicService, DNBOMatrixService dnboMatrixService, PaymentMeanService paymentMeanService, HttpServer subscriberProfileServer, HttpServer internalServer, StockMonitor stockService, ResellerService resellerService, SupplierService supplierService)
+    private ShutdownHook(KafkaStreams kafkaStreams, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,UCGState> ucgStateReader, DynamicCriterionFieldService dynamicCriterionFieldsService, JourneyService journeyService, LoyaltyProgramService loyaltyProgramService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, SegmentationDimensionService segmentationDimensionService, PresentationStrategyService presentationStrategyService, ScoringStrategyService scoringStrategyService, OfferService offerService, SalesChannelService salesChannelService, TokenTypeService tokenTypeService, SubscriberMessageTemplateService subscriberMessageTemplateService, DeliverableService deliverableService, SegmentContactPolicyService segmentContactPolicyService, TimerService timerService, PointService pointService, ExclusionInclusionTargetService exclusionInclusionTargetService, ProductService productService, ProductTypeService productTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService, CatalogCharacteristicService catalogCharacteristicService, DNBOMatrixService dnboMatrixService, PaymentMeanService paymentMeanService, HttpServer subscriberProfileServer, HttpServer internalServer, StockMonitor stockService, ResellerService resellerService, SupplierService supplierService)
     {
       this.kafkaStreams = kafkaStreams;
       this.subscriberGroupEpochReader = subscriberGroupEpochReader;
@@ -1772,7 +1763,6 @@ public class EvolutionEngine
       this.productService = productService;
       this.productTypeService = productTypeService;
       this.voucherService = voucherService;
-      this.badgeService = badgeService;
       this.voucherTypeService = voucherTypeService;
       this.catalogCharacteristicService = catalogCharacteristicService;
       this.dnboMatrixService = dnboMatrixService;
@@ -1809,7 +1799,6 @@ public class EvolutionEngine
       productService.stop();
       productTypeService.stop();
       voucherService.stop();
-      badgeService.stop();
       voucherTypeService.stop();
       catalogCharacteristicService.stop();
       dnboMatrixService.stop();
@@ -1905,7 +1894,7 @@ public class EvolutionEngine
 
     SubscriberProfile subscriberProfile = subscriberState.getSubscriberProfile();
     ExtendedSubscriberProfile extendedSubscriberProfile = (evolutionEvent instanceof TimedEvaluation) ? ((TimedEvaluation) evolutionEvent).getExtendedSubscriberProfile() : null;
-    EvolutionEventContext context = new EvolutionEventContext(subscriberState, evolutionEvent, extendedSubscriberProfile, subscriberGroupEpochReader, journeyService, subscriberMessageTemplateService, deliverableService, segmentationDimensionService, presentationStrategyService, scoringStrategyService, offerService, salesChannelService, tokenTypeService, segmentContactPolicyService, productService, productTypeService, voucherService, badgeService, voucherTypeService, catalogCharacteristicService, dnboMatrixService, paymentMeanService, uniqueKeyServer, resellerService, supplierService, customCriteriaService, SystemTime.getCurrentTime());
+    EvolutionEventContext context = new EvolutionEventContext(subscriberState, evolutionEvent, extendedSubscriberProfile, subscriberGroupEpochReader, journeyService, subscriberMessageTemplateService, deliverableService, segmentationDimensionService, presentationStrategyService, scoringStrategyService, offerService, salesChannelService, tokenTypeService, segmentContactPolicyService, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, dnboMatrixService, paymentMeanService, uniqueKeyServer, resellerService, supplierService, customCriteriaService, SystemTime.getCurrentTime());
 
     if(log.isTraceEnabled()) log.trace("updateSubscriberState on event "+evolutionEvent.getClass().getSimpleName()+ " for "+evolutionEvent.getSubscriberID());
 
@@ -2768,9 +2757,10 @@ public class EvolutionEngine
          }
        else if ((boolean) badgeChangeRequest.getInfos().get("executeWorkFlowOnly")) // delegate false event from Journey only to trigger workflow - other codes in action manager
          {
-           Badge badge = badgeService.getActiveBadge(badgeChangeRequest.getBadgeID(), SystemTime.getCurrentTime());
-           if (badge != null)
+           LoyaltyProgram badgeUnchecked = loyaltyProgramService.getActiveLoyaltyProgram(badgeChangeRequest.getBadgeID(), SystemTime.getCurrentTime());
+           if (badgeUnchecked != null && badgeUnchecked.getLoyaltyProgramType() == LoyaltyProgramType.BADGE)
              {
+               Badge badge = (Badge) badgeUnchecked;
                String workFlowId = null;
                BadgeAction actionRequest = badgeChangeRequest.getAction();
                switch (actionRequest)
@@ -2794,7 +2784,7 @@ public class EvolutionEngine
        //  if badge got deleted (NOT JUST "suspended"), we need to remove to clean it from profile after a while
        //
        
-       Collection<GUIManagedObject> allBadges = badgeService.getStoredBadges(true, context.getSubscriberState().getSubscriberProfile().getTenantID());
+       Collection<GUIManagedObject> allBadges = loyaltyProgramService.getStoredLoyaltyPrograms(true, context.getSubscriberState().getSubscriberProfile().getTenantID());
        Collection<GUIManagedObject> deletedBadges = allBadges.stream().filter(bdg -> bdg.getDeleted()).collect(Collectors.toList());
        for (GUIManagedObject deletedBadge : deletedBadges)
          {
@@ -2817,9 +2807,10 @@ public class EvolutionEngine
    BadgeChange badgeChangeResponse = new BadgeChange(badgeChangeRequest);
    badgeChangeResponse.changeToBadgeChangeResponse();
    BadgeAction actionRequest = badgeChangeRequest.getAction();
-   Badge badge = badgeService.getActiveBadge(badgeChangeRequest.getBadgeID(), now);
-   if (badge != null)
+   LoyaltyProgram badgeUnchecked = loyaltyProgramService.getActiveLoyaltyProgram(badgeChangeRequest.getBadgeID(), SystemTime.getCurrentTime());
+   if (badgeUnchecked != null && badgeUnchecked.getLoyaltyProgramType() == LoyaltyProgramType.BADGE)
      {
+       Badge badge = (Badge) badgeUnchecked;
        SubscriberProfile subscriberProfile = subscriberState.getSubscriberProfile();
        BadgeState subscriberBadge = subscriberProfile.getBadgeByID(badgeChangeRequest.getBadgeID());
        switch (actionRequest)
@@ -4544,7 +4535,7 @@ public class EvolutionEngine
     // Tag the subscriber state with the event's information, log a warn if a conflict appears (is the date enough to segregate 2 
     //
     if(badgeWorflowID == null) { return false; }
-    String toBeAdded = eventToTrigWorkflow.getClass().getName() + ":" + eventToTrigWorkflow.getEventDate().getTime() + ":" + badgeWorflowID + ":" + featureID + ":" + DeliveryRequest.Module.Loyalty_Badge.getExternalRepresentation() + ":" + origin ;
+    String toBeAdded = eventToTrigWorkflow.getClass().getName() + ":" + eventToTrigWorkflow.getEventDate().getTime() + ":" + badgeWorflowID + ":" + featureID + ":" + DeliveryRequest.Module.Loyalty_Program.getExternalRepresentation() + ":" + origin ;
     List<String> workflowTriggering = subscriberState.getWorkflowTriggering();
     if(workflowTriggering.contains(toBeAdded))
       {
@@ -6774,10 +6765,6 @@ public class EvolutionEngine
               caller = loyaltyProgramService.getStoredLoyaltyProgram(featureID);
               break;
               
-            case Loyalty_Badge:
-              caller = badgeService.getStoredBadge(featureID);
-              break;
-              
             case Unknown:
               log.debug("Unknown moduleID : " + moduleID.getExternalRepresentation());
               mustCheck = false;
@@ -8460,7 +8447,6 @@ public class EvolutionEngine
     private ProductService productService;
     private ProductTypeService productTypeService;
     private VoucherService voucherService;
-    private BadgeService badgeService;
     private VoucherTypeService voucherTypeService;
     private CatalogCharacteristicService catalogCharacteristicService;
     private DNBOMatrixService dnboMatrixService;
@@ -8483,7 +8469,7 @@ public class EvolutionEngine
     *
     *****************************************/
 
-    public EvolutionEventContext(SubscriberState subscriberState, SubscriberStreamEvent event, ExtendedSubscriberProfile extendedSubscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService, DeliverableService deliverableService, SegmentationDimensionService segmentationDimensionService, PresentationStrategyService presentationStrategyService, ScoringStrategyService scoringStrategyService, OfferService offerService, SalesChannelService salesChannelService, TokenTypeService tokenTypeService, SegmentContactPolicyService segmentContactPolicyService, ProductService productService, ProductTypeService productTypeService, VoucherService voucherService, BadgeService badgeService, VoucherTypeService voucherTypeService, CatalogCharacteristicService catalogCharacteristicService, DNBOMatrixService dnboMatrixService, PaymentMeanService paymentMeanService, KStreamsUniqueKeyServer uniqueKeyServer, ResellerService resellerService, SupplierService supplierService, CustomCriteriaService customCriteriaService, Date now)
+    public EvolutionEventContext(SubscriberState subscriberState, SubscriberStreamEvent event, ExtendedSubscriberProfile extendedSubscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JourneyService journeyService, SubscriberMessageTemplateService subscriberMessageTemplateService, DeliverableService deliverableService, SegmentationDimensionService segmentationDimensionService, PresentationStrategyService presentationStrategyService, ScoringStrategyService scoringStrategyService, OfferService offerService, SalesChannelService salesChannelService, TokenTypeService tokenTypeService, SegmentContactPolicyService segmentContactPolicyService, ProductService productService, ProductTypeService productTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService, CatalogCharacteristicService catalogCharacteristicService, DNBOMatrixService dnboMatrixService, PaymentMeanService paymentMeanService, KStreamsUniqueKeyServer uniqueKeyServer, ResellerService resellerService, SupplierService supplierService, CustomCriteriaService customCriteriaService, Date now)
     {
       this.subscriberState = subscriberState;
       this.event = event;
@@ -8503,7 +8489,6 @@ public class EvolutionEngine
       this.productService = productService;
       this.productTypeService = productTypeService;
       this.voucherService = voucherService;
-      this.badgeService = badgeService;
       this.voucherTypeService = voucherTypeService;
       this.catalogCharacteristicService = catalogCharacteristicService;
       this.dnboMatrixService = dnboMatrixService;
@@ -8541,7 +8526,6 @@ public class EvolutionEngine
     public ProductService getProductService() { return productService; }
     public ProductTypeService getProductTypeService() { return productTypeService; }
     public VoucherService getVoucherService() { return voucherService; }
-    public BadgeService getBadgeService() { return badgeService; }
     public VoucherTypeService getVoucherTypeService() { return voucherTypeService; }
     public CatalogCharacteristicService getCatalogCharacteristicService() { return catalogCharacteristicService; }
     public DNBOMatrixService getDnboMatrixService() { return dnboMatrixService; }

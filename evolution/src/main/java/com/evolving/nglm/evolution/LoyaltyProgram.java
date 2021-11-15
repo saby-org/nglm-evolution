@@ -43,6 +43,7 @@ public abstract class LoyaltyProgram extends GUIManagedObject
     POINTS("POINTS"),
     CHALLENGE("CHALLENGE"),
     MISSION("MISSION"),
+    BADGE("BADGE"),
     Unknown("(unknown)");
     private String externalRepresentation;
     private LoyaltyProgramType(String externalRepresentation) { this.externalRepresentation = externalRepresentation; }

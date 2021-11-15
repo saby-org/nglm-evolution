@@ -27,8 +27,8 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.Badge;
 import com.evolving.nglm.evolution.BadgeObjectiveInstance;
 import com.evolving.nglm.evolution.BadgeObjectiveService;
-import com.evolving.nglm.evolution.BadgeService;
 import com.evolving.nglm.evolution.GUIManagedObject;
+import com.evolving.nglm.evolution.LoyaltyProgramService;
 import com.evolving.nglm.evolution.reports.ReportCsvFactory;
 import com.evolving.nglm.evolution.reports.ReportMonoPhase;
 import com.evolving.nglm.evolution.reports.ReportUtils;
@@ -63,7 +63,7 @@ public class BadgeCustomerReportMonoPhase implements ReportCsvFactory
       headerFieldsOrder.add(badgeObjective);
     }
 
-  private BadgeService badgeService = null;
+  private LoyaltyProgramService loyaltyProgramService = null;
   private BadgeObjectiveService badgeObjectiveService = null;
   private int tenantID = 0;
 
@@ -132,7 +132,7 @@ public class BadgeCustomerReportMonoPhase implements ReportCsvFactory
                         StringBuilder badgeObjectives = new StringBuilder();
                         if (badgeIDESVal != null)
                           {
-                            GUIManagedObject guiManagedObject = badgeService.getStoredBadge(badgeIDESVal, true);
+                            GUIManagedObject guiManagedObject = loyaltyProgramService.getStoredLoyaltyProgram(badgeIDESVal, true);
                             if (guiManagedObject != null)
                               badgeDisplayVal = guiManagedObject.getGUIManagedObjectDisplay();
                             if (guiManagedObject != null && guiManagedObject.getAccepted())
@@ -249,9 +249,9 @@ public class BadgeCustomerReportMonoPhase implements ReportCsvFactory
     LinkedHashMap<String, QueryBuilder> esIndexWithQuery = new LinkedHashMap<String, QueryBuilder>();
     esIndexWithQuery.put(esIndexCustomer, QueryBuilders.boolQuery().filter(QueryBuilders.termQuery("tenantID", tenantID)));
     ReportMonoPhase reportMonoPhase = new ReportMonoPhase(esNode, esIndexWithQuery, this, csvfile);
-    badgeService = new BadgeService(Deployment.getBrokerServers(), "report-badgeService-BadgeCustomerReportMonoPhase", Deployment.getBadgeTopic(), false);
+    loyaltyProgramService = new LoyaltyProgramService(Deployment.getBrokerServers(), "report-loyaltyProgramService-BadgeCustomerReportMonoPhase", Deployment.getLoyaltyProgramTopic(), false);
     badgeObjectiveService = new BadgeObjectiveService(Deployment.getBrokerServers(), "report-badgeObjectiveService-BadgeCustomerReportMonoPhase", Deployment.getBadgeObjectiveTopic(), false);
-    badgeService.start();
+    loyaltyProgramService.start();
     badgeObjectiveService.start();
     try
       {
@@ -263,7 +263,7 @@ public class BadgeCustomerReportMonoPhase implements ReportCsvFactory
       } 
     finally
       {
-        badgeService.stop();
+        loyaltyProgramService.stop();
         badgeObjectiveService.stop();
       }
   }

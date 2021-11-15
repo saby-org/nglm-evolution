@@ -1155,7 +1155,7 @@ public abstract class SubscriberProfile
   //  getProfileMapForGUIPresentation
   //
 
-  public Map<String, Object> getProfileMapForGUIPresentation(SubscriberProfileService subscriberProfileService, LoyaltyProgramService loyaltyProgramService, BadgeService badgeService, SegmentationDimensionService segmentationDimensionService, TargetService targetService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService, ExclusionInclusionTargetService exclusionInclusionTargetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
+  public Map<String, Object> getProfileMapForGUIPresentation(SubscriberProfileService subscriberProfileService, LoyaltyProgramService loyaltyProgramService, SegmentationDimensionService segmentationDimensionService, TargetService targetService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService, ExclusionInclusionTargetService exclusionInclusionTargetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
   {
     //
     //  now
@@ -1282,7 +1282,7 @@ public abstract class SubscriberProfile
     List<JSONObject> badgesPresentation = new ArrayList<JSONObject>();
     for (BadgeState badgeState : getBadges())
       {
-        GUIManagedObject badgeUnchecked = badgeService.getStoredBadge(badgeState.getBadgeID());
+        GUIManagedObject badgeUnchecked = loyaltyProgramService.getStoredLoyaltyProgram(badgeState.getBadgeID());
         if (badgeUnchecked != null && badgeUnchecked.getAccepted())
           {
             Badge badge = (Badge) badgeUnchecked;
@@ -1470,7 +1470,7 @@ public abstract class SubscriberProfile
   //  getProfileMapForThirdPartyPresentation
   //
 
-  public Map<String,Object> getProfileMapForThirdPartyPresentation(SegmentationDimensionService segmentationDimensionService, BadgeService badgeService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ExclusionInclusionTargetService exclusionInclusionTargetService)
+  public Map<String,Object> getProfileMapForThirdPartyPresentation(SegmentationDimensionService segmentationDimensionService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ExclusionInclusionTargetService exclusionInclusionTargetService, LoyaltyProgramService loyaltyProgramService)
   {
     HashMap<String, Object> baseProfilePresentation = new HashMap<String,Object>();
     HashMap<String, Object> generalDetailsPresentation = new HashMap<String,Object>();
@@ -1486,7 +1486,7 @@ public abstract class SubscriberProfile
     List<JSONObject> badgesPresentation = new ArrayList<JSONObject>();
     for (BadgeState badgeState : getBadges())
       {
-        GUIManagedObject badgeUnchecked = badgeService.getStoredBadge(badgeState.getBadgeID());
+        GUIManagedObject badgeUnchecked = loyaltyProgramService.getStoredLoyaltyProgram(badgeState.getBadgeID());
         if (badgeUnchecked != null && badgeUnchecked.getAccepted())
           {
             Badge badge = (Badge) badgeUnchecked;

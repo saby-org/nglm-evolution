@@ -422,16 +422,16 @@ public class ThirdPartyJSONGenerator
    * @param offerObjectiveService 
   *
   *****************************************/
-  protected static JSONObject generateTokenJSONForThirdParty(Token token, JourneyService journeyService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, BadgeService badgeService, int tenantID)
+  protected static JSONObject generateTokenJSONForThirdParty(Token token, JourneyService journeyService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, int tenantID)
   {
-    return generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, null, null, null, null, badgeService, tenantID);
+    return generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, null, null, null, null, tenantID);
   }
-  protected static JSONObject generateTokenJSONForThirdParty(Token token, JourneyService journeyService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, TokenTypeService tokenTypeService, BadgeService badgeService, int tenantID)
+  protected static JSONObject generateTokenJSONForThirdParty(Token token, JourneyService journeyService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, TokenTypeService tokenTypeService, int tenantID)
   {
-    return generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService, null, null, null, badgeService, tenantID);
+    return generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService, null, null, null, tenantID);
   }
   
-  protected static JSONObject generateTokenJSONForThirdParty(Token token, JourneyService journeyService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, TokenTypeService tokenTypeService, CallingChannel callingChannel, Collection<ProposedOfferDetails> presentedOffers, PaymentMeanService paymentMeanService, BadgeService badgeService, int tenantID) 
+  protected static JSONObject generateTokenJSONForThirdParty(Token token, JourneyService journeyService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, OfferObjectiveService offerObjectiveService, LoyaltyProgramService loyaltyProgramService, TokenTypeService tokenTypeService, CallingChannel callingChannel, Collection<ProposedOfferDetails> presentedOffers, PaymentMeanService paymentMeanService, int tenantID) 
   {
     Date now = SystemTime.getCurrentTime();
     HashMap<String, Object> tokenMap = new HashMap<String, Object>();
@@ -451,7 +451,7 @@ public class ThirdPartyJSONGenerator
     Module module = Module.fromExternalRepresentation(token.getModuleID());
     tokenMap.put("moduleName", module.toString());
     String featureID = token.getFeatureID();
-    tokenMap.put("featureName", (featureID==null) ? "unknown feature" : DeliveryRequest.getFeatureDisplay(module, featureID, journeyService, offerService, loyaltyProgramService, badgeService));
+    tokenMap.put("featureName", (featureID==null) ? "unknown feature" : DeliveryRequest.getFeatureDisplay(module, featureID, journeyService, offerService, loyaltyProgramService));
     tokenMap.put("tokenCode", token.getTokenCode());
     if (token instanceof DNBOToken)
       {

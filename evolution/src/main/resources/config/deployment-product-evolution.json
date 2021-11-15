@@ -255,7 +255,6 @@
   "communicationChannelBlackoutTopic"                    : "${topic.blackoutperiod}",
   "communicationChannelTimeWindowTopic"                  : "${topic.timewindowperiod}",
   "loyaltyProgramTopic"                                  : "${topic.loyaltyprogram}",
-  "badgeTopic"                                           : "${topic.badge}",
   "badgeObjectiveTopic"                                  : "${topic.badgeobjective}",
   "exclusionInclusionTargetTopic"                        : "${topic.exclusioninclusiontarget}",
   "profileChangeEventTopic"                              : "${topic.profilechangeevent}",

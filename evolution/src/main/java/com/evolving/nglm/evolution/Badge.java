@@ -26,11 +26,12 @@ import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
-@GUIDependencyDef(objectType = "badge", serviceClass = BadgeService.class, dependencies = { "badgeobjective" })
-public class Badge extends GUIManagedObject implements GUIManagedObject.ElasticSearchMapping
+@GUIDependencyDef(objectType = "badge", serviceClass = LoyaltyProgramService.class, dependencies = { "badgeobjective" })
+public class Badge extends LoyaltyProgram implements GUIManagedObject.ElasticSearchMapping
 {
   
   //
@@ -97,8 +98,8 @@ public class Badge extends GUIManagedObject implements GUIManagedObject.ElasticS
   static
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-    schemaBuilder.name("badge");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),4));
+    schemaBuilder.name("loyalty_badge");
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(), 1));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("badgeObjectives", SchemaBuilder.array(BadgeObjectiveInstance.schema()).schema());
     schemaBuilder.field("badgeTranslations", SchemaBuilder.array(BadgeTranslation.schema()).schema());
@@ -446,7 +447,7 @@ public class Badge extends GUIManagedObject implements GUIManagedObject.ElasticS
     *
     *****************************************/
 
-    super(jsonRoot, (existingBadgeUnchecked != null) ? existingBadgeUnchecked.getEpoch() : epoch, tenantID);
+    super(jsonRoot, GUIManagedObjectType.LoyaltyBadge, epoch, existingBadgeUnchecked, catalogCharacteristicService, tenantID);
 
     /*****************************************
     *
@@ -470,7 +471,7 @@ public class Badge extends GUIManagedObject implements GUIManagedObject.ElasticS
     this.awardedWorkflowID = JSONUtilities.decodeString(jsonRoot, "awardedWorkflowID", false);
     this.removeWorkflowID = JSONUtilities.decodeString(jsonRoot, "removeWorkflowID", false);
     this.badgeTranslations = decodeBadgeTranslations(JSONUtilities.decodeJSONArray(jsonRoot, "translations", false));
-    this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", true), tenantID);
+    this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", new JSONArray()), tenantID);
     this.badgeCharacteristics = new BadgeCharacteristics(JSONUtilities.decodeJSONObject(jsonRoot, "badgeCharacteristics", false), catalogCharacteristicService);
     
     /*****************************************

@@ -79,7 +79,7 @@ public class GUIManagerLoyaltyReporting extends GUIManager
   
   private static final Logger log = LoggerFactory.getLogger(GUIManagerLoyaltyReporting.class);
 
-  public GUIManagerLoyaltyReporting(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, BadgeService badgeService, BadgeObjectiveService badgeObjectiveService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService, DNBOMatrixService dnboMatrixService, DynamicCriterionFieldService dynamicCriterionFieldService, DynamicEventDeclarationsService dynamicEventDeclarationsService, JourneyTemplateService journeyTemplateService, KafkaResponseListenerService<StringKey,PurchaseFulfillmentRequest> purchaseResponseListenerService, CustomCriteriaService customCriteriaService, SharedIDService subscriberGroupSharedIDService, ZookeeperUniqueKeyServer zuks, int httpTimeout, KafkaProducer<byte[], byte[]> kafkaProducer, ElasticsearchClientAPI elasticsearch, SubscriberMessageTemplateService subscriberMessageTemplateService, String getCustomerAlternateID, GUIManagerContext guiManagerContext, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader)
+  public GUIManagerLoyaltyReporting(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, BadgeObjectiveService badgeObjectiveService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService, DNBOMatrixService dnboMatrixService, DynamicCriterionFieldService dynamicCriterionFieldService, DynamicEventDeclarationsService dynamicEventDeclarationsService, JourneyTemplateService journeyTemplateService, KafkaResponseListenerService<StringKey,PurchaseFulfillmentRequest> purchaseResponseListenerService, CustomCriteriaService customCriteriaService, SharedIDService subscriberGroupSharedIDService, ZookeeperUniqueKeyServer zuks, int httpTimeout, KafkaProducer<byte[], byte[]> kafkaProducer, ElasticsearchClientAPI elasticsearch, SubscriberMessageTemplateService subscriberMessageTemplateService, String getCustomerAlternateID, GUIManagerContext guiManagerContext, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader)
   {
     super.callingChannelService = callingChannelService;
     super.catalogCharacteristicService = catalogCharacteristicService;
@@ -91,7 +91,6 @@ public class GUIManagerLoyaltyReporting extends GUIManager
     super.journeyObjectiveService = journeyObjectiveService;
     super.journeyService = journeyService;
     super.loyaltyProgramService = loyaltyProgramService;
-    super.badgeService = badgeService;
     super.badgeObjectiveService = badgeObjectiveService;
     super.offerObjectiveService = offerObjectiveService;
     super.offerService = offerService;
@@ -1580,7 +1579,7 @@ protected JSONObject processSetStatusBadge(String userID, JSONObject jsonRoot, i
   for (int i = 0; i < badgeIDs.size(); i++)
     {
       String badgeID = badgeIDs.get(i).toString();
-      GUIManagedObject existingElement = badgeService.getStoredBadge(badgeID);
+      GUIManagedObject existingElement = loyaltyProgramService.getStoredLoyaltyProgram(badgeID);
       if (existingElement != null && !(existingElement.getReadOnly()))
         {
           statusSetIDs.add(badgeID);
@@ -1594,7 +1593,7 @@ protected JSONObject processSetStatusBadge(String userID, JSONObject jsonRoot, i
                *
                ****************************************/
 
-              Badge badge = new Badge(elementRoot, epoch, existingElement, catalogCharacteristicService, tenantID);
+              LoyaltyProgram badge = new Badge(elementRoot, epoch, existingElement, catalogCharacteristicService, tenantID);
 
               /*****************************************
                *
@@ -1602,7 +1601,7 @@ protected JSONObject processSetStatusBadge(String userID, JSONObject jsonRoot, i
                *
                *****************************************/
               
-              badgeService.putBadge(badge, (existingElement == null), userID);
+              loyaltyProgramService.putLoyaltyProgram(badge, (existingElement == null), userID);
 
               /*****************************************
                *
@@ -1628,7 +1627,7 @@ protected JSONObject processSetStatusBadge(String userID, JSONObject jsonRoot, i
               // store
               //
 
-              badgeService.putBadge(incompleteObject, (existingElement == null), userID);
+              loyaltyProgramService.putLoyaltyProgram(incompleteObject, (existingElement == null), userID);
 
               /*****************************************
                *
@@ -1699,9 +1698,11 @@ protected JSONObject processSetStatusBadge(String userID, JSONObject jsonRoot, i
    String badgeID = JSONUtilities.decodeString(jsonRoot, "id", false);
    if (badgeID == null)
      {
-       badgeID = badgeService.generateBadgeID();
+       badgeID = loyaltyProgramService.generateLoyaltyProgramID();
        jsonRoot.put("id", badgeID);
      }
+   
+   jsonRoot.put("loyaltyProgramType", LoyaltyProgramType.BADGE.getExternalRepresentation());
 
    /*****************************************
    *
@@ -1709,7 +1710,7 @@ protected JSONObject processSetStatusBadge(String userID, JSONObject jsonRoot, i
    *
    *****************************************/
 
-   GUIManagedObject existingBadge = badgeService.getStoredBadge(badgeID);
+   GUIManagedObject existingBadge = loyaltyProgramService.getStoredLoyaltyProgram(badgeID);
 
    /*****************************************
    *
@@ -1722,7 +1723,7 @@ protected JSONObject processSetStatusBadge(String userID, JSONObject jsonRoot, i
        response.put("id", existingBadge.getGUIManagedObjectID());
        response.put("accepted", existingBadge.getAccepted());
        response.put("valid", existingBadge.getAccepted());
-       response.put("processing", badgeService.isActiveBadge(existingBadge, now));
+       response.put("processing", loyaltyProgramService.isActiveLoyaltyProgram(existingBadge, now));
        response.put("responseCode", "failedReadOnly");
        return JSONUtilities.encodeObject(response);
      }
@@ -1742,7 +1743,7 @@ protected JSONObject processSetStatusBadge(String userID, JSONObject jsonRoot, i
        *
        ****************************************/
 
-       Badge badge = new Badge(jsonRoot, epoch, existingBadge, catalogCharacteristicService, tenantID);
+       LoyaltyProgram badge = new Badge(jsonRoot, epoch, existingBadge, catalogCharacteristicService, tenantID);
 
        /*****************************************
        *
@@ -1751,7 +1752,7 @@ protected JSONObject processSetStatusBadge(String userID, JSONObject jsonRoot, i
        *****************************************/
        if (!dryRun)
          {
-           badgeService.putBadge(badge, (existingBadge == null), userID);
+           loyaltyProgramService.putLoyaltyProgram(badge, (existingBadge == null), userID);
 
            /*****************************************
             *
@@ -1771,10 +1772,10 @@ protected JSONObject processSetStatusBadge(String userID, JSONObject jsonRoot, i
        *
        *****************************************/
 
-       response.put("id", badge.getBadgeID());
+       response.put("id", badge.getLoyaltyProgramID() );
        response.put("accepted", badge.getAccepted());
        response.put("valid", badge.getAccepted());
-       response.put("processing", badgeService.isActiveBadge(badge, now));
+       response.put("processing", loyaltyProgramService.isActiveLoyaltyProgram(badge, now));
        response.put("responseCode", "ok");
        return JSONUtilities.encodeObject(response);
      }
@@ -1791,7 +1792,7 @@ protected JSONObject processSetStatusBadge(String userID, JSONObject jsonRoot, i
        //
        if (!dryRun)
          {
-           badgeService.putBadge(incompleteObject, (existingBadge == null), userID);
+           loyaltyProgramService.putLoyaltyProgram(incompleteObject, (existingBadge == null), userID);
 
            /*****************************************
             *
@@ -1855,8 +1856,8 @@ protected JSONObject processSetStatusBadge(String userID, JSONObject jsonRoot, i
    *
    *****************************************/
 
-   GUIManagedObject badge = badgeService.getStoredBadge(badgeID, includeArchived);
-   JSONObject badgeJSON = badgeService.generateResponseJSON(badge, true, SystemTime.getCurrentTime());
+   GUIManagedObject badge = loyaltyProgramService.getStoredGUIManagedObject(badgeID, includeArchived);
+   JSONObject badgeJSON = loyaltyProgramService.generateResponseJSON(badge, true, SystemTime.getCurrentTime());
 
    /*****************************************
    *
@@ -1893,7 +1894,7 @@ protected JSONObject processSetStatusBadge(String userID, JSONObject jsonRoot, i
        for (int i = 0; i < badgeIDs.size(); i++)
          {
            String badgeID = badgeIDs.get(i).toString();
-           GUIManagedObject badge = badgeService.getStoredBadge(badgeID, includeArchived);
+           GUIManagedObject badge = loyaltyProgramService.getStoredGUIManagedObject(badgeID, includeArchived);
            if (badge != null && badge.getTenantID() == tenantID)
              {
                badgeObjects.add(badge);
@@ -1902,11 +1903,15 @@ protected JSONObject processSetStatusBadge(String userID, JSONObject jsonRoot, i
      }
    else
      {
-       badgeObjects = badgeService.getStoredBadges(includeArchived, tenantID);
+       badgeObjects = loyaltyProgramService.getStoredLoyaltyPrograms(includeArchived, tenantID);
      }
    for (GUIManagedObject badge : badgeObjects)
      {
-       badges.add(badgeService.generateResponseJSON(badge, fullDetails, now));
+       JSONObject loyaltyProFull = loyaltyProgramService.generateResponseJSON(badge, true, now);
+       if (LoyaltyProgramType.BADGE == LoyaltyProgramType.fromExternalRepresentation(JSONUtilities.decodeString(loyaltyProFull, "loyaltyProgramType")))
+         {
+           badges.add(loyaltyProgramService.generateResponseJSON(badge, fullDetails, now));
+         }
      }
 
    /*****************************************
@@ -1965,7 +1970,7 @@ protected JSONObject processSetStatusBadge(String userID, JSONObject jsonRoot, i
      {
        String badgeID = JSONUtilities.decodeString(jsonRoot, "id", false);
        badgeIDs.add(badgeID);
-       GUIManagedObject badge = badgeService.getStoredBadge(badgeID);
+       GUIManagedObject badge = loyaltyProgramService.getStoredLoyaltyProgram(badgeID);
        if (badge != null && (force || !badge.getReadOnly()))
          singleIDresponseCode = "ok";
        else if (badge != null)
@@ -1985,7 +1990,7 @@ protected JSONObject processSetStatusBadge(String userID, JSONObject jsonRoot, i
    for (int i = 0; i < badgeIDs.size(); i++)
      {
        String badgeID = badgeIDs.get(i).toString();
-       GUIManagedObject badge = badgeService.getStoredBadge(badgeID);
+       GUIManagedObject badge = loyaltyProgramService.getStoredLoyaltyProgram(badgeID);
        if (badge != null && (force || !badge.getReadOnly()))
          {
            badges.add(badge);
@@ -2003,7 +2008,7 @@ protected JSONObject processSetStatusBadge(String userID, JSONObject jsonRoot, i
    for (int i = 0; i < badges.size(); i++)
      {
        GUIManagedObject badge = badges.get(i);
-       badgeService.removeBadge(badge.getGUIManagedObjectID(), userID, tenantID);
+       loyaltyProgramService.removeLoyaltyProgram(badge.getGUIManagedObjectID(), userID, tenantID);
      }
 
    /*****************************************
@@ -2077,7 +2082,8 @@ protected JSONObject processSetStatusBadge(String userID, JSONObject jsonRoot, i
            return JSONUtilities.encodeObject(response);
          }
 
-       String activeBadgeID = badgeService.getActiveBadge(badgeID, SystemTime.getCurrentTime()) == null ? null : badgeService.getActiveBadge(badgeID, SystemTime.getCurrentTime()).getBadgeID();
+       LoyaltyProgram activeBadge = loyaltyProgramService.getActiveLoyaltyProgram(badgeID, SystemTime.getCurrentTime());
+       String activeBadgeID = activeBadge != null && activeBadge.getLoyaltyProgramType() == LoyaltyProgramType.BADGE ? activeBadge.getLoyaltyProgramID() : null;
        if (activeBadgeID == null)
          {
            response.put("responseCode", RESTAPIGenericReturnCodes.BADGE_NOT_FOUND.getGenericResponseMessage());
@@ -2130,8 +2136,11 @@ protected JSONObject processSetStatusBadge(String userID, JSONObject jsonRoot, i
     ****************************************/
 
     Set<GUIManagedObject> modifiedBadges = new HashSet<GUIManagedObject>();
-    for (GUIManagedObject existingBadge : badgeService.getStoredBadges(tenantID))
+    for (GUIManagedObject existingBadge : loyaltyProgramService.getStoredLoyaltyPrograms(tenantID))
       {
+        JSONObject loyaltyProFull = loyaltyProgramService.generateResponseJSON(existingBadge, true, date);
+        if (LoyaltyProgramType.BADGE != LoyaltyProgramType.fromExternalRepresentation(JSONUtilities.decodeString(loyaltyProFull, "loyaltyProgramType"))) continue;
+          
         //
         //  modifiedBadge
         //
@@ -2167,7 +2176,7 @@ protected JSONObject processSetStatusBadge(String userID, JSONObject jsonRoot, i
 
     for (GUIManagedObject modifiedBadge : modifiedBadges)
       {
-        badgeService.putGUIManagedObject(modifiedBadge, date, false, null);
+        loyaltyProgramService.putGUIManagedObject(modifiedBadge, date, false, null);
       }
   }
   
@@ -2578,7 +2587,6 @@ protected JSONObject processSetStatusBadge(String userID, JSONObject jsonRoot, i
     response.put("resellerCount", resellerService.getStoredResellers(includeArchived, tenantID).size());
     response.put("customCriteriaCount", customCriteriaService.getStoredCustomCriterias(includeArchived, tenantID).size());
     response.put("criterionFieldAvailableValuesCount", criterionFieldAvailableValuesService.getStoredCriterionFieldAvailableValuesList(includeArchived, tenantID).size());
-    response.put("badgeCount", badgeService.getStoredBadges(includeArchived, tenantID).size());
     response.put("badgeObjectiveCount", badgeObjectiveService.getStoredBadgeObjectives(includeArchived, tenantID).size());
     
     //
@@ -2588,6 +2596,7 @@ protected JSONObject processSetStatusBadge(String userID, JSONObject jsonRoot, i
     int loyaltyProgramCount = 0;
     int loyaltyProgramChallengeCount = 0;
     int loyaltyProgramMissionCount = 0;
+    int loyaltyBadgeCount = 0;
     for (GUIManagedObject guiManagedObject : loyaltyProgramService.getStoredLoyaltyPrograms(includeArchived, tenantID))
       {
         JSONObject loyaltyProFull = loyaltyProgramService.generateResponseJSON(guiManagedObject, true, SystemTime.getCurrentTime());
@@ -2604,10 +2613,15 @@ protected JSONObject processSetStatusBadge(String userID, JSONObject jsonRoot, i
           {
             loyaltyProgramMissionCount++;
           }
+        else if (type == LoyaltyProgramType.BADGE)
+          {
+            loyaltyBadgeCount++;
+          }
       }
     response.put("loyaltyProgramCount", loyaltyProgramCount);
     response.put("loyaltyProgramChallengeCount", loyaltyProgramChallengeCount);
     response.put("loyaltyProgramMissionCount", loyaltyProgramMissionCount);
+    response.put("badgeCount", loyaltyBadgeCount);
     
     //
     //  areaAvailablity
