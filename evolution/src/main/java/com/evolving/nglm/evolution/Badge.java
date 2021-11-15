@@ -471,7 +471,7 @@ public class Badge extends LoyaltyProgram implements GUIManagedObject.ElasticSea
     this.awardedWorkflowID = JSONUtilities.decodeString(jsonRoot, "awardedWorkflowID", false);
     this.removeWorkflowID = JSONUtilities.decodeString(jsonRoot, "removeWorkflowID", false);
     this.badgeTranslations = decodeBadgeTranslations(JSONUtilities.decodeJSONArray(jsonRoot, "translations", false));
-    this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", true), tenantID);
+    this.profileCriteria = decodeProfileCriteria(JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", new JSONArray()), tenantID);
     this.badgeCharacteristics = new BadgeCharacteristics(JSONUtilities.decodeJSONObject(jsonRoot, "badgeCharacteristics", false), catalogCharacteristicService);
     
     /*****************************************
