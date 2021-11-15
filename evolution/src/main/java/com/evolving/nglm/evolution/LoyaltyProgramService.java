@@ -192,6 +192,12 @@ public class LoyaltyProgramService extends GUIService
         responseJSON.remove("effectiveStartDate");
         responseJSON.remove("effectiveEndDate");
       }
+    else if (guiManagedObject instanceof Badge)
+      {
+        Badge badge = (Badge) guiManagedObject;
+        responseJSON.put("badgeType", badge.getBadgeType().getExternalRepresentation());
+        responseJSON.put("badgeObjectives", JSONUtilities.decodeJSONArray(guiManagedObject.getJSONRepresentation(), "badgeObjectives", new JSONArray()));
+      }
     return responseJSON;
   }
 
