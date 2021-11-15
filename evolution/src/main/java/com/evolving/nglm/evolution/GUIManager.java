@@ -27923,7 +27923,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                   {
                     LoyaltyProgram loyaltyProgram = (LoyaltyProgram) badgeUnchecked;
                     HashMap<String,Object> availableValue = new HashMap<String,Object>();
-                    availableValue.put("id", loyaltyProgram.getLoyaltyProgramName());
+                    availableValue.put("id", loyaltyProgram.getLoyaltyProgramID());
                     availableValue.put("display", loyaltyProgram.getGUIManagedObjectDisplay());
                     result.add(JSONUtilities.encodeObject(availableValue));
                   }
