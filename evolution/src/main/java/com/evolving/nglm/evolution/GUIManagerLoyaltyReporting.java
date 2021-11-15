@@ -1703,7 +1703,7 @@ protected JSONObject processSetStatusBadge(String userID, JSONObject jsonRoot, i
      }
    
    jsonRoot.put("loyaltyProgramType", LoyaltyProgramType.BADGE.getExternalRepresentation());
-   jsonRoot.put("badgeCharacteristics", jsonRoot.remove("characteristics")); // gui send bad value as discussed with anna could be removed after gui fix(RAJ K)
+   //jsonRoot.put("badgeCharacteristics", jsonRoot.remove("characteristics")); // gui send bad value as discussed with anna could be removed after gui fix(RAJ K)
 
    /*****************************************
    *
@@ -1861,7 +1861,7 @@ protected JSONObject processSetStatusBadge(String userID, JSONObject jsonRoot, i
    JSONObject badgeJSON = loyaltyProgramService.generateResponseJSON(badge, true, SystemTime.getCurrentTime());
    if (badge != null)
      {
-       if (badgeJSON.containsKey("badgeCharacteristics")) badgeJSON.put("characteristics", badgeJSON.remove("badgeCharacteristics")); //// gui send bad value as discussed with anna could be removed after gui fix(RAJ K)
+       //if (badgeJSON.containsKey("badgeCharacteristics")) badgeJSON.put("characteristics", badgeJSON.remove("badgeCharacteristics")); //// gui send bad value as discussed with anna could be removed after gui fix(RAJ K)
      }
 
    /*****************************************
@@ -1917,9 +1917,9 @@ protected JSONObject processSetStatusBadge(String userID, JSONObject jsonRoot, i
          {
            JSONObject loyaltyProRK = loyaltyProgramService.generateResponseJSON(badge, fullDetails, now); // // gui send bad value as discussed with anna could be removed after gui fix(RAJ K)
            if (loyaltyProRK.containsKey("badgeCharacteristics")) loyaltyProRK.put("characteristics", loyaltyProRK.remove("badgeCharacteristics"));
-           badges.add(loyaltyProRK);
+           //badges.add(loyaltyProRK);
            
-           //badges.add(loyaltyProgramService.generateResponseJSON(badge, fullDetails, now));
+           badges.add(loyaltyProgramService.generateResponseJSON(badge, fullDetails, now));
          }
      }
 
