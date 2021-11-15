@@ -66,6 +66,7 @@ public abstract class GUIManagedObject
     LoyaltyProgramPoints("loyaltyProgramPoints"),
     LoyaltyProgramMission("loyaltyProgramMission"),
     LoyaltyProgramChallenge("loyaltyProgramChallenge"),
+    LoyaltyBadge("badge"),
     Voucher("voucher"),
     Vouchershared("vouchershared"),
     

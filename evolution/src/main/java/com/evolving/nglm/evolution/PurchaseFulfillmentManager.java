@@ -1040,7 +1040,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     *
     ****************************************/
     
-    @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService, BadgeService badgeService,  int tenantID)
+    @Override public void addFieldsForGUIPresentation(HashMap<String, Object> guiPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService, int tenantID)
     {
       //
       //  salesChannel
@@ -1057,8 +1057,8 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       guiPresentationMap.put(MODULEID, getModuleID());
       guiPresentationMap.put(MODULENAME, getModule().toString());
       guiPresentationMap.put(FEATUREID, getFeatureID());
-      guiPresentationMap.put(FEATURENAME, getFeatureName(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService, badgeService));
-      guiPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService, badgeService));
+      guiPresentationMap.put(FEATURENAME, getFeatureName(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
+      guiPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
       guiPresentationMap.put(ORIGIN, getOrigin());
       guiPresentationMap.put(RESELLERDISPLAY, getResellerDisplay());
       guiPresentationMap.put(SUPPLIERDISPLAY, getSupplierDisplay());
@@ -1141,7 +1141,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         }
     }
     
-    @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService, BadgeService badgeService, int tenantID)
+    @Override public void addFieldsForThirdPartyPresentation(HashMap<String, Object> thirdPartyPresentationMap, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService, ProductService productService, VoucherService voucherService, DeliverableService deliverableService, PaymentMeanService paymentMeanService, ResellerService resellerService, int tenantID)
     {
       //
       //  salesChannel
@@ -1222,8 +1222,8 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           thirdPartyPresentationMap.put(MODULEID, getModuleID());
           thirdPartyPresentationMap.put(MODULENAME, getModule().toString());
           thirdPartyPresentationMap.put(FEATUREID, getFeatureID());
-          thirdPartyPresentationMap.put(FEATURENAME, getFeatureName(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService, badgeService));
-          thirdPartyPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService, badgeService));
+          thirdPartyPresentationMap.put(FEATURENAME, getFeatureName(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
+          thirdPartyPresentationMap.put(FEATUREDISPLAY, getFeatureDisplay(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
           thirdPartyPresentationMap.put(ORIGIN, getOrigin());
           thirdPartyPresentationMap.put(RESELLERDISPLAY, getResellerDisplay());
           thirdPartyPresentationMap.put(SUPPLIERDISPLAY, getSupplierDisplay());
@@ -3243,15 +3243,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
             {
               if (!(areaAvailability.get(i).equals("realtime")) && !(areaAvailability.get(i).equals("journeymanager")))
                 {
-                  newModuleID = subscriberEvaluationRequest.getJourneyState().getSourceModuleID();
-                  if (newModuleID != null && Module.fromExternalRepresentation(newModuleID) == Module.Loyalty_Badge)
-                    {
-                      newModuleID = Module.fromExternalRepresentation(newModuleID).getExternalRepresentation();
-                    }
-                  else
-                    {
-                      newModuleID = Module.Loyalty_Program.getExternalRepresentation();
-                    }
+                  newModuleID = Module.Loyalty_Program.getExternalRepresentation();
                   if (subscriberEvaluationRequest.getJourneyState() != null && subscriberEvaluationRequest.getJourneyState().getsourceOrigin() != null)
                     {
                       origin = subscriberEvaluationRequest.getJourneyState().getsourceOrigin();

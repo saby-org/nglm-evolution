@@ -3,7 +3,6 @@ package com.evolving.nglm.evolution.reports.vdr;
 import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.RLMDateUtils;
-import com.evolving.nglm.evolution.BadgeService;
 import com.evolving.nglm.evolution.DeliveryRequest;
 import com.evolving.nglm.evolution.JourneyService;
 import com.evolving.nglm.evolution.LoyaltyProgramService;
@@ -55,7 +54,6 @@ public class VDRReportMonoPhase implements ReportCsvFactory
   private OfferService offerService;
   private SalesChannelService salesChannelService;
   private LoyaltyProgramService loyaltyProgramService;
-  private BadgeService badgeService;
   private ProductService productService;
   private SupplierService supplierService;
   private VoucherTypeService voucherTypeService;
@@ -235,7 +233,7 @@ public class VDRReportMonoPhase implements ReportCsvFactory
             Module module = Module.fromExternalRepresentation(String.valueOf(VDRFields.get(moduleId)));
             String feature = DeliveryRequest.getFeatureDisplay(module,
                 String.valueOf(VDRFields.get(featureId).toString()), journeyService, offerService,
-                loyaltyProgramService, badgeService);
+                loyaltyProgramService);
             vdrRecs.put(featureName, feature);
           }
         else
@@ -493,7 +491,6 @@ public class VDRReportMonoPhase implements ReportCsvFactory
     loyaltyProgramService = new LoyaltyProgramService(Deployment.getBrokerServers(),
         "vdrreportcsvwriter-loyaltyprogramservice-VDRReportMonoPhase", loyaltyProgramTopic, false);
     
-    badgeService = new BadgeService(Deployment.getBrokerServers(), "vdrreportcsvwriter-badgeService-VDRReportMonoPhase", Deployment.getBadgeTopic(), false);
     
     productService = new ProductService(Deployment.getBrokerServers(),
         "vdrreportcsvwriter-productService-VDRReportMonoPhase", productTopic, false);
@@ -513,7 +510,6 @@ public class VDRReportMonoPhase implements ReportCsvFactory
     offerService.start();
     journeyService.start();
     loyaltyProgramService.start();
-    badgeService.start();
     productService.start();
     supplierService.start();
     voucherTypeService.start();
@@ -538,7 +534,6 @@ public class VDRReportMonoPhase implements ReportCsvFactory
       offerService.stop();
       journeyService.stop();
       loyaltyProgramService.stop();
-      badgeService.stop();
       productService.stop();
       supplierService.stop();
       voucherTypeService.stop();

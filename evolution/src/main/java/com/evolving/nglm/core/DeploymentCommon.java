@@ -359,7 +359,6 @@ public class DeploymentCommon
   private static String communicationChannelTimeWindowTopic;
   private static String tokenChangeTopic;
   private static String loyaltyProgramTopic;
-  private static String badgeTopic;
   private static String badgeObjectiveTopic;
   private static String exclusionInclusionTargetTopic;
   private static String dnboMatrixTopic;
@@ -699,7 +698,6 @@ public class DeploymentCommon
   public static String getCommunicationChannelTimeWindowTopic() { return communicationChannelTimeWindowTopic; }
   public static String getTokenChangeTopic() { return tokenChangeTopic; }
   public static String getLoyaltyProgramTopic() { return loyaltyProgramTopic; }
-  public static String getBadgeTopic() { return badgeTopic; }
   public static String getBadgeObjectiveTopic() { return badgeObjectiveTopic; }
   public static String getExclusionInclusionTargetTopic() { return exclusionInclusionTargetTopic; }
   public static String getDNBOMatrixTopic() { return dnboMatrixTopic; }
@@ -1004,7 +1002,6 @@ public class DeploymentCommon
     communicationChannelTopic = jsonReader.decodeString("communicationChannelTopic");
     tokenChangeTopic = jsonReader.decodeString("tokenChangeTopic");
     loyaltyProgramTopic = jsonReader.decodeString("loyaltyProgramTopic");
-    badgeTopic = jsonReader.decodeString("badgeTopic");
     badgeObjectiveTopic = jsonReader.decodeString("badgeObjectiveTopic");
     timedEvaluationTopic = jsonReader.decodeString("timedEvaluationTopic");
     evaluateTargetsTopic = jsonReader.decodeString("evaluateTargetsTopic");

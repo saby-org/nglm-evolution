@@ -23,7 +23,6 @@ import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.evolution.Badge;
 import com.evolving.nglm.evolution.BadgeObjectiveInstance;
 import com.evolving.nglm.evolution.BadgeObjectiveService;
-import com.evolving.nglm.evolution.BadgeService;
 import com.evolving.nglm.evolution.DeliveryManager;
 import com.evolving.nglm.evolution.DeliveryRequest;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
@@ -44,7 +43,6 @@ public class BGDRReportMonoPhase implements ReportCsvFactory
 
   private static final String CSV_SEPARATOR = ReportUtils.getSeparator();
   private SalesChannelService salesChannelService;
-  private BadgeService badgeService = null;
   private BadgeObjectiveService badgeObjectiveService = null;
   private JourneyService journeyService;
   private OfferService offerService;
@@ -207,7 +205,7 @@ public class BGDRReportMonoPhase implements ReportCsvFactory
         StringBuilder badgeObjectives = new StringBuilder();
         if (badgeIDESVal != null)
           {
-            GUIManagedObject guiManagedObject = badgeService.getStoredBadge(badgeIDESVal, true);
+            GUIManagedObject guiManagedObject = loyaltyProgramService.getStoredLoyaltyProgram(badgeIDESVal, true);
             if (guiManagedObject != null)
               badgeDisplayVal = guiManagedObject.getGUIManagedObjectDisplay();
             if (guiManagedObject != null && guiManagedObject.getAccepted())
@@ -236,7 +234,7 @@ public class BGDRReportMonoPhase implements ReportCsvFactory
             badgeObjectivesValue = badgeObjectives.toString().substring(0, badgeObjectives.toString().length() - 1);
           }
         Module module = Module.fromExternalRepresentation(String.valueOf(moduleIdESVal));
-        String featureESVal = DeliveryRequest.getFeatureDisplay(module, String.valueOf(bgdrFields.get(featureId).toString()), journeyService, offerService, loyaltyProgramService, badgeService);
+        String featureESVal = DeliveryRequest.getFeatureDisplay(module, String.valueOf(bgdrFields.get(featureId).toString()), journeyService, offerService, loyaltyProgramService);
 
         //
         //  bgdrRecs
@@ -364,12 +362,10 @@ public class BGDRReportMonoPhase implements ReportCsvFactory
     String loyaltyProgramTopic = Deployment.getLoyaltyProgramTopic();
 
     salesChannelService = new SalesChannelService(Deployment.getBrokerServers(), "bgdrreportcsvwriter-saleschannelservice-BGDRReportMonoPhase", salesChannelTopic, false);
-    badgeService = new BadgeService(Deployment.getBrokerServers(), "bgdrreportcsvwriter-badgeService-BGDRReportMonoPhase", Deployment.getBadgeTopic(), false);
     badgeObjectiveService = new BadgeObjectiveService(Deployment.getBrokerServers(), "bgdrreportcsvwriter-badgeObjectiveService-BGDRReportMonoPhase", Deployment.getBadgeObjectiveTopic(), false);
     journeyService = new JourneyService(Deployment.getBrokerServers(), "bgdrreportcsvwriter-journeyService-BGDRReportMonoPhase", journeyTopic, false);
     offerService = new OfferService(Deployment.getBrokerServers(), "bgdrreportcsvwriter-offerService-BGDRReportMonoPhase", offerTopic, false);
     loyaltyProgramService = new LoyaltyProgramService(Deployment.getBrokerServers(), "bgdrreportcsvwriter-loyaltyProgramService-BGDRReportMonoPhase", loyaltyProgramTopic, false);
-    badgeService.start();
     badgeObjectiveService.start();
     salesChannelService.start();
     journeyService.start();
@@ -396,7 +392,6 @@ public class BGDRReportMonoPhase implements ReportCsvFactory
     finally
       {
         salesChannelService.stop();
-        badgeService.stop();
         badgeObjectiveService.stop();
         journeyService.stop();
         offerService.stop();

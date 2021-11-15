@@ -5,7 +5,6 @@ import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.DeploymentCommon;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.BadgeService;
 import com.evolving.nglm.evolution.DeliveryRequest;
 import com.evolving.nglm.evolution.DialogTemplate;
 import com.evolving.nglm.evolution.JourneyService;
@@ -61,7 +60,6 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
   private JourneyService journeyService;
   private OfferService offerService;
   private LoyaltyProgramService loyaltyProgramService;
-  private BadgeService badgeService;
   private SubscriberMessageTemplateService subscriberMessageTemplateService;
   private int tenantID = 0;
 
@@ -306,7 +304,7 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
               {
                 module = Module.Unknown;
               }
-            String feature = DeliveryRequest.getFeatureDisplay(module, String.valueOf(notifFields.get(featureId).toString()), journeyService, offerService, loyaltyProgramService, badgeService);
+            String feature = DeliveryRequest.getFeatureDisplay(module, String.valueOf(notifFields.get(featureId).toString()), journeyService, offerService, loyaltyProgramService);
             notifRecs.put(featureDisplay, feature);
             notifRecs.put(moduleName, module.toString());
             notifRecs.put(featureId, notifFields.get(featureId));
@@ -585,13 +583,11 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
     journeyService = new JourneyService(Deployment.getBrokerServers(), "notifreportcsvwriter-journeyservice-NotificationReportMonoPhase", journeyTopic, false);
     offerService = new OfferService(Deployment.getBrokerServers(), "notifreportcsvwriter-offerservice-NotificationReportMonoPhase", offerTopic, false);
     loyaltyProgramService = new LoyaltyProgramService(Deployment.getBrokerServers(), "notifreportcsvwriter-loyaltyprogramservice-NotificationReportMonoPhase", loyaltyProgramTopic, false);
-    badgeService = new BadgeService(Deployment.getBrokerServers(), "notifreportcsvwriter-badgeService-NotificationReportMonoPhase", Deployment.getBadgeTopic(), false);
     subscriberMessageTemplateService = new SubscriberMessageTemplateService(Deployment.getBrokerServers(), "notifreportcsvwriter-subscribermessagetemplateservice-NotificationReportMonoPhase", subscriberMessageTemplateTopic, false);
     
     offerService.start();
     journeyService.start();
     loyaltyProgramService.start();
-    badgeService.start();
     subscriberMessageTemplateService.start();
     
     try {
@@ -617,7 +613,6 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
       offerService.stop();
       journeyService.stop();
       loyaltyProgramService.stop();
-      badgeService.stop();
       subscriberMessageTemplateService.stop();
       log.info("The report " + csvfile + " is finished");
     }

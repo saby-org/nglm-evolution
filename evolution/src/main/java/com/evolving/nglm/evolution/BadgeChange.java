@@ -255,7 +255,7 @@ public class BadgeChange extends SubscriberStreamOutput implements EvolutionEngi
   //  getGUIPresentationMap
   //
   
-  public Map<String, Object> getGUIPresentationMap(BadgeService badgeService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService)
+  public Map<String, Object> getGUIPresentationMap(JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService)
   {
     Map<String, Object> result = new HashMap<String, Object>();
     result.put("eventID", getEventID());
@@ -265,11 +265,11 @@ public class BadgeChange extends SubscriberStreamOutput implements EvolutionEngi
     result.put("moduleID", moduleID);
     result.put("moduleName", getModule().toString());
     result.put("featureID", featureID);
-    result.put("featureName", DeliveryRequest.getFeatureName(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService, badgeService));
+    result.put("featureName", DeliveryRequest.getFeatureName(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
     result.put("tenantID", tenantID);
     result.put("returnCode", returnStatus.getGenericResponseCode());
     result.put("returnCodeDetails", returnStatus.getGenericResponseMessage());
-    GUIManagedObject badgeUnchecked = badgeService.getStoredBadge(badgeID);
+    GUIManagedObject badgeUnchecked = loyaltyProgramService.getStoredLoyaltyProgram(badgeID);
     if (badgeUnchecked != null && badgeUnchecked.getAccepted())
       {
         Badge badge = (Badge) badgeUnchecked;
@@ -284,7 +284,7 @@ public class BadgeChange extends SubscriberStreamOutput implements EvolutionEngi
   //  getThirdPartyPresentationMap
   //
   
-  public Map<String, Object> getThirdPartyPresentationMap(BadgeService badgeService, JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService)
+  public Map<String, Object> getThirdPartyPresentationMap(JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService)
   {
     Map<String, Object> result = new HashMap<String, Object>();
     result.put("eventID", getEventID());
@@ -294,12 +294,12 @@ public class BadgeChange extends SubscriberStreamOutput implements EvolutionEngi
     result.put("moduleID", moduleID);
     result.put("moduleName", getModule().toString());
     result.put("featureID", featureID);
-    result.put("featureName", DeliveryRequest.getFeatureName(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService, badgeService));
-    result.put("featureDisplay", DeliveryRequest.getFeatureDisplay(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService, badgeService));
+    result.put("featureName", DeliveryRequest.getFeatureName(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
+    result.put("featureDisplay", DeliveryRequest.getFeatureDisplay(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
     result.put("tenantID", tenantID);
     result.put("returnCode", returnStatus.getGenericResponseCode());
     result.put("returnCodeDetails", returnStatus.getGenericResponseMessage());
-    GUIManagedObject badgeUnchecked = badgeService.getStoredBadge(badgeID);
+    GUIManagedObject badgeUnchecked = loyaltyProgramService.getStoredLoyaltyProgram(badgeID);
     if (badgeUnchecked != null && badgeUnchecked.getAccepted())
       {
         Badge badge = (Badge) badgeUnchecked;

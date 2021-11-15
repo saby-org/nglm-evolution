@@ -185,7 +185,6 @@ public class ThirdPartyManager
   private CallingChannelService callingChannelService;
   private ExclusionInclusionTargetService exclusionInclusionTargetService;
   private UploadedFileService uploadedFileService;
-  private BadgeService badgeService;
 
   private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
   private static final int RESTAPIVersion = 1;
@@ -549,9 +548,6 @@ public class ThirdPartyManager
     exclusionInclusionTargetService = new ExclusionInclusionTargetService(Deployment.getBrokerServers(), "thirdpartymanager-exclusionInclusionTargetService-" + apiProcessKey, Deployment.getExclusionInclusionTargetTopic(), false);
     exclusionInclusionTargetService.start();
     
-    badgeService = new BadgeService(bootstrapServers, "thirdpartymanager-badgeservice-"+apiProcessKey, Deployment.getBadgeTopic(), false);
-    badgeService.start();
-
     subscriberIDService = new SubscriberIDService(redisServer, "thirdpartymanager-" + apiProcessKey);
     subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("thirdpartymanager-subscribergroupepoch", bootstrapServers, subscriberGroupEpochTopic, SubscriberGroupEpoch::unpack);
 
@@ -652,7 +648,7 @@ public class ThirdPartyManager
      *
      *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, dynamicCriterionFieldService, offerService, subscriberProfileService, segmentationDimensionService, journeyService, journeyObjectiveService, loyaltyProgramService, pointService, paymentMeanService, offerObjectiveService, subscriberMessageTemplateService, salesChannelService, resellerService, subscriberIDService, subscriberGroupEpochReader, productService, deliverableService, callingChannelService, exclusionInclusionTargetService, uploadedFileService, badgeService));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, dynamicCriterionFieldService, offerService, subscriberProfileService, segmentationDimensionService, journeyService, journeyObjectiveService, loyaltyProgramService, pointService, paymentMeanService, offerObjectiveService, subscriberMessageTemplateService, salesChannelService, resellerService, subscriberIDService, subscriberGroupEpochReader, productService, deliverableService, callingChannelService, exclusionInclusionTargetService, uploadedFileService));
 
     /*****************************************
      *
@@ -698,13 +694,12 @@ public class ThirdPartyManager
     private CallingChannelService callingChannelService;
     private ExclusionInclusionTargetService exclusionInclusionTargetService;
     private UploadedFileService uploadedFileService;
-    private BadgeService badgeService;
 
     //
     //  constructor
     //
 
-    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, DynamicCriterionFieldService dynamicCriterionFieldService, OfferService offerService, SubscriberProfileService subscriberProfileService, SegmentationDimensionService segmentationDimensionService, JourneyService journeyService, JourneyObjectiveService journeyObjectiveService, LoyaltyProgramService loyaltyProgramService, PointService pointService, PaymentMeanService paymentMeanService, OfferObjectiveService offerObjectiveService, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, ResellerService resellerService, SubscriberIDService subscriberIDService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader, ProductService productService, DeliverableService deliverableService, CallingChannelService callingChannelService, ExclusionInclusionTargetService exclusionInclusionTargetService, UploadedFileService uploadedFileService, BadgeService badgeService)
+    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, DynamicCriterionFieldService dynamicCriterionFieldService, OfferService offerService, SubscriberProfileService subscriberProfileService, SegmentationDimensionService segmentationDimensionService, JourneyService journeyService, JourneyObjectiveService journeyObjectiveService, LoyaltyProgramService loyaltyProgramService, PointService pointService, PaymentMeanService paymentMeanService, OfferObjectiveService offerObjectiveService, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, ResellerService resellerService, SubscriberIDService subscriberIDService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader, ProductService productService, DeliverableService deliverableService, CallingChannelService callingChannelService, ExclusionInclusionTargetService exclusionInclusionTargetService, UploadedFileService uploadedFileService)
     {
       this.kafkaProducer = kafkaProducer;
       this.restServer = restServer;
@@ -728,7 +723,6 @@ public class ThirdPartyManager
       this.callingChannelService = callingChannelService;
       this.exclusionInclusionTargetService = exclusionInclusionTargetService;
       this.uploadedFileService = uploadedFileService;
-      this.badgeService = badgeService;
     }
 
     //
@@ -761,7 +755,6 @@ public class ThirdPartyManager
       if (callingChannelService != null) callingChannelService.stop();
       if (exclusionInclusionTargetService != null) exclusionInclusionTargetService.stop();
       if (uploadedFileService != null) uploadedFileService.stop();
-      if (badgeService != null) badgeService.stop();
       
       //
       //  rest server
@@ -1319,7 +1312,7 @@ public class ThirdPartyManager
         }
       else
         {
-          response = baseSubscriberProfile.getProfileMapForThirdPartyPresentation(segmentationDimensionService, badgeService, subscriberGroupEpochReader, exclusionInclusionTargetService);
+          response = baseSubscriberProfile.getProfileMapForThirdPartyPresentation(segmentationDimensionService, subscriberGroupEpochReader, exclusionInclusionTargetService, loyaltyProgramService);
           response.putAll(resolveAllSubscriberIDs(baseSubscriberProfile, tenantID));
           updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
         }
@@ -1404,7 +1397,7 @@ public class ThirdPartyManager
             {
               Map<String, Object> esFields = hit.getSourceAsMap();
               CommodityDeliveryRequest commodityDeliveryRequest = new CommodityDeliveryRequest(esFields);
-              Map<String, Object> esbdrMap = commodityDeliveryRequest.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, badgeService, tenantID);
+              Map<String, Object> esbdrMap = commodityDeliveryRequest.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, tenantID);
               // EVPRO-1249 do not return a pseudo-expiration date (now+1 year) if not set
               if (esFields.get("deliverableExpirationDate") == null) {
                 esbdrMap.put(DeliveryRequest.DELIVERABLEEXPIRATIONDATE, null);
@@ -1495,7 +1488,7 @@ public class ThirdPartyManager
 
          for (BadgeChange bgdr : BGDRs)
            {
-             Map<String, Object> presentationMap = bgdr.getThirdPartyPresentationMap(badgeService, journeyService, offerService, loyaltyProgramService);
+             Map<String, Object> presentationMap = bgdr.getThirdPartyPresentationMap(journeyService, offerService, loyaltyProgramService);
              BGDRsJson.add(JSONUtilities.encodeObject(presentationMap));
            }
          
@@ -1687,7 +1680,7 @@ public class ThirdPartyManager
 
           for (DeliveryRequest odr : ODRs)
             {
-              Map<String, Object> presentationMap = odr.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, badgeService, tenantID);
+              Map<String, Object> presentationMap = odr.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, tenantID);
               ODRsJson.add(JSONUtilities.encodeObject(presentationMap));
             }
           response.put("ODRs", JSONUtilities.encodeArray(ODRsJson));
@@ -2077,7 +2070,7 @@ public class ThirdPartyManager
                           DeliveryRequest notification = ElasticsearchClientAPI.getNotificationDeliveryRequest(requestClass, hit);
                           if (notification != null)
                             {
-                              Map<String, Object> esNotificationMap = notification.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, badgeService, tenantID);
+                              Map<String, Object> esNotificationMap = notification.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, tenantID);
                               messagesJson.add(JSONUtilities.encodeObject(esNotificationMap));
                             }
                         }
@@ -4222,7 +4215,7 @@ public class ThirdPartyManager
                      if (status != null && (status.equals(TokenStatus.New) || status.equals(TokenStatus.Bound)) && !token.getTokenExpirationDate().before(now))
                        {
                          List<ProposedOfferDetails> proposedOfferDetails = dnboToken.getProposedOfferDetails();
-                         response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService, callingChannel, proposedOfferDetails, paymentMeanService, badgeService, tenantID);
+                         response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService, callingChannel, proposedOfferDetails, paymentMeanService, tenantID);
                          response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
                          response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
                          return JSONUtilities.encodeObject(response);
@@ -4271,7 +4264,7 @@ public class ThirdPartyManager
       *  decorate and response
       *
       *****************************************/
-     response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(newToken, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService, callingChannel, presentedOffers, paymentMeanService, badgeService, tenantID);
+     response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(newToken, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService, callingChannel, presentedOffers, paymentMeanService, tenantID);
      response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
      response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
    }
@@ -4445,7 +4438,7 @@ public class ThirdPartyManager
       *  decorate and response
       *
       *****************************************/
-     response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(subscriberStoredToken, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService, badgeService, tenantID);
+     response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(subscriberStoredToken, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService, tenantID);
      response.putAll(resolveAllSubscriberIDs(subscriberProfile, tenantID));
      updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
      return JSONUtilities.encodeObject(response);
@@ -5047,7 +5040,7 @@ public class ThirdPartyManager
                 {
                   purchaseResponse = purchaseOffer(subscriberProfile,true,subscriberID, offerID, salesChannelID, quantity, moduleID, featureID,
                           origin, resellerID, kafkaProducer, tenantID);
-                  response.put("offer",purchaseResponse.getThirdPartyPresentationMap(subscriberMessageTemplateService,salesChannelService,journeyService,offerService,loyaltyProgramService,productService,voucherService,deliverableService,paymentMeanService, resellerService, badgeService, tenantID));
+                  response.put("offer",purchaseResponse.getThirdPartyPresentationMap(subscriberMessageTemplateService,salesChannelService,journeyService,offerService,loyaltyProgramService,productService,voucherService,deliverableService,paymentMeanService, resellerService, tenantID));
                 }
             }
           else
@@ -5068,7 +5061,7 @@ public class ThirdPartyManager
             {
               purchaseResponse = purchaseOffer(subscriberProfile,true,subscriberID, offerID, salesChannelID, quantity, moduleID, featureID,
                       origin, resellerID, kafkaProducer, tenantID);
-              response.put("offer",purchaseResponse.getThirdPartyPresentationMap(subscriberMessageTemplateService,salesChannelService,journeyService,offerService,loyaltyProgramService,productService,voucherService,deliverableService,paymentMeanService, resellerService, badgeService, tenantID));
+              response.put("offer",purchaseResponse.getThirdPartyPresentationMap(subscriberMessageTemplateService,salesChannelService,journeyService,offerService,loyaltyProgramService,productService,voucherService,deliverableService,paymentMeanService, resellerService, tenantID));
             }
           }
       
@@ -5306,8 +5299,8 @@ public class ThirdPartyManager
            return JSONUtilities.encodeObject(response);
          }
 
-       Badge activeBadge = badgeService.getActiveBadges(now, tenantID).stream().filter(badgeObj -> badgeDisplay.equals(badgeObj.getGUIManagedObjectDisplay())).findFirst().orElse(null);
-       if (activeBadge == null)
+       LoyaltyProgram activeBadge = loyaltyProgramService.getActiveLoyaltyPrograms(now, tenantID).stream().filter(badgeObj -> badgeDisplay.equals(badgeObj.getGUIManagedObjectDisplay())).findFirst().orElse(null);
+       if (activeBadge == null || !(activeBadge.getLoyaltyProgramType() == LoyaltyProgramType.BADGE))
          {
            updateResponse(response, RESTAPIGenericReturnCodes.BADGE_NOT_FOUND);
            return JSONUtilities.encodeObject(response);
@@ -5439,7 +5432,7 @@ public class ThirdPartyManager
               tokenStream = tokenStream.filter(token -> tokenStatusForStreams.equalsIgnoreCase(token.getTokenStatus().getExternalRepresentation()));
             }
           tokensJson = tokenStream
-              .map(token -> ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService, badgeService, tenantID))
+              .map(token -> ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(token, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService, tenantID))
               .collect(Collectors.toList());
         }
 

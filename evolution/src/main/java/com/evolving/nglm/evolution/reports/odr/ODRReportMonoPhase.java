@@ -20,7 +20,6 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.RLMDateUtils;
-import com.evolving.nglm.evolution.BadgeService;
 import com.evolving.nglm.evolution.DeliveryManager;
 import com.evolving.nglm.evolution.DeliveryRequest;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
@@ -62,7 +61,6 @@ public class ODRReportMonoPhase implements ReportCsvFactory
   private OfferService offerService;
   private SalesChannelService salesChannelService;
   private LoyaltyProgramService loyaltyProgramService;
-  private BadgeService badgeService;
   private ProductService productService;
   private ResellerService resellerService;
   private VoucherService voucherService;
@@ -248,7 +246,7 @@ public class ODRReportMonoPhase implements ReportCsvFactory
         //Compute featureName and ModuleName from ID
         if(odrFields.containsKey(moduleId) && odrFields.containsKey(featureId)){
           Module module = Module.fromExternalRepresentation(String.valueOf(odrFields.get(moduleId)));
-          String feature = DeliveryRequest.getFeatureDisplay(module, String.valueOf(odrFields.get(featureId).toString()), journeyService, offerService, loyaltyProgramService, badgeService);
+          String feature = DeliveryRequest.getFeatureDisplay(module, String.valueOf(odrFields.get(featureId).toString()), journeyService, offerService, loyaltyProgramService);
           oderRecs.put(featureName, feature);
           oderRecs.put(moduleName, module.toString());
           oderRecs.put(featureId, odrFields.get(featureId));
@@ -576,7 +574,6 @@ public class ODRReportMonoPhase implements ReportCsvFactory
     offerService = new OfferService(Deployment.getBrokerServers(), "odrreportcsvwriter-offerservice-ODRReportMonoPhase", offerTopic, false);
     journeyService = new JourneyService(Deployment.getBrokerServers(), "odrreportcsvwriter-journeyservice-ODRReportMonoPhase", journeyTopic, false);
     loyaltyProgramService = new LoyaltyProgramService(Deployment.getBrokerServers(), "odrreportcsvwriter-loyaltyprogramservice-ODRReportMonoPhase", loyaltyProgramTopic, false);
-    badgeService = new BadgeService(Deployment.getBrokerServers(), "odrreportcsvwriter-badgeService-ODRReportMonoPhase", Deployment.getBadgeTopic(), false);
     productService = new ProductService(Deployment.getBrokerServers(), "odrreportcsvwriter-productService-ODRReportMonoPhase", productTopic, false);
     resellerService = new ResellerService(Deployment.getBrokerServers(), "odrreportcsvwriter-resellerService-ODRReportMonoPhase", resellerTopic, false);
     voucherService = new VoucherService(Deployment.getBrokerServers(),"odrreportcsvwriter-voucherservice-ODRReportMonoPhase", voucherTopic);
@@ -587,7 +584,6 @@ public class ODRReportMonoPhase implements ReportCsvFactory
     offerService.start();
     journeyService.start();
     loyaltyProgramService.start();
-    badgeService.start();
     productService.start();
     resellerService.start();
     voucherService.start();
@@ -618,7 +614,6 @@ public class ODRReportMonoPhase implements ReportCsvFactory
       offerService.stop();
       journeyService.stop();
       loyaltyProgramService.stop();
-      badgeService.stop();
       productService.stop();
       resellerService.stop();
       voucherService.stop();
