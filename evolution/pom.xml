@@ -51,7 +51,7 @@
     <gui-opr.version>2.0.7</gui-opr.version>
     <gui-stg.version>2.0.16</gui-stg.version>
     <gui-sbm.version>2.0.14</gui-sbm.version>
-    <gui-lpm.version>2.0.9</gui-lpm.version>
+    <gui-lpm.version>2.1.0</gui-lpm.version>
     <gui-tls.version>1.4.17</gui-tls.version>
     <gui-audit.version>1.0.9</gui-audit.version>
     <gui-links.version>1.0.5</gui-links.version>
