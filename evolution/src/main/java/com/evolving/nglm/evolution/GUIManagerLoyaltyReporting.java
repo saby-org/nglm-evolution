@@ -1703,7 +1703,6 @@ protected JSONObject processSetStatusBadge(String userID, JSONObject jsonRoot, i
      }
    
    jsonRoot.put("loyaltyProgramType", LoyaltyProgramType.BADGE.getExternalRepresentation());
-   //jsonRoot.put("badgeCharacteristics", jsonRoot.remove("characteristics")); // gui send bad value as discussed with anna could be removed after gui fix(RAJ K)
 
    /*****************************************
    *
@@ -1859,10 +1858,6 @@ protected JSONObject processSetStatusBadge(String userID, JSONObject jsonRoot, i
 
    GUIManagedObject badge = loyaltyProgramService.getStoredGUIManagedObject(badgeID, includeArchived);
    JSONObject badgeJSON = loyaltyProgramService.generateResponseJSON(badge, true, SystemTime.getCurrentTime());
-   if (badge != null)
-     {
-       //if (badgeJSON.containsKey("badgeCharacteristics")) badgeJSON.put("characteristics", badgeJSON.remove("badgeCharacteristics")); //// gui send bad value as discussed with anna could be removed after gui fix(RAJ K)
-     }
 
    /*****************************************
    *
@@ -1915,10 +1910,6 @@ protected JSONObject processSetStatusBadge(String userID, JSONObject jsonRoot, i
        JSONObject loyaltyProFull = loyaltyProgramService.generateResponseJSON(badge, true, now);
        if (LoyaltyProgramType.BADGE == LoyaltyProgramType.fromExternalRepresentation(JSONUtilities.decodeString(loyaltyProFull, "loyaltyProgramType")))
          {
-           JSONObject loyaltyProRK = loyaltyProgramService.generateResponseJSON(badge, fullDetails, now); // // gui send bad value as discussed with anna could be removed after gui fix(RAJ K)
-           if (loyaltyProRK.containsKey("badgeCharacteristics")) loyaltyProRK.put("characteristics", loyaltyProRK.remove("badgeCharacteristics"));
-           //badges.add(loyaltyProRK);
-           
            badges.add(loyaltyProgramService.generateResponseJSON(badge, fullDetails, now));
          }
      }
