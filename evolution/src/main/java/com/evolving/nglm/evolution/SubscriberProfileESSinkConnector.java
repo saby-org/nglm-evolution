@@ -187,6 +187,7 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
       documentMap.put("complexFields", subscriberProfile.getComplexFieldsJSON(complexObjectTypeService));
       documentMap.put("universalControlGroupPrevious",subscriberProfile.getUniversalControlGroupPrevious());
       documentMap.put("universalControlGroupChangeDate",RLMDateUtils.formatDateForElasticsearchDefault(subscriberProfile.getUniversalControlGroupChangeDate()));
+      documentMap.put("universalControlGroupHistoryAuditInfo",subscriberProfile.getUniversalControlGroupHistoryAuditInfo());
       addToDocumentMap(documentMap, subscriberProfile, now);
       
       //

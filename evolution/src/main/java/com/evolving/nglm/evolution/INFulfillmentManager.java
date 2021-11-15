@@ -7,17 +7,21 @@
 package com.evolving.nglm.evolution;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Map;
 
 import com.evolving.nglm.evolution.statistics.CounterStat;
 import com.evolving.nglm.evolution.statistics.DurationStat;
 import com.evolving.nglm.evolution.statistics.StatBuilder;
 import com.evolving.nglm.evolution.statistics.StatsBuilders;
+
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +34,8 @@ import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
+import com.evolving.nglm.evolution.Expression.ConstantExpression;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
   
 public class INFulfillmentManager extends DeliveryManager implements Runnable
 {
@@ -124,10 +130,21 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
   *
   *****************************************/
 
-  private INPluginInterface inPlugin;
+  private INPluginInterface[] inPluginArray;
   private ArrayList<Thread> threads = new ArrayList<Thread>();
   private StatBuilder<DurationStat> statsDuration = null;
   
+  private EvaluationCriterion[] criterionArray;
+  private boolean useCriteriaMode;
+  private boolean connectionFailover = false;
+  private int[] deliveryRatioArray;
+  private double[] thruputMin, thruputMax; // defines interval for each connection, length proportional to connection thruput
+  //     0................................................1
+  //   min[0]   max[0]
+  //            min[1]   max[1]
+  //                     min[2]   max[2] ...
+  //                                        min[n-1]   max[n-1]
+
   /*****************************************
   *
   *  constructor
@@ -149,25 +166,66 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
     String inPluginClassName = JSONUtilities.decodeString(Deployment.getDeliveryManagers().get(pluginName).getJSONRepresentation(), "inPluginClass", true);
     log.info("INFufillmentManager: plugin instanciation : inPluginClassName = "+inPluginClassName);
 
-    JSONObject inPluginConfiguration = JSONUtilities.decodeJSONObject(Deployment.getDeliveryManagers().get(pluginName).getJSONRepresentation(), "inPluginConfiguration", true);
-    log.info("INFufillmentManager: plugin instanciation : inPluginConfiguration = "+inPluginConfiguration);
+    JSONArray inPluginConfigurations = JSONUtilities.decodeJSONArray(Deployment.getDeliveryManagers().get(pluginName).getJSONRepresentation(), "inPluginConfiguration", true);
+    inPluginArray = new INPluginInterface[inPluginConfigurations.size()];
+    criterionArray = new EvaluationCriterion[inPluginConfigurations.size()];
+    deliveryRatioArray = new int[inPluginConfigurations.size()];
+    thruputMin = new double[inPluginConfigurations.size()];
+    thruputMax = new double[inPluginConfigurations.size()];
+    int thruputSum = 0;
 
-    try
+    for (int i=0; i<inPluginConfigurations.size(); i++)
       {
-        inPlugin = (INPluginInterface) (Class.forName(inPluginClassName).newInstance());
-        inPlugin.init(inPluginConfiguration, pluginConfiguration);
+        JSONObject inPluginConfiguration = (JSONObject) inPluginConfigurations.get(i);
+        log.info("INFufillmentManager: plugin instanciation : inPluginConfiguration = "+inPluginConfiguration);
+
+        try
+        {
+          inPluginArray[i] = (INPluginInterface) (Class.forName(inPluginClassName).newInstance());
+          inPluginArray[i].init(inPluginConfiguration, pluginConfiguration);
+        }
+        catch (InstantiationException | IllegalAccessException | IllegalArgumentException e)
+        {
+          log.error("INFufillmentManager: could not create new instance of class " + inPluginClassName, e);
+          throw new RuntimeException("INFufillmentManager: could not create new instance of class " + inPluginClassName, e);
+        }
+        catch (ClassNotFoundException e)
+        {
+          log.error("INFufillmentManager: could not find class " + inPluginClassName, e);
+          throw new RuntimeException("INFufillmentManager: could not find class " + inPluginClassName, e);
+        }
+        
+        JSONObject evaluationCriterionJSON = JSONUtilities.decodeJSONObject(inPluginConfiguration, "criteria", false);
+        if (evaluationCriterionJSON == null) {
+          criterionArray[i] = null;
+        } else {
+          try
+          {
+            EvaluationCriterion evaluationCriterion = new EvaluationCriterion(evaluationCriterionJSON, CriterionContext.Profile(0), 0);
+            criterionArray[i] = evaluationCriterion;
+            useCriteriaMode = true; // we have at least one valid criteria => criteria mode
+          }
+          catch (GUIManagerException e)
+          {
+            log.info("error in notificationPluginConfiguration criteria for " + JSONUtilities.decodeString(inPluginConfiguration, "inServers") + " connection : " + e.getLocalizedMessage());
+          }
+        }
+        deliveryRatioArray[i] = JSONUtilities.decodeInteger(inPluginConfiguration, "deliveryRatio", Integer.MAX_VALUE);
+        thruputSum += deliveryRatioArray[i];
       }
-    catch (InstantiationException | IllegalAccessException | IllegalArgumentException e)
-      {
-        log.error("INFufillmentManager: could not create new instance of class " + inPluginClassName, e);
-        throw new RuntimeException("INFufillmentManager: could not create new instance of class " + inPluginClassName, e);
-      }
-    catch (ClassNotFoundException e)
-      {
-        log.error("INFufillmentManager: could not find class " + inPluginClassName, e);
-        throw new RuntimeException("INFufillmentManager: could not find class " + inPluginClassName, e);
-      }
-      
+    // compute percentage per connection, for load balancing
+    double currentMin = 0.0;
+    for (int i=0; i<inPluginConfigurations.size(); i++) {
+      thruputMin[i] = currentMin;
+      currentMin += (double) deliveryRatioArray[i] / (double) thruputSum;
+      thruputMax[i] = currentMin; 
+    }
+    for (int i=0; i<thruputMin.length; i++) {
+      log.info("  thruputMin[" + i + "] = " + thruputMin[i]);
+    }
+    for (int i=0; i<thruputMax.length; i++) {
+      log.info(" thruputMax[" + i + "] = " + thruputMax[i]);
+    }
     
     //
     // statistics
@@ -588,6 +646,69 @@ public class INFulfillmentManager extends DeliveryManager implements Runnable
         long startTime = DurationStat.startTime();
         INFulfillmentStatus status = null;
         CommodityDeliveryOperation operation = ((INFulfillmentRequest)deliveryRequest).getOperation();
+        
+        // select an IN, based on throughput or criteria
+        
+        INPluginInterface inPlugin = null;
+        Map<String, String> subscriberFields = deliveryRequest.getSubscriberFields(); // normalized to lower case
+        if (useCriteriaMode) {
+          log.info("Criteria mode");
+          for (int i = 0; i<inPluginArray.length; i++) {
+            INPluginInterface currentIN = inPluginArray[i]; 
+            EvaluationCriterion criteria = criterionArray[i];
+            if (criteria == null) { // no more criteria for this connection => take current sender
+              inPlugin = currentIN;
+            } else {
+              String criterionField = criteria.getCriterionField().getID(); // "subscriber.city"
+              String profileValue = subscriberFields.get(criterionField);
+              if (profileValue != null) {
+                Expression exp = criteria.getArgument();
+                if (exp instanceof ConstantExpression) {
+                  String value = ((ConstantExpression) exp).evaluateConstant() + "";  // "Las Vegas"
+                  log.info("Evaluating " + profileValue + " " + criteria.getCriterionOperator() + " " + value);
+                  switch (criteria.getCriterionOperator()) {
+                    case EqualOperator:
+                      if (profileValue.equalsIgnoreCase(value)) inPlugin = currentIN;
+                      break;
+                    case NotEqualOperator:
+                      if (!profileValue.equalsIgnoreCase(value)) inPlugin = currentIN;
+                      break;
+                    default:
+                      log.info("unsupported criteria operator : " + criteria.getCriterionOperator());
+                  }
+                } else {
+                  log.info("only constants are supported for criteria : " + criteria.getArgument().getClass());
+                }
+              } else {
+                log.info("profile value for " + criterionField + " is not available");
+              }
+            }
+            if (inPlugin != null) break;
+          }
+          // if no sender matches criteria, or if there are errors, take the first IN to send 
+          if ((inPlugin == null) && (inPluginArray.length > 0)) {
+            inPlugin = inPluginArray[0];
+          }
+        } else { // load-balancing mode, select connection based on thruput repartition
+          log.info("Load-balancing mode");
+          double rnd = Math.random();
+          for (int i = 0; i<inPluginArray.length; i++) {
+            if (thruputMin[i] <= rnd && rnd < thruputMax[i]) {
+              inPlugin = inPluginArray[i];
+              log.info("selects IN # " + i);
+              break;
+            }
+          }
+          if (inPlugin == null) {
+            inPlugin = inPluginArray[0]; // defaults to 1st one
+            StringBuffer sb = new StringBuffer("Min : ");
+            Arrays.stream(thruputMin).forEach(tm -> sb.append(tm).append(" "));
+            sb.append("Max : ");
+            Arrays.stream(thruputMax).forEach(tm -> sb.append(tm).append(" "));
+            log.info("Unable to load-balance, rnd = " + rnd + " intervals are : " + sb);
+          }
+        }
+        
         switch (operation) {
         case Credit:
           status = inPlugin.credit((INFulfillmentRequest)deliveryRequest);
