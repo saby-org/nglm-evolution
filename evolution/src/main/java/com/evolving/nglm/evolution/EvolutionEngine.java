@@ -2801,13 +2801,13 @@ public class EvolutionEngine
  
  private static boolean changeSubscriberBadge(BadgeChange badgeChangeRequest, SubscriberState subscriberState, Date now, boolean executeOnEntry)
  {
-   log.info("RAJ K changeSubscriberBadge");
+   log.info("RAJ K changeSubscriberBadge {}", badgeChangeRequest);
    boolean changed = true;
    BadgeChange badgeChangeResponse = new BadgeChange(badgeChangeRequest);
    badgeChangeResponse.changeToBadgeChangeResponse();
    BadgeAction actionRequest = badgeChangeRequest.getAction();
    LoyaltyProgram badgeUnchecked = loyaltyProgramService.getActiveLoyaltyProgram(badgeChangeRequest.getBadgeID(), SystemTime.getCurrentTime());
-   log.info("RAJ K changeSubscriberBadge badgeUnchecked {}", badgeUnchecked.getJSONRepresentation());
+   log.info("RAJ K changeSubscriberBadge badgeUnchecked is null {} - badgeChangeRequest.getBadgeID() {}", badgeUnchecked == null, badgeChangeRequest.getBadgeID());
    if (badgeUnchecked != null && badgeUnchecked.getLoyaltyProgramType() == LoyaltyProgramType.BADGE)
      {
        Badge badge = (Badge) badgeUnchecked;
