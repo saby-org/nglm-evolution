@@ -2743,12 +2743,14 @@ public class EvolutionEngine
    if (result)
      {
        BadgeChange badgeChangeRequest = (BadgeChange) evolutionEvent;
+       log.info("RAJ K updateBadges badgeChangeRequest {}", badgeChangeRequest);
        if (badgeChangeRequest.getInfos().get("executeWorkFlowOnly") == null) // original request from topic 
          {
            //
            //  changeSubscriberBadge
            //
            
+           log.info("RAJ K updateBadges real event");
            boolean changed = changeSubscriberBadge(badgeChangeRequest, context.getSubscriberState(), context.processingDate(), false);
          }
        else if ((boolean) badgeChangeRequest.getInfos().get("executeWorkFlowOnly")) // delegate false event from Journey only to trigger workflow - other codes in action manager
@@ -2799,11 +2801,13 @@ public class EvolutionEngine
  
  private static boolean changeSubscriberBadge(BadgeChange badgeChangeRequest, SubscriberState subscriberState, Date now, boolean executeOnEntry)
  {
+   log.info("RAJ K changeSubscriberBadge");
    boolean changed = true;
    BadgeChange badgeChangeResponse = new BadgeChange(badgeChangeRequest);
    badgeChangeResponse.changeToBadgeChangeResponse();
    BadgeAction actionRequest = badgeChangeRequest.getAction();
    LoyaltyProgram badgeUnchecked = loyaltyProgramService.getActiveLoyaltyProgram(badgeChangeRequest.getBadgeID(), SystemTime.getCurrentTime());
+   log.info("RAJ K changeSubscriberBadge badgeUnchecked {}", badgeUnchecked.getJSONRepresentation());
    if (badgeUnchecked != null && badgeUnchecked.getLoyaltyProgramType() == LoyaltyProgramType.BADGE)
      {
        Badge badge = (Badge) badgeUnchecked;
@@ -2812,6 +2816,7 @@ public class EvolutionEngine
        switch (actionRequest)
        {
          case AWARD:
+           log.info("RAJ K AWARD");
            if (subscriberBadge == null)
              {
                //
@@ -2854,6 +2859,7 @@ public class EvolutionEngine
            break;
            
          case REMOVE:
+           log.info("RAJ K AWARD");
            if (subscriberBadge == null || subscriberBadge.getCustomerBadgeStatus().equals(CustomerBadgeStatus.PENDING))
              {
                badgeChangeResponse.setReturnStatus(RESTAPIGenericReturnCodes.BADGE_NOT_AVAILABLE);
@@ -4405,11 +4411,13 @@ public class EvolutionEngine
   
   public static boolean triggerBadgeWorflow(SubscriberStreamEvent eventToTrigWorkflow, SubscriberState subscriberState, String badgeWorflowID, String featureID, String origin)
   {
+    log.info("RAJ K triggerBadgeWorflow badgeWorflowID {}", badgeWorflowID);
     // 
     // Tag the subscriber state with the event's information, log a warn if a conflict appears (is the date enough to segregate 2 
     //
     if(badgeWorflowID == null) { return false; }
     String toBeAdded = eventToTrigWorkflow.getClass().getName() + ":" + eventToTrigWorkflow.getEventDate().getTime() + ":" + badgeWorflowID + ":" + featureID + ":" + DeliveryRequest.Module.Loyalty_Program.getExternalRepresentation() + ":" + origin ;
+    log.info("RAJ K triggerBadgeWorflow toBeAdded {}", toBeAdded);
     List<String> workflowTriggering = subscriberState.getWorkflowTriggering();
     if(workflowTriggering.contains(toBeAdded))
       {
@@ -6097,6 +6105,7 @@ public class EvolutionEngine
             // check if this workflow has to be triggered
             for(String currentWFToTrigger : workflowTriggering)
               {
+                log.info("RAJ K currentWFToTrigger {} and current event is {}", currentWFToTrigger, evolutionEvent.getClass().getName());
                 String[] elements = currentWFToTrigger.split(":");
                 String eventClass = elements[0];
                 if(eventClass.equals(evolutionEvent.getClass().getName()))
