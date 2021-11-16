@@ -58,6 +58,8 @@ public class GrafanaUtils
       {
         // prepare the curls
         Set<Tenant> tenants = Deployment.getTenants();
+        
+       
 
         HashMap<String, Integer> existingOrgs = getExistingGrafanaOrgs();
         log.info("existingOrgs: " + existingOrgs);
@@ -99,7 +101,11 @@ public class GrafanaUtils
         for (Tenant tenant : tenants)
           {
             int tenantID = tenant.getTenantID();
-
+            
+            // setting the tenant timeZone in the dashboard
+//            Deployment deployment = Deployment.getDeployment(tenantID);
+//            String tz = deployment.getTimeZone();
+            
             // check if organization exists
 //            String orgName = tenant.getDisplay();
             String orgName = "t" + tenantID;
@@ -284,6 +290,9 @@ public class GrafanaUtils
 //                        HashMap<String,Object> mapDbEs=new HashMap<String,Object>();
 //                        UpdateRequest request = new UpdateRequest();
                         
+                        Deployment deployment = Deployment.getDeployment(tenantID);
+                        String tz = deployment.getTimeZone();
+                        
                         log.info("The dashboard under-study is: === " + expectedTitle + " ===");
                         
                         // 1- The dashboard already exists but its uid doesn't start with t<tenantID>-
@@ -301,6 +310,7 @@ public class GrafanaUtils
                           }
                           // Then recreate it using a unique uid that starts with t<tenandID>-
                           String newUID = "t"+ tenantID + "-" + TokenUtils.generateFromRegex(regex);
+                          s= s.replace("replaceWithTenantTimeZone", tz);
                           s = s.replace("replaceWithUniqueID", newUID );
                           fulldashboardDef = (JSONObject) (new JSONParser()).parse(s);
 //                          mapDbEs.put("name",expectedTitle);
@@ -330,6 +340,7 @@ public class GrafanaUtils
                             {
                               // overwrite it using the same existing uid
                               log.info("GrafanaUtils.prepareGrafanaForTenants: Dashboard " + expectedTitle + " already exists for orgID " + orgID + " for dashboard file name " + currentFileName + " and it'll be overwritten.");
+                              s= s.replace("replaceWithTenantTimeZone", tz);
                               s= s.replace("replaceWithUniqueID", existingUID);
                               fulldashboardDef = (JSONObject) (new JSONParser()).parse(s);
                               //                          mapDbEs.put("name",expectedTitle);
@@ -345,6 +356,7 @@ public class GrafanaUtils
                           log.info("GrafanaUtils.prepareGrafanaForTenants: Dashboard " + expectedTitle + " doesn't exist for orgID " + orgID + " for dashboard file name " + currentFileName + " and it'll be created.");
                           // Create it using a unique uid that starts with t<tenandID>-
                           String newUID = "t"+ tenantID + "-" + TokenUtils.generateFromRegex(regex);
+                          s= s.replace("replaceWithTenantTimeZone", tz);
                           s = s.replace("replaceWithUniqueID", newUID );
                           fulldashboardDef = (JSONObject) (new JSONParser()).parse(s);
 //                          mapDbEs.put("name",expectedTitle);
