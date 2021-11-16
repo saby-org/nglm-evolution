@@ -16711,7 +16711,7 @@ public class GUIManager
     String voucherCode = JSONUtilities.decodeString(jsonRoot, "voucherCode", true);
     String voucherID = JSONUtilities.decodeString(jsonRoot, "voucherID", true);
     Date newExpiryDate = GUIManagedObject.parseDateField(JSONUtilities.decodeString(jsonRoot, "expiryDate", voucherChangeAction.equals(VoucherChange.VoucherChangeAction.Extend)));
-    String origin = JSONUtilities.decodeString(jsonRoot, "origin", false);
+    String origin = "CC"; // EVPRO-1344 hardcode to "CC" instead of JSONUtilities.decodeString(jsonRoot, "origin", false);
 
     /*****************************************
      *
@@ -22851,7 +22851,7 @@ public class GUIManager
     String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
     String bonusID = JSONUtilities.decodeString(jsonRoot, "bonusID", true);
     Integer quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
-    String origin = JSONUtilities.decodeString(jsonRoot, "origin", true);
+    String origin = "CC"; // EVPRO-1344 hardcode to "CC" instead of JSONUtilities.decodeString(jsonRoot, "origin", true);
     String userName = JSONUtilities.decodeString(jsonRoot, "userName", false);
     String featureID = (userName != null) ? userName : "administrator";
 
@@ -22952,7 +22952,7 @@ public class GUIManager
     String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
     String bonusID = JSONUtilities.decodeString(jsonRoot, "bonusID", true);
     Integer quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
-    String origin = JSONUtilities.decodeString(jsonRoot, "origin", true);
+    String origin = "CC"; // EVPRO-1344 hardcode to "CC" instead of JSONUtilities.decodeString(jsonRoot, "origin", true);
     String userName = JSONUtilities.decodeString(jsonRoot, "userName", false);
     String featureID = (userName != null) ? userName : "administrator";
 
@@ -24496,7 +24496,7 @@ public class GUIManager
     String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
     String tokenCode = JSONUtilities.decodeString(jsonRoot, "tokenCode", false);
     String offerID = JSONUtilities.decodeString(jsonRoot, "offerID", false);
-    String origin = JSONUtilities.decodeString(jsonRoot, "origin", false);
+    String origin = "CC"; // EVPRO-1344 hardcode to "CC" instead of JSONUtilities.decodeString(jsonRoot, "origin", false);
 
     /*****************************************
      *
@@ -24720,7 +24720,7 @@ public class GUIManager
    String offerID = JSONUtilities.decodeString(jsonRoot, "offerID", true);
    String salesChannelID = JSONUtilities.decodeString(jsonRoot, "salesChannelID", true);
    Integer quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
-   String origin = JSONUtilities.decodeString(jsonRoot, "origin", false);
+   String origin = "CC"; // EVPRO-1344 hardcode to "CC" instead of JSONUtilities.decodeString(jsonRoot, "origin", false);
 
    /*****************************************
     *
