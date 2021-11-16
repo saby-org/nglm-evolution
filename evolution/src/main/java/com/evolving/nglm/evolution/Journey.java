@@ -65,6 +65,7 @@ import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.JourneyHistory.StatusHistory;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.StockMonitor.StockableItem;
+import com.evolving.nglm.evolution.Target.TargetStatus;
 import com.evolving.nglm.evolution.notification.NotificationTemplateParameters;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientException;
@@ -2502,30 +2503,19 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
       {
         
         for(String currentTargetID : targets.keySet()){
-          
-          //
-          //  retrieve target
-          //
-          
-          Target target = targetService.getActiveTarget(currentTargetID, date);
-
-          //
-          //  validate the target exists and is active
-          //  
-          
-          if (target == null)
-            {
-              // EVPRO-1226 only invalidate journey if we are inside the provisioning period
-              GUIManagedObject targetGMO = targetService.getStoredGUIManagedObject(currentTargetID);
-              if (targetGMO == null ||
-                  (targetGMO.getEffectiveEndDate() != null && targetGMO.getEffectiveEndDate().before(getEffectiveEntryPeriodEndDate()))) {
-                log.info("journey {} uses unknown/inactive target: {}", getJourneyID(), currentTargetID);
-                throw new GUIManagerException("journey uses unknown/inactive target", currentTargetID);
-              }
+          GUIManagedObject targetGMO = targetService.getStoredGUIManagedObject(currentTargetID);
+          // EVPRO-1226 only invalidate journey if target is unknown or invalid
+          if (targetGMO != null && (targetGMO instanceof Target)) {
+            TargetStatus targetStatus = ((Target) targetGMO).getTargetStatus();
+            if (targetStatus == targetStatus.Unknown || targetStatus == targetStatus.NotValid) {
+              log.info("journey {} uses invalid target: {}", getJourneyID(), currentTargetID);
+              throw new GUIManagerException("journey uses invalid target", currentTargetID);
             }
-          
+          } else {
+            log.info("journey {} uses unknown target: {}", getJourneyID(), currentTargetID);
+            throw new GUIManagerException("journey uses unknown target", currentTargetID);
+          }
         }
-        
       }
   }
 

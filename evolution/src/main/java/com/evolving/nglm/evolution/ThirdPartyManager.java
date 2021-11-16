@@ -5931,7 +5931,20 @@ public class ThirdPartyManager
       if(voucherES==null) throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_CODE_NOT_FOUND);
       subscriberID=voucherES.getSubscriberId();
       String voucherId = voucherES.getVoucherId();
-      Boolean isTransferable = (boolean) voucherTypeService.getStoredVoucherType(voucherId).getJSONRepresentation().get("transferable");
+      
+      Boolean isTransferable = false;
+      
+      Voucher voucher = ((Voucher)voucherService.getStoredVoucher(voucherId));
+      if(voucher!=null) {
+    	  if(voucher.getVoucherTypeId()!=null) {
+    		  VoucherType voucherType = ((VoucherType)voucherTypeService.getStoredVoucherType(voucher.getVoucherTypeId()));
+    		  if(voucherType!=null) {
+    			  isTransferable = voucherType.getTransferable();
+    		  }
+    	  }
+      }
+
+
       if(!isTransferable) {
           throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_NOT_TRANSFERABLE);
       }
