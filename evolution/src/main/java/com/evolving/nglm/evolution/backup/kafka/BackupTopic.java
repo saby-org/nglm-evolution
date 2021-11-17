@@ -89,9 +89,11 @@ public class BackupTopic {
 		kafkaConsumer.seekToBeginning(kafkaConsumer.assignment());
 		while(!doesConsumerReachedPosition(kafkaConsumer,endAtStart)){
 			for(ConsumerRecord<byte[],byte[]> record:kafkaConsumer.poll(Duration.ofSeconds(5)).records(topicName)){
-				encoder.writeBytes(record.key());
-				encoder.writeBytes(record.value());
-				nbRecords++;
+			  if (record.key() != null && record.value() != null) {
+			    encoder.writeBytes(record.key());
+			    encoder.writeBytes(record.value());
+			    nbRecords++;
+			  }
 			}
 		}
 		out.close();
