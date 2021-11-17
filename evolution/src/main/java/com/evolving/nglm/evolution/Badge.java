@@ -593,10 +593,8 @@ public class Badge extends LoyaltyProgram implements GUIManagedObject.ElasticSea
   @Override public Map<String, List<String>> getGUIDependencies(List<GUIService> guiServiceList, int tenantID)
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
-    log.info("RAJ K badgeObjectives {}", getBadgeObjectives());
     List<String> badgeObjectivesIDs = getBadgeObjectives().stream().map(badgeObjective -> badgeObjective.getBadgeObjectiveID()).collect(Collectors.toList());
     result.put("badgeobjective", badgeObjectivesIDs);
-    log.info("RAJ K result {}", result);
     return result;
   }
   

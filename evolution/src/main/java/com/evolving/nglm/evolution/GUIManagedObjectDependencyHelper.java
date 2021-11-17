@@ -73,10 +73,6 @@ public class GUIManagedObjectDependencyHelper
                  if (guiDependencies != null && !guiDependencies.isEmpty())
                   {
                     List<String> guiDependencyList = guiDependencies.get(guiDependencyModelTree.getGuiManagedObjectType().toLowerCase());
-                    if (guiDependencyModelTree.getGuiManagedObjectType().toLowerCase().equalsIgnoreCase("badgeobjective"))
-                      {
-                        log.info("RAJ K guiDependencyList {} ", guiDependencyList);
-                      }
                     if (guiDependencyList != null && guiDependencyList.contains(objectID)) containerObjectList.add(guiManagedObject);
                   }
                 }
