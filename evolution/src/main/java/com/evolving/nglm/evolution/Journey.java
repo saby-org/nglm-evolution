@@ -2499,12 +2499,16 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
               log.info("journey {} uses invalid target: {}", getJourneyID(), currentTargetID);
               throw new GUIManagerException("journey uses invalid target", currentTargetID);
             }
+<<<<<<< HEAD
           } else {
             log.info("journey {} uses unknown target: {}", getJourneyID(), currentTargetID);
             throw new GUIManagerException("journey uses unknown target", currentTargetID);
           }
+=======
+>>>>>>> EVPRO-1373-v201_0
         }
       }
+    
   }
 
   /*****************************************
