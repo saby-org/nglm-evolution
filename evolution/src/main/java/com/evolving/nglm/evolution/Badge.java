@@ -447,7 +447,7 @@ public class Badge extends LoyaltyProgram implements GUIManagedObject.ElasticSea
     *
     *****************************************/
 
-    super(jsonRoot, GUIManagedObjectType.LoyaltyBadge, epoch, existingBadgeUnchecked, catalogCharacteristicService, tenantID);
+    super(jsonRoot, GUIManagedObjectType.Badge, epoch, existingBadgeUnchecked, catalogCharacteristicService, tenantID);
 
     /*****************************************
     *
