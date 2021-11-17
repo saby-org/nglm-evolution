@@ -9688,8 +9688,35 @@ public class EvolutionEngine
     
     @Override public Map<String, String> getGUIDependencies(List<GUIService> guiServiceList, JourneyNode journeyNode, int tenantID)
     {
+
       Map<String, String> result = new HashMap<String, String>();
-      //String badgeID = (String) journeyNode.getNodeParameters().get("node.parameter.badgeID"); // TO DO
+      String loyaltyProgramIdUnchecked = null;
+      Object nodeParamObj = journeyNode.getNodeParameters().get("node.parameter.badgeID");
+      if (nodeParamObj instanceof ParameterExpression && ((ParameterExpression) nodeParamObj).getExpression() instanceof ConstantExpression)
+        {
+          loyaltyProgramIdUnchecked  = (String)  ((ParameterExpression) nodeParamObj).getExpression().evaluateConstant();
+        }
+      else if (nodeParamObj instanceof String)
+        {
+          loyaltyProgramIdUnchecked = (String) nodeParamObj;
+        }
+      if (loyaltyProgramIdUnchecked != null)
+        {
+          String loyaltyProgramId = loyaltyProgramIdUnchecked;
+          LoyaltyProgramService loyaltyProgramService = (LoyaltyProgramService) guiServiceList.stream().filter(srvc -> srvc.getClass() == LoyaltyProgramService.class).findFirst().orElse(null);
+          if (loyaltyProgramService == null)
+            {
+              log.error("loyaltyProgramService not found in guiServiceList - getGUIDependencies will be effected");
+            }
+          else
+            {
+              GUIManagedObject loyaltyUnchecked = loyaltyProgramService.getStoredLoyaltyPrograms(tenantID).stream().filter(obj -> obj.getGUIManagedObjectID().equals(loyaltyProgramId)).findFirst().orElse(null);
+              if (loyaltyUnchecked != null && loyaltyUnchecked.getAccepted())
+                {
+                  result.put("badge", loyaltyProgramId);
+                }
+            }
+        }
       return result;
     }
   }
