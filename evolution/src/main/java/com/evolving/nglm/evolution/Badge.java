@@ -30,7 +30,7 @@ import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
-@GUIDependencyDef(objectType = "badge", serviceClass = LoyaltyProgramService.class, dependencies = { "badgeobjective" })
+@GUIDependencyDef(objectType = "badge", serviceClass = LoyaltyProgramService.class, dependencies = { "badgeobjective"})
 public class Badge extends LoyaltyProgram implements GUIManagedObject.ElasticSearchMapping
 {
   
