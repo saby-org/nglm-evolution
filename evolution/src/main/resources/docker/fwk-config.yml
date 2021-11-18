@@ -1,0 +1,5 @@
+
+configs:
+  gui_email_config:
+    file: ./runtime-config/gui/config/email-config.json
+

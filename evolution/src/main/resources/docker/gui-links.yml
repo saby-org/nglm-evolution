@@ -30,4 +30,4 @@ gui-links-dashboard-<_KEY_>:
         - engine.labels.hostname == <_GUI_LINKS_SERVER_HOST_>
   networks:
     - outside
-  
+    
