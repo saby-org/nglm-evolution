@@ -6,6 +6,7 @@ import java.util.Date;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.ScheduledJob;
 import com.evolving.nglm.evolution.ScheduledJobConfiguration;
 import com.evolving.nglm.evolution.datacubes.generator.BDRDatacubeGenerator;
@@ -694,12 +695,21 @@ public class DatacubeJobs
         
         for(String journeyID : journeysMap.keySet()) {
           if(journeysMap.isWorkflow(journeyID)) {  // EVPRO-1318 do not generate datacubes for Workflow, the journeystatistic does not contain all data. Plus it is not needed.
+             continue;
+          }
+          if(journeysMap.get(journeyID) == null) {
             continue;
           }
           
-          if(journeysMap.getTenant(journeyID) == config.getTenantID()) { // only journeys of this tenant
-            trafficDatacube.definitive(journeyID, journeysMap.getStartDateTime(journeyID), endOfLastHour);
-            rewardsDatacube.definitive(journeyID, journeysMap.getStartDateTime(journeyID), endOfLastHour);
+          // Discard WORKFLOW, TEMPLATES, OTHERS...
+          if(journeysMap.get(journeyID).getGUIManagedObjectType() ==  GUIManagedObjectType.Journey
+              || journeysMap.get(journeyID).getGUIManagedObjectType() ==  GUIManagedObjectType.Campaign
+              || journeysMap.get(journeyID).getGUIManagedObjectType() ==  GUIManagedObjectType.BulkCampaign) {
+            
+            if(journeysMap.getTenant(journeyID) == config.getTenantID()) { // only journeys of this tenant
+              trafficDatacube.definitive(journeyID, journeysMap.getStartDateTime(journeyID), endOfLastHour);
+              rewardsDatacube.definitive(journeyID, journeysMap.getStartDateTime(journeyID), endOfLastHour);
+            }
           }
         }
         
