@@ -1182,9 +1182,11 @@ public class SimpleSMSSender extends SMSSenderListener {
                           logger.warn("SimpleSMSSender.onDeliverSm Exception, Could not instanciate class " + eventDeclaration.getEventClassName(), e);
                           return;
                         }
-                        String subscriberID = resolveSubscriberID(packet.getSource().getAddress());
+						String address = moEvent.formatAddressForRedis(packet.getSource().getAddress());
+
+						String subscriberID = resolveSubscriberID(address);
                         if(subscriberID == null) {
-                          logger.warn("SimpleSMSSender.onDeliverSm SUBSCRIBER_NOT_FOUND " + packet.getSource().getAddress());
+                          logger.warn("SimpleSMSSender.onDeliverSm SUBSCRIBER_NOT_FOUND " + address);
                           return;
                         }
                         String destination = packet.getDestination()!=null ? packet.getDestination().getAddress() : null;
@@ -1199,7 +1201,7 @@ public class SimpleSMSSender extends SMSSenderListener {
                           return;
                         }
                         
-                        moEvent.fillWithMOInfos(subscriberID, new Date(), sms_MO_channel_name, packet.getSource()!=null ? packet.getSource().getAddress() : null, destination, body);
+                        moEvent.fillWithMOInfos(subscriberID, new Date(), sms_MO_channel_name, packet.getSource()!=null ? address : null, destination, body);
                         // now drop it into the good topic with right format
 						String topic = eventDeclaration.getPreprocessTopic() != null ? eventDeclaration.getPreprocessTopic().getName() : eventDeclaration.getEventTopic();
 						byte[] message = eventDeclaration.getPreprocessorSerde() !=null ? eventDeclaration.getPreprocessorSerde().serializer().serialize(topic,(PreprocessorEvent)moEvent) : eventDeclaration.getEventSerde().serializer().serialize(topic,(EvolutionEngineEvent)moEvent);
