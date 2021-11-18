@@ -274,6 +274,24 @@ public abstract class CriterionFieldRetriever
         startDate = RLMDateUtils.addMonths(startDate, -2, timeZone);
         startDate = RLMDateUtils.truncate(startDate, Calendar.MONTH, timeZone);
         break;
+        
+      case "this.week":
+        startDate = RLMDateUtils.truncate(now, Calendar.DAY_OF_WEEK, timeZone);
+        break;
+        
+      case "last.7.days":
+        startDate = RLMDateUtils.addDays(startDate, -1, timeZone);
+        endDate = RLMDateUtils.ceiling(startDate, Calendar.DATE, timeZone);
+        startDate = RLMDateUtils.addDays(startDate, -6, timeZone);
+        startDate = RLMDateUtils.truncate(startDate, Calendar.DATE, timeZone);
+        break;
+        
+      case "last.week":
+        startDate = RLMDateUtils.addWeeks(startDate, -1, timeZone);
+        endDate = RLMDateUtils.ceiling(startDate, Calendar.DAY_OF_WEEK, timeZone);
+        startDate = RLMDateUtils.truncate(startDate, Calendar.DAY_OF_WEEK, timeZone);
+        break;
+
 
       default:
         break;
