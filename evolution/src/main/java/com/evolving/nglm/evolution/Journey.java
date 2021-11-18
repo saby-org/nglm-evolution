@@ -2489,22 +2489,27 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
 
     if (targets != null)
       {
-        
-        for(String currentTargetID : targets.keySet()){
-          GUIManagedObject targetGMO = targetService.getStoredGUIManagedObject(currentTargetID);
-          // EVPRO-1226 only invalidate journey if target is unknown or invalid
-          if (targetGMO != null && (targetGMO instanceof Target)) {
-            TargetStatus targetStatus = ((Target) targetGMO).getTargetStatus();
-            if (targetStatus == targetStatus.Unknown || targetStatus == targetStatus.NotValid) {
-              log.info("journey {} uses invalid target: {}", getJourneyID(), currentTargetID);
-              throw new GUIManagerException("journey uses invalid target", currentTargetID);
-            }
-          } else {
-            log.info("journey {} uses unknown target: {}", getJourneyID(), currentTargetID);
-            throw new GUIManagerException("journey uses unknown target", currentTargetID);
+        for (String currentTargetID : targets.keySet())
+          {
+            GUIManagedObject targetGMO = targetService.getStoredGUIManagedObject(currentTargetID);
+            // EVPRO-1226 only invalidate journey if target is unknown or invalid
+            if (targetGMO != null && (targetGMO instanceof Target))
+              {
+                TargetStatus targetStatus = ((Target) targetGMO).getTargetStatus();
+                if (targetStatus == targetStatus.Unknown || targetStatus == targetStatus.NotValid)
+                  {
+                    log.info("journey {} uses invalid target: {}", getJourneyID(), currentTargetID);
+                    throw new GUIManagerException("journey uses invalid target", currentTargetID);
+                  }
+              } 
+            else
+              {
+                log.info("journey {} uses unknown target: {}", getJourneyID(), currentTargetID);
+                throw new GUIManagerException("journey uses unknown target", currentTargetID);
+              }
           }
-        }
       }
+    
   }
 
   /*****************************************
