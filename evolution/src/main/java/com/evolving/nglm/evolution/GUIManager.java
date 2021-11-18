@@ -29,6 +29,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -45,6 +46,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -139,6 +141,7 @@ import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EmptyFulfillmentManager.EmptyFulfillmentRequest;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionOperator;
+import com.evolving.nglm.evolution.Expression.ConstantExpression;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
@@ -6283,8 +6286,8 @@ public class GUIManager
         if (!dryRun)
           {
 
-            journeyService.putJourney(journey, journeyObjectiveService, catalogCharacteristicService, targetService, subscriberMessageTemplateService, 
-                (existingJourney == null), userID);
+            validateJourneyNodeParams(journey, now);
+            journeyService.putJourney(journey, journeyObjectiveService, catalogCharacteristicService, targetService, subscriberMessageTemplateService, (existingJourney == null), userID);
 
             /*****************************************
              *
@@ -16809,7 +16812,7 @@ public class GUIManager
     String voucherCode = JSONUtilities.decodeString(jsonRoot, "voucherCode", true);
     String voucherID = JSONUtilities.decodeString(jsonRoot, "voucherID", true);
     Date newExpiryDate = GUIManagedObject.parseDateField(JSONUtilities.decodeString(jsonRoot, "expiryDate", voucherChangeAction.equals(VoucherChange.VoucherChangeAction.Extend)));
-    String origin = JSONUtilities.decodeString(jsonRoot, "origin", false);
+    String origin = "CC"; // EVPRO-1344 hardcode to "CC" instead of JSONUtilities.decodeString(jsonRoot, "origin", false);
 
     /*****************************************
      *
@@ -20343,9 +20346,17 @@ public class GUIManager
                     
                     if (customerStatus != null)
                       {
-                        SubscriberJourneyStatus customerStatusInReq = SubscriberJourneyStatus.fromExternalRepresentation(customerStatus);
-                        boolean criteriaSatisfied = customerStatusInReq == customerStatusInJourney;
-                        if (!criteriaSatisfied) continue;
+                        // SubscriberJourneyStatus customerStatusInReq =
+                        // SubscriberJourneyStatus.fromExternalRepresentation(customerStatus);
+                        String customerStatusInJourneyDisplay = customerStatusInJourney.getDisplay();
+                        boolean criteriaSatisfied = false;
+                        if (customerStatus.equalsIgnoreCase(customerStatusInJourneyDisplay))
+                          {
+                            criteriaSatisfied = true;
+                          }
+                        if (!criteriaSatisfied)
+                          continue;
+
                       }
 
                     //
@@ -23053,7 +23064,7 @@ public class GUIManager
     String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
     String bonusID = JSONUtilities.decodeString(jsonRoot, "bonusID", true);
     Integer quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
-    String origin = JSONUtilities.decodeString(jsonRoot, "origin", true);
+    String origin = "CC"; // EVPRO-1344 hardcode to "CC" instead of JSONUtilities.decodeString(jsonRoot, "origin", true);
     String userName = JSONUtilities.decodeString(jsonRoot, "userName", false);
     String featureID = (userName != null) ? userName : "administrator";
 
@@ -23154,7 +23165,7 @@ public class GUIManager
     String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
     String bonusID = JSONUtilities.decodeString(jsonRoot, "bonusID", true);
     Integer quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
-    String origin = JSONUtilities.decodeString(jsonRoot, "origin", true);
+    String origin = "CC"; // EVPRO-1344 hardcode to "CC" instead of JSONUtilities.decodeString(jsonRoot, "origin", true);
     String userName = JSONUtilities.decodeString(jsonRoot, "userName", false);
     String featureID = (userName != null) ? userName : "administrator";
 
@@ -24698,7 +24709,7 @@ public class GUIManager
     String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
     String tokenCode = JSONUtilities.decodeString(jsonRoot, "tokenCode", false);
     String offerID = JSONUtilities.decodeString(jsonRoot, "offerID", false);
-    String origin = JSONUtilities.decodeString(jsonRoot, "origin", false);
+    String origin = "CC"; // EVPRO-1344 hardcode to "CC" instead of JSONUtilities.decodeString(jsonRoot, "origin", false);
 
     /*****************************************
      *
@@ -24922,7 +24933,7 @@ public class GUIManager
    String offerID = JSONUtilities.decodeString(jsonRoot, "offerID", true);
    String salesChannelID = JSONUtilities.decodeString(jsonRoot, "salesChannelID", true);
    Integer quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
-   String origin = JSONUtilities.decodeString(jsonRoot, "origin", false);
+   String origin = "CC"; // EVPRO-1344 hardcode to "CC" instead of JSONUtilities.decodeString(jsonRoot, "origin", false);
 
    /*****************************************
     *
@@ -28392,6 +28403,8 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
 
   protected void revalidateJourneys(Date date, int tenantID)
   {
+    Date now = SystemTime.getCurrentTime();
+    
     /****************************************
     *
     *  identify
@@ -28411,6 +28424,12 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           {
             Journey journey = new Journey(existingJourney.getJSONRepresentation(), existingJourney.getGUIManagedObjectType(), epoch, existingJourney, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, journeyTemplateService, tenantID);
             journey.validate(journeyObjectiveService, catalogCharacteristicService, targetService, date);
+            
+            //
+            //  validate nodes param
+            //
+            
+            validateJourneyNodeParams(journey, now);
             modifiedJourney = journey;
           }
         catch (JSONUtilitiesException|GUIManagerException e)
@@ -28450,6 +28469,80 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
         else
           {
             journeyService.putGUIManagedObject(modifiedJourney, date, false, null);
+          }
+      }
+  }
+
+  private void validateJourneyNodeParams(Journey journey, Date now) throws GUIManagerException
+  {
+    Map<String, JSONArray> nodesJSON = new HashMap<String, JSONArray>();
+    for (Object nodeObject : JSONUtilities.decodeJSONArray(journeyService.getJSONRepresentation(journey), "nodes", true))
+      {
+        JSONObject nodeJson = (JSONObject) nodeObject;
+        nodesJSON.put(JSONUtilities.decodeString(nodeJson, "id", true), JSONUtilities.decodeJSONArray(nodeJson, "parameters", new JSONArray()));
+      } 
+    for (JourneyNode journeyNode : journey.getJourneyNodes().values())
+      {
+        if (journeyNode.getNodeType().getActionManager() != null)
+          {
+            NodeType nodeType = journeyNode.getNodeType();
+            JSONObject resolvedNodeTypeJSON = (JSONObject) nodeType.getJSONRepresentation().clone();
+            JSONArray parameters = JSONUtilities.decodeJSONArray(resolvedNodeTypeJSON, "parameters", true);
+            Map<String, List<JSONObject>> parameterAvailableValues = new HashMap<String, List<JSONObject>>();
+            for (int i=0; i<parameters.size(); i++)
+              {
+                //
+                // clone
+                //
+
+                JSONObject parameterJSON = (JSONObject) ((JSONObject) parameters.get(i)).clone();
+
+                //
+                //
+                //
+
+                String id = JSONUtilities.decodeString(parameterJSON, "id", true);
+                String name = JSONUtilities.decodeString(parameterJSON, "name", id);
+                JSONObject parametersJSON = (JSONObject) nodesJSON.get(journeyNode.getNodeID()).stream().filter(paramJson -> id.equals(JSONUtilities.decodeString((JSONObject) paramJson, "parameterName", false))).findFirst().orElse(new JSONObject());
+                JSONObject parameterValueJSON = JSONUtilities.decodeJSONObject(parametersJSON, "value", new JSONObject());
+                boolean isFixedValueType = JSONUtilities.decodeString(parameterValueJSON, "valueType", "").equals("simple"); // valueType is only used by GUI but here we need to know the value is fixed or set from a drop down
+                
+                //
+                // availableValues
+                //
+                
+                JSONArray availableValuesJSON = JSONUtilities.decodeJSONArray(parameterJSON, "availableValues", false);
+                JSONArray expressionValuesJSON = JSONUtilities.decodeJSONArray(parameterJSON, "expressionFields", false);
+                boolean shouldBeValidated = !isFixedValueType && (availableValuesJSON != null || expressionValuesJSON != null);
+                if (shouldBeValidated)
+                  {
+                    JSONArray availableValuesJSONArray = new JSONArray();
+                    if (availableValuesJSON != null) availableValuesJSONArray.addAll(availableValuesJSONArray);
+                    if (expressionValuesJSON != null) availableValuesJSONArray.addAll(expressionValuesJSON);
+                    List<JSONObject> availableValues = evaluateAvailableValues(availableValuesJSONArray, now, journey.getTenantID());
+                    Object nodeParamObjVal = journeyNode.getNodeParameters().get(id);
+                    boolean found = false;
+                    Object actualVal = null;
+                    if (nodeParamObjVal instanceof ParameterExpression && ((ParameterExpression) nodeParamObjVal).getExpression() instanceof ConstantExpression)
+                      {
+                        actualVal  = ((ParameterExpression) nodeParamObjVal).getExpression().evaluateConstant(); // context vars are ParameterExpression but not constant so value will be null - no need to do seperate check for context vars.
+                      }
+                    else if (nodeParamObjVal instanceof String)
+                      {
+                        actualVal = nodeParamObjVal;
+                      }
+                    if (actualVal != null)
+                      {
+                        for (JSONObject jsn : availableValues)
+                          {
+                            Object idVal = jsn.get("id");
+                            found = actualVal.equals(idVal);
+                            if (found) break;
+                          }
+                        if (!found) throw new GUIManagerException("bad node parameter value for", name);
+                      }
+                  }
+              }
           }
       }
   }

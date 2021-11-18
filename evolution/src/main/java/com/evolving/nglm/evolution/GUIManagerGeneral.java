@@ -4276,6 +4276,7 @@ public class GUIManagerGeneral extends GUIManager
              *****************************************/
 
             revalidateProducts(now, tenantID);
+            revalidateJourneys(now, tenantID);
           }
 
         /*****************************************
@@ -4311,6 +4312,7 @@ public class GUIManagerGeneral extends GUIManager
             //
 
             revalidateProducts(now, tenantID);
+            revalidateJourneys(now, tenantID);
           }
 
         //
@@ -4427,6 +4429,7 @@ public class GUIManagerGeneral extends GUIManager
          *****************************************/
 
         revalidateProducts(now, tenantID);
+        revalidateJourneys(now, tenantID);
       }
 
     /*****************************************
@@ -4512,6 +4515,7 @@ public class GUIManagerGeneral extends GUIManager
                  *****************************************/
 
                 revalidateProducts(now, tenantID);
+                revalidateJourneys(now, tenantID);
 
               }
             catch (JSONUtilitiesException | GUIManagerException e)
@@ -4532,6 +4536,7 @@ public class GUIManagerGeneral extends GUIManager
                 //
 
                 revalidateProducts(now, tenantID);
+                revalidateJourneys(now, tenantID);
 
                 //
                 // log
