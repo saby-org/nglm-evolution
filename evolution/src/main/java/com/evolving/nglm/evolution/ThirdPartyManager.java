@@ -2295,14 +2295,15 @@ public class ThirdPartyManager
     JSONArray customerStatusesJSONAry = JSONUtilities.decodeJSONArray(jsonRoot, "customerStatus", new JSONArray());      //readString(jsonRoot, "customerStatus", false);
     String campaignStartDateStr = readString(jsonRoot, "campaignStartDate", false);
     String campaignEndDateStr = readString(jsonRoot, "campaignEndDate", false);
-    List<SubscriberJourneyStatus> subscriberJourneyStatuses = new ArrayList<Journey.SubscriberJourneyStatus>();
+    //List<SubscriberJourneyStatus> subscriberJourneyStatuses = new ArrayList<Journey.SubscriberJourneyStatus>();
+    List<String> subscriberStatuses = new ArrayList<String>();
     if (!customerStatusesJSONAry.isEmpty())
       {
         for (int i = 0; i < customerStatusesJSONAry.size(); i++)
           {
             String status = (String) customerStatusesJSONAry.get(i);
-            SubscriberJourneyStatus journeyStatus = SubscriberJourneyStatus.fromExternalRepresentation(status);
-            subscriberJourneyStatuses.add(journeyStatus);
+            //SubscriberJourneyStatus journeyStatus = SubscriberJourneyStatus.fromExternalRepresentation(status);
+            subscriberStatuses.add(status);
           }
       }
     
@@ -2465,9 +2466,15 @@ public class ThirdPartyManager
               if (profilejourneyStatus.in(SubscriberJourneyStatus.NotEligible, SubscriberJourneyStatus.UniversalControlGroup, SubscriberJourneyStatus.Excluded, SubscriberJourneyStatus.ObjectiveLimitReached))
                 customerStatusInJourney = profilejourneyStatus;
 
-              if (!subscriberJourneyStatuses.isEmpty())
+              if (!subscriberStatuses.isEmpty())
                 {
-                  boolean criteriaSatisfied = subscriberJourneyStatuses.contains(customerStatusInJourney);
+                  String customerStatusInJourneyDisplay = customerStatusInJourney.getDisplay();
+                  //boolean criteriaSatisfied = subscriberStatuses.contains(customerStatusInJourneyDisplay);
+                  boolean criteriaSatisfied = false;
+                  if (subscriberStatuses.contains(customerStatusInJourneyDisplay))
+                    {
+                      criteriaSatisfied = true;
+                    }
                   if (!criteriaSatisfied)
                     continue;
                 }
