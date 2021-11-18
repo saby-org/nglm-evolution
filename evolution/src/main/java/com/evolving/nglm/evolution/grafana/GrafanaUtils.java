@@ -102,10 +102,6 @@ public class GrafanaUtils
           {
             int tenantID = tenant.getTenantID();
             
-            // setting the tenant timeZone in the dashboard
-//            Deployment deployment = Deployment.getDeployment(tenantID);
-//            String tz = deployment.getTimeZone();
-            
             // check if organization exists
 //            String orgName = tenant.getDisplay();
             String orgName = "t" + tenantID;
@@ -290,6 +286,7 @@ public class GrafanaUtils
 //                        HashMap<String,Object> mapDbEs=new HashMap<String,Object>();
 //                        UpdateRequest request = new UpdateRequest();
                         
+                        // setting the tenant timeZone in the dashboard
                         Deployment deployment = Deployment.getDeployment(tenantID);
                         String tz = deployment.getTimeZone();
                         
