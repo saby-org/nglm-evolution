@@ -570,7 +570,7 @@
           "targets": [
             {
               "exemplar": true,
-              "expr": "sum by (instance) (irate(node_disk_bytes_written{}[1h]))",
+              "expr": "sum by (instance) (rate(node_disk_bytes_written{}[1h]))",
               "interval": "",
               "legendFormat": "{{instance}}",
               "refId": "A"
@@ -675,7 +675,7 @@
           "targets": [
             {
               "exemplar": true,
-              "expr": "sum by (instance) (irate(node_disk_bytes_read{}[1h]))",
+              "expr": "sum by (instance) (rate(node_disk_bytes_read{}[1h]))",
               "interval": "",
               "legendFormat": "{{instance}}",
               "refId": "A"
