@@ -1,0 +1,19 @@
+doc-web-<_KEY_>:
+  image: ${env.DOCKER_REGISTRY}doc.web:${gui-doc.version}
+  environment:
+    FwkSettings__AuthorizationBaseUrl: "http://<_GUI_FWK_AUTH_SERVER_HOST_IP_>:<_GUI_FWK_AUTH_SERVER_PORT_>/api"
+    TZ: <_DEPLOYMENT_TIMEZONE_>
+    DOC_WEB_PORT: <_PORT_>
+  deploy:
+    restart_policy:
+      condition: <_DOCKER_RESTART_POLICY_>
+      delay: 5s
+      max_attempts: 3
+      window: 120s
+    mode: replicated
+    replicas: 1
+    placement:
+      constraints:
+        - engine.labels.hostname == <_GUI_DOC_WEB_SERVER_HOST_>
+  networks:
+    - outside

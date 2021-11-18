@@ -1234,6 +1234,25 @@ do
    echo >> $DEPLOY_ROOT/stack/stack-gui.yml
 done
 
+
+#
+#  doc-web
+#
+
+for TUPLE in $GUI_DOC_WEB_CONFIGURATION
+do
+   export KEY=`echo $TUPLE | cut -d: -f1`
+   export HOST=`echo $TUPLE | cut -d: -f2`
+   export HOST_IP=`echo $TUPLE | cut -d: -f3`
+   export HOST_EXTERNAL_IP=`echo $TUPLE | cut -d: -f4`
+   export PORT=`echo $TUPLE | cut -d: -f5`
+   export HOST_EXTERNAL=`echo $TUPLE | cut -d: -f6`
+   export GUI_DOC_WEB_SERVER_HOST_INTERNAL_IP=$HOST_IP
+   export GUI_DOC_WEB_SERVER_PORT=$PORT  
+   cat $DEPLOY_ROOT/docker/doc-web.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' >> $DEPLOY_ROOT/stack/stack-gui.yml
+   echo >> $DEPLOY_ROOT/stack/stack-gui.yml
+done
+
 #
 #  gui-audit
 #
@@ -1273,6 +1292,12 @@ do
    echo >> $DEPLOY_ROOT/stack/stack-gui.yml
 done
 
+
+#
+# configs for GUI
+#
+
+cat $DEPLOY_ROOT/docker/fwk-config.yml >> $DEPLOY_ROOT/stack/stack-gui.yml
 
 #
 #  postamble

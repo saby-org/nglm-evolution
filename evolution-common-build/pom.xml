@@ -3,7 +3,7 @@
   <groupId>com.evolving.nglm</groupId>
   <artifactId>nglm-evolution-common-build</artifactId>
   <packaging>pom</packaging>
-  <version>pre_2.1.0_0-SNAPSHOT</version>  
+  <version>EVPRO-1374-pre_2.1.0_0-SNAPSHOT</version>  
   <name>evolution-common-build</name>
 
   <repositories> 
@@ -37,7 +37,7 @@
 
     <!-- dependencies -->
     <flyway.version>qaveon-dnbo-2.5.0.10.4.6</flyway.version>
-    <flyway.gui.version>1.0.72</flyway.gui.version>
+    <flyway.gui.version>1.0.73</flyway.gui.version>
     
     <!-- evolution-common-build -->
     <common.build.phase.generate-evolution-scripts>none</common.build.phase.generate-evolution-scripts>
@@ -542,6 +542,26 @@
           </execution>
 
           <execution>
+            <id>generate-gui-docker-stack</id>
+            <phase>${common.build.phase.generate-evolution-resources}</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/assembled-docker/gui</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${project.build.directory}/nglm-evolution-resources</directory>
+                  <includes>
+                    <include>config/email-config.json</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+
+          <execution>
             <id>generate-upgrade-stack</id>
             <phase>${common.build.phase.generate-upgrade-image}</phase>
             <goals>
@@ -657,6 +677,8 @@
               <tag>${project.name}-${project.version}</tag>
             </configuration>
           </execution>
+
+          
 
         </executions>
       </plugin>

@@ -1,0 +1,36 @@
+{
+    "Resources": {
+      "en": {
+        "EmailEnableAccountSubject": "1 Evolution Activate Account",
+        "EmailEnableAccountSubjectTemplate": "Hi {0}, <br/>Your account has been activated.<br/>Click in the link below to go to the client login area {1} <br/>In case you forgot your password, please click {2} <br/>If you have any questions or encounter any problems logging in, please contact a site administrator.",
+        "EmailPasswordRecoverySubject": "1 Evolution Password Recovery",
+        "EmailPasswordRecoveryTemplate": "Hi {0},<br/> In order to recover your account please click {1}/{2}<br/>If you have any questions or encounter any problems logging in, please contact a site administrator.",
+        "EmailRegistrationSubject": "1 Evolution Account Registration",
+        "EmailRegistrationTemplate": "Hi  {0},<br/> In order to activate your account please click {1}/{2}<br/>If you have any questions or encounter any problems logging in, please contact a site administrator."
+      },
+      "fr": {
+        "EmailEnableAccountSubject": "1Evolution  activer le compte",
+        "EmailEnableAccountSubjectTemplate": "Bonjour {0},<br/>Votre compte a été activé. <br/>Cliquez sur le lien ci-dessous pour accéder à la zone de connexion client {1}<br/>Si vous avez oublié votre mot de passe, cliquez {2} <br/>Si vous avez des questions ou rencontrez des problèmes pour vous connecter, veuillez contacter un administrateur de site.",
+        "EmailPasswordRecoverySubject": "Récupération de mot de passe Evolution",
+        "EmailPasswordRecoveryTemplate": "Bonjour {0},<br/> Afin de récupérer votre compte s'il vous plaît cliquez sur {1}/{2}<br/>Si vous avez des questions ou rencontrez des problèmes pour vous connecter, veuillez contacter un administrateur de site.",
+        "EmailRegistrationSubject": "Compte Evolution inscription",
+        "EmailRegistrationTemplate": "Bonjour {0},<br/> Pour activer votre compte s'il vous plaît cliquez sur {1}/{2}<br/>Si vous avez des questions ou rencontrez des problèmes pour vous connecter, veuillez contacter un administrateur de site."
+      },
+      "ar": {
+        "EmailEnableAccountSubject": "1Evolution Activate Account",
+        "EmailEnableAccountSubjectTemplate": "Hello {0}, <br/>Your account has been activated.<br/>Click in the link below to go to the client login area {1} <br/>In case you forgot your password, please click {2} <br/>If you have any questions or encounter any problems logging in, please contact a site administrator.",
+        "EmailPasswordRecoverySubject": "Evolution Password Recovery",
+        "EmailPasswordRecoveryTemplate": "Hello {0},<br/> In order to recover your account please click {1}/{2}<br/>If you have any questions or encounter any problems logging in, please contact a site administrator.",
+        "EmailRegistrationSubject": "Evolution Account Registration",
+        "EmailRegistrationTemplate": "Hello {0},<br/> In order to activate your account please click {1}/{2}<br/>If you have any questions or encounter any problems logging in, please contact a site administrator."
+      },
+      "pt": {
+        "EmailEnableAccountSubject": "1Evolution Activate Account",
+        "EmailEnableAccountSubjectTemplate": "Hello {0}, <br/>Your account has been activated.<br/>Click in the link below to go to the client login area {1} <br/>In case you forgot your password, please click {2} <br/>If you have any questions or encounter any problems logging in, please contact a site administrator.",
+        "EmailPasswordRecoverySubject": "Evolution Password Recovery",
+        "EmailPasswordRecoveryTemplate": "Hello {0},<br/> In order to recover your account please click {1}/{2}<br/>If you have any questions or encounter any problems logging in, please contact a site administrator.",
+        "EmailRegistrationSubject": "Evolution Account Registration",
+        "EmailRegistrationTemplate": "Hello {0},<br/> In order to activate your account please click {1}/{2}<br/>If you have any questions or encounter any problems logging in, please contact a site administrator."
+      }
+    }
+  }
