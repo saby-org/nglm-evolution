@@ -20151,9 +20151,17 @@ public class GUIManager
 
                     if (customerStatus != null)
                       {
-                        SubscriberJourneyStatus customerStatusInReq = SubscriberJourneyStatus.fromExternalRepresentation(customerStatus);
-                        boolean criteriaSatisfied = customerStatusInReq == customerStatusInJourney;
-                        if (!criteriaSatisfied) continue;
+                        // SubscriberJourneyStatus customerStatusInReq =
+                        // SubscriberJourneyStatus.fromExternalRepresentation(customerStatus);
+                        String customerStatusInJourneyDisplay = customerStatusInJourney.getDisplay();
+                        boolean criteriaSatisfied = false;
+                        if (customerStatus.equalsIgnoreCase(customerStatusInJourneyDisplay))
+                          {
+                            criteriaSatisfied = true;
+                          }
+                        if (!criteriaSatisfied)
+                          continue;
+
                       }
 
                     //
