@@ -2467,17 +2467,23 @@ public class ThirdPartyManager
                 customerStatusInJourney = profilejourneyStatus;
 
               if (!subscriberStatuses.isEmpty())
-                {
-                  String customerStatusInJourneyDisplay = customerStatusInJourney.getDisplay();
-                  //boolean criteriaSatisfied = subscriberStatuses.contains(customerStatusInJourneyDisplay);
-                  boolean criteriaSatisfied = false;
-                  if (subscriberStatuses.contains(customerStatusInJourneyDisplay))
-                    {
-                      criteriaSatisfied = true;
-                    }
-                  if (!criteriaSatisfied)
-                    continue;
-                }
+                  {
+                    String customerStatusInJourneyDisplay = customerStatusInJourney.getDisplay();
+                    // boolean criteriaSatisfied =
+                    // subscriberStatuses.contains(customerStatusInJourneyDisplay);
+                    boolean criteriaSatisfied = false;
+
+                    for (String subscriberStatus : subscriberStatuses)
+                      {
+                        if (subscriberStatus.equalsIgnoreCase(customerStatusInJourneyDisplay))
+                          {
+                            criteriaSatisfied = true;
+                            break;
+                          }
+                      }
+                    if (!criteriaSatisfied)
+                      continue;
+                  }
 
               //
               // prepare response
