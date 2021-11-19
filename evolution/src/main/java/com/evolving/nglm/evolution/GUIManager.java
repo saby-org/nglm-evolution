@@ -27985,6 +27985,29 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           }
           break;
           
+        case "timePeriods":
+          if (includeDynamic)
+          {
+            HashMap<String,Object> availableValueToday = new HashMap<String,Object>(); availableValueToday.put("id", "today"); availableValueToday.put("display", "Today");
+            HashMap<String,Object> availableValueYesterday = new HashMap<String,Object>(); availableValueYesterday.put("id", "yesterday"); availableValueYesterday.put("display", "Yesterday");
+            HashMap<String,Object> availableValueThisMonth = new HashMap<String,Object>(); availableValueThisMonth.put("id", "this.month"); availableValueThisMonth.put("display", "This Month");
+            HashMap<String,Object> availableValueLast1Month = new HashMap<String,Object>(); availableValueLast1Month.put("id", "last.1.month"); availableValueLast1Month.put("display", "Last month");
+            HashMap<String,Object> availableValueLast3Month = new HashMap<String,Object>(); availableValueLast3Month.put("id", "last.3.month"); availableValueLast3Month.put("display", "Last 3 months");
+            HashMap<String,Object> availableValueThisWeek = new HashMap<String,Object>(); availableValueThisWeek.put("id", "this.week"); availableValueThisWeek.put("display", "This week");
+            HashMap<String,Object> availableValueLast7Days = new HashMap<String,Object>(); availableValueLast7Days.put("id", "last.7.days"); availableValueLast7Days.put("display", "Last 7 days");
+            HashMap<String,Object> availableValueLastWeek = new HashMap<String,Object>(); availableValueLastWeek.put("id", "last.week"); availableValueLastWeek.put("display", "Last week");
+            
+            result.add(JSONUtilities.encodeObject(availableValueToday));
+            result.add(JSONUtilities.encodeObject(availableValueYesterday));
+            result.add(JSONUtilities.encodeObject(availableValueThisMonth));
+            result.add(JSONUtilities.encodeObject(availableValueLast1Month));
+            result.add(JSONUtilities.encodeObject(availableValueLast3Month));
+            result.add(JSONUtilities.encodeObject(availableValueThisWeek));
+            result.add(JSONUtilities.encodeObject(availableValueLast7Days));
+            result.add(JSONUtilities.encodeObject(availableValueLastWeek));
+          }
+        break;
+          
         case "returnCodesBDR":
           if (includeDynamic)
             {
