@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *  TokenReportMonoPhase.java 
+ *  ROIReportMonoPhase.java 
  *
  ****************************************************************************/
 
@@ -87,7 +87,7 @@ public class ROIReportMonoPhase implements ReportCsvFactory
     ****************************************/
   public boolean dumpElementToCsvMono(Map<String,Object> map, ZipOutputStream writer, boolean addHeaders) throws IOException
   {
-    final int tenantID;
+	Date now = SystemTime.getCurrentTime();
     LinkedHashMap<String, Object> result = new LinkedHashMap<>();
     Map<String, Object> elasticFields = map;
     if (elasticFields != null)
@@ -96,6 +96,9 @@ public class ROIReportMonoPhase implements ReportCsvFactory
         tenantID = (Integer) elasticFields.get("tenantID");
       else
         tenantID = 0;
+      
+      result.clear();
+      result.put(dateTime,now);
       
       if (addHeaders)
       {
