@@ -1122,6 +1122,7 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
     if(log.isDebugEnabled()) log.debug("NotificationManager.completeDeliveryRequest(deliveryRequest=" + deliveryRequest + ")");
     completeRequest((DeliveryRequest)deliveryRequest);
     incrementStats((NotificationManagerRequest) deliveryRequest);
+    incrementPartsStats((NotificationManagerRequest) deliveryRequest);
   }
 
   private void incrementStats(NotificationManagerRequest notificationManagerRequest)
@@ -1132,6 +1133,16 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
             .withLabel(StatsBuilders.LABEL.priority.name(), notificationManagerRequest.getDeliveryPriority().getExternalRepresentation())
             .withLabel(StatsBuilders.LABEL.tenant.name(), String.valueOf(notificationManagerRequest.getTenantID()))
             .getStats().increment();
+  }
+
+  private void incrementPartsStats(NotificationManagerRequest notificationManagerRequest)
+  {
+    statsCounter.withLabel(StatsBuilders.LABEL.status.name(), "noOfParts")
+            .withLabel(StatsBuilders.LABEL.channel.name(), GetCommunicationChannels().get(notificationManagerRequest.getChannelID()).getDisplay())
+            .withLabel(StatsBuilders.LABEL.module.name(), notificationManagerRequest.getModule().name())
+            .withLabel(StatsBuilders.LABEL.priority.name(), notificationManagerRequest.getDeliveryPriority().getExternalRepresentation())
+            .withLabel(StatsBuilders.LABEL.tenant.name(), String.valueOf(notificationManagerRequest.getTenantID()))
+            .getStats().add(notificationManagerRequest.extractLastSentCount());
   }
 
   /*****************************************
