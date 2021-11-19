@@ -1819,7 +1819,14 @@ public class GUIManagerBaseManagement extends GUIManager
         UCGRuleIDs.add(UCGRuleID);
         GUIManagedObject ucgRule = ucgRuleService.getStoredUCGRule(UCGRuleID);
         if (ucgRule != null && (force || !ucgRule.getReadOnly()))
-          singleIDresponseCode = "ok";
+          if(ucgRule.getActive())
+          {
+            singleIDresponseCode = "deletingActiveNotAllowed";
+          }
+        else
+          {
+            singleIDresponseCode = "ok";
+        }
         else if (ucgRule != null)
           singleIDresponseCode = "failedReadOnly";
         else singleIDresponseCode = "ucgRuleNotFound";
@@ -1856,8 +1863,10 @@ public class GUIManagerBaseManagement extends GUIManager
       {
 
         GUIManagedObject ucgRule = UCGRules.get(i);
-
-        ucgRuleService.removeUCGRule(ucgRule.getGUIManagedObjectID(), userID, tenantID);
+        if(!ucgRule.getActive())
+        {
+          ucgRuleService.removeUCGRule(ucgRule.getGUIManagedObjectID(), userID, tenantID);
+        }
       }
 
     /*****************************************
