@@ -52,6 +52,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import com.evolving.nglm.evolution.event.ExternalEvent;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -363,7 +364,7 @@ public class EvolutionEngine
 
     // for performance testing only, SHOULD NOT BE USED IN PROD, the right rocksDB configuration should be able to provide the same
     boolean isInMemoryStateStores = false;
-    if("true".equals(System.getenv("EVOLUTIONENGINE_IN_MEMORY_STATE_STORES"))) isInMemoryStateStores = true;
+    // to risky force false before real cleanning: if("true".equals(System.getenv("EVOLUTIONENGINE_IN_MEMORY_STATE_STORES"))) isInMemoryStateStores = true;
     // try as well some rocksdb config (not sure yet at all about all this, documentation is not so clear, so testing)
     int rocksDBCacheMBytes=-1;// will not change the default kstream rocksdb settings
     if(!isInMemoryStateStores) try{ rocksDBCacheMBytes = Integer.parseInt(System.getenv("EVOLUTIONENGINE_ROCKSDB_CACHE_MB")); } catch(NumberFormatException e){}
@@ -1077,11 +1078,13 @@ public class EvolutionEngine
         (key,value) -> (value instanceof JourneyTriggerEventAction),
         (key,value) -> (value instanceof SubscriberProfileForceUpdate),
         (key,value) -> (value instanceof EDRDetails),
+
         (key,value) -> (value instanceof TokenRedeemed),
         (key,value) -> (value instanceof SubscriberProfileForceUpdateResponse),
         (key,value) -> (value instanceof OTPInstanceChangeEvent),
         (key,value) -> (value instanceof CleanupSubscriber),
         (key,value) -> (value instanceof AssignSubscriberIDs),
+
         (key,value) -> (value instanceof BadgeChange && ((BadgeChange) value).IsResponseEvent()),
         (key,value) -> (value instanceof BadgeChange && !((BadgeChange) value).IsResponseEvent())
     );
@@ -1103,11 +1106,13 @@ public class EvolutionEngine
     KStream<StringKey, JourneyTriggerEventAction> journeyTriggerEventActionStream = (KStream<StringKey, JourneyTriggerEventAction>) branchedEvolutionEngineOutputs[12];
     KStream<StringKey, SubscriberProfileForceUpdate> subscriberProfileForceUpdateStream = (KStream<StringKey, SubscriberProfileForceUpdate>) branchedEvolutionEngineOutputs[13];
     KStream<StringKey, EDRDetails> edrDetailsStream = (KStream<StringKey, EDRDetails>) branchedEvolutionEngineOutputs[14];
+
     KStream<StringKey, TokenRedeemed> tokenRedeemedsStream = (KStream<StringKey, TokenRedeemed>) branchedEvolutionEngineOutputs[15];
     KStream<StringKey, SubscriberProfileForceUpdateResponse> subscriberProfileForceUpdateResponseStream = (KStream<StringKey, SubscriberProfileForceUpdateResponse>) branchedEvolutionEngineOutputs[16];
     KStream<StringKey, OTPInstanceChangeEvent> otpInstanceChangeEventsStream = (KStream<StringKey, OTPInstanceChangeEvent>) branchedEvolutionEngineOutputs[17];
     KStream<StringKey, CleanupSubscriber> immediateCleanupStream = (KStream<StringKey, CleanupSubscriber>) branchedEvolutionEngineOutputs[18];
     KStream<StringKey, AssignSubscriberIDs> deleteActionStream = (KStream<StringKey, AssignSubscriberIDs>) branchedEvolutionEngineOutputs[19];
+
     KStream<StringKey, BadgeChange> badgeChangeResponseStream = (KStream<StringKey, BadgeChange>) branchedEvolutionEngineOutputs[20];
     KStream<StringKey, BadgeChange> badgeChangeRequestStream = (KStream<StringKey, BadgeChange>) branchedEvolutionEngineOutputs[21];
     
@@ -1863,22 +1868,30 @@ public class EvolutionEngine
     *
     ****************************************/
     int tenantID;
-    if(previousSubscriberState == null)
-      {
-        // ensure this event is of type Auto
-        if(evolutionEvent instanceof AutoProvisionSubscriberStreamEvent)
-          {
-            tenantID = ((AutoProvisionSubscriberStreamEvent)evolutionEvent).getTenantID();
-          }
-        else {
-          log.warn("Event " + evolutionEvent.getClass() + " does not implement AutoProvisionSubscriberStreamEvent, can't retrieve the tenantID for SubscriberState creation");
+    if(previousSubscriberState == null) {
+      // OLD WAY BEFORE EVPRO-1306 (to clean, but keeping for now)
+      if(evolutionEvent instanceof AutoProvisionSubscriberStreamEvent) {
+        tenantID = ((AutoProvisionSubscriberStreamEvent)evolutionEvent).getTenantID();
+      }
+      // NEW WAY AFTER EVPRO-1306
+      else if(evolutionEvent instanceof ExternalEvent) {
+        ExternalEvent externalEvent = (ExternalEvent) evolutionEvent;
+        if(externalEvent.getSubscriberAction()!=SubscriberAction.Create){
+          log.warn("Event " + evolutionEvent.getClass() + " received while subscriber does not exists, but not for a creation "+externalEvent.getSubscriberAction());
           return null;
         }
+        if(externalEvent.getTenantID()==null) {
+          log.warn("Event " + evolutionEvent.getClass() + " received for a creation without tenantID");
+        }
+        tenantID = externalEvent.getTenantID();
       }
-    else
-      {
-        tenantID = previousSubscriberState.getSubscriberProfile().getTenantID();
+      else {
+        log.warn("Event " + evolutionEvent.getClass() + " does not implement AutoProvisionSubscriberStreamEvent, can't retrieve the tenantID for SubscriberState creation");
+        return null;
       }
+    } else {
+      tenantID = previousSubscriberState.getSubscriberProfile().getTenantID();
+    }
 
     // NO MORE DEEP COPY !!!!
     // previous one or new empty
@@ -1910,6 +1923,14 @@ public class EvolutionEngine
 
   switch (evolutionEvent.getSubscriberAction()) 
   {
+
+    case Delete: // Delete is useful for SubscriberManager, not really for Evolution Engine
+    case DeleteImmediate: // DeleteImmediate is useful for SubscriberManager, not really for Evolution Engine
+      if (previousSubscriberState == null) { return null; }
+      SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(), subscriberState);
+      evolutionHackyEvent.enrichWithContext(context);// filter output based on this
+      return subscriberState;
+
     case Cleanup:
     case CleanupImmediate:
       // check if the cleanup date has already been set before
@@ -1917,9 +1938,12 @@ public class EvolutionEngine
       //    * compute the end date (in the future for cleanup and now for cleanupimmediate) and schedule a timeout
       //    * set the Terminated status 
       //    * Trig a schedule for the good date...
-      // 
+
+      // send a delete for redis alternateIDs
+      CleanupSubscriber cleanupEvent = new CleanupSubscriber(subscriberState.getSubscriberID(), SubscriberAction.Delete);
+      subscriberState.getImmediateCleanupActions().add(cleanupEvent);
       
-      if(subscriberState.getCleanupDate() == null)
+      if(subscriberState.getCleanupDate() == null || evolutionEvent.getSubscriberAction()==SubscriberAction.CleanupImmediate)
         {
           Date nowDate = SystemTime.getCurrentTime();
           if(evolutionEvent.getSubscriberAction() == SubscriberAction.Cleanup)
@@ -1939,21 +1963,14 @@ public class EvolutionEngine
           updateScheduledEvaluations(scheduledEvaluationsBefore, subscriberState.getScheduledEvaluations());
           subscriberState.getSubscriberProfile().setEvolutionSubscriberStatus(EvolutionSubscriberStatus.Terminated);
         }
-      SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(),
-          subscriberState);
+      SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(), subscriberState);
+      evolutionHackyEvent.enrichWithContext(context);// filter output based on this
       return subscriberState;
-  
-    case Delete: // Delete is useful for SubscriberManager, not really for Evolution Engine
-    case DeleteImmediate: // DeleteImmediate is useful for SubscriberManager, not really for Evolution
-                // Engine
-      if (previousSubscriberState == null) { return null; }
-      SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(),
-          subscriberState);
-      return subscriberState;
+
   }
-  
+
   // on any event make effective clean if needed...
-  if(subscriberState.getCleanupDate() != null && subscriberState.getCleanupDate().before(SystemTime.getCurrentTime()))
+  if(subscriberState.getCleanupDate() != null && subscriberState.getCleanupDate().before(new Date(SystemTime.getCurrentTime().getTime()+1/*add one ms to be sure delete now is before*/)))
     {
       if (Boolean.TRUE.equals(subscriberState.getCleanupESAlreadyTriggered()))
           {
@@ -1962,7 +1979,7 @@ public class EvolutionEngine
             return null;
           }
       else 
-        {            
+        {
           // ready to clean ES : trig a cleanupEvent to inform ES and mark the subscriber as already tagged for ES cleaup
           subscriberState.setCleanupESAlreadyTriggered(true);
           CleanupSubscriber cleanupEvent = new CleanupSubscriber(subscriberState.getSubscriberID(), SubscriberAction.DeleteImmediate);
@@ -1976,8 +1993,7 @@ public class EvolutionEngine
   *
   *****************************************/
 
-  SubscriberEvaluationRequest subscriberEvaluationRequest = new SubscriberEvaluationRequest(subscriberProfile,
-      extendedSubscriberProfile, subscriberGroupEpochReader, context.eventDate(), tenantID);
+  SubscriberEvaluationRequest subscriberEvaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, extendedSubscriberProfile, subscriberGroupEpochReader, context.eventDate(), tenantID);
   
   /*****************************************
    *
@@ -3088,7 +3104,7 @@ public class EvolutionEngine
         //
 
         DeliveryRequest deliveryRequest = (DeliveryRequest)evolutionEvent;
-        log.info("Rescheduled Request for " + deliveryRequest.getRescheduledDate());
+        if(log.isDebugEnabled()) log.debug("Rescheduled Request for " + deliveryRequest.getRescheduledDate());
         ReScheduledDeliveryRequest reScheduledDeliveryRequest = new ReScheduledDeliveryRequest(subscriberProfile.getSubscriberID(), deliveryRequest.getRescheduledDate(), deliveryRequest);
         subscriberState.getReScheduledDeliveryRequests().add(reScheduledDeliveryRequest);
 
@@ -3494,12 +3510,12 @@ public class EvolutionEngine
                             catch (NoSuchMethodException|SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e1)
                               {
                                 // setters defined as Integer can be declared with long param (ex: setLastRechargeAmount())
-                                if (Integer.class.equals(parameterType) && (value instanceof Integer))
+                                if (Integer.class.equals(parameterType))
                                   {
                                     try
                                     {
                                       Method setter = subscriberProfile.getClass().getMethod(methodName, Long.class);
-                                      setter.invoke(subscriberProfile, new Long((long) (int) value));
+                                      setter.invoke(subscriberProfile, value);
                                       subscriberProfileUpdated = true;
                                      }
                                      catch (NoSuchMethodException|SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e)
@@ -3910,7 +3926,7 @@ public class EvolutionEngine
             
             long previousPurchseCount = cleanPurchaseHistory.stream().filter(history -> history.getSecondElement().after(earliestDateToKeep)).count();
             int totalPurchased = (int) (previousPurchseCount) + purchaseFulfillmentRequest.getQuantity();
-            log.info("cleanPurchaseHistory.size() after filter = " + previousPurchseCount + " purchaseFulfillmentRequest.getQuantity() " + purchaseFulfillmentRequest.getQuantity());
+            if(log.isDebugEnabled()) log.debug("cleanPurchaseHistory.size() after filter = " + previousPurchseCount + " purchaseFulfillmentRequest.getQuantity() " + purchaseFulfillmentRequest.getQuantity());
             if (isPurchaseLimitReached(offer, totalPurchased))
               {
                 if (log.isTraceEnabled()) log.trace("maximumAcceptances : " + offer.getMaximumAcceptances() + " of offer " + offer.getOfferID() + " exceeded for subscriber " + subscriberProfile.getSubscriberID() + " as totalPurchased = " + totalPurchased + " (" + cleanPurchaseHistory.size() + "+" + purchaseFulfillmentRequest.getQuantity() + ") earliestDateToKeep : " + earliestDateToKeep);
@@ -7037,7 +7053,7 @@ public class EvolutionEngine
                 // Check for new conversion - setup
                 Boolean convertedReference = null;
                 if(originalStatusConverted) {
-                  convertedReference = new Boolean(true); // We track for change (Boolean object, we will compare reference and not value) 
+                  convertedReference = true; // We track for change (Boolean object, we will compare reference and not value)
                   journeyState.getJourneyParameters().put(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName(), convertedReference);
                 }
                 
@@ -7792,7 +7808,7 @@ public class EvolutionEngine
     *  get (or create) entry
     *
     ****************************************/
-    log.info(SystemTime.getCurrentTime() + " updateExtendedSubscriberProfile event " + evolutionEvent);
+    if(log.isTraceEnabled()) log.trace("updateExtendedSubscriberProfile event " + evolutionEvent);
     
     ExtendedSubscriberProfile extendedSubscriberProfile = (currentExtendedSubscriberProfile != null) ? ExtendedSubscriberProfile.copy(currentExtendedSubscriberProfile) : ExtendedSubscriberProfile.create(evolutionEvent.getSubscriberID());
     ExtendedProfileContext context = new ExtendedProfileContext(extendedSubscriberProfile, subscriberGroupEpochReader, uniqueKeyServer, SystemTime.getCurrentTime());
@@ -7825,7 +7841,7 @@ public class EvolutionEngine
     }
     if(evolutionEvent instanceof CleanupSubscriber)
       {
-        log.info("CleanupSubscriber " + evolutionEvent);
+        log.info("full deleting subscriber :  " + evolutionEvent);
         if(Boolean.TRUE.equals(((CleanupSubscriber)evolutionEvent).getCleanExtESReady())) 
           { 
             return null;
@@ -8396,7 +8412,7 @@ public class EvolutionEngine
                   {
                     for (int i = 0; i < dailyBuckets.length; i++)
                       {
-                        dailyBucketsArrayNode.add(new Long(dailyBuckets[i]));
+                        dailyBucketsArrayNode.add(Long.valueOf(dailyBuckets[i]));
                       }
                   }
                 ((ObjectNode) value).put("dailyBuckets", dailyBucketsArrayNode);
@@ -8413,7 +8429,7 @@ public class EvolutionEngine
                   {
                     for (int i = 0; i < monthlyBuckets.length; i++)
                       {
-                        monthlyBucketsArrayNode.add(new Long(monthlyBuckets[i]));
+                        monthlyBucketsArrayNode.add(Long.valueOf(monthlyBuckets[i]));
                       }
                   }
                 ((ObjectNode) value).put("monthlyBuckets", monthlyBucketsArrayNode);

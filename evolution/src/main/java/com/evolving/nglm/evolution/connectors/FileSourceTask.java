@@ -1,41 +1,45 @@
-package com.evolving.nglm.core;
+package com.evolving.nglm.evolution.connectors;
 
+import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.ConnectSerde.PackSchema;
+import com.evolving.nglm.core.Deployment;
+import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.ServerRuntimeException;
+import com.evolving.nglm.core.StringValue;
+import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
 import com.evolving.nglm.evolution.SingletonServices;
+import com.evolving.nglm.evolution.UpdateParentRelationshipEvent;
+import com.evolving.nglm.evolution.event.ExternalEvent;
+import com.evolving.nglm.evolution.event.MapperUtils;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
+import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
-
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.evolving.nglm.core.ConnectSerde.PackSchema;
-import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
-import com.evolving.nglm.evolution.UpdateChildrenRelationshipEvent;
-import com.evolving.nglm.evolution.UpdateParentRelationshipEvent;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.IOException;
 import java.nio.charset.Charset;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -53,7 +57,7 @@ public abstract class FileSourceTask extends SourceTask {
 
 	private static final Logger log = LoggerFactory.getLogger(FileSourceTask.class);
 
-	protected abstract List<KeyValue> processRecord(String record) throws FileSourceTaskException, InterruptedException;
+	protected abstract List<ExternalEvent> processRecord(String record) throws FileSourceTaskException;
 	@Override public String version() { return FileSourceConnector.FileSourceVersion; }
 
 	//  configuration
@@ -173,8 +177,6 @@ public abstract class FileSourceTask extends SourceTask {
 			stopRequested = true;
 			stopRequestedReference.set(true);
 
-			stopStatisticsCollection();
-
 			this.notifyAll();
 
 		}
@@ -195,24 +197,48 @@ public abstract class FileSourceTask extends SourceTask {
 		// check if we need to wait records to be ack well pushed to kafka
 		waitInflightRecordsAndCommitProgress();
 
-		List<SourceRecord> result = nextSourceRecords();
+		List<SourceRecord> results = new ArrayList<>();
+
+		// get bulk of lines processed by custom class
+		List<ExternalEvent> externalEvents = nextRecordsFromFile();
+
+		if(!externalEvents.isEmpty()){
+
+			log.trace("{} -- poll {} records to process", taskName, externalEvents.size());
+
+			// move out the one existing resolved from redis
+			try{
+				for(ExternalEvent externalEvent:MapperUtils.resolve(externalEvents, SingletonServices.getSubscriberIDService(),stopRequestedReference)){
+					results.add(externalEvent.toSourceRecord());
+				}
+			}catch (SubscriberIDServiceException e){
+				//TODO to check what to do, we should make sure we never have this
+				log.warn(taskName+" -- exception resolving alternateID", e);
+			}
+
+			log.trace("{} -- poll {} records resolved to send", taskName, results.size());
+
+			return results;
+
+		}
+
 
 		synchronized (this){
 			// pause if nothing to do, but not infinitely, this to avoid "pause task" call to hang
-			if (result == null && !stopRequested && !rebalanceRequested) {
+			if (results.isEmpty() && !stopRequested && !rebalanceRequested) {
 				try { this.wait(3000); } catch (InterruptedException e) {}
 			}else if(stopRequested || rebalanceRequested){
 				if(rebalanceRequested) rebalanceRequested=false;
 				inFlightRecords.clear();
 				preCommitActions.clear();
-				result=null;
+				results=null;
 			}else{
-				inFlightRecords.addAll(result);
+				inFlightRecords.addAll(results);
 			}
 		}
 
-		log.debug("{} -- poll returning {} records", taskName, (result!=null?result.size():0));
-		return result;
+		log.debug("{} -- poll returning {} records", taskName, results.size());
+		return results;
 	}
 
 	private synchronized void waitInflightRecordsAndCommitProgress(){
@@ -245,16 +271,16 @@ public abstract class FileSourceTask extends SourceTask {
 	}
 
 	@Override
-	public synchronized void commitRecord(SourceRecord record) throws InterruptedException {
+	public synchronized void commitRecord(SourceRecord record, RecordMetadata recordMetadata) throws InterruptedException {
 		inFlightRecords.remove(record);
 		if(inFlightRecords.isEmpty()) this.notifyAll();
-		super.commitRecord(record);
+		super.commitRecord(record,recordMetadata);
 	}
 
 	// the real files read jobs
-	private List<SourceRecord> nextSourceRecords() throws InterruptedException {
+	private List<ExternalEvent> nextRecordsFromFile() {
 
-		List<SourceRecord> result = null;
+		List<ExternalEvent> result = new ArrayList<>();
 
 		while (true) {
 			synchronized (this){
@@ -277,35 +303,31 @@ public abstract class FileSourceTask extends SourceTask {
 					if (record == null) {
 						log.debug("{} -- nextSourceRecords closing processed file {}", taskName, currentFile.getName());
 						closeCurrentFile();
-						updateFilesProcessed(connectorName, taskNumber, 1);
+						//updateFilesProcessed(connectorName, taskNumber, 1);
 						continue;
 					}
 
 					if (record.trim().length() == 0) continue;
 
 					//  parse
-					List<KeyValue> recordResults=null;
+					List<ExternalEvent> recordResults=null;
 					try {
 						recordResults = processRecord(record.trim());// custom implementation call
-					} catch (InterruptedException e) {
-						throw e;//not an error
-					}
-					catch (Exception e) { // we usually avoid crash on custom code calls
-						updateErrorRecords(connectorName, taskNumber, 1);
+					} catch (Exception e) { // we usually avoid crash on custom code calls
+						//updateErrorRecords(connectorName, taskNumber, 1);
 						// if FileSourceTaskException, that is something expected by custom code, so otherwise is probably bad error
-						if (!(e instanceof FileSourceTaskException))
-							log.error(taskName+" -- nextSourceRecords unexpected exception processing record: " + record, e);
-						if (errorTopic != null) {
-							ErrorRecord errorRecord = new ErrorRecord(record.trim(), SystemTime.getCurrentTime(), currentFile.getName(), e.getMessage());
-							recordResults = Collections.singletonList(new KeyValue("error", null, null, ErrorRecord.schema(), ErrorRecord.pack(errorRecord)));
-						}
+						if (!(e instanceof FileSourceTaskException)) log.error(taskName+" -- nextSourceRecords unexpected exception processing record: " + record, e);
+						//if (errorTopic != null) {
+						//	ErrorRecord errorRecord = new ErrorRecord(record.trim(), SystemTime.getCurrentTime(), currentFile.getName(), e.getMessage());
+						//	recordResults = Collections.singletonList(new KeyValue("error", null, null, ErrorRecord.schema(), ErrorRecord.pack(errorRecord)));
+						//}
 					}
 
 					if(recordResults==null) continue;
 
-					// create a KeyValue event for the parent if needed
+					/* TODO create a KeyValue event for the parent if needed
 					ArrayList<KeyValue> eventToAdd = null;
-					for (KeyValue recordResult : recordResults) {
+					for (ExternalEvent recordResult : recordResults) {
 						//  hierarchy relationship event generation for the parent
 						Object eventObject = recordResult.getValue();
 
@@ -315,7 +337,7 @@ public abstract class FileSourceTask extends SourceTask {
 							// need to create an event to the parent if this one exists
 							// but also update the event newParent with the parent's subscriberID
 							if (parentRelationEvent.getNewParent() == null || parentRelationEvent.getNewParent().equals("")) {
-								continue; /* the event is not used for hierarchy update */
+								continue; //the event is not used for hierarchy update
 							}
 							String parentSubscriberID = resolveSubscriberID(parentRelationEvent.getNewParentAlternateIDName(), parentRelationEvent.getNewParent());
 							if (parentSubscriberID != null) {
@@ -352,7 +374,9 @@ public abstract class FileSourceTask extends SourceTask {
 						recordResults = new ArrayList<>(recordResults); // to avoid an UnsupportedOperationException
 						recordResults.addAll(eventToAdd);
 					}
+					*/
 
+					/* TODO this :
 					for (KeyValue recordResult : recordResults) {
 
 						//  topic
@@ -362,13 +386,14 @@ public abstract class FileSourceTask extends SourceTask {
 						if(result==null) result = new ArrayList<>();
 						int recordNumber = 0;
 						//  sourceRecord
-						result.add(new SourceRecord(/*sourcePartition*/null,/* sourceOffset*/null, recordTopic, recordResult.getKeySchema(), recordResult.getKey(), recordResult.getValueSchema(), recordResult.getValue()));
+						result.add(new SourceRecord(null,null, recordTopic, recordResult.getKeySchema(), recordResult.getKey(), recordResult.getValueSchema(), recordResult.getValue()));
 						// stats
 						recordNumber += 1;
 						updateRecordStatistics(connectorName, taskNumber, recordTopic, recordNumber);
-					}
+					}*/
 
-					if(result!=null && result.size()+inFlightRecords.size() >= pollMaxRecords) break;//enough records, return them
+					result.addAll(recordResults);
+					if(result.size()+inFlightRecords.size() >= pollMaxRecords) break;//enough records, return them
 					continue; // otherwise continue
 
 				}
@@ -377,7 +402,7 @@ public abstract class FileSourceTask extends SourceTask {
 
 				// poll queue if empty
 				if(filesToProcess.isEmpty()){
-					if(result!=null && !result.isEmpty()) break;//return current records before polling for new files
+					if(!result.isEmpty()) break;//return current records before polling for new files
 					pollJobs();
 				}
 
@@ -678,6 +703,7 @@ public abstract class FileSourceTask extends SourceTask {
 	}
 
 
+	/* TODO stats
 	// stats
 
 	private Map<Integer, FileSourceTaskStatistics> allTaskStatistics = new HashMap<Integer, FileSourceTaskStatistics>();
@@ -725,7 +751,7 @@ public abstract class FileSourceTask extends SourceTask {
 			}
 			allTaskStatistics.clear();
 		}
-	}
+	}*/
 
 	public static class KeyValue {
 
@@ -838,26 +864,6 @@ public abstract class FileSourceTask extends SourceTask {
 	}
 	protected Double readDouble(String token, String record) throws IllegalArgumentException {
 		return FileSourceConnector.readDouble(token, record, null);
-	}
-
-
-	// utils resolveSubscriberID
-
-	// child subscriber id resolver
-	protected Pair<String, Integer> resolveSubscriberIDAndTenantID(String alternateIDName, String alternateID) throws InterruptedException {
-		try {
-			return SingletonServices.getSubscriberIDService().getSubscriberIDAndTenantIDBlocking(alternateIDName, alternateID, stopRequestedReference);
-		} catch (SubscriberIDServiceException e) {
-			log.error(this.taskName + " resolveSubscriberID exception", e);
-			// seems bad error if this happens, safer to crash
-			throw new RuntimeException(e);
-		}
-	}
-	// derived
-	protected String resolveSubscriberID(String alternateIDName, String alternateID) throws InterruptedException {
-		Pair<String,Integer> subscriberIDAndTenantID = resolveSubscriberIDAndTenantID(alternateIDName,alternateID);
-		if(subscriberIDAndTenantID==null) return null;
-		return subscriberIDAndTenantID.getFirstElement();
 	}
 
 }

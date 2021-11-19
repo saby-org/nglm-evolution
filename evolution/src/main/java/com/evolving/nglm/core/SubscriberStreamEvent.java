@@ -11,9 +11,10 @@ public interface SubscriberStreamEvent extends SubscriberStreamPriority, Subscri
   enum SubscriberAction
   {
     Standard("standard"),
+    Create("create"),// for evolution engine to create subscriber if not existing
     Delete("delete"), // this is for subscriber manager, evolution engine ignores it
     DeleteImmediate("deleteImediate"), // this is for subscriber manager, evolution engine ignores it
-    Cleanup("cleanup"), // this is for evolution engine, subscriber manager ignores it and only generates a CleanupSubscriber event 
+    Cleanup("cleanup"), // this is for evolution engine, subscriber manager ignores it and only generates a CleanupSubscriber event
     CleanupImmediate("cleanupImmediate"), // this is for evolution engine, subscriber manager ignores it and only generates a CleanupSubscriber event
     Unknown("(unknown)");
     private String externalRepresentation;

@@ -274,7 +274,7 @@ public class TokenUtils
         log.info("After " + HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_TOKEN_CODE + " tries, unable to generate a new token code with pattern " + codeFormat);
         return null;
       }
-    log.info("TokenUtils.generateTokenCode : " + tokenCode);
+    if(log.isTraceEnabled()) log.trace("TokenUtils.generateTokenCode : " + tokenCode);
     DNBOToken token = new DNBOToken(tokenCode, subscriberProfile.getSubscriberID(), tokenType);
     return token;
   }

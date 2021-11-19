@@ -19,6 +19,7 @@ import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.evolving.nglm.evolution.EvolutionEngineEvent;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
@@ -29,7 +30,6 @@ import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.evolution.CallingChannelProperty;
 import com.evolving.nglm.evolution.CatalogCharacteristicUnit;
 import com.evolving.nglm.evolution.CommunicationChannel;
@@ -37,7 +37,6 @@ import com.evolving.nglm.evolution.CriterionField;
 import com.evolving.nglm.evolution.CriterionFieldRetriever;
 import com.evolving.nglm.evolution.CustomerMetaData;
 import com.evolving.nglm.evolution.DNBOMatrixVariable;
-import com.evolving.nglm.evolution.DeliveryManagerAccount;
 import com.evolving.nglm.evolution.DeliveryManagerDeclaration;
 import com.evolving.nglm.evolution.EvolutionEngine;
 import com.evolving.nglm.evolution.EvolutionEngineEventDeclaration;
@@ -64,7 +63,6 @@ import com.evolving.nglm.evolution.SupportedRelationship;
 import com.evolving.nglm.evolution.SupportedTokenCodesFormat;
 import com.evolving.nglm.evolution.SupportedVoucherCodePattern;
 import com.evolving.nglm.evolution.ThirdPartyMethodAccessLevel;
-import com.evolving.nglm.evolution.ToolboxSection;
 import com.evolving.nglm.evolution.EvolutionEngineEventDeclaration.EventRule;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.datacubes.SubscriberProfileDatacubeMetric;
@@ -408,6 +406,7 @@ public class DeploymentCommon
   private static String getCustomerAlternateID;
   private static boolean subscriberGroupLoaderAutoProvision;
   private static Map<String,EvolutionEngineEventDeclaration> evolutionEngineEvents;
+  private static Map<Class<? extends EvolutionEngineEvent>,EvolutionEngineEventDeclaration> evolutionEngineEventsByClass;
   private static Map<String,CriterionField> profileChangeDetectionCriterionFields;
   private static Map<String,CriterionField> profileChangeGeneratedCriterionFields;
   private static boolean enableProfileSegmentChange;
@@ -727,6 +726,11 @@ public class DeploymentCommon
   //
   
   public static Map<String,AlternateID> getAlternateIDs() { return alternateIDs; }
+  public static AlternateID getAlternateID(String id) {
+    AlternateID toRet = getAlternateIDs().get(id);
+    if(toRet==null) throw new RuntimeException("unknwown alternateID "+id);
+    return toRet;
+  }
   public static String getExternalSubscriberID() { return externalSubscriberID; }
   public static String getSubscriberTraceControlAlternateID() { return subscriberTraceControlAlternateID; }
   public static boolean getSubscriberTraceControlAutoProvision() { return subscriberTraceControlAutoProvision; }
@@ -739,6 +743,7 @@ public class DeploymentCommon
   public static String getGetCustomerAlternateID() { return getCustomerAlternateID; }  // EVPRO-99 check for tenant and static
   public static boolean getSubscriberGroupLoaderAutoProvision() { return subscriberGroupLoaderAutoProvision; }
   public static Map<String,EvolutionEngineEventDeclaration> getEvolutionEngineEvents() { return evolutionEngineEvents; }
+  public static EvolutionEngineEventDeclaration getEvolutionEngineEventDeclaration(EvolutionEngineEvent evolutionEngineEvent){ return evolutionEngineEventsByClass.get(evolutionEngineEvent.getClass());}
   public static boolean getEnableProfileSegmentChange() { return enableProfileSegmentChange; }
   public static int getPropensityInitialisationPresentationThreshold() { return propensityInitialisationPresentationThreshold; }
   public static int getPropensityInitialisationDurationInDaysThreshold() { return propensityInitialisationDurationInDaysThreshold; }
@@ -1278,7 +1283,7 @@ public class DeploymentCommon
     for (int i=0; i<deplCriterionFieldValues.size(); i++)
       {
         JSONObject criterionFieldJSON = (JSONObject) deplCriterionFieldValues.get(i);
-        log.info("Decoding profileCriterionField " + criterionFieldJSON.toString());
+        if(log.isDebugEnabled()) log.debug("Decoding profileCriterionField " + criterionFieldJSON.toString());
         CriterionField criterionField = new CriterionField(criterionFieldJSON);
         profileCriterionFields.put(criterionField.getID(), criterionField);
         baseProfileCriterionFields.put(criterionField.getID(), criterionField);
@@ -1309,6 +1314,12 @@ public class DeploymentCommon
     //  profileChangeEvent
     EvolutionEngineEventDeclaration profileChangeEvent = new EvolutionEngineEventDeclaration("profile update", ProfileChangeEvent.class.getName(), getProfileChangeEventTopic(), EventRule.Standard, getProfileChangeGeneratedCriterionFields());
     evolutionEngineEvents.put(profileChangeEvent.getName(), profileChangeEvent);
+
+    // for accessing event declaration from event
+    if(evolutionEngineEvents!=null && !evolutionEngineEvents.isEmpty()){
+      evolutionEngineEventsByClass = new HashMap<>();
+      for(EvolutionEngineEventDeclaration evolutionEngineEventDeclaration:evolutionEngineEvents.values()) evolutionEngineEventsByClass.put(evolutionEngineEventDeclaration.getEventClass(),evolutionEngineEventDeclaration);
+    }
 
     extendedProfileCriterionFields = jsonReader.decodeMapFromArray(CriterionField.class, "extendedProfileCriterionFields");
     presentationCriterionFields = jsonReader.decodeMapFromArray(CriterionField.class, "presentationCriterionFields");
@@ -2045,8 +2056,8 @@ public class DeploymentCommon
         // merge both
         //
         JSONObject brutJSONRoot = JSONUtilities.jsonMergerOverrideOrAdd(productJson,custoJson,(product,custo) -> product.get("id")!=null && custo.get("id")!=null && product.get("id").equals(custo.get("id")));//json object in array match thanks to "id" field only
-        // the final running conf could be so hard to understand from all deployment files, we have to provide it to support team, hence the info log, even if big :
-        log.info("LOADED BRUT CONF : "+brutJSONRoot.toJSONString());
+        log.info("json conf loaded, turn on DEBUG on "+log.getName()+" if you want the final merged result");
+        if(log.isDebugEnabled()) log.debug("LOADED BRUT CONF : "+brutJSONRoot.toJSONString());
         return brutJSONRoot;
 
       }

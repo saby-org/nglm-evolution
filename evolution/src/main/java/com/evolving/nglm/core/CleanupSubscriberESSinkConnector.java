@@ -6,6 +6,9 @@
 
 package com.evolving.nglm.core;
 
+import com.evolving.nglm.evolution.SingletonServices;
+import com.evolving.nglm.evolution.event.MapperUtils;
+import com.evolving.nglm.evolution.event.SubscriberIDAlternateID;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.config.ConfigDef;
@@ -46,6 +49,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class CleanupSubscriberESSinkConnector extends SinkConnector
 {
@@ -60,6 +64,8 @@ public class CleanupSubscriberESSinkConnector extends SinkConnector
   //
 
   protected static final Logger log = LoggerFactory.getLogger(CleanupSubscriberESSinkConnector.class);
+
+  private static final AtomicBoolean stopRequested = new AtomicBoolean(false);
   
   //
   //  configuration
@@ -220,6 +226,7 @@ public class CleanupSubscriberESSinkConnector extends SinkConnector
 
   @Override public void stop()
   {
+    stopRequested.set(true);
     log.info("{} -- Connector.stop()", connectorName);
   }
 
@@ -464,6 +471,7 @@ public class CleanupSubscriberESSinkConnector extends SinkConnector
       else
         log.trace("{} -- Task.put() - {} records.", connectorName, sinkRecords.size());
       List<String> subscriberIDs = new ArrayList<String>();
+      List<SubscriberIDAlternateID> subscriberIDAlternateIDs = new ArrayList<>();
       for (SinkRecord sinkRecord : sinkRecords)
         {
           log.debug("Cleanup  -- Task.put() - records. 1");
@@ -471,11 +479,31 @@ public class CleanupSubscriberESSinkConnector extends SinkConnector
           Schema cleanupSubscriberValueSchema = sinkRecord.valueSchema();
           CleanupSubscriber cleanupSubscriber = CleanupSubscriber.unpack(new SchemaAndValue(cleanupSubscriberValueSchema, cleanupSubscriberValue));
           log.debug("Cleanup  -- Task.put() - records. 1 addd " + cleanupSubscriber.getSubscriberID() + " Cleanup " + cleanupSubscriber.toString());
-          if(Boolean.TRUE.equals(cleanupSubscriber.getCleanExtESReady()))
+
+          // sorry for that hack, we delete redis alternateIDs from this connector as well
+          if(cleanupSubscriber.getSubscriberAction()==SubscriberStreamEvent.SubscriberAction.Delete)
+            {
+              if(cleanupSubscriber.getAlternateIDs()!=null && !cleanupSubscriber.getAlternateIDs().isEmpty())
+                {
+                  for(Map.Entry<String,String> entry:cleanupSubscriber.getAlternateIDs().entrySet()){
+                    subscriberIDAlternateIDs.add(new SubscriberIDAlternateID(Long.valueOf(cleanupSubscriber.getSubscriberID()),entry.getKey(),entry.getValue()));
+                  }
+                }
+            }
+
+          if(cleanupSubscriber.getSubscriberAction()==SubscriberStreamEvent.SubscriberAction.DeleteImmediate && Boolean.TRUE.equals(cleanupSubscriber.getCleanExtESReady()))
             {
               subscriberIDs.add(cleanupSubscriber.getSubscriberID());
             }
         }
+
+      try{
+        if(!subscriberIDAlternateIDs.isEmpty()) MapperUtils.delete(subscriberIDAlternateIDs, SingletonServices.getSubscriberIDService(),stopRequested);
+      }catch (SubscriberIDService.SubscriberIDServiceException e){
+        throw new RuntimeException(e);
+      }catch (InterruptedException e){
+        log.info("Cleanup  -- Task.put() interrupted");
+      }
 
       /****************************************
       *
@@ -545,7 +573,7 @@ public class CleanupSubscriberESSinkConnector extends SinkConnector
       *  update statistics
       *
       ****************************************/
-      log.info("Cleanup  -- Task.put() - records. 6");
+      log.debug("Cleanup  -- Task.put() - records. 6");
       updatePutCount(connectorName, taskNumber, 1);
       updateRecordCount(connectorName, taskNumber, (subscriberIDs.size() > 0 ? subscriberIDs.size() : 1)); // to avoid reading the same event if subscriberIDs is empty...
     }
