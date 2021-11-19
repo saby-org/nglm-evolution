@@ -1220,7 +1220,7 @@ public class DeploymentCommon
     	int periodROI = 4;
     	try {
     		periodROI = subscriberProfileDatacubeMetricConfigurationJsonReader.decodeInteger("periodROI");
-    	} catch (JSONUtilitiesException e) {
+    	} catch (JSONUtilities.JSONUtilitiesException e) {
     		log.warn("not 'subscriberProfileDatacubeMetric' settings. 'periodROI' field is null. Put default value = 4");
             periodROI = 4;
     	}
@@ -1232,7 +1232,7 @@ public class DeploymentCommon
       String timeUnitROI = "week";
       try{
     	  subscriberProfileDatacubeMetricConfigurationJsonReader.decodeString("timeUnitROI");
-      } catch (JSONUtilitiesException e) {
+      } catch (JSONUtilities.JSONUtilitiesException e) {
   		log.warn("not 'subscriberProfileDatacubeMetric' settings. timeUnitROI' field is null. Put default value = week");
   		timeUnitROI = "week";
       }
