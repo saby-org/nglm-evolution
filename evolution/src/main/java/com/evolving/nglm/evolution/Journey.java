@@ -27,6 +27,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
 import org.apache.kafka.common.errors.SerializationException;
@@ -4630,55 +4631,62 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
   private String getGUIManagedObjectIDFromDynamicCriterion(EvaluationCriterion criteria, String objectType, List<GUIService> guiServiceList)
   {
     String result = null;
-    switch (objectType.toLowerCase())
+    try
     {
-      case "loyaltyprogrampoints":
-        Pattern fieldNamePattern = Pattern.compile("^loyaltyprogram\\.([^.]+)\\.(.+)$");
-        Matcher fieldNameMatcher = fieldNamePattern.matcher(criteria.getCriterionField().getID());
-        if (fieldNameMatcher.find())
-          {
-            String loyaltyProgramID = fieldNameMatcher.group(1);
-            LoyaltyProgramService loyaltyProgramService = (LoyaltyProgramService) guiServiceList.stream().filter(srvc -> srvc.getClass() == LoyaltyProgramService.class).findFirst().orElse(null);
-            if (loyaltyProgramService != null)
-              {
-                GUIManagedObject uncheckedLoyalty = loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID);
-                if (uncheckedLoyalty !=  null && uncheckedLoyalty.getAccepted() && ((LoyaltyProgram) uncheckedLoyalty).getLoyaltyProgramType() == LoyaltyProgramType.POINTS) result = uncheckedLoyalty.getGUIManagedObjectID();
-              }
-          }
-        break;
-        
-      case "loyaltyprogramchallenge":
-        fieldNamePattern = Pattern.compile("^loyaltyprogram\\.([^.]+)\\.(.+)$");
-        fieldNameMatcher = fieldNamePattern.matcher(criteria.getCriterionField().getID());
-        if (fieldNameMatcher.find())
-          {
-            String loyaltyProgramID = fieldNameMatcher.group(1);
-            LoyaltyProgramService loyaltyProgramService = (LoyaltyProgramService) guiServiceList.stream().filter(srvc -> srvc.getClass() == LoyaltyProgramService.class).findFirst().orElse(null);
-            if (loyaltyProgramService != null)
-              {
-                GUIManagedObject uncheckedLoyalty = loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID);
-                if (uncheckedLoyalty !=  null && uncheckedLoyalty.getAccepted() && ((LoyaltyProgram) uncheckedLoyalty).getLoyaltyProgramType() == LoyaltyProgramType.CHALLENGE) result = uncheckedLoyalty.getGUIManagedObjectID();
-              }
-          }
-        break;
-        
-      case "loyaltyprogrammission":
-        fieldNamePattern = Pattern.compile("^loyaltyprogram\\.([^.]+)\\.(.+)$");
-        fieldNameMatcher = fieldNamePattern.matcher(criteria.getCriterionField().getID());
-        if (fieldNameMatcher.find())
-          {
-            String loyaltyProgramID = fieldNameMatcher.group(1);
-            LoyaltyProgramService loyaltyProgramService = (LoyaltyProgramService) guiServiceList.stream().filter(srvc -> srvc.getClass() == LoyaltyProgramService.class).findFirst().orElse(null);
-            if (loyaltyProgramService != null)
-              {
-                GUIManagedObject uncheckedLoyalty = loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID);
-                if (uncheckedLoyalty !=  null && uncheckedLoyalty.getAccepted() && ((LoyaltyProgram) uncheckedLoyalty).getLoyaltyProgramType() == LoyaltyProgramType.MISSION) result = uncheckedLoyalty.getGUIManagedObjectID();
-              }
-          }
-        break;
+      switch (objectType.toLowerCase())
+      {
+        case "loyaltyprogrampoints":
+          Pattern fieldNamePattern = Pattern.compile("^loyaltyprogram\\.([^.]+)\\.(.+)$");
+          Matcher fieldNameMatcher = fieldNamePattern.matcher(criteria.getCriterionField().getID());
+          if (fieldNameMatcher.find())
+            {
+              String loyaltyProgramID = fieldNameMatcher.group(1);
+              LoyaltyProgramService loyaltyProgramService = (LoyaltyProgramService) guiServiceList.stream().filter(srvc -> srvc.getClass() == LoyaltyProgramService.class).findFirst().orElse(null);
+              if (loyaltyProgramService != null)
+                {
+                  GUIManagedObject uncheckedLoyalty = loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID);
+                  if (uncheckedLoyalty !=  null && uncheckedLoyalty.getAccepted() && ((LoyaltyProgram) uncheckedLoyalty).getLoyaltyProgramType() == LoyaltyProgramType.POINTS) result = uncheckedLoyalty.getGUIManagedObjectID();
+                }
+            }
+          break;
+          
+        case "loyaltyprogramchallenge":
+          fieldNamePattern = Pattern.compile("^loyaltyprogram\\.([^.]+)\\.(.+)$");
+          fieldNameMatcher = fieldNamePattern.matcher(criteria.getCriterionField().getID());
+          if (fieldNameMatcher.find())
+            {
+              String loyaltyProgramID = fieldNameMatcher.group(1);
+              LoyaltyProgramService loyaltyProgramService = (LoyaltyProgramService) guiServiceList.stream().filter(srvc -> srvc.getClass() == LoyaltyProgramService.class).findFirst().orElse(null);
+              if (loyaltyProgramService != null)
+                {
+                  GUIManagedObject uncheckedLoyalty = loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID);
+                  if (uncheckedLoyalty !=  null && uncheckedLoyalty.getAccepted() && ((LoyaltyProgram) uncheckedLoyalty).getLoyaltyProgramType() == LoyaltyProgramType.CHALLENGE) result = uncheckedLoyalty.getGUIManagedObjectID();
+                }
+            }
+          break;
+          
+        case "loyaltyprogrammission":
+          fieldNamePattern = Pattern.compile("^loyaltyprogram\\.([^.]+)\\.(.+)$");
+          fieldNameMatcher = fieldNamePattern.matcher(criteria.getCriterionField().getID());
+          if (fieldNameMatcher.find())
+            {
+              String loyaltyProgramID = fieldNameMatcher.group(1);
+              LoyaltyProgramService loyaltyProgramService = (LoyaltyProgramService) guiServiceList.stream().filter(srvc -> srvc.getClass() == LoyaltyProgramService.class).findFirst().orElse(null);
+              if (loyaltyProgramService != null)
+                {
+                  GUIManagedObject uncheckedLoyalty = loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID);
+                  if (uncheckedLoyalty !=  null && uncheckedLoyalty.getAccepted() && ((LoyaltyProgram) uncheckedLoyalty).getLoyaltyProgramType() == LoyaltyProgramType.MISSION) result = uncheckedLoyalty.getGUIManagedObjectID();
+                }
+            }
+          break;
 
-      default:
-        break;
+        default:
+          break;
+      }
+    }
+  catch (PatternSyntaxException e)
+    {
+      if(log.isWarnEnabled()) log.warn("PatternSyntaxException Description: {}, Index: ", e.getDescription(), e.getIndex());
     }
     return result;
   }
