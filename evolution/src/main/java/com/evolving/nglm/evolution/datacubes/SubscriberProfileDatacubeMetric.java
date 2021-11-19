@@ -47,6 +47,11 @@ public class SubscriberProfileDatacubeMetric extends DeploymentManagedObject
     super(jsonRoot);
     this.yesterdayESField = JSONUtilities.decodeString(jsonRoot, "yesterdayESField", true);
     this.todayESField = JSONUtilities.decodeString(jsonRoot, "todayESField", true);
-    this.isMetricROI = JSONUtilities.decodeBoolean(jsonRoot, "metricROI", true);
+    try { // TODO this try/catch is to hide EVPRO-1172
+      this.isMetricROI = JSONUtilities.decodeBoolean(jsonRoot, "metricROI", true);      
+    }
+    catch (Exception e) {
+      this.isMetricROI = false;
+    }
   }
 }
