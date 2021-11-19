@@ -1227,7 +1227,7 @@ public class Offer extends GUIManagedObject implements StockableItem
     } 
     catch (PatternSyntaxException e)
     {
-      if (log.isWarnEnabled()) log.warn("PatternSyntaxException Description: {}, Index: ", e.getDescription(), e.getIndex());
+      if(log.isTraceEnabled()) log.trace("PatternSyntaxException Description: {}, Index: ", e.getDescription(), e.getIndex());
     }
     
     return result;
