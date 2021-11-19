@@ -37,8 +37,8 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
   private static final String DATA_ES_INDEX = "subscriberprofile";
   private static final String FILTER_STRATUM_PREFIX = "stratum.";
   private static final String METRIC_PREFIX = "metric_";
-  private static final String STATUS_PREVIOUS = "status.previous.";
-  private static final String UCG_PREVIOUS = "ucg.previous.";
+  private static final String STATUS_PREVIOUS = "status_previous";
+  private static final String UCG_PREVIOUS = "ucg_previous";
 
   /*****************************************
   *
@@ -116,6 +116,22 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
     //EVPRO-1172: add filter.status.previous and filter.ucg.previous
     this.filterFields.add(STATUS_PREVIOUS);
     this.filterFields.add(UCG_PREVIOUS);
+    
+    //Add status.previous and ucg.previous
+    int periodROI = Deployment.getSubscriberProfileDatacubeConfiguration().getPeriodROI();
+    String unitTimeROI = Deployment.getSubscriberProfileDatacubeConfiguration().getTimeUnitROI();
+    //diff = currentDate-period
+    Date diffPeriod = null;
+    Date now = SystemTime.getCurrentTime();
+    if(unitTimeROI.equals("day")) {
+    	diffPeriod = RLMDateUtils.addDays(now, -1*periodROI, this.getTimeZone());
+    } if(unitTimeROI.equals("week")) {
+    	diffPeriod = RLMDateUtils.addWeeks(now, -1*periodROI, this.getTimeZone());
+    } if(unitTimeROI.equals("month")) {
+    	diffPeriod = RLMDateUtils.addMonths(now, -1*periodROI, this.getTimeZone());
+    } 
+    
+    
 	    
     this.segmentationDimensionList.update();
     this.filterFields = new ArrayList<String>();
@@ -154,11 +170,6 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
         filters.put(newFieldName, segmentationDimensionList.getSegmentDisplay(dimensionID, segmentID, fieldName));
       }
     
-    //
-    // subscriber previous status
-    //
-    filters.put(STATUS_PREVIOUS, STATUS_PREVIOUS);
-    filters.put(UCG_PREVIOUS, UCG_PREVIOUS);
   }
 
   /*****************************************
@@ -189,13 +200,7 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
           + " } return left;", Collections.emptyMap()));
       metricAggregations.add(customMetricAgg);
     }
-    
-    //Add status.previous and ucg.previous
-    int periodROI = Deployment.getSubscriberProfileDatacubeConfiguration().getPeriodROI();
-    String unitTimeROI = Deployment.getSubscriberProfileDatacubeConfiguration().getTimeUnitROI();
-    //diff = currentDate-period
-    Date now = SystemTime.getCurrentTime();
-    Date diff = RLMDateUtils.addDays(now, -1, this.getTimeZone());
+     
         
     return metricAggregations;
   }

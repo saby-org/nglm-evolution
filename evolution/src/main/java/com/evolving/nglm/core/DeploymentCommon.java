@@ -1212,17 +1212,33 @@ public class DeploymentCommon
       // subscriberProfileDatacubeMetrics are therefore disabled
     	subscriberProfileDatacubeMetricConfiguration  = new SubscriberProfileDatacubeMetricConfiguration();
     } else {
-      int periodROI = subscriberProfileDatacubeMetricConfigurationJsonReader.decodeInteger("periodROI");
+    	int periodROI = 4;
+    	try {
+    		periodROI = subscriberProfileDatacubeMetricConfigurationJsonReader.decodeInteger("periodROI");
+    	} catch (JSONUtilitiesException e) {
+    		log.warn("not 'subscriberProfileDatacubeMetric' settings. 'periodROI' field is null. Put default value = 4");
+            periodROI = 4;
+    	}
       if(periodROI < 1) {
     	log.warn("Bad 'subscriberProfileDatacubeMetric' settings. 'periodROI' field cannot be negative or zero. Put default value = 4");
         periodROI = 4;
       }
       
-      String timeUnitROI = subscriberProfileDatacubeMetricConfigurationJsonReader.decodeString("timeUnitROI");
+      String timeUnitROI = "week";
+      try{
+    	  subscriberProfileDatacubeMetricConfigurationJsonReader.decodeString("timeUnitROI");
+      } catch (JSONUtilitiesException e) {
+  		log.warn("not 'subscriberProfileDatacubeMetric' settings. timeUnitROI' field is null. Put default value = week");
+  		timeUnitROI = "week";
+      }
       if(timeUnitROI.isEmpty()) {
     	log.warn("Bad 'subscriberProfileDatacubeMetric' settings. 'timeUnitROI' field is empty. Put default value = week");
     	timeUnitROI="week"; //default value="week"
       }
+      if(!(timeUnitROI.equals("day") || timeUnitROI.equals("week") || timeUnitROI.equals("month") )) {
+      	log.warn("Bad 'subscriberProfileDatacubeMetric' settings. 'timeUnitROI' will be day or week or month. Put default value = week");
+      	timeUnitROI="week"; //default value="week"
+        }
       Map<String,SubscriberProfileDatacubeMetric> subscriberProfileDatacubeMetricDeclarations = subscriberProfileDatacubeMetricConfigurationJsonReader.decodeMapFromArray(SubscriberProfileDatacubeMetric.class, "metrics");
       if(subscriberProfileDatacubeMetricDeclarations.isEmpty()) { // subscriberProfileDatacubeMetric are therefore disabled
     	  subscriberProfileDatacubeMetricConfiguration = new SubscriberProfileDatacubeMetricConfiguration();
