@@ -28567,7 +28567,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                             if (!found) throw new GUIManagerException("bad node parameter value for", name);
                           }
                       }
-                  }
+                  } 
               }
           }
       }
