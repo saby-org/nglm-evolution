@@ -21,7 +21,7 @@
   "links": [],
   "panels": [
     {
-      "datasource": "Tdr",
+      "datasource": "TDR",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -115,7 +115,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": "Tdr",
+      "datasource": "TDR",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -227,7 +227,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": "Tdr",
+      "datasource": "TDR",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -342,7 +342,7 @@
       "type": "bargauge"
     },
     {
-      "datasource": "Tdr",
+      "datasource": "TDR",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -471,7 +471,7 @@
       "type": "stat"
     },
     {
-      "datasource": "Tdr",
+      "datasource": "TDR",
       "fieldConfig": {
         "defaults": {
           "color": {
