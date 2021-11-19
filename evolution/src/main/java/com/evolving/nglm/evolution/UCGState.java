@@ -20,6 +20,7 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Timestamp;
 
+import java.io.Console;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
@@ -192,9 +193,9 @@ public class UCGState implements ReferenceDataValue<String>
     this.evaluationDate = ucgState.evaluationDate;
   }
 
-  private double calculateTargetRatio()
+  private Double calculateTargetRatio()
   {
-    Double targetRatio = null;
+    Double targetRatio;
     if(ucgRule.getCalculationType() == UCGRuleCalculationType.Percent)
     {
       targetRatio = ucgRule.getSize() / 100.0d;
@@ -326,7 +327,14 @@ public class UCGState implements ReferenceDataValue<String>
     UCGRule ucgRule = UCGRule.unpack(new SchemaAndValue(schema.field("ucgRule").schema(), valueStruct.get("ucgRule")));
     Set<UCGGroup> ucgGroups = unpackUCGGroups(schema.field("ucgGroups").schema(), valueStruct.get("ucgGroups"));
     Date evaluationDate = (Date) valueStruct.get("evaluationDate");
-    Double targetRatio = (schemaVersion >= 2) ? valueStruct.getFloat64("targetRatio") : 0;
+    // this was not working when targetRatio is null. Throwing null pointer exception
+    //Double targetRatio = schemaVersion >= 2 ? valueStruct.getFloat64("targetRatio") : 0.0d;
+    //changed with bellow one
+    Double targetRatio = 0.0d;
+    if(schemaVersion >= 2)
+    {
+      targetRatio = valueStruct.getFloat64("targetRatio");
+    }
     
     //
     //  return
