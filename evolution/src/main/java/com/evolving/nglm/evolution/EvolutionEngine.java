@@ -3920,8 +3920,7 @@ public class EvolutionEngine
                 if (!removeFromUCG && shiftProbability < 0 && elasticShiftProbability < 0 && Deployment.getUcgQuickRemovalAtRefresh())
                 {
                   //verify if subscriber stayed eligible no of days to be removed (different than refresh days period)
-                  if (RLMDateUtils.addDays(context.getSubscriberState().getUCGRefreshDay(), Deployment.getMinDaysInUCGForQuickRemoval(), Deployment.getDeployment(tenantID).getTimeZone()).compareTo(now)
-                      <= 0)
+                  if (RLMDateUtils.addDays(context.getSubscriberState().getUCGRefreshDay(), Deployment.getMinDaysInUCGForQuickRemoval(), Deployment.getDeployment(tenantID).getTimeZone()).compareTo(now) <= 0)
                   {
                     if (Deployment.getUcgQuickOverloadRemoval())
                     {
