@@ -611,7 +611,7 @@
       "bars": true,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Odr",
+      "datasource": "ODR",
       "fieldConfig": {
         "defaults": {},
         "overrides": []
@@ -738,7 +738,7 @@
       "bars": true,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Odr",
+      "datasource": "ODR",
       "fieldConfig": {
         "defaults": {},
         "overrides": []
@@ -862,7 +862,7 @@
       }
     },
     {
-      "datasource": "Odr",
+      "datasource": "ODR",
       "fieldConfig": {
         "defaults": {
           "mappings": [],

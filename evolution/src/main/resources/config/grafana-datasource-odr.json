@@ -2,7 +2,7 @@
   "apiVersion": 1,
   "datasources": [
     {
-      "name": "Odr",
+      "name": "ODR",
       "org_id": null,
       "type": "elasticsearch",
       "access": "proxy",
