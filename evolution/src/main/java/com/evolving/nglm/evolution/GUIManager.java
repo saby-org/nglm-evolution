@@ -28247,42 +28247,45 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                 String id = JSONUtilities.decodeString(parameterJSON, "id", true);
                 String name = JSONUtilities.decodeString(parameterJSON, "name", id);
                 JSONObject parametersJSON = (JSONObject) nodesJSON.get(journeyNode.getNodeID()).stream().filter(paramJson -> id.equals(JSONUtilities.decodeString((JSONObject) paramJson, "parameterName", false))).findFirst().orElse(new JSONObject());
-                JSONObject parameterValueJSON = JSONUtilities.decodeJSONObject(parametersJSON, "value", new JSONObject());
-                boolean isFixedValueType = JSONUtilities.decodeString(parameterValueJSON, "valueType", "").equals("simple"); // valueType is only used by GUI but here we need to know the value is fixed or set from a drop down
-                
-                //
-                // availableValues
-                //
-                
-                JSONArray availableValuesJSON = JSONUtilities.decodeJSONArray(parameterJSON, "availableValues", false);
-                JSONArray expressionValuesJSON = JSONUtilities.decodeJSONArray(parameterJSON, "expressionFields", false);
-                boolean shouldBeValidated = !isFixedValueType && (availableValuesJSON != null || expressionValuesJSON != null);
-                if (shouldBeValidated)
+                if (parametersJSON.get("value") instanceof JSONObject)
                   {
-                    JSONArray availableValuesJSONArray = new JSONArray();
-                    if (availableValuesJSON != null) availableValuesJSONArray.addAll(availableValuesJSONArray);
-                    if (expressionValuesJSON != null) availableValuesJSONArray.addAll(expressionValuesJSON);
-                    List<JSONObject> availableValues = evaluateAvailableValues(availableValuesJSONArray, now, journey.getTenantID());
-                    Object nodeParamObjVal = journeyNode.getNodeParameters().get(id);
-                    boolean found = false;
-                    Object actualVal = null;
-                    if (nodeParamObjVal instanceof ParameterExpression && ((ParameterExpression) nodeParamObjVal).getExpression() instanceof ConstantExpression)
+                    JSONObject parameterValueJSON = JSONUtilities.decodeJSONObject(parametersJSON, "value", new JSONObject());
+                    boolean isFixedValueType = JSONUtilities.decodeString(parameterValueJSON, "valueType", "").equals("simple"); // valueType is only used by GUI but here we need to know the value is fixed or set from a drop down
+                    
+                    //
+                    // availableValues
+                    //
+                    
+                    JSONArray availableValuesJSON = JSONUtilities.decodeJSONArray(parameterJSON, "availableValues", false);
+                    JSONArray expressionValuesJSON = JSONUtilities.decodeJSONArray(parameterJSON, "expressionFields", false);
+                    boolean shouldBeValidated = !isFixedValueType && (availableValuesJSON != null || expressionValuesJSON != null);
+                    if (shouldBeValidated)
                       {
-                        actualVal  = ((ParameterExpression) nodeParamObjVal).getExpression().evaluateConstant(); // context vars are ParameterExpression but not constant so value will be null - no need to do seperate check for context vars.
-                      }
-                    else if (nodeParamObjVal instanceof String)
-                      {
-                        actualVal = nodeParamObjVal;
-                      }
-                    if (actualVal != null)
-                      {
-                        for (JSONObject jsn : availableValues)
+                        JSONArray availableValuesJSONArray = new JSONArray();
+                        if (availableValuesJSON != null) availableValuesJSONArray.addAll(availableValuesJSON);
+                        if (expressionValuesJSON != null) availableValuesJSONArray.addAll(expressionValuesJSON);
+                        List<JSONObject> availableValues = evaluateAvailableValues(availableValuesJSONArray, now, journey.getTenantID());
+                        Object nodeParamObjVal = journeyNode.getNodeParameters().get(id);
+                        boolean found = false;
+                        Object actualVal = null;
+                        if (nodeParamObjVal instanceof ParameterExpression && ((ParameterExpression) nodeParamObjVal).getExpression() instanceof ConstantExpression)
                           {
-                            Object idVal = jsn.get("id");
-                            found = actualVal.equals(idVal);
-                            if (found) break;
+                            actualVal  = ((ParameterExpression) nodeParamObjVal).getExpression().evaluateConstant(); // context vars are ParameterExpression but not constant so value will be null - no need to do seperate check for context vars.
                           }
-                        if (!found) throw new GUIManagerException("bad node parameter value for", name);
+                        else if (nodeParamObjVal instanceof String)
+                          {
+                            actualVal = nodeParamObjVal;
+                          }
+                        if (actualVal != null)
+                          {
+                            for (JSONObject jsn : availableValues)
+                              {
+                                Object idVal = jsn.get("id");
+                                found = actualVal.equals(idVal);
+                                if (found) break;
+                              }
+                            if (!found) throw new GUIManagerException("bad node parameter value for", name);
+                          }
                       }
                   }
               }
