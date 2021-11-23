@@ -679,7 +679,7 @@ public class SubscriberIDService
     if(subscriberID==null||subscriberID.getFirstElement()==null) return null;//no mapping entry return null
     Integer tenantID = subscriberID.getSecondElement();
     if(tenantID==null) tenantID=1;//no tenantID stored, default to 1 (migration to "multi-tenancy" case)
-    return new Pair<>(subscriberID.getFirstElement()+"",1);
+    return new Pair<>(subscriberID.getFirstElement()+"",tenantID);
   }
 
   // same but blocking call if redis issue
