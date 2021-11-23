@@ -76,12 +76,12 @@ public abstract class ExternalEvent implements EvolutionEngineEvent {
 	}
 
 	// the common schema builder to be used by sub-classes, we put all in a sub schema field, to avoid any overlap
-	private static final SchemaBuilder externalEventSchemaBuilder;
-	static {
-		externalEventSchemaBuilder = SchemaBuilder.struct();
+	// can not be static singleton as will be called by several sub-classes for different final schema
+	public static SchemaBuilder struct(){
+		SchemaBuilder externalEventSchemaBuilder = SchemaBuilder.struct();
 		externalEventSchemaBuilder.field("evolution_event_fields", productFieldSchema).optional();
+		return externalEventSchemaBuilder;
 	}
-	public static SchemaBuilder struct(){return externalEventSchemaBuilder;}
 	// the common pack to be used by sub-classes
 	public static void packExternalEvent(Struct struct, ExternalEvent externalEvent) {
 		if(externalEvent.getSubscriberID()!=null) struct.put("evolution_event_fields", packProductFields(externalEvent));
