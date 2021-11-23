@@ -5492,11 +5492,11 @@ public class ThirdPartyManager
                 eventClass = (Class<? extends SubscriberStreamOutput>) Class.forName(eventDeclaration.getEventClassName());
                 if(AutoProvisionSubscriberStreamEvent.class.isAssignableFrom(eventClass)) 
                   {
-                    constructor = eventClass.getConstructor(new Class<?>[]{String.class, Date.class, JSONObject.class, int.class});
+                    constructor = eventClass.getConstructor(new Class<?>[]{String.class, JSONObject.class, int.class});
                   }
                 else 
                   {
-                    constructor = eventClass.getConstructor(new Class<?>[]{String.class, Date.class, JSONObject.class });
+                    constructor = eventClass.getConstructor(new Class<?>[]{String.class, JSONObject.class });
                   }
                 JSON3rdPartyEventsConstructor.put(eventName, constructor);
               }

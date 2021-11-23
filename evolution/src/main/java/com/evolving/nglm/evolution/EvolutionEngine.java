@@ -9867,11 +9867,11 @@ public class EvolutionEngine
       {
         if(isAutoProvisionSubscriberStreamEvent = AutoProvisionSubscriberStreamEvent.class.isAssignableFrom(eventDeclaration.getEventClass()))
           {
-            eventConstructor = eventDeclaration.getEventClass().getConstructor(new Class<?>[]{String.class, Date.class, JSONObject.class, int.class});
+            eventConstructor = eventDeclaration.getEventClass().getConstructor(new Class<?>[]{String.class, JSONObject.class, int.class});
           }
         else
           {
-            eventConstructor = eventDeclaration.getEventClass().getConstructor(new Class<?>[]{String.class, Date.class, JSONObject.class });
+            eventConstructor = eventDeclaration.getEventClass().getConstructor(new Class<?>[]{String.class, JSONObject.class });
           }
       }
     catch (Exception e)
