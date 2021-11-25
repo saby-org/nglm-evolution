@@ -11,6 +11,9 @@ import com.evolving.nglm.evolution.SingletonServices;
 import com.evolving.nglm.evolution.UpdateParentRelationshipEvent;
 import com.evolving.nglm.evolution.event.ExternalEvent;
 import com.evolving.nglm.evolution.event.MapperUtils;
+import com.evolving.nglm.evolution.statistics.CounterStat;
+import com.evolving.nglm.evolution.statistics.StatBuilder;
+import com.evolving.nglm.evolution.statistics.StatsBuilders;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -20,7 +23,6 @@ import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.WakeupException;
-import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
 import org.json.simple.JSONObject;
@@ -70,6 +72,9 @@ public abstract class FileSourceTask extends SourceTask {
 	private String errorTopic = null;
 	private File archiveDirectory = null;
 	private int taskNumber;
+	private StatBuilder<CounterStat> fileStats;// count number of files processed
+	private StatBuilder<CounterStat> lineStats;// count number of lines in file processed
+	private StatBuilder<CounterStat> eventStats;// count number of events produced
 
 	//  state
 	private String taskName;
@@ -106,6 +111,9 @@ public abstract class FileSourceTask extends SourceTask {
 		connectorName = taskConfig.get("connectorName");
 		taskNumber = parseIntegerConfig(taskConfig.get("taskNumber"));
 		taskName = connectorName+"-task-"+taskNumber;
+		fileStats = StatsBuilders.getEvolutionCounterStatisticsBuilder("cdrfile",taskName).withLabel(StatsBuilders.LABEL.name.name(), connectorName);
+		lineStats = StatsBuilders.getEvolutionCounterStatisticsBuilder("cdrline",taskName).withLabel(StatsBuilders.LABEL.name.name(), connectorName);
+		eventStats = StatsBuilders.getEvolutionCounterStatisticsBuilder("cdrevent",taskName);
 		log.info("{} -- Task.start() START", taskName);
 
 		directory = new File(taskConfig.get("directory"));
@@ -210,6 +218,9 @@ public abstract class FileSourceTask extends SourceTask {
 			try{
 				for(ExternalEvent externalEvent:MapperUtils.resolve(externalEvents, SingletonServices.getSubscriberIDService(),stopRequestedReference)){
 					results.add(externalEvent.toSourceRecord());
+					eventStats.withLabel(StatsBuilders.LABEL.name.name(), externalEvent.getEventName())
+							.withLabel(StatsBuilders.LABEL.status.name(), StatsBuilders.STATUS.ok.name())
+							.getStats().increment();
 				}
 			}catch (SubscriberIDServiceException e){
 				//TODO to check what to do, we should make sure we never have this
@@ -292,10 +303,12 @@ public abstract class FileSourceTask extends SourceTask {
 				if (currentFile != null) {
 
 					String record;
+					boolean fileError = false;
 					try {
 						record = reader.readLine();
 						preCommitActions.add(new IncrementFilePosition(currentFile));
 					} catch (IOException e) {
+						fileError = true;
 						log.info(taskName+" -- nextSourceRecords bufferedReader", e);
 						record = null;
 					}
@@ -303,7 +316,7 @@ public abstract class FileSourceTask extends SourceTask {
 					if (record == null) {
 						log.debug("{} -- nextSourceRecords closing processed file {}", taskName, currentFile.getName());
 						closeCurrentFile();
-						//updateFilesProcessed(connectorName, taskNumber, 1);
+						fileStats.withLabel(StatsBuilders.LABEL.status.name(), fileError ? StatsBuilders.STATUS.ko.name() : StatsBuilders.STATUS.ok.name()).getStats().increment();
 						continue;
 					}
 
@@ -311,19 +324,24 @@ public abstract class FileSourceTask extends SourceTask {
 
 					//  parse
 					List<ExternalEvent> recordResults=null;
+					boolean recordsError = false;
 					try {
 						recordResults = processRecord(record.trim());// custom implementation call
 					} catch (Exception e) { // we usually avoid crash on custom code calls
-						//updateErrorRecords(connectorName, taskNumber, 1);
+						recordsError=true;
+						lineStats.withLabel(StatsBuilders.LABEL.status.name(), StatsBuilders.STATUS.ko.name()).getStats().increment();
 						// if FileSourceTaskException, that is something expected by custom code, so otherwise is probably bad error
 						if (!(e instanceof FileSourceTaskException)) log.error(taskName+" -- nextSourceRecords unexpected exception processing record: " + record, e);
-						//if (errorTopic != null) {
-						//	ErrorRecord errorRecord = new ErrorRecord(record.trim(), SystemTime.getCurrentTime(), currentFile.getName(), e.getMessage());
-						//	recordResults = Collections.singletonList(new KeyValue("error", null, null, ErrorRecord.schema(), ErrorRecord.pack(errorRecord)));
-						//}
 					}
 
-					if(recordResults==null) continue;
+					if(recordResults==null){
+						if(!recordsError){
+							lineStats.withLabel(StatsBuilders.LABEL.status.name(), StatsBuilders.STATUS.ignored.name()).getStats().increment();
+						}
+						continue;
+					}
+
+					lineStats.withLabel(StatsBuilders.LABEL.status.name(), StatsBuilders.STATUS.ok.name()).getStats().increment();
 
 					/* TODO create a KeyValue event for the parent if needed
 					ArrayList<KeyValue> eventToAdd = null;
@@ -699,105 +717,6 @@ public abstract class FileSourceTask extends SourceTask {
 			jsonObject.put("line",getLineProcessed());
 			return jsonObject.toJSONString();
 		}
-
-	}
-
-
-	/* TODO stats
-	// stats
-
-	private Map<Integer, FileSourceTaskStatistics> allTaskStatistics = new HashMap<Integer, FileSourceTaskStatistics>();
-
-	private FileSourceTaskStatistics getStatistics(String connectorName, int taskNumber) {
-		synchronized (allTaskStatistics) {
-			FileSourceTaskStatistics taskStatistics = allTaskStatistics.get(taskNumber);
-			if (taskStatistics == null) {
-				try {
-					taskStatistics = new FileSourceTaskStatistics(connectorName, taskNumber);
-				} catch (ServerException se) {
-					throw new ServerRuntimeException("Could not create statistics object", se);
-				}
-				allTaskStatistics.put(taskNumber, taskStatistics);
-			}
-			return taskStatistics;
-		}
-	}
-
-	private void updateFilesProcessed(String connectorName, int taskNumber, int amount) {
-		synchronized (allTaskStatistics) {
-			FileSourceTaskStatistics taskStatistics = getStatistics(connectorName, taskNumber);
-			taskStatistics.updateFilesProcessed(amount);
-		}
-	}
-
-	private void updateErrorRecords(String connectorName, int taskNumber, int amount) {
-		synchronized (allTaskStatistics) {
-			FileSourceTaskStatistics taskStatistics = getStatistics(connectorName, taskNumber);
-			taskStatistics.updateErrorRecords(amount);
-		}
-	}
-
-	private void updateRecordStatistics(String connectorName, int taskNumber, String recordType, int amount) {
-		synchronized (allTaskStatistics) {
-			FileSourceTaskStatistics taskStatistics = getStatistics(connectorName, taskNumber);
-			taskStatistics.updateRecordStatistics(recordType, amount);
-		}
-	}
-
-	private void stopStatisticsCollection() {
-		synchronized (allTaskStatistics) {
-			for (FileSourceTaskStatistics taskStatistics : allTaskStatistics.values()) {
-				taskStatistics.unregister();
-			}
-			allTaskStatistics.clear();
-		}
-	}*/
-
-	public static class KeyValue {
-
-		private String recordType;
-		private Schema keySchema;
-		private Object key;
-		private Schema valueSchema;
-		protected Object value;
-
-		public KeyValue(String recordType, Schema keySchema, Object key, Schema valueSchema, Object value) {
-			this.recordType = recordType;
-			this.keySchema = keySchema;
-			this.key = key;
-			this.valueSchema = valueSchema;
-			this.value = value;
-		}
-
-		public KeyValue(Schema keySchema, Object key, Schema valueSchema, Object value) {
-			this.recordType = null;
-			this.keySchema = keySchema;
-			this.key = key;
-			this.valueSchema = valueSchema;
-			this.value = value;
-		}
-
-		public String getRecordType() { return recordType; }
-		public Schema getKeySchema() { return keySchema; }
-		public Object getKey() { return key; }
-		public Schema getValueSchema() { return valueSchema; }
-		public Object getValue() { return value; }
-
-	}
-
-	public static class KeyValueWithParentUpdate extends KeyValue {
-		private UpdateParentRelationshipEvent updateParentRelationshipEvent;
-		private PackSchema packSchema;
-
-		public KeyValueWithParentUpdate(String recordType, Schema keySchema, Object key, Schema valueSchema, Object value, UpdateParentRelationshipEvent updateParentRelationshipEvent, PackSchema packSchema) {
-			super(recordType, keySchema, key, valueSchema, value);
-			this.updateParentRelationshipEvent = updateParentRelationshipEvent;
-			this.packSchema = packSchema;
-		}
-
-		public UpdateParentRelationshipEvent getUpdateParentRelationshipEvent() { return updateParentRelationshipEvent; }
-		public PackSchema getPackSchema() { return packSchema; }
-		public void setValue(Object value) { this.value = value; }
 
 	}
 

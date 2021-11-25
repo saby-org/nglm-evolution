@@ -21,6 +21,7 @@ public class StatsBuilders {
   public enum STATUS{
     ok,
     ko,
+    ignored,
     unknown
   }
 
