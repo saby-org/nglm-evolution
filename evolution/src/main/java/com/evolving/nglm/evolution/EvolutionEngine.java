@@ -9910,8 +9910,8 @@ public class EvolutionEngine
         {
           EvolutionEngineEvent event;
           event = (isAutoProvisionSubscriberStreamEvent)?
-              eventConstructor.newInstance(subscriberID, evolutionEventContext.eventDate(), eventJSON, subscriberEvaluationRequest.getTenantID()):
-              eventConstructor.newInstance(subscriberID, evolutionEventContext.eventDate(), eventJSON);
+              eventConstructor.newInstance(subscriberID, eventJSON, subscriberEvaluationRequest.getTenantID()):
+              eventConstructor.newInstance(subscriberID, eventJSON);
 
           JourneyTriggerEventAction action = new JourneyTriggerEventAction();
           action.setEventDeclaration(eventDeclaration);

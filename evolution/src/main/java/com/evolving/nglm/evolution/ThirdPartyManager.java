@@ -5516,17 +5516,17 @@ public class ThirdPartyManager
               {
                 if(autoProvisionEvent != null)
                 {
-                  eev = constructor.newInstance(new Object[]{subscriberID, SystemTime.getCurrentTime(), eventBody, (short) tenantID });
+                  eev = constructor.newInstance(new Object[]{subscriberID, eventBody, (short) tenantID });
                   eev.forceDeliveryPriority(DELIVERY_REQUEST_PRIORITY);
                 }else{
-                  eev = constructor.newInstance(new Object[]{subscriberID, SystemTime.getCurrentTime(), eventBody});
+                  eev = constructor.newInstance(new Object[]{subscriberID, eventBody});
                   eev.forceDeliveryPriority(DELIVERY_REQUEST_PRIORITY);
                 }
               }
             else if(autoProvisionEvent != null)
               {
                 // means this is an autoprovision event, case 2...
-                eev = constructor.newInstance(new Object[]{subscriberParameter.getSecondElement(), SystemTime.getCurrentTime(), eventBody, (short) tenantID });
+                eev = constructor.newInstance(new Object[]{subscriberParameter.getSecondElement(), eventBody, (short) tenantID });
                 eev.forceDeliveryPriority(DELIVERY_REQUEST_PRIORITY);
               }
           }
