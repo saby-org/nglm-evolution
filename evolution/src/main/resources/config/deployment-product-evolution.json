@@ -783,7 +783,7 @@
     { "id": "7", "name": "price", "display": "Price" }
   ],
   
-  "authResponseCacheLifetimeInMinutes" : 60,
+  "authResponseCacheLifetimeInMinutes" : 1,
   "thirdPartyMethodPermissions" :
   [
     {
