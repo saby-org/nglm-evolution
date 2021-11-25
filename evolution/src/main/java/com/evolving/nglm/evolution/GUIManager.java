@@ -19841,7 +19841,7 @@ public class GUIManager
 
                     SubscriberJourneyStatus customerStatusInJourney = Journey.getSubscriberJourneyStatus(statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
                     SubscriberJourneyStatus profilejourneyStatus = baseSubscriberProfile.getSubscriberJourneys().get(storeJourney.getJourneyID() + "");
-                    if (profilejourneyStatus.in(SubscriberJourneyStatus.NotEligible, SubscriberJourneyStatus.UniversalControlGroup, SubscriberJourneyStatus.Excluded, SubscriberJourneyStatus.ObjectiveLimitReached)) {
+                    if (profilejourneyStatus != null && profilejourneyStatus.in(SubscriberJourneyStatus.NotEligible, SubscriberJourneyStatus.UniversalControlGroup, SubscriberJourneyStatus.Excluded, SubscriberJourneyStatus.ObjectiveLimitReached)) {
                       customerStatusInJourney = profilejourneyStatus;
                     }
 
