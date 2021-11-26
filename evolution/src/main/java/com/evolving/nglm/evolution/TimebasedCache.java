@@ -341,6 +341,7 @@ public class TimebasedCache<K, V> implements Map<K, V>
         ThirdPartyCredential credential = (ThirdPartyCredential) key;
         if (credential.getLoginName().equals(login)) {
           this.remove(credential);
+          break;
         }
       }
     }
