@@ -15,6 +15,8 @@ import java.util.concurrent.DelayQueue;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
 
+import com.evolving.nglm.evolution.ThirdPartyManager.ThirdPartyCredential;
+
 public class TimebasedCache<K, V> implements Map<K, V>
 {
   /*****************************************
@@ -201,7 +203,7 @@ public class TimebasedCache<K, V> implements Map<K, V>
     cleanup();
     return internalMap.containsKey((K) key);
   }
-
+  
   /*****************************************
   *
   *  containsValue
@@ -323,6 +325,27 @@ public class TimebasedCache<K, V> implements Map<K, V>
         delayedKey = delayQueue.poll();
       }
   }
+  
+
+  
+  
+  /*****************************************
+  *
+  * reset
+  *
+  *****************************************/
+  public void reset(String login) {
+    Set<K> keyset = internalMap.keySet();
+    for (K key : keyset) {
+      if (key instanceof ThirdPartyCredential) {
+        ThirdPartyCredential credential = (ThirdPartyCredential) key;
+        if (credential.getLoginName().equals(login)) {
+          this.remove(credential);
+        }
+      }
+    }
+  }
+
 
   /*****************************************
   *

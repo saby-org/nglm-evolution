@@ -6842,17 +6842,31 @@ public class ThirdPartyManager
         }
       else if (httpResponse != null && httpResponse.getStatusLine() != null && httpResponse.getStatusLine().getStatusCode() == 401)
         {
-          log.error("FWK server HTTP reponse code {} message {} ", httpResponse.getStatusLine().getStatusCode(), EntityUtils.toString(httpResponse.getEntity(), "UTF-8"));
+         /*Set <ThirdPartyCredential> credentials = authCache.keySet();
+            for (ThirdPartyCredential credential : credentials)
+              {
+                String loginName = credential.getLoginName();
+                String currentLogin = thirdPartyCredential.getLoginName();
+                if (loginName.equals(currentLogin))
+                  {
+                    authCache.remove(credential);
+                    break;
+                  }
+              }*/
+          authCache.reset(thirdPartyCredential.getLoginName());
+          log.error("FWK server HTTP reponse code {} message {} ", httpResponse.getStatusLine().getStatusCode(), EntityUtils.toString(httpResponse.getEntity(), "UTF-8"), "Reset the user" + thirdPartyCredential.getLoginName());
           throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.AUTHENTICATION_FAILURE);
         }
       else if (httpResponse != null && httpResponse.getStatusLine() != null)
         {
-          log.error("FWK server HTTP reponse code is invalid {}", httpResponse.getStatusLine().getStatusCode());
+          authCache.reset(thirdPartyCredential.getLoginName());
+          log.error("FWK server HTTP reponse code is invalid {}", httpResponse.getStatusLine().getStatusCode(), "Reset the user" + thirdPartyCredential.getLoginName());
           throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.AUTHENTICATION_FAILURE);
         }
       else
         {
-          log.error("FWK server error httpResponse or httpResponse.getStatusLine() is null {} {} ", httpResponse, httpResponse.getStatusLine());
+          authCache.reset(thirdPartyCredential.getLoginName());
+          log.error("FWK server error httpResponse or httpResponse.getStatusLine() is null {} {} ", httpResponse, httpResponse.getStatusLine(), "Reset the user" + thirdPartyCredential.getLoginName());
           throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.AUTHENTICATION_FAILURE);
         }
     }
