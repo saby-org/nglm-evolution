@@ -15,11 +15,12 @@ USER root
 # confluent 6.2.0
 RUN chmod 0777 /home/appuser
 
-RUN yum install -y perl
+
 
 RUN yum update; exit 0
 
 RUN yum install -y curl tar
+RUN yum install -y perl
 
 RUN mkdir -p /app
 

@@ -47,6 +47,9 @@ RUN chmod 0755 /app/bin/ev-cub
 COPY bin/guimanager-run.sh /app/bin/guimanager-run.sh
 RUN chmod 0755 /app/bin/guimanager-run.sh
 
+COPY bin/restoreKafkaBackup.sh /app/bin/restoreKafkaBackup.sh
+RUN chmod 0755 /app/bin/restoreKafkaBackup.sh
+
 #
 #  configuration
 #
