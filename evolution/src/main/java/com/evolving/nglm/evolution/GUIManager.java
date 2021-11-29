@@ -29,6 +29,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -45,6 +46,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -124,6 +126,8 @@ import com.evolving.nglm.core.SubscriberIDService;
 import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.core.UniqueKeyServer;
+import com.evolving.nglm.evolution.Badge.BadgeAction;
+import com.evolving.nglm.evolution.Badge.BadgeType;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryStatus;
@@ -137,8 +141,10 @@ import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EmptyFulfillmentManager.EmptyFulfillmentRequest;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionOperator;
+import com.evolving.nglm.evolution.Expression.ConstantExpression;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.GUIService.GUIManagedObjectListener;
 import com.evolving.nglm.evolution.INFulfillmentManager.INFulfillmentRequest;
 import com.evolving.nglm.evolution.Journey.GUINode;
@@ -489,6 +495,7 @@ public class GUIManager
     getCustomerEDRs("getCustomerEDRs"),
     getCustomerODRs("getCustomerODRs"),
     getCustomerVDRs("getCustomerVDRs"),
+    getCustomerBGDRs("getCustomerBGDRs"),
     getCustomerMessages("getCustomerMessages"),
     getCustomerJourneys("getCustomerJourneys"),
     getCustomerCampaigns("getCustomerCamapigns"),
@@ -552,6 +559,21 @@ public class GUIManager
     removeLoyaltyProgram("removeLoyaltyProgram"),
     setStatusLoyaltyProgram("setStatusLoyaltyProgram"),
     
+    putBadgeObjective("putBadgeObjective"),
+    getBadgeObjective("getBadgeObjective"),
+    getBadgeObjectiveSummaryList("getBadgeObjectiveSummaryList"),
+    getBadgeObjectiveList("getBadgeObjectiveList"),
+    getBadgeTypeList("getBadgeTypeList"),
+    removeBadgeObjective("removeBadgeObjective"),
+    setStatusBadgeObjective("setStatusBadgeObjective"),
+    putBadge("putBadge"),
+    getBadge("getBadge"),
+    getBadgeSummaryList("getBadgeSummaryList"),
+    getBadgeList("getBadgeList"),
+    removeBadge("removeBadge"),
+    setStatusBadge("setStatusBadge"),
+    loyaltyAwardBadge("loyaltyAwardBadge"),
+    loyaltyRemoveBadge("loyaltyRemoveBadge"),
     getResellerList("getResellerList"),
     getResellerSummaryList("getResellerSummaryList"),
     getReseller("getReseller"),
@@ -759,6 +781,7 @@ public class GUIManager
   protected CommunicationChannelTimeWindowService communicationChannelTimeWindowService;
   protected CommunicationChannelService communicationChannelService;
   protected LoyaltyProgramService loyaltyProgramService;
+  protected BadgeObjectiveService badgeObjectiveService;
   protected ExclusionInclusionTargetService exclusionInclusionTargetService;
   protected ResellerService resellerService;
   protected SegmentContactPolicyService segmentContactPolicyService;
@@ -881,6 +904,7 @@ public class GUIManager
     String communicationChannelBlackoutTopic = Deployment.getCommunicationChannelBlackoutTopic();
     String communicationChannelTimeWindowTopic = Deployment.getCommunicationChannelTimeWindowTopic();
     String loyaltyProgramTopic = Deployment.getLoyaltyProgramTopic();
+    String badgeObjectiveTopic = Deployment.getBadgeObjectiveTopic();
     String exclusionInclusionTargetTopic = Deployment.getExclusionInclusionTargetTopic();
     String resellerTopic = Deployment.getResellerTopic();
     String segmentContactPolicyTopic = Deployment.getSegmentContactPolicyTopic();
@@ -1110,6 +1134,7 @@ public class GUIManager
     communicationChannelTimeWindowService = new CommunicationChannelTimeWindowService(bootstrapServers, "guimanager-timewindowservice-" + apiProcessKey, communicationChannelTimeWindowTopic, true);
     communicationChannelService = new CommunicationChannelService(bootstrapServers, "guimanager-communicationchannelservice-" + apiProcessKey, communicationChannelTopic, true);
     loyaltyProgramService = new LoyaltyProgramService(bootstrapServers, "guimanager-loyaltyprogramservice-"+apiProcessKey, loyaltyProgramTopic, true);
+    badgeObjectiveService = new BadgeObjectiveService(bootstrapServers, "guimanager-badgeobjectiveservice-"+apiProcessKey, badgeObjectiveTopic, true);
     exclusionInclusionTargetService = new ExclusionInclusionTargetService(bootstrapServers, "guimanager-exclusioninclusiontargetservice-" + apiProcessKey, exclusionInclusionTargetTopic, true);
     resellerService = new ResellerService(bootstrapServers, "guimanager-resellerservice-"+apiProcessKey, resellerTopic, true);
     segmentContactPolicyService = new SegmentContactPolicyService(bootstrapServers, "guimanager-segmentcontactpolicyservice-"+apiProcessKey, segmentContactPolicyTopic, true);
@@ -1128,11 +1153,11 @@ public class GUIManager
     voucherChangeResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),Deployment.getVoucherChangeResponseTopic(),StringKey.serde(),VoucherChange.serde());
     voucherChangeResponseListenerService.start();
 
-    guiManagerContext = new GUIManagerContext(journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, predictionSettingsService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, customCriteriaService);
-    guiManagerBaseManagement = new GUIManagerBaseManagement(journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, dnboMatrixService, dynamicCriterionFieldService, dynamicEventDeclarationsService, journeyTemplateService, purchaseResponseListenerService, subscriberGroupSharedIDService, zuks, httpTimeout, kafkaProducer, elasticsearch, subscriberMessageTemplateService, getCustomerAlternateID, guiManagerContext, subscriberGroupEpochReader, renamedProfileCriterionFieldReader);
-    guiManagerLoyaltyReporting = new GUIManagerLoyaltyReporting(journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, dnboMatrixService, dynamicCriterionFieldService, dynamicEventDeclarationsService, journeyTemplateService, purchaseResponseListenerService, customCriteriaService, subscriberGroupSharedIDService, zuks, httpTimeout, kafkaProducer, elasticsearch, subscriberMessageTemplateService, getCustomerAlternateID, guiManagerContext, subscriberGroupEpochReader, renamedProfileCriterionFieldReader);
-    guiManagerGeneral = new GUIManagerGeneral(journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, dnboMatrixService, dynamicCriterionFieldService, dynamicEventDeclarationsService, journeyTemplateService, purchaseResponseListenerService, subscriberGroupSharedIDService, zuks, httpTimeout, kafkaProducer, elasticsearch, subscriberMessageTemplateService, getCustomerAlternateID, guiManagerContext, subscriberGroupEpochReader, renamedProfileCriterionFieldReader);
-
+    guiManagerContext = new GUIManagerContext(journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, predictionSettingsService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, badgeObjectiveService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, customCriteriaService);
+    guiManagerBaseManagement = new GUIManagerBaseManagement(journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService,badgeObjectiveService,  resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, dnboMatrixService, dynamicCriterionFieldService, dynamicEventDeclarationsService, journeyTemplateService, purchaseResponseListenerService, subscriberGroupSharedIDService, zuks, httpTimeout, kafkaProducer, elasticsearch, subscriberMessageTemplateService, getCustomerAlternateID, guiManagerContext, subscriberGroupEpochReader, renamedProfileCriterionFieldReader);
+    guiManagerLoyaltyReporting = new GUIManagerLoyaltyReporting(journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, badgeObjectiveService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, dnboMatrixService, dynamicCriterionFieldService, dynamicEventDeclarationsService, journeyTemplateService, purchaseResponseListenerService, customCriteriaService, subscriberGroupSharedIDService, zuks, httpTimeout, kafkaProducer, elasticsearch, subscriberMessageTemplateService, getCustomerAlternateID, guiManagerContext, subscriberGroupEpochReader, renamedProfileCriterionFieldReader);
+    guiManagerGeneral = new GUIManagerGeneral(journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, reportService, paymentMeanService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberMessageTemplateService, subscriberProfileService, subscriberIDService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, badgeObjectiveService, resellerService, exclusionInclusionTargetService, segmentContactPolicyService, criterionFieldAvailableValuesService, dnboMatrixService, dynamicCriterionFieldService, dynamicEventDeclarationsService, journeyTemplateService, purchaseResponseListenerService, subscriberGroupSharedIDService, zuks, httpTimeout, kafkaProducer, elasticsearch, subscriberMessageTemplateService, getCustomerAlternateID, guiManagerContext, subscriberGroupEpochReader, renamedProfileCriterionFieldReader);
+    
     /*****************************************
     *
     *  Register Service Listener
@@ -1685,7 +1710,7 @@ public class GUIManager
     //  journeyTemplates do not change the ID - still this is a bug, how two different tenant have the obj with sameID
     //
     
-    for(Tenant tenant : Deployment.getTenants())
+    for(Tenant tenant : Deployment.getRealTenants())
       {
         int tenantID = tenant.getTenantID();
         if (journeyTemplateService.getStoredJourneyTemplates(tenantID).size() == 0)
@@ -1695,7 +1720,13 @@ public class GUIManager
               JSONArray initialJourneyTemplatesJSONArray = Deployment.getDeployment(tenantID).getInitialJourneyTemplatesJSONArray();
               for (int i=0; i<initialJourneyTemplatesJSONArray.size(); i++)
                 {
-                  JSONObject journeyTemplateJSON = (JSONObject) initialJourneyTemplatesJSONArray.get(i);
+                  JSONObject journeyTemplateJSONOrig = (JSONObject) initialJourneyTemplatesJSONArray.get(i);
+                  // duplicate object so that it is not modified
+                  JSONObject journeyTemplateJSON = new JSONObject();
+                  journeyTemplateJSON.putAll(journeyTemplateJSONOrig);
+                  // Make sure there is no ID
+                  journeyTemplateJSON.remove("id");
+                  journeyTemplateJSON.put("tenantID", tenantID); // this info is missing in deployment.json
                   processPutJourneyTemplate("0", journeyTemplateJSON, tenantID);
                 }
             }
@@ -2024,6 +2055,7 @@ public class GUIManager
     voucherService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);
     communicationChannelBlackoutService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);
     loyaltyProgramService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);
+    badgeObjectiveService.start();
     exclusionInclusionTargetService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);
     resellerService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);
     segmentContactPolicyService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);
@@ -2326,6 +2358,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getCustomerEDRs", new APISimpleHandler(API.getCustomerEDRs));
         restServer.createContext("/nglm-guimanager/getCustomerODRs", new APISimpleHandler(API.getCustomerODRs));
         restServer.createContext("/nglm-guimanager/getCustomerVDRs", new APISimpleHandler(API.getCustomerVDRs));
+        restServer.createContext("/nglm-guimanager/getCustomerBGDRs", new APISimpleHandler(API.getCustomerBGDRs));
         restServer.createContext("/nglm-guimanager/getCustomerMessages", new APISimpleHandler(API.getCustomerMessages));
         restServer.createContext("/nglm-guimanager/getCustomerJourneys", new APISimpleHandler(API.getCustomerJourneys));
         restServer.createContext("/nglm-guimanager/getCustomerCampaigns", new APISimpleHandler(API.getCustomerCampaigns));
@@ -2385,6 +2418,21 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/updateChallenge", new APISimpleHandler(API.updateChallenge));
         restServer.createContext("/nglm-guimanager/removeLoyaltyProgram", new APISimpleHandler(API.removeLoyaltyProgram));
         restServer.createContext("/nglm-guimanager/setStatusLoyaltyProgram", new APISimpleHandler(API.setStatusLoyaltyProgram));
+        restServer.createContext("/nglm-guimanager/getBadgeTypeList", new APISimpleHandler(API.getBadgeTypeList));
+        restServer.createContext("/nglm-guimanager/putBadgeObjective", new APISimpleHandler(API.putBadgeObjective));
+        restServer.createContext("/nglm-guimanager/getBadgeObjective", new APISimpleHandler(API.getBadgeObjective));
+        restServer.createContext("/nglm-guimanager/getBadgeObjectiveSummaryList", new APISimpleHandler(API.getBadgeObjectiveSummaryList));
+        restServer.createContext("/nglm-guimanager/getBadgeObjectiveList", new APISimpleHandler(API.getBadgeObjectiveList));
+        restServer.createContext("/nglm-guimanager/removeBadgeObjective", new APISimpleHandler(API.removeBadgeObjective));
+        restServer.createContext("/nglm-guimanager/setStatusBadgeObjective", new APISimpleHandler(API.setStatusBadgeObjective));
+        restServer.createContext("/nglm-guimanager/putBadge", new APISimpleHandler(API.putBadge));
+        restServer.createContext("/nglm-guimanager/getBadge", new APISimpleHandler(API.getBadge));
+        restServer.createContext("/nglm-guimanager/getBadgeSummaryList", new APISimpleHandler(API.getBadgeSummaryList));
+        restServer.createContext("/nglm-guimanager/getBadgeList", new APISimpleHandler(API.getBadgeList));
+        restServer.createContext("/nglm-guimanager/removeBadge", new APISimpleHandler(API.removeBadge));
+        restServer.createContext("/nglm-guimanager/setStatusBadge", new APISimpleHandler(API.setStatusBadge));
+        restServer.createContext("/nglm-guimanager/loyaltyAwardBadge", new APISimpleHandler(API.loyaltyAwardBadge));
+        restServer.createContext("/nglm-guimanager/loyaltyRemoveBadge", new APISimpleHandler(API.loyaltyRemoveBadge));
         restServer.createContext("/nglm-guimanager/getResellerList", new APISimpleHandler(API.getResellerList));
         restServer.createContext("/nglm-guimanager/getResellerSummaryList", new APISimpleHandler(API.getResellerSummaryList));
         restServer.createContext("/nglm-guimanager/getReseller", new APISimpleHandler(API.getReseller));
@@ -3918,6 +3966,10 @@ public class GUIManager
                 case getCustomerODRs:
                   jsonResponse = processGetCustomerODRs(userID, jsonRoot, tenantID);
                   break;
+                  
+                case getCustomerBGDRs:
+                  jsonResponse = processGetCustomerBGDRs(userID, jsonRoot, tenantID);
+                  break;
 
                 case getCustomerVDRs:
                   jsonResponse = processGetCustomerVDRs(userID, jsonRoot, tenantID);
@@ -4134,6 +4186,66 @@ public class GUIManager
                   
                 case setStatusLoyaltyProgram:
                   jsonResponse = guiManagerLoyaltyReporting.processSetStatusLoyaltyProgram(userID, jsonRoot, tenantID);
+                  break;
+                  
+                case getBadgeTypeList:
+                  jsonResponse = guiManagerLoyaltyReporting.processGetBadgeTypeList(userID, jsonRoot, tenantID);
+                  break;
+                  
+                case putBadgeObjective:
+                  jsonResponse = guiManagerLoyaltyReporting.processPutBadgeObjective(userID, jsonRoot, tenantID);
+                  break;
+                  
+                case getBadgeObjective:
+                  jsonResponse = guiManagerLoyaltyReporting.processGetBadgeObjective(userID, jsonRoot, includeArchived, tenantID);
+                  break;
+                  
+                case getBadgeObjectiveSummaryList:
+                  jsonResponse = guiManagerLoyaltyReporting.processGetBadgeObjectiveList(userID, jsonRoot, false, includeArchived, tenantID);
+                  break;
+                  
+                case getBadgeObjectiveList:
+                  jsonResponse = guiManagerLoyaltyReporting.processGetBadgeObjectiveList(userID, jsonRoot, true, includeArchived, tenantID);
+                  break;
+                  
+                case removeBadgeObjective:
+                  jsonResponse = guiManagerLoyaltyReporting.processRemoveBadgeObjective(userID, jsonRoot, tenantID);
+                  break;
+                  
+                case setStatusBadgeObjective:
+                  jsonResponse = guiManagerLoyaltyReporting.processSetStatusBadgeObjective(userID, jsonRoot, tenantID);
+                  break;
+                  
+                case putBadge:
+                  jsonResponse = guiManagerLoyaltyReporting.processPutBadge(userID, jsonRoot, tenantID);
+                  break;
+                  
+                case getBadge:
+                  jsonResponse = guiManagerLoyaltyReporting.processGetBadge(userID, jsonRoot, includeArchived, tenantID);
+                  break;
+                  
+                case getBadgeSummaryList:
+                  jsonResponse = guiManagerLoyaltyReporting.processGetBadgeList(userID, jsonRoot, false, includeArchived, tenantID);
+                  break;
+                  
+                case getBadgeList:
+                  jsonResponse = guiManagerLoyaltyReporting.processGetBadgeList(userID, jsonRoot, true, includeArchived, tenantID);
+                  break;
+                  
+                case removeBadge:
+                  jsonResponse = guiManagerLoyaltyReporting.processRemoveBadge(userID, jsonRoot, tenantID);
+                  break;
+                  
+                case setStatusBadge:
+                  jsonResponse = guiManagerLoyaltyReporting.processSetStatusBadge(userID, jsonRoot, tenantID);
+                  break;
+                  
+                case loyaltyAwardBadge:
+                  jsonResponse = guiManagerLoyaltyReporting.processLoyaltyBadgeRequest(userID, jsonRoot, BadgeAction.AWARD, tenantID);
+                  break;
+                  
+                case loyaltyRemoveBadge:
+                  jsonResponse = guiManagerLoyaltyReporting.processLoyaltyBadgeRequest(userID, jsonRoot, BadgeAction.REMOVE, tenantID);
                   break;
                   
                 case getResellerList:
@@ -6174,8 +6286,8 @@ public class GUIManager
         if (!dryRun)
           {
 
-            journeyService.putJourney(journey, journeyObjectiveService, catalogCharacteristicService, targetService, subscriberMessageTemplateService, 
-                (existingJourney == null), userID);
+            validateJourneyNodeParams(journey, now);
+            journeyService.putJourney(journey, journeyObjectiveService, catalogCharacteristicService, targetService, subscriberMessageTemplateService, (existingJourney == null), userID);
 
             /*****************************************
              *
@@ -8672,13 +8784,11 @@ public class GUIManager
         //
         //  retrieve from Elasticsearch 
         //
-         try {
-          Map<String, Long> esMap = this.elasticsearch.getJourneyNodeCount(journeyID);
+        try {
+          Map<String, Long> esMap = this.elasticsearch.getJourneyNodeCount(journeyID, ((Journey) journey).isWorkflow());
           for (String key : nodeIDs) {
-        	  Long count = esMap.get(key);
-              if(key.trim().equalsIgnoreCase(((Journey) journey).getEndNodeID().trim()) && esMap.get(key)!=null)
-            	  count=esMap.get(key)-elasticsearch.getSpecialExitCount(journeyID);
-              result.put(key, (count != null)? count : 0);
+            Long count = esMap.get(key);
+            result.put(key, (count != null)? count : 0);
           }
         }
         catch (ElasticsearchClientException e) {
@@ -14532,7 +14642,7 @@ public class GUIManager
                 // incompleteObject
                 //
 
-                IncompleteObject incompleteObject = new IncompleteObject(jsonRoot, epoch, tenantID);
+                IncompleteObject incompleteObject = new IncompleteObject(elementRoot, epoch, tenantID);
 
                 //
                 // store
@@ -16702,7 +16812,7 @@ public class GUIManager
     String voucherCode = JSONUtilities.decodeString(jsonRoot, "voucherCode", true);
     String voucherID = JSONUtilities.decodeString(jsonRoot, "voucherID", true);
     Date newExpiryDate = GUIManagedObject.parseDateField(JSONUtilities.decodeString(jsonRoot, "expiryDate", voucherChangeAction.equals(VoucherChange.VoucherChangeAction.Extend)));
-    String origin = JSONUtilities.decodeString(jsonRoot, "origin", false);
+    String origin = "CC"; // EVPRO-1344 hardcode to "CC" instead of JSONUtilities.decodeString(jsonRoot, "origin", false);
 
     /*****************************************
      *
@@ -19384,6 +19494,110 @@ public class GUIManager
 
     return JSONUtilities.encodeObject(response);
   }
+  
+  /*****************************************
+  *
+  * processGetCustomerBGDRs
+  *
+  *****************************************/
+
+  private JSONObject processGetCustomerBGDRs(String userID, JSONObject jsonRoot, int tenantID) throws GUIManagerException
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    Map<String, Object> response = new HashMap<String, Object>();
+
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+    String startDateReq = JSONUtilities.decodeString(jsonRoot, "startDate", false);
+    String moduleID = JSONUtilities.decodeString(jsonRoot, "moduleID", false);
+    String featureID = JSONUtilities.decodeString(jsonRoot, "featureID", false);
+    
+    List<QueryBuilder> filters = new ArrayList<QueryBuilder>();
+    if (moduleID != null && !moduleID.isEmpty()) filters.add(QueryBuilders.matchQuery("moduleID", moduleID));
+    if (featureID != null && !featureID.isEmpty()) filters.add(QueryBuilders.matchQuery("featureID", featureID));
+
+    /*****************************************
+    *
+    *  resolve subscriberID
+    *
+    *****************************************/
+
+    String subscriberID = resolveSubscriberID(customerID, tenantID);
+    if (subscriberID == null)
+      {
+        log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
+        response.put("responseCode", "CustomerNotFound");
+      }
+    else
+      {
+        /*****************************************
+        *
+        *  getSubscriberProfile - include history
+        *
+        *****************************************/
+        try
+          {
+            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
+            if (baseSubscriberProfile == null)
+              {
+                response.put("responseCode", "CustomerNotFound");
+                log.debug("SubscriberProfile is null for subscriberID {}" , subscriberID);
+              }
+            else
+              {
+                List<JSONObject> BGDRsJson = new ArrayList<JSONObject>();
+                
+                List<BadgeChange> BGDRs = new ArrayList<BadgeChange>();
+                SearchRequest searchRequest = this.elasticsearch.getSearchRequest(API.getCustomerBGDRs, subscriberID, startDateReq == null ? null : RLMDateUtils.parseDateFromDay(startDateReq, Deployment.getDeployment(tenantID).getTimeZone()), filters, tenantID);
+                List<SearchHit> hits = this.elasticsearch.getESHits(searchRequest);
+                for (SearchHit hit : hits)
+                  {
+                    BadgeChange badgeChange = new BadgeChange(hit.getSourceAsMap());
+                    BGDRs.add(badgeChange);
+                  }
+
+                //
+                // prepare json
+                //
+
+                for (BadgeChange bgdr : BGDRs)
+                  {
+                    Map<String, Object> presentationMap = bgdr.getGUIPresentationMap(journeyService, offerService, loyaltyProgramService);
+                    BGDRsJson.add(JSONUtilities.encodeObject(presentationMap));
+                  }
+
+                //
+                // prepare response
+                //
+
+                response.put("BGDRs", JSONUtilities.encodeArray(BGDRsJson));
+                response.put("responseCode", "ok");
+              }
+          }
+        catch (SubscriberProfileServiceException | java.text.ParseException e)
+          {
+            throw new GUIManagerException(e);
+          }
+      }
+
+    /*****************************************
+    *
+    *  return
+    *
+    *****************************************/
+
+    return JSONUtilities.encodeObject(response);
+  }
 
   /*****************************************
   *
@@ -19831,7 +20045,7 @@ public class GUIManager
 
                     SubscriberJourneyStatus customerStatusInJourney = Journey.getSubscriberJourneyStatus(statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
                     SubscriberJourneyStatus profilejourneyStatus = baseSubscriberProfile.getSubscriberJourneys().get(storeJourney.getJourneyID() + "");
-                    if (profilejourneyStatus.in(SubscriberJourneyStatus.NotEligible, SubscriberJourneyStatus.UniversalControlGroup, SubscriberJourneyStatus.Excluded, SubscriberJourneyStatus.ObjectiveLimitReached)) {
+                    if (profilejourneyStatus.isSpecialExit()) {
                       customerStatusInJourney = profilejourneyStatus;
                     }
 
@@ -20126,14 +20340,23 @@ public class GUIManager
                     boolean campaignComplete = subsLatestStatistic.getStatusHistory().stream().filter(campaignStat -> campaignStat.getJourneyComplete()).count() > 0L; // ??
                     SubscriberJourneyStatus customerStatusInJourney = Journey.getSubscriberJourneyStatus(statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
                     SubscriberJourneyStatus profilejourneyStatus = baseSubscriberProfile.getSubscriberJourneys().get(storeCampaign.getJourneyID() + "");
-                    if (profilejourneyStatus.in(SubscriberJourneyStatus.NotEligible, SubscriberJourneyStatus.UniversalControlGroup, SubscriberJourneyStatus.Excluded, SubscriberJourneyStatus.ObjectiveLimitReached))
+                    if (profilejourneyStatus.isSpecialExit()) {
                       customerStatusInJourney = profilejourneyStatus;
-
+                    }
+                    
                     if (customerStatus != null)
                       {
-                        SubscriberJourneyStatus customerStatusInReq = SubscriberJourneyStatus.fromExternalRepresentation(customerStatus);
-                        boolean criteriaSatisfied = customerStatusInReq == customerStatusInJourney;
-                        if (!criteriaSatisfied) continue;
+                        // SubscriberJourneyStatus customerStatusInReq =
+                        // SubscriberJourneyStatus.fromExternalRepresentation(customerStatus);
+                        String customerStatusInJourneyDisplay = customerStatusInJourney.getDisplay();
+                        boolean criteriaSatisfied = false;
+                        if (customerStatus.equalsIgnoreCase(customerStatusInJourneyDisplay))
+                          {
+                            criteriaSatisfied = true;
+                          }
+                        if (!criteriaSatisfied)
+                          continue;
+
                       }
 
                     //
@@ -22841,7 +23064,7 @@ public class GUIManager
     String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
     String bonusID = JSONUtilities.decodeString(jsonRoot, "bonusID", true);
     Integer quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
-    String origin = JSONUtilities.decodeString(jsonRoot, "origin", true);
+    String origin = "CC"; // EVPRO-1344 hardcode to "CC" instead of JSONUtilities.decodeString(jsonRoot, "origin", true);
     String userName = JSONUtilities.decodeString(jsonRoot, "userName", false);
     String featureID = (userName != null) ? userName : "administrator";
 
@@ -22942,7 +23165,7 @@ public class GUIManager
     String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
     String bonusID = JSONUtilities.decodeString(jsonRoot, "bonusID", true);
     Integer quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
-    String origin = JSONUtilities.decodeString(jsonRoot, "origin", true);
+    String origin = "CC"; // EVPRO-1344 hardcode to "CC" instead of JSONUtilities.decodeString(jsonRoot, "origin", true);
     String userName = JSONUtilities.decodeString(jsonRoot, "userName", false);
     String featureID = (userName != null) ? userName : "administrator";
 
@@ -24486,7 +24709,7 @@ public class GUIManager
     String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
     String tokenCode = JSONUtilities.decodeString(jsonRoot, "tokenCode", false);
     String offerID = JSONUtilities.decodeString(jsonRoot, "offerID", false);
-    String origin = JSONUtilities.decodeString(jsonRoot, "origin", false);
+    String origin = "CC"; // EVPRO-1344 hardcode to "CC" instead of JSONUtilities.decodeString(jsonRoot, "origin", false);
 
     /*****************************************
      *
@@ -24710,7 +24933,7 @@ public class GUIManager
    String offerID = JSONUtilities.decodeString(jsonRoot, "offerID", true);
    String salesChannelID = JSONUtilities.decodeString(jsonRoot, "salesChannelID", true);
    Integer quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
-   String origin = JSONUtilities.decodeString(jsonRoot, "origin", false);
+   String origin = "CC"; // EVPRO-1344 hardcode to "CC" instead of JSONUtilities.decodeString(jsonRoot, "origin", false);
 
    /*****************************************
     *
@@ -24944,7 +25167,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
          *
          *****************************************/
 
-        List<JSONObject> offersJson = offers.stream().map(offer -> ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService, offerObjectiveService, productService, voucherService, salesChannelService, catalogCharacteristicService
+        List<JSONObject> offersJson = offers.stream().map(offer -> ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService, offerObjectiveService, productService, voucherService, salesChannelService, catalogCharacteristicService, false, false
             )).collect(Collectors.toList());
         response.put("offers", JSONUtilities.encodeArray(offersJson));
         response.put("responseCode", "ok");
@@ -25543,15 +25766,15 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
             Map<String, Object> OfferProductVoucherAndSupplierIDs = OfferProductVoucherAndSupplierIDs(
                 (Offer) existingOffer, tenantID);
             existingSupplierID = (String) OfferProductVoucherAndSupplierIDs.get("supplierID");
-            OfferProduct product = (OfferProduct) OfferProductVoucherAndSupplierIDs.get("offerProduct");
-            OfferVoucher voucher = (OfferVoucher) OfferProductVoucherAndSupplierIDs.get("offerVoucher");
-            if (product != null)
+            JSONObject product = (JSONObject) OfferProductVoucherAndSupplierIDs.get("offerProduct");
+            JSONObject voucher = (JSONObject) OfferProductVoucherAndSupplierIDs.get("offerVoucher");
+            if (product != null &&  product.get("productID") != null)
               {
-                existingproductID = product.getProductID();
+                existingproductID = product.get("productID").toString();
               }
-            if (voucher != null)
+            if (voucher != null &&  voucher.get("voucherID") != null)
               {
-                existingVoucherID = voucher.getVoucherID();
+                existingVoucherID =  voucher.get("voucherID").toString();
               }
           }
       }
@@ -25900,7 +26123,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
         return JSONUtilities.encodeObject(response);
       }
 
-    else if (activeSupplier != null && activeSupplier != "InactiveReseller")
+    else if (activeSupplier != null && !(activeSupplier.equals("InactiveReseller")))
       {
         for (GUIManagedObject offerObject : offerService.getStoredOffers(tenantID))
           {
@@ -25908,15 +26131,14 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
               {
                 Map<String, Object> OfferProductVoucherAndSupplierIDs = OfferProductVoucherAndSupplierIDs(
                     (Offer) offerObject, tenantID);
-                String supplierID = (String) OfferProductVoucherAndSupplierIDs.get("supplierID");
-                OfferProduct product = (OfferProduct) OfferProductVoucherAndSupplierIDs.get("offerProduct");
-                OfferVoucher voucher = (OfferVoucher) OfferProductVoucherAndSupplierIDs.get("offerVoucher");                
-                
-                Offer offer = (Offer) offerObject;
-                String offerName = offer.getGUIManagedObjectName();                               
-                if (product != null)
+                String supplierID = (String) OfferProductVoucherAndSupplierIDs.get("supplierID"); 
+                JSONObject product = (JSONObject) OfferProductVoucherAndSupplierIDs.get("offerProduct");
+                JSONObject voucher = (JSONObject) OfferProductVoucherAndSupplierIDs.get("offerVoucher");
+                String offerName = offerObject.getGUIManagedObjectName();
+                Offer offer = (Offer) offerObject;                              
+                if (product != null && product.get("productID") != null)
                   {
-                    String productID = product.getProductID();
+                    String productID = product.get("productID").toString();
                     String productName = (productService.getStoredProduct(productID)).getGUIManagedObjectName();
 
                     if (activeSupplier.equals(supplierID) && offerName.equals(productName) && offer.getSimpleOffer())
@@ -25937,14 +26159,14 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                           log.debug(offer + " is not supplierOffer");
                       }
                   }
-                if (voucher != null)
+                if (voucher != null && voucher.get("voucherID") != null)
                   {
-                    String voucherID = voucher.getVoucherID();
+                    String voucherID = voucher.get("voucherID").toString();
                     String voucherName = (voucherService.getStoredVoucher(voucherID)).getGUIManagedObjectName();
 
                     if (activeSupplier.equals(supplierID) && offerName.equals(voucherName) && offer.getSimpleOffer())
                       {
-                        vouchers.add(voucher);
+                        //vouchers.add(voucher);
                         offers.add(offer);
                       }
                     else if (offerName.equals(voucherName) && offer.getSimpleOffer() && !(activeSupplier.equals(supplierID)))
@@ -25973,7 +26195,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
 
         List<JSONObject> offersJson = offers.stream()
             .map(offer -> ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService,
-                offerObjectiveService, productService, voucherService, salesChannelService, catalogCharacteristicService))
+                offerObjectiveService, productService, voucherService, salesChannelService, catalogCharacteristicService,false,false))
             .collect(Collectors.toList());
 
         response.put("simpleOffers", JSONUtilities.encodeArray(offersJson));
@@ -26021,7 +26243,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     String user = JSONUtilities.decodeString(jsonRoot, "loginID", false);
     String activeSupplier = activeSupplierAndParentSupplierIDs(user, tenantID).get("activeSupplierID");
     Date now = SystemTime.getCurrentTime();
-    Offer offer = null;
+    GUIManagedObject offer = null;
 
     /*****************************************
      *
@@ -26031,14 +26253,14 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     if (jsonRoot.containsKey("id") && offerID != null)
       {
         GUIManagedObject offerObject = offerService.getStoredOffer(offerID);
-        offer = (Offer) offerObject;
+        offer = offerObject;
       }
     else if (jsonRoot.containsKey("offerName") && offerDisplay != null)
       {
         Collection<GUIManagedObject> offers = offerService.getStoredOffers(tenantID);
         for (GUIManagedObject offerObject : offers)
           {
-            Offer currentOffer = (Offer) offerObject;
+            GUIManagedObject currentOffer = offerObject;
             if (currentOffer.getGUIManagedObjectDisplay().equals(offerDisplay))
               {
                 offer = currentOffer;
@@ -26065,30 +26287,35 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
             return JSONUtilities.encodeObject(response);
           }
 
-        else if (activeSupplier != null && activeSupplier != "InactiveReseller")
+        else if (activeSupplier != null && !(activeSupplier.equals("InactiveReseller")))
           {
+            Boolean simpleOffer = false;
+            if (offer.getJSONRepresentation().get("simpleOffer") != null) {
+              simpleOffer = (Boolean) offer.getJSONRepresentation().get("simpleOffer");
+            }
             String offerName = offer.getGUIManagedObjectName();
             Map<String, Object> OfferProductVoucherAndSupplierIDs = OfferProductVoucherAndSupplierIDs(offer, tenantID);
             String supplierID = (String) OfferProductVoucherAndSupplierIDs.get("supplierID");
-            OfferProduct product = (OfferProduct) OfferProductVoucherAndSupplierIDs.get("offerProduct");
-            OfferVoucher voucher = (OfferVoucher) OfferProductVoucherAndSupplierIDs.get("offerVoucher");                   
+            JSONObject product = (JSONObject) OfferProductVoucherAndSupplierIDs.get("offerProduct");
+            JSONObject voucher = (JSONObject) OfferProductVoucherAndSupplierIDs.get("offerVoucher");                   
             
-            if (product != null)
+            if (product != null && product.get("productID") != null)
               {
-                String productID = product.getProductID();
+                String productID = product.get("productID").toString();
                 String productName = (productService.getStoredProduct(productID)).getGUIManagedObjectName();
-                if (activeSupplier.equals(supplierID) && offerName.equals(productName) && offer.getSimpleOffer() )
+                
+                if (activeSupplier.equals(supplierID) && offerName.equals(productName) && simpleOffer)
                   {
-                    String productId = product.getProductID();
+                    String productId = productID;
                     productService.removeProduct(productId, userID, tenantID);
-                    offerService.removeOffer(offer.getOfferID(), userID, tenantID);
+                    offerService.removeOffer(offer.getGUIManagedObjectID(), userID, tenantID);
 
                     responseCode = "ok";
 
                     response.put("responseCode", responseCode);
                   }
 
-                else if (offerName.equals(productName) && offer.getSimpleOffer() && !(activeSupplier.equals(supplierID)))
+                else if (offerName.equals(productName) && simpleOffer && !(activeSupplier.equals(supplierID)))
 
                   {
 
@@ -26106,23 +26333,23 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                     return JSONUtilities.encodeObject(response);
                   }
               }
-            if (voucher != null)
+            if (voucher != null && voucher.get("voucherID") != null)
               {
-                String voucherID = voucher.getVoucherID();
+                String voucherID = voucher.get("voucherID").toString();
                 String voucherName = (voucherService.getStoredVoucher(voucherID)).getGUIManagedObjectName();
 
-                if (activeSupplier.equals(supplierID) && offerName.equals(voucherName) && offer.getSimpleOffer())
+                if (activeSupplier.equals(supplierID) && offerName.equals(voucherName) && simpleOffer)
                   {
-                    String voucherId = voucher.getVoucherID();
+                    String voucherId = voucherID;
                     voucherService.removeVoucher(voucherId, userID, uploadedFileService, tenantID);
-                    offerService.removeOffer(offer.getOfferID(), userID, tenantID);
+                    offerService.removeOffer(offer.getGUIManagedObjectID(), userID, tenantID);
 
                     responseCode = "ok";
 
                     response.put("responseCode", responseCode);
                   }
 
-                else if (offerName.equals(voucherName) && offer.getSimpleOffer() && !(activeSupplier.equals(supplierID)))
+                else if (offerName.equals(voucherName) && simpleOffer && !(activeSupplier.equals(supplierID)))
 
                   {
 
@@ -26828,7 +27055,18 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                 Matcher matcher = enumeratedValuesPattern.matcher(availableValue);
                 if (matcher.matches())
                   {
-                    result.addAll(evaluateEnumeratedValues(matcher.group(1), now, includeDynamic, tenantID));
+                    String enumID = matcher.group(1);
+                    // EVPRO-1114 if this is a reference to a criterionFieldAvailableValue, return it directly
+                    CriterionFieldAvailableValues cfav = criterionFieldAvailableValuesService.getActiveCriterionFieldAvailableValues(enumID, now);
+                    if (cfav == null) {
+                      result.addAll(evaluateEnumeratedValues(enumID, now, includeDynamic, tenantID));
+                    } else {
+                      // EVPRO-1114 put a special object when the values can be found in the criterionFieldAvailableValuesService
+                      HashMap<String,Object> av = new HashMap<String,Object>();
+                      av.put("id", "criterionFieldAvailableValuesID");
+                      av.put("display", enumID);
+                      result.add(JSONUtilities.encodeObject(av));
+                    }
                   }
                 else
                   {
@@ -26954,7 +27192,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                 }
             }
           break;
-
+          
         case "callableJourneys":
           if (includeDynamic)
             {
@@ -27681,6 +27919,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                 }
             }
           break;
+          
         case "months":
           if (includeDynamic)
             {
@@ -27695,6 +27934,79 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                 }
             }
           break;
+          
+        case "badges":
+          if (includeDynamic)
+          {
+            for (GUIManagedObject badgeUnchecked : loyaltyProgramService.getStoredLoyaltyPrograms(tenantID))
+              {
+                if (badgeUnchecked.getAccepted() && ((LoyaltyProgram) badgeUnchecked).getLoyaltyProgramType() == LoyaltyProgramType.BADGE)
+                  {
+                    LoyaltyProgram loyaltyProgram = (LoyaltyProgram) badgeUnchecked;
+                    HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                    availableValue.put("id", loyaltyProgram.getLoyaltyProgramID());
+                    availableValue.put("display", loyaltyProgram.getGUIManagedObjectDisplay());
+                    result.add(JSONUtilities.encodeObject(availableValue));
+                  }
+              }
+          }
+          break;
+          
+        case "badgeTypes":
+          if (includeDynamic)
+          {
+            for (BadgeType badgeType : BadgeType.values())
+            {
+              if (!badgeType.equals(BadgeType.Unknown))
+              {
+                HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                availableValue.put("id", badgeType.getExternalRepresentation());
+                availableValue.put("display", badgeType.toString());
+                result.add(JSONUtilities.encodeObject(availableValue));
+              }
+            }
+          }
+          break;
+          
+        case "badgeObjectives":
+          if (includeDynamic)
+          {
+            for (GUIManagedObject badgeObjectiveUnchecked : badgeObjectiveService.getStoredBadgeObjectives(tenantID))
+            {
+              if (badgeObjectiveUnchecked.getAccepted())
+              {
+                BadgeObjective badgeObjective = (BadgeObjective) badgeObjectiveUnchecked;
+                HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                availableValue.put("id", badgeObjective.getBadgeObjectiveID());
+                availableValue.put("display", badgeObjective.getGUIManagedObjectDisplay());
+                result.add(JSONUtilities.encodeObject(availableValue));
+              }
+            }
+          }
+          break;
+          
+        case "timePeriods":
+          if (includeDynamic)
+          {
+            HashMap<String,Object> availableValueToday = new HashMap<String,Object>(); availableValueToday.put("id", "today"); availableValueToday.put("display", "Today");
+            HashMap<String,Object> availableValueYesterday = new HashMap<String,Object>(); availableValueYesterday.put("id", "yesterday"); availableValueYesterday.put("display", "Yesterday");
+            HashMap<String,Object> availableValueThisMonth = new HashMap<String,Object>(); availableValueThisMonth.put("id", "this.month"); availableValueThisMonth.put("display", "This Month");
+            HashMap<String,Object> availableValueLast1Month = new HashMap<String,Object>(); availableValueLast1Month.put("id", "last.1.month"); availableValueLast1Month.put("display", "Last month");
+            HashMap<String,Object> availableValueLast3Month = new HashMap<String,Object>(); availableValueLast3Month.put("id", "last.3.month"); availableValueLast3Month.put("display", "Last 3 months");
+            HashMap<String,Object> availableValueThisWeek = new HashMap<String,Object>(); availableValueThisWeek.put("id", "this.week"); availableValueThisWeek.put("display", "This week");
+            HashMap<String,Object> availableValueLast7Days = new HashMap<String,Object>(); availableValueLast7Days.put("id", "last.7.days"); availableValueLast7Days.put("display", "Last 7 days");
+            HashMap<String,Object> availableValueLastWeek = new HashMap<String,Object>(); availableValueLastWeek.put("id", "last.week"); availableValueLastWeek.put("display", "Last week");
+            
+            result.add(JSONUtilities.encodeObject(availableValueToday));
+            result.add(JSONUtilities.encodeObject(availableValueYesterday));
+            result.add(JSONUtilities.encodeObject(availableValueThisMonth));
+            result.add(JSONUtilities.encodeObject(availableValueLast1Month));
+            result.add(JSONUtilities.encodeObject(availableValueLast3Month));
+            result.add(JSONUtilities.encodeObject(availableValueThisWeek));
+            result.add(JSONUtilities.encodeObject(availableValueLast7Days));
+            result.add(JSONUtilities.encodeObject(availableValueLastWeek));
+          }
+        break;
           
         case "returnCodesBDR":
           if (includeDynamic)
@@ -28114,6 +28426,8 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
 
   protected void revalidateJourneys(Date date, int tenantID)
   {
+    Date now = SystemTime.getCurrentTime();
+    
     /****************************************
     *
     *  identify
@@ -28133,6 +28447,12 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           {
             Journey journey = new Journey(existingJourney.getJSONRepresentation(), existingJourney.getGUIManagedObjectType(), epoch, existingJourney, journeyService, catalogCharacteristicService, subscriberMessageTemplateService, dynamicEventDeclarationsService, journeyTemplateService, tenantID);
             journey.validate(journeyObjectiveService, catalogCharacteristicService, targetService, date);
+            
+            //
+            //  validate nodes param
+            //
+            
+            validateJourneyNodeParams(journey, now);
             modifiedJourney = journey;
           }
         catch (JSONUtilitiesException|GUIManagerException e)
@@ -28172,6 +28492,83 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
         else
           {
             journeyService.putGUIManagedObject(modifiedJourney, date, false, null);
+          }
+      }
+  }
+
+  private void validateJourneyNodeParams(Journey journey, Date now) throws GUIManagerException
+  {
+    Map<String, JSONArray> nodesJSON = new HashMap<String, JSONArray>();
+    for (Object nodeObject : JSONUtilities.decodeJSONArray(journeyService.getJSONRepresentation(journey), "nodes", true))
+      {
+        JSONObject nodeJson = (JSONObject) nodeObject;
+        nodesJSON.put(JSONUtilities.decodeString(nodeJson, "id", true), JSONUtilities.decodeJSONArray(nodeJson, "parameters", new JSONArray()));
+      } 
+    for (JourneyNode journeyNode : journey.getJourneyNodes().values())
+      {
+        if (journeyNode.getNodeType().getActionManager() != null)
+          {
+            NodeType nodeType = journeyNode.getNodeType();
+            JSONObject resolvedNodeTypeJSON = (JSONObject) nodeType.getJSONRepresentation().clone();
+            JSONArray parameters = JSONUtilities.decodeJSONArray(resolvedNodeTypeJSON, "parameters", true);
+            Map<String, List<JSONObject>> parameterAvailableValues = new HashMap<String, List<JSONObject>>();
+            for (int i=0; i<parameters.size(); i++)
+              {
+                //
+                // clone
+                //
+
+                JSONObject parameterJSON = (JSONObject) ((JSONObject) parameters.get(i)).clone();
+
+                //
+                //
+                //
+
+                String id = JSONUtilities.decodeString(parameterJSON, "id", true);
+                String name = JSONUtilities.decodeString(parameterJSON, "name", id);
+                JSONObject parametersJSON = (JSONObject) nodesJSON.get(journeyNode.getNodeID()).stream().filter(paramJson -> id.equals(JSONUtilities.decodeString((JSONObject) paramJson, "parameterName", false))).findFirst().orElse(new JSONObject());
+                if (parametersJSON.get("value") instanceof JSONObject)
+                  {
+                    JSONObject parameterValueJSON = JSONUtilities.decodeJSONObject(parametersJSON, "value", new JSONObject());
+                    boolean isFixedValueType = JSONUtilities.decodeString(parameterValueJSON, "valueType", "").equals("simple"); // valueType is only used by GUI but here we need to know the value is fixed or set from a drop down
+                    
+                    //
+                    // availableValues
+                    //
+                    
+                    JSONArray availableValuesJSON = JSONUtilities.decodeJSONArray(parameterJSON, "availableValues", false);
+                    JSONArray expressionValuesJSON = JSONUtilities.decodeJSONArray(parameterJSON, "expressionFields", false);
+                    boolean shouldBeValidated = !isFixedValueType && (availableValuesJSON != null || expressionValuesJSON != null);
+                    if (shouldBeValidated)
+                      {
+                        JSONArray availableValuesJSONArray = new JSONArray();
+                        if (availableValuesJSON != null) availableValuesJSONArray.addAll(availableValuesJSON);
+                        if (expressionValuesJSON != null) availableValuesJSONArray.addAll(expressionValuesJSON);
+                        List<JSONObject> availableValues = evaluateAvailableValues(availableValuesJSONArray, now, journey.getTenantID());
+                        Object nodeParamObjVal = journeyNode.getNodeParameters().get(id);
+                        boolean found = false;
+                        Object actualVal = null;
+                        if (nodeParamObjVal instanceof ParameterExpression && ((ParameterExpression) nodeParamObjVal).getExpression() instanceof ConstantExpression)
+                          {
+                            actualVal  = ((ParameterExpression) nodeParamObjVal).getExpression().evaluateConstant(); // context vars are ParameterExpression but not constant so value will be null - no need to do seperate check for context vars.
+                          }
+                        else if (nodeParamObjVal instanceof String)
+                          {
+                            actualVal = nodeParamObjVal;
+                          }
+                        if (actualVal != null)
+                          {
+                            for (JSONObject jsn : availableValues)
+                              {
+                                Object idVal = jsn.get("id");
+                                found = actualVal.equals(idVal);
+                                if (found) break;
+                              }
+                            if (!found) throw new GUIManagerException("bad node parameter value for", name);
+                          }
+                      }
+                  } 
+              }
           }
       }
   }
@@ -28233,6 +28630,64 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     for (GUIManagedObject modifiedSubscriberMessageTemplate : modifiedSubscriberMessageTemplates)
       {
         subscriberMessageTemplateService.putGUIManagedObject(modifiedSubscriberMessageTemplate, date, false, null);
+      }
+  }
+  
+  /*****************************************
+  *
+  *  revalidateBadges
+  *
+  *****************************************/
+  protected void revalidateBadges(Date date, int tenantID)
+  {
+    /****************************************
+    *
+    *  identify
+    *
+    ****************************************/
+
+    Set<GUIManagedObject> modifiedBadges = new HashSet<GUIManagedObject>();
+    for (GUIManagedObject existingBadge : loyaltyProgramService.getStoredLoyaltyPrograms(tenantID))
+      {
+        JSONObject loyaltyProFull = loyaltyProgramService.generateResponseJSON(existingBadge, true, date);
+        if (LoyaltyProgramType.BADGE != LoyaltyProgramType.fromExternalRepresentation(JSONUtilities.decodeString(loyaltyProFull, "loyaltyProgramType"))) continue;
+          
+        //
+        //  modifiedBadge
+        //
+
+        long epoch = epochServer.getKey();
+        GUIManagedObject modifiedBadge;
+        try
+          {
+            LoyaltyProgram badge = new Badge(existingBadge.getJSONRepresentation(), epoch, existingBadge, catalogCharacteristicService, tenantID);
+            badge.validate();
+            modifiedBadge = badge;
+          }
+        catch (JSONUtilitiesException|GUIManagerException e)
+          {
+            modifiedBadge = new IncompleteObject(existingBadge.getJSONRepresentation(), epoch, tenantID);
+          }
+
+        //
+        //  changed?
+        //
+
+        if (existingBadge.getAccepted() != modifiedBadge.getAccepted())
+          {
+            modifiedBadges.add(modifiedBadge);
+          }
+      }
+
+    /****************************************
+    *
+    *  update
+    *
+    ****************************************/
+
+    for (GUIManagedObject modifiedBadge : modifiedBadges)
+      {
+        loyaltyProgramService.putGUIManagedObject(modifiedBadge, date, false, null);
       }
   }
 
@@ -28354,6 +28809,62 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     ****************************************/
 
     revalidateOffers(date, tenantID);
+  }
+  
+  /*****************************************
+  *
+  *  revalidateBadgeObjectives
+  *
+  *****************************************/
+  
+  protected void revalidateBadgeObjectives(Date date, int tenantID)
+  {
+    /****************************************
+    *
+    *  identify
+    *
+    ****************************************/
+    Set<GUIManagedObject> modifiedBadgeObjectives = new HashSet<GUIManagedObject>();
+    for (GUIManagedObject existingBadgeObjective : badgeObjectiveService.getStoredBadgeObjectives(tenantID))
+      {
+        //
+        //  modifiedBadgeObjective
+        //
+        long epoch = epochServer.getKey();
+        GUIManagedObject modifiedBadgeObjective;
+        try
+          {
+            BadgeObjective badgeObjective = new BadgeObjective(existingBadgeObjective.getJSONRepresentation(), epoch, existingBadgeObjective, tenantID);
+            badgeObjective.validate(catalogCharacteristicService, date);
+            modifiedBadgeObjective = badgeObjective;
+          }
+        catch (JSONUtilitiesException|GUIManagerException e)
+          {
+            modifiedBadgeObjective = new IncompleteObject(existingBadgeObjective.getJSONRepresentation(), epoch, tenantID);
+          }
+        //
+        //  changed?
+        //
+        if (existingBadgeObjective.getAccepted() != modifiedBadgeObjective.getAccepted())
+          {
+            modifiedBadgeObjectives.add(modifiedBadgeObjective);
+          }
+      }
+    /****************************************
+    *
+    *  update
+    *
+    ****************************************/
+    for (GUIManagedObject modifiedBadgeObjective : modifiedBadgeObjectives)
+      {
+        badgeObjectiveService.putGUIManagedObject(modifiedBadgeObjective, date, false, null);
+      }
+    /****************************************
+    *
+    *  revalidate dependent objects
+    *
+    ****************************************/
+    revalidateBadges(date, tenantID);
   }
 
   /*****************************************
@@ -29307,6 +29818,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     private TargetService targetService;
     private CommunicationChannelBlackoutService communicationChannelBlackoutService;
     private LoyaltyProgramService loyaltyProgramService;
+    private BadgeObjectiveService badgeObjectiveService;
     private ExclusionInclusionTargetService exclusionInclusionTargetService;
     private ResellerService resellerService;
     private SegmentContactPolicyService segmentContactPolicyService;
@@ -29351,6 +29863,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     public TargetService getTargetService() { return targetService; }
     public CommunicationChannelBlackoutService getCommunicationChannelBlackoutService() { return communicationChannelBlackoutService; }
     public LoyaltyProgramService getLoyaltyProgramService() { return loyaltyProgramService; }
+    public BadgeObjectiveService getbBadgeObjectiveService() { return badgeObjectiveService; }
     public ExclusionInclusionTargetService getExclusionInclusionTargetService() { return exclusionInclusionTargetService; }
     public ResellerService getPartnerService() { return resellerService; }
     public SegmentContactPolicyService getSegmentContactPolicyService() { return segmentContactPolicyService; }
@@ -29364,7 +29877,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     *
     *****************************************/
 
-    public GUIManagerContext(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, PredictionSettingsService predictionSettingsService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService, CustomCriteriaService customCriteriaService)
+    public GUIManagerContext(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, PredictionSettingsService predictionSettingsService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, BadgeObjectiveService badgeObjectiveService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService, CustomCriteriaService customCriteriaService)
     {
       this.journeyService = journeyService;
       this.segmentationDimensionService = segmentationDimensionService;
@@ -29398,6 +29911,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
       this.targetService = targetService;
       this.communicationChannelBlackoutService = communicationChannelBlackoutService;
       this.loyaltyProgramService = loyaltyProgramService;
+      this.badgeObjectiveService = badgeObjectiveService;
       this.exclusionInclusionTargetService = exclusionInclusionTargetService;
       this.resellerService = resellerService;
       this.segmentContactPolicyService = segmentContactPolicyService;
@@ -29719,7 +30233,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     if (offer != null && offer.getJSONRepresentation().get("vouchers") != null) {
       offerVouchers = (JSONArray) offer.getJSONRepresentation().get("vouchers");
     }
-    
     HashMap<String,Object> response = new HashMap<String,Object>();
     String supplierID = null;
     if (offerProducts != null && offerProducts.size() != 0)

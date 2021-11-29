@@ -108,9 +108,10 @@ public class VoucherCustomerReportMonoPhase implements ReportCsvFactory
                             Object alternateId = subscriberFields.get(alternateID.getESField());
                             commonFields.put(alternateID.getName(), alternateId);
                           }
-                        {
-                          commonFields.put(alternateID.getName(), "");
-                        }
+                        else
+                          {
+                            commonFields.put(alternateID.getName(), "");
+                          }
                       }
 
                     for (int i = 0; i < vouchersArray.size(); i++)

@@ -38,6 +38,9 @@ fwk-api-<_KEY_>:
     - type: bind
       source: <_NGLM_GUI_RUNTIME_>/fwk-api-<_KEY_>/mnt
       target: /mnt
+  configs:
+    - source: gui_email_config
+      target: /app/Resources/resources.json
   deploy:
     restart_policy:
       condition: <_DOCKER_RESTART_POLICY_>

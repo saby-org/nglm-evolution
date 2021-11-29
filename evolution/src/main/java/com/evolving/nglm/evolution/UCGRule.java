@@ -17,6 +17,7 @@ import org.json.simple.JSONObject;
 
 import java.util.*;
 import java.util.Date;
+import java.util.stream.Collectors;
 
 @GUIDependencyDef(objectType = "ucgrule", serviceClass = UCGRuleService.class, dependencies = { "segmentationdimension" })
 public class UCGRule extends GUIManagedObject
@@ -132,6 +133,18 @@ public class UCGRule extends GUIManagedObject
     this.percentageOfRefresh = percentageOfRefresh;
     this.noOfDaysForStayOut = noOfDaysForStayOut;
     this.refreshEpoch = refreshEpoch;
+  }
+
+  //copy constructor
+  public UCGRule(UCGRule ucgRule)
+  {
+    super(ucgRule.getUCGRuleID(), ucgRule.getTenantID());
+    this.selectedDimensions = ucgRule.selectedDimensions.stream().collect(Collectors.toList());
+    this.calculationType = ucgRule.calculationType;
+    this.size = ucgRule.size;
+    this.percentageOfRefresh = ucgRule.percentageOfRefresh;
+    this.noOfDaysForStayOut = ucgRule.noOfDaysForStayOut;
+    this.refreshEpoch = ucgRule.refreshEpoch;
   }
 
   /*****************************************

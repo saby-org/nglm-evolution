@@ -1814,7 +1814,7 @@
     },
     {
       "columns": [],
-      "datasource": "Odr",
+      "datasource": "ODR",
       "fieldConfig": {
         "defaults": {
           "custom": {}
@@ -1934,7 +1934,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Odr",
+      "datasource": "ODR",
       "fieldConfig": {
         "defaults": {
           "color": {},

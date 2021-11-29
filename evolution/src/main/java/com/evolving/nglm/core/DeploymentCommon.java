@@ -19,6 +19,7 @@ import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.evolving.nglm.evolution.EvolutionEngineEvent;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
@@ -29,7 +30,6 @@ import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.evolution.CallingChannelProperty;
 import com.evolving.nglm.evolution.CatalogCharacteristicUnit;
 import com.evolving.nglm.evolution.CommunicationChannel;
@@ -37,7 +37,6 @@ import com.evolving.nglm.evolution.CriterionField;
 import com.evolving.nglm.evolution.CriterionFieldRetriever;
 import com.evolving.nglm.evolution.CustomerMetaData;
 import com.evolving.nglm.evolution.DNBOMatrixVariable;
-import com.evolving.nglm.evolution.DeliveryManagerAccount;
 import com.evolving.nglm.evolution.DeliveryManagerDeclaration;
 import com.evolving.nglm.evolution.EvolutionEngine;
 import com.evolving.nglm.evolution.EvolutionEngineEventDeclaration;
@@ -64,10 +63,10 @@ import com.evolving.nglm.evolution.SupportedRelationship;
 import com.evolving.nglm.evolution.SupportedTokenCodesFormat;
 import com.evolving.nglm.evolution.SupportedVoucherCodePattern;
 import com.evolving.nglm.evolution.ThirdPartyMethodAccessLevel;
-import com.evolving.nglm.evolution.ToolboxSection;
 import com.evolving.nglm.evolution.EvolutionEngineEventDeclaration.EventRule;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.datacubes.SubscriberProfileDatacubeMetric;
+import com.evolving.nglm.evolution.datacubes.SubscriberProfileDatacubeMetricConfiguration;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchConnectionSettings;
 import com.evolving.nglm.evolution.kafka.Topic;
 import com.evolving.nglm.evolution.tenancy.Tenant;
@@ -251,6 +250,7 @@ public class DeploymentCommon
   private static int elasticsearchRetentionDaysTokens;
   private static int elasticsearchRetentionDaysSnapshots;
   private static int elasticsearchRetentionDaysVDR;
+  private static int elasticsearchRetentionDaysBGDR;
   private static int elasticsearchRetentionDaysEDR;
   private static int elasticsearchRetentionDaysJourneys;
   private static int elasticsearchRetentionDaysCampaigns;
@@ -276,6 +276,8 @@ public class DeploymentCommon
   private static int kafkaRetentionDaysExpiredVouchers;
   private static int kafkaRetentionDaysLoyaltyPrograms;
   private static int kafkaRetentionDaysTargets;
+  private static int kafkaRetentionDaysRemovedBadges;
+  
   //
   // Topics
   //
@@ -355,6 +357,7 @@ public class DeploymentCommon
   private static String communicationChannelTimeWindowTopic;
   private static String tokenChangeTopic;
   private static String loyaltyProgramTopic;
+  private static String badgeObjectiveTopic;
   private static String exclusionInclusionTargetTopic;
   private static String dnboMatrixTopic;
   private static String segmentContactPolicyTopic;
@@ -371,6 +374,8 @@ public class DeploymentCommon
   private static String subscriberProfileForceUpdateResponseTopic;
   private static String notificationEventTopic;
   private static String customCriteriaTopic;
+  private static String badgeChangeRequestTopic;
+  private static String badgeChangeResponseTopic;
     
   //
   // Others
@@ -401,6 +406,7 @@ public class DeploymentCommon
   private static String getCustomerAlternateID;
   private static boolean subscriberGroupLoaderAutoProvision;
   private static Map<String,EvolutionEngineEventDeclaration> evolutionEngineEvents;
+  private static Map<Class<? extends EvolutionEngineEvent>,EvolutionEngineEventDeclaration> evolutionEngineEventsByClass;
   private static Map<String,CriterionField> profileChangeDetectionCriterionFields;
   private static Map<String,CriterionField> profileChangeGeneratedCriterionFields;
   private static boolean enableProfileSegmentChange;
@@ -437,7 +443,7 @@ public class DeploymentCommon
   private static Map<String,CommunicationChannel> communicationChannels;
   private static Map<String,SupportedDataType> supportedDataTypes;
   private static JourneyMetricConfiguration journeyMetricConfiguration;
-  private static Map<String,SubscriberProfileDatacubeMetric> subscriberProfileDatacubeMetrics;
+  private static SubscriberProfileDatacubeMetricConfiguration subscriberProfileDatacubeMetricConfiguration;
   private static Map<String,CriterionField> profileCriterionFields;
   private static Map<String,CriterionField> baseProfileCriterionFields;
   private static Map<String,CriterionField> extendedProfileCriterionFields;
@@ -500,6 +506,10 @@ public class DeploymentCommon
   private static int guiConfigurationInitialConsumerMaxFetchBytes;
   private static boolean addSubscribersToUcgByCounting;
   private static int eventMaxDelayMs;
+  private static boolean ucgQuickRemovalAtRefresh;
+  private static int minDaysInUCGForQuickRemoval;
+  private static boolean ucgQuickOverloadRemoval;
+
 
 
   
@@ -546,6 +556,7 @@ public class DeploymentCommon
   public static int getElasticsearchRetentionDaysTokens() { return elasticsearchRetentionDaysTokens; }
   public static int getElasticsearchRetentionDaysSnapshots() { return elasticsearchRetentionDaysSnapshots; }
   public static int getElasticsearchRetentionDaysVDR() { return elasticsearchRetentionDaysVDR; }
+  public static int getElasticsearchRetentionDaysBGDR() { return elasticsearchRetentionDaysBGDR; }
   public static int getElasticsearchRetentionDaysEDR() { return elasticsearchRetentionDaysEDR; }
   public static int getElasticsearchRetentionDaysJourneys() { return elasticsearchRetentionDaysJourneys; }
   public static int getElasticsearchRetentionDaysCampaigns() { return elasticsearchRetentionDaysCampaigns; }
@@ -559,9 +570,11 @@ public class DeploymentCommon
   public static Long getElasticsearchTokenTemplateVersion() { return elasticsearchTemplatesVersion.get("detailedrecords_tokens"); }
   public static Long getElasticsearchOdrTemplateVersion() { return elasticsearchTemplatesVersion.get("detailedrecords_offers"); }
   public static Long getElasticsearchVdrTemplateVersion() { return elasticsearchTemplatesVersion.get("detailedrecords_vouchers"); }
+  public static Long getElasticsearchBGdrTemplateVersion() { return elasticsearchTemplatesVersion.get("detailedrecords_badges"); }
   public static Long getElasticsearchMdrTemplateVersion() { return elasticsearchTemplatesVersion.get("detailedrecords_messages"); }
   public static Long getElasticsearchEdrTemplateVersion() { return elasticsearchTemplatesVersion.get("detailedrecords_events"); }
   public static Long getElasticsearcJourneystatisticTemplateVersion() { return elasticsearchTemplatesVersion.get("journeystatistic"); }
+  public static Long getElasticsearcWorkflowarchiveTemplateVersion() { return elasticsearchTemplatesVersion.get("workflowarchive"); }
   public static Long getElasticsearchDatacubeSubscriberprofileTemplateVersion() { return elasticsearchTemplatesVersion.get("datacube_subscriberprofile"); }
   public static Long getElasticsearchDatacubeLoyaltyprogramshistoryTemplateVersion() { return elasticsearchTemplatesVersion.get("datacube_loyaltyprogramshistory"); }
   public static Long getElasticsearchDatacubeLoyaltyprogramschangesTemplateVersion() { return elasticsearchTemplatesVersion.get("datacube_loyaltyprogramschanges"); }
@@ -582,6 +595,7 @@ public class DeploymentCommon
   public static Long getElasticsearchMappingDeliverablesTemplateVersion() { return elasticsearchTemplatesVersion.get("mapping_deliverables"); }
   public static Long getElasticsearchMappingPartnersTemplateVersion() { return elasticsearchTemplatesVersion.get("mapping_partners"); }
   public static Long getElasticsearchMappingBasemanagementTemplateVersion() { return elasticsearchTemplatesVersion.get("mapping_basemanagement"); }
+  public static Long getElasticsearchMappingBadgesTemplateVersion() { return elasticsearchTemplatesVersion.get("mapping_badges"); }
   public static Long getElasticsearchMappingJourneyobjectiveTemplateVersion() { return elasticsearchTemplatesVersion.get("mapping_journeyobjective"); }
 
   //
@@ -596,6 +610,7 @@ public class DeploymentCommon
   public static int getKafkaRetentionDaysExpiredTokens() { return kafkaRetentionDaysExpiredTokens; }
   public static int getKafkaRetentionDaysExpiredVouchers() { return kafkaRetentionDaysExpiredVouchers; }
   public static int getKafkaRetentionDaysLoyaltyPrograms() { return kafkaRetentionDaysLoyaltyPrograms; }
+  public static int getKafkaRetentionDaysRemovedBadges() { return kafkaRetentionDaysRemovedBadges; }
   public static int getKafkaRetentionDaysTargets() { return kafkaRetentionDaysTargets; } 
   public static int getJourneysReportMaxParallelThreads() { return journeysReportMaxParallelThreads; }
   public static int getDetailedrecordReportsArrearCount() { return detailedrecordReportsArrearCount; }
@@ -686,6 +701,7 @@ public class DeploymentCommon
   public static String getCommunicationChannelTimeWindowTopic() { return communicationChannelTimeWindowTopic; }
   public static String getTokenChangeTopic() { return tokenChangeTopic; }
   public static String getLoyaltyProgramTopic() { return loyaltyProgramTopic; }
+  public static String getBadgeObjectiveTopic() { return badgeObjectiveTopic; }
   public static String getExclusionInclusionTargetTopic() { return exclusionInclusionTargetTopic; }
   public static String getDNBOMatrixTopic() { return dnboMatrixTopic; }
   public static String getSegmentContactPolicyTopic() { return segmentContactPolicyTopic; }
@@ -702,11 +718,19 @@ public class DeploymentCommon
   public static String getSubscriberProfileForceUpdateResponseTopic() { return subscriberProfileForceUpdateResponseTopic; }    
   public static String getNotificationEventTopic() { return notificationEventTopic; }
   public static String getCustomCriteriaTopic() { return customCriteriaTopic; }
+  public static String getBadgeChangeRequestTopic() { return badgeChangeRequestTopic; }
+  public static String getBadgeChangeResponseTopic() { return badgeChangeResponseTopic; }
   
   //
   // Others
   //
+  
   public static Map<String,AlternateID> getAlternateIDs() { return alternateIDs; }
+  public static AlternateID getAlternateID(String id) {
+    AlternateID toRet = getAlternateIDs().get(id);
+    if(toRet==null) throw new RuntimeException("unknwown alternateID "+id);
+    return toRet;
+  }
   public static String getExternalSubscriberID() { return externalSubscriberID; }
   public static String getSubscriberTraceControlAlternateID() { return subscriberTraceControlAlternateID; }
   public static boolean getSubscriberTraceControlAutoProvision() { return subscriberTraceControlAutoProvision; }
@@ -719,6 +743,7 @@ public class DeploymentCommon
   public static String getGetCustomerAlternateID() { return getCustomerAlternateID; }  // EVPRO-99 check for tenant and static
   public static boolean getSubscriberGroupLoaderAutoProvision() { return subscriberGroupLoaderAutoProvision; }
   public static Map<String,EvolutionEngineEventDeclaration> getEvolutionEngineEvents() { return evolutionEngineEvents; }
+  public static EvolutionEngineEventDeclaration getEvolutionEngineEventDeclaration(EvolutionEngineEvent evolutionEngineEvent){ return evolutionEngineEventsByClass.get(evolutionEngineEvent.getClass());}
   public static boolean getEnableProfileSegmentChange() { return enableProfileSegmentChange; }
   public static int getPropensityInitialisationPresentationThreshold() { return propensityInitialisationPresentationThreshold; }
   public static int getPropensityInitialisationDurationInDaysThreshold() { return propensityInitialisationDurationInDaysThreshold; }
@@ -751,7 +776,7 @@ public class DeploymentCommon
   public static boolean getGenerateSimpleProfileDimensions() { return generateSimpleProfileDimensions; }
   public static Map<String,SupportedDataType> getSupportedDataTypes() { return supportedDataTypes; }
   public static JourneyMetricConfiguration getJourneyMetricConfiguration() { return journeyMetricConfiguration; }
-  public static Map<String,SubscriberProfileDatacubeMetric> getSubscriberProfileDatacubeMetrics() { return subscriberProfileDatacubeMetrics; } // EVPRO-99 check for tenant and static 
+  public static SubscriberProfileDatacubeMetricConfiguration getSubscriberProfileDatacubeConfiguration() { return subscriberProfileDatacubeMetricConfiguration; } // EVPRO-99 check for tenant and static 
   public static Map<String,CriterionField> getProfileCriterionFields() { return profileCriterionFields; } // EVPRO-99 check for tenant and static
   public static Map<String,CriterionField> getBaseProfileCriterionFields() { return baseProfileCriterionFields; }
   public static Map<String,CriterionField> getExtendedProfileCriterionFields() { return extendedProfileCriterionFields; }
@@ -821,8 +846,13 @@ public class DeploymentCommon
   public static int getNodesTransitionsHistorySize() { return nodesTransitionsHistorySize; }
   public static int getFirstDayOfTheWeek() { return firstDayOfTheWeek; }
   public static boolean getAddSubscribersToUcgByCounting() { return addSubscribersToUcgByCounting; }
+  
   public static int getEventMaxDelayMs() { return eventMaxDelayMs; }
 
+  public static boolean getUcgQuickRemovalAtRefresh() { return ucgQuickRemovalAtRefresh; }
+  public static int getMinDaysInUCGForQuickRemoval() { return minDaysInUCGForQuickRemoval; }
+  public static boolean getUcgQuickOverloadRemoval() { return ucgQuickOverloadRemoval; }
+  
   
   /****************************************
   *
@@ -879,6 +909,7 @@ public class DeploymentCommon
     elasticsearchRetentionDaysTokens = jsonReader.decodeInteger("ESRetentionDaysTokens");
     elasticsearchRetentionDaysSnapshots = jsonReader.decodeInteger("ESRetentionDaysSnapshots");
     elasticsearchRetentionDaysVDR = jsonReader.decodeInteger("ESRetentionDaysVDR");
+    elasticsearchRetentionDaysBGDR = jsonReader.decodeInteger("ESRetentionDaysBGDR");
     elasticsearchRetentionDaysEDR = jsonReader.decodeInteger("ESRetentionDaysEDR");
     elasticsearchRetentionDaysJourneys = jsonReader.decodeInteger("ESRetentionDaysJourneys");
     elasticsearchRetentionDaysCampaigns = jsonReader.decodeInteger("ESRetentionDaysCampaigns");
@@ -918,6 +949,7 @@ public class DeploymentCommon
     kafkaRetentionDaysExpiredTokens = jsonReader.decodeInteger("kafkaRetentionDaysExpiredTokens");
     kafkaRetentionDaysExpiredVouchers = jsonReader.decodeInteger("kafkaRetentionDaysExpiredVouchers");
     kafkaRetentionDaysLoyaltyPrograms = jsonReader.decodeInteger("kafkaRetentionDaysLoyaltyPrograms");
+    kafkaRetentionDaysRemovedBadges = jsonReader.decodeInteger("kafkaRetentionDaysRemovedBadges");
     kafkaRetentionDaysTargets = jsonReader.decodeInteger("kafkaRetentionDaysTargets");
     maxPollIntervalMs = jsonReader.decodeInteger("maxPollIntervalMs");
     purchaseTimeoutMs = jsonReader.decodeInteger("purchaseTimeoutMs");
@@ -984,6 +1016,7 @@ public class DeploymentCommon
     communicationChannelTopic = jsonReader.decodeString("communicationChannelTopic");
     tokenChangeTopic = jsonReader.decodeString("tokenChangeTopic");
     loyaltyProgramTopic = jsonReader.decodeString("loyaltyProgramTopic");
+    badgeObjectiveTopic = jsonReader.decodeString("badgeObjectiveTopic");
     timedEvaluationTopic = jsonReader.decodeString("timedEvaluationTopic");
     evaluateTargetsTopic = jsonReader.decodeString("evaluateTargetsTopic");
     subscriberProfileForceUpdateTopic = jsonReader.decodeString("subscriberProfileForceUpdateTopic");
@@ -1016,6 +1049,8 @@ public class DeploymentCommon
     workflowEventTopic = jsonReader.decodeString("workflowEventTopic");
     notificationEventTopic = jsonReader.decodeString("notificationEventTopic");
     customCriteriaTopic = jsonReader.decodeString("customCriteriaTopic");
+    badgeChangeRequestTopic = jsonReader.decodeString("badgeChangeRequestTopic");
+    badgeChangeResponseTopic = jsonReader.decodeString("badgeChangeResponseTopic");
     
     alternateIDs = jsonReader.decodeMapFromArray(AlternateID.class, "alternateIDs");
     
@@ -1129,7 +1164,7 @@ public class DeploymentCommon
     callingChannelProperties = jsonReader.decodeMapFromArray(CallingChannelProperty.class, "callingChannelProperties");
     catalogCharacteristicUnits = jsonReader.decodeMapFromArray(CatalogCharacteristicUnit.class, "catalogCharacteristicUnits");    
     supportedDataTypes = jsonReader.decodeMapFromArray(SupportedDataType.class, "supportedDataTypes");
-    subscriberProfileDatacubeMetrics = jsonReader.decodeMapFromArray(SubscriberProfileDatacubeMetric.class, "subscriberProfileDatacubeMetrics");
+//    subscriberProfileDatacubeMetrics = jsonReader.decodeMapFromArray(SubscriberProfileDatacubeMetric.class, "subscriberProfileDatacubeMetrics");
     
     initialCallingChannelsJSONArray = jsonReader.decodeJSONArray("initialCallingChannels");
     initialSalesChannelsJSONArray = jsonReader.decodeJSONArray("initialSalesChannels");
@@ -1175,6 +1210,48 @@ public class DeploymentCommon
       }
     }
     
+    
+    // subscriberProfileDatacubeMetrcsDeclarations
+    DeploymentJSONReader subscriberProfileDatacubeMetricConfigurationJsonReader = jsonReader.get("subscriberProfileDatacubeMetrics");
+    if( subscriberProfileDatacubeMetricConfigurationJsonReader.keySet().isEmpty() ) {
+      // subscriberProfileDatacubeMetrics are therefore disabled
+    	subscriberProfileDatacubeMetricConfiguration  = new SubscriberProfileDatacubeMetricConfiguration();
+    } else {
+    	int periodROI = 4;
+    	try {
+    		periodROI = subscriberProfileDatacubeMetricConfigurationJsonReader.decodeInteger("periodROI");
+    	} catch (JSONUtilities.JSONUtilitiesException e) {
+    		log.warn("not 'subscriberProfileDatacubeMetric' settings. 'periodROI' field is null. Put default value = 4");
+            periodROI = 4;
+    	}
+      if(periodROI < 1) {
+    	log.warn("Bad 'subscriberProfileDatacubeMetric' settings. 'periodROI' field cannot be negative or zero. Put default value = 4");
+        periodROI = 4;
+      }
+      
+      String timeUnitROI = "week";
+      try{
+    	  subscriberProfileDatacubeMetricConfigurationJsonReader.decodeString("timeUnitROI");
+      } catch (JSONUtilities.JSONUtilitiesException e) {
+  		log.warn("not 'subscriberProfileDatacubeMetric' settings. timeUnitROI' field is null. Put default value = week");
+  		timeUnitROI = "week";
+      }
+      if(timeUnitROI.isEmpty()) {
+    	log.warn("Bad 'subscriberProfileDatacubeMetric' settings. 'timeUnitROI' field is empty. Put default value = week");
+    	timeUnitROI="week"; //default value="week"
+      }
+      if(!(timeUnitROI.equals("day") || timeUnitROI.equals("week") || timeUnitROI.equals("month") )) {
+      	log.warn("Bad 'subscriberProfileDatacubeMetric' settings. 'timeUnitROI' will be day or week or month. Put default value = week");
+      	timeUnitROI="week"; //default value="week"
+        }
+      Map<String,SubscriberProfileDatacubeMetric> subscriberProfileDatacubeMetricDeclarations = subscriberProfileDatacubeMetricConfigurationJsonReader.decodeMapFromArray(SubscriberProfileDatacubeMetric.class, "metrics");
+      if(subscriberProfileDatacubeMetricDeclarations.isEmpty()) { // subscriberProfileDatacubeMetric are therefore disabled
+    	  subscriberProfileDatacubeMetricConfiguration = new SubscriberProfileDatacubeMetricConfiguration();
+      } else {
+    	  subscriberProfileDatacubeMetricConfiguration = new SubscriberProfileDatacubeMetricConfiguration(periodROI, timeUnitROI, subscriberProfileDatacubeMetricDeclarations);
+      }
+    }
+    
     //
     //  profileCriterionFields
     //
@@ -1206,7 +1283,7 @@ public class DeploymentCommon
     for (int i=0; i<deplCriterionFieldValues.size(); i++)
       {
         JSONObject criterionFieldJSON = (JSONObject) deplCriterionFieldValues.get(i);
-        log.info("Decoding profileCriterionField " + criterionFieldJSON.toString());
+        if(log.isDebugEnabled()) log.debug("Decoding profileCriterionField " + criterionFieldJSON.toString());
         CriterionField criterionField = new CriterionField(criterionFieldJSON);
         profileCriterionFields.put(criterionField.getID(), criterionField);
         baseProfileCriterionFields.put(criterionField.getID(), criterionField);
@@ -1237,6 +1314,12 @@ public class DeploymentCommon
     //  profileChangeEvent
     EvolutionEngineEventDeclaration profileChangeEvent = new EvolutionEngineEventDeclaration("profile update", ProfileChangeEvent.class.getName(), getProfileChangeEventTopic(), EventRule.Standard, getProfileChangeGeneratedCriterionFields());
     evolutionEngineEvents.put(profileChangeEvent.getName(), profileChangeEvent);
+
+    // for accessing event declaration from event
+    if(evolutionEngineEvents!=null && !evolutionEngineEvents.isEmpty()){
+      evolutionEngineEventsByClass = new HashMap<>();
+      for(EvolutionEngineEventDeclaration evolutionEngineEventDeclaration:evolutionEngineEvents.values()) evolutionEngineEventsByClass.put(evolutionEngineEventDeclaration.getEventClass(),evolutionEngineEventDeclaration);
+    }
 
     extendedProfileCriterionFields = jsonReader.decodeMapFromArray(CriterionField.class, "extendedProfileCriterionFields");
     presentationCriterionFields = jsonReader.decodeMapFromArray(CriterionField.class, "presentationCriterionFields");
@@ -1486,6 +1569,9 @@ public class DeploymentCommon
 
     addSubscribersToUcgByCounting = jsonReader.decodeBoolean("addSubscribersToUcgByCounting");
     eventMaxDelayMs = jsonReader.decodeInteger("eventMaxDelayMinutes") * 60 * 1000;
+    ucgQuickRemovalAtRefresh = jsonReader.decodeBoolean("ucgQuickRemovalAtRefresh");
+    minDaysInUCGForQuickRemoval = jsonReader.decodeInteger("minDaysInUCGForQuickRemoval");
+    ucgQuickOverloadRemoval = jsonReader.decodeBoolean("ucgQuickOverloadRemoval");
 
   }
 
@@ -1970,8 +2056,8 @@ public class DeploymentCommon
         // merge both
         //
         JSONObject brutJSONRoot = JSONUtilities.jsonMergerOverrideOrAdd(productJson,custoJson,(product,custo) -> product.get("id")!=null && custo.get("id")!=null && product.get("id").equals(custo.get("id")));//json object in array match thanks to "id" field only
-        // the final running conf could be so hard to understand from all deployment files, we have to provide it to support team, hence the info log, even if big :
-        log.info("LOADED BRUT CONF : "+brutJSONRoot.toJSONString());
+        log.info("json conf loaded, turn on DEBUG on "+log.getName()+" if you want the final merged result");
+        if(log.isDebugEnabled()) log.debug("LOADED BRUT CONF : "+brutJSONRoot.toJSONString());
         return brutJSONRoot;
 
       }

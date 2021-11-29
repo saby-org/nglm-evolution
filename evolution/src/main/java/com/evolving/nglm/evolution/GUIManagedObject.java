@@ -66,6 +66,7 @@ public abstract class GUIManagedObject
     LoyaltyProgramPoints("loyaltyProgramPoints"),
     LoyaltyProgramMission("loyaltyProgramMission"),
     LoyaltyProgramChallenge("loyaltyProgramChallenge"),
+    Badge("badge"),
     Voucher("voucher"),
     Vouchershared("vouchershared"),
     
@@ -194,6 +195,8 @@ public abstract class GUIManagedObject
     guiManagedObjectSerdes.add(CriterionFieldAvailableValues.serde());
     guiManagedObjectSerdes.add(SourceAddress.serde());
     guiManagedObjectSerdes.add(CustomCriteria.serde());
+    guiManagedObjectSerdes.add(Badge.serde());
+    guiManagedObjectSerdes.add(BadgeObjective.serde());
     commonSerde = new ConnectSerde<GUIManagedObject>("guiManagedObject", false, guiManagedObjectSerdes.toArray(new ConnectSerde[0]));
     incompleteObjectSerde = new ConnectSerde<GUIManagedObject>("guiManagedObjectIncomplete", false, IncompleteObject::unpack, guiManagedObjectSerdes.toArray(new ConnectSerde[0]));
   }
@@ -692,7 +695,6 @@ public abstract class GUIManagedObject
     @Override public Map<String, List<String>>  getGUIDependencies(List<GUIService> guiServiceList, int tenantID) { return new HashMap<String, List<String>>(); }
   }
   
-  //public abstract Map<String, List<String>>  getGUIDependencies();
   public Map<String, List<String>> getGUIDependencies(List<GUIService> guiServiceList, int tenantID)
   {
     return new HashMap<String, List<String>>();

@@ -2826,7 +2826,7 @@
       "1d"
     ]
   },
-  "timezone": "",
+  "timezone": "replaceWithTenantTimeZone",
   "title": "Admin - Monitoring Dashboard",
   "uid": "replaceWithUniqueID",
   "version": 14

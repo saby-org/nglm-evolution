@@ -19,6 +19,8 @@ RUN chmod 0777 /home/appuser
 #  core
 #
 
+RUN mkdir -p /app/jars
+RUN chmod 0777 /app/jars
 COPY lib/ /app/jars
 
 #

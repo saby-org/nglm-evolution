@@ -438,8 +438,8 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCriterionFieldAvailableValuesList; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCriterionFieldAvailableValuesSummaryList; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id":"genders"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCriterionFieldAvailableValues; echo
-curl -X POST -H "Content-Type: application/json" -d '{"apiVersion": 1, "tenantID":1, "id":"genders","availableValues":[{"id": "male","display": "male"},{"id": "female","display": "female"},{"id": "other","display": "other"}]}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putCriterionFieldAvailableValues; echo
-curl -X POST -H "Content-Type: application/json" -d '{"apiVersion": 1, "tenantID":1, "id":"supportedStatuses","availableValues":[{ "id" : "active", "display" : "active" }, { "id" : "inactive", "display" : "inactive" }]}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putCriterionFieldAvailableValues; echo
+curl -X POST -H "Content-Type: application/json" -d '{"apiVersion": 1, "tenantID":1, "id":"genders","name":"genders","display":"genders","availableValues":[{"id": "male","display": "male"},{"id": "female","display": "female"},{"id": "other","display": "other"}]}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putCriterionFieldAvailableValues; echo
+curl -X POST -H "Content-Type: application/json" -d '{"apiVersion": 1, "tenantID":1, "id":"supportedStatuses","name":"supportedStatuses","display":"supportedStatuses","availableValues":[{ "id" : "active", "display" : "active" }, { "id" : "inactive", "display" : "inactive" }]}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putCriterionFieldAvailableValues; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id":"genders"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeCriterionFieldAvailableValues; echo
 
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomCriteriaList; echo
@@ -474,6 +474,29 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-configadaptor/getScoringEngines; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-configadaptor/getPresentationCriterionFields; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-configadaptor/getDefaultNoftificationDailyWindows; echo
+
+
+--
+--  badges
+--
+
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getBadgeTypeList; echo
+curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/badge-objective-001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putBadgeObjective; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getBadgeObjective; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getBadgeObjectiveSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getBadgeObjectiveList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeBadgeObjective; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "ids" : ["1", "2"], "active" : true }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/setStatusBadgeObjective; echo
+curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/badge-001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putBadge; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getBadge; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getBadgeSummaryList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getBadgeList; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/removeBadge; echo
+
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "customerID":"19195551000", "badge" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/loyaltyAwardBadge; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "customerID":"19195551000", "badge" : "1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/loyaltyRemoveBadge; echo
+
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 , "customerID":"19195551000" , "startDate" : "2018-10-12" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCustomerBGDRs; echo
 
 --
 -- recurrent-campaign
@@ -533,6 +556,8 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "loginNam
 
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>" : "19195551000", "loyaltyProgram" : "LP001" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/loyaltyProgramOptIn; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>" : "19195551000", "loyaltyProgram" : "LP001" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/loyaltyProgramOptOut; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "loginName" : "tavi", "password" : "Test1234", "<_THIRDPARTYAPI_CUSTOMER_ID_>" : "19195551000", "badge" : "rk-badge", "sync": true }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/loyaltyAwardBadge; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "loginName" : "tavi", "password" : "Test1234", "<_THIRDPARTYAPI_CUSTOMER_ID_>" : "19195551000", "badge" : "rk-badge", "sync": true }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/loyaltyRemoveBadge; echo
 
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "loginName" : "Administrator", "password" : "password", "voucherCode" : "voucher1", "supplier" : "supplier_1" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/validateVoucher; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "loginName" : "Administrator", "password" : "password", "<_THIRDPARTYAPI_CUSTOMER_ID_>" : "19195551000", "voucherCode" : "voucher1", "supplier" : "supplier_1", "origin" : "test" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/redeemVoucher; echo
@@ -629,6 +654,12 @@ $DEPLOY_ROOT/bin/configlog.sh
 $DEPLOY_ROOT/bin/restoreKafkaBackup.sh 
 
 --
+-- create criterionFieldAvailableValues
+--
+curl -X POST -H "Content-Type: application/json" -d '{"apiVersion":1,"tenantID":1,"id":"ratePlans","availableValues":[{ "id" : "tariff001", "display" : "tariff001" }, { "id" : "tariff002", "display" : "tariff002" }, { "id" : "tariff003", "display" : "tariff003" }]}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putCriterionFieldAvailableValues | jq .
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id":"ratePlans"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCriterionFieldAvailableValues; echo
+
+--
 --  storeconfiguration
 --
 
@@ -664,4 +695,3 @@ sleep 30
 curl -X POST -H "Content-Type: multipart/form-data" -F 'fileUploadMetaData={"sourceFilename": "target-with-variables.001.csv","fileType": "target","fileEncoding": "UTF-8","fileSize": 100,"numberOfLines": 1,"userID": "1", "applicationID":"201" }' -F 'file=@target-with-variables.001.csv' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putUploadedFileWithVariables; echo
 sleep 5
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/file-withvar-campaign.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putCampaign; echo
-

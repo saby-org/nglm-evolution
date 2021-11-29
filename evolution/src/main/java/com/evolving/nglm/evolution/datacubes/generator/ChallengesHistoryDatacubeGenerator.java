@@ -119,7 +119,7 @@ public class ChallengesHistoryDatacubeGenerator extends DatacubeGenerator
   {
     loyaltyProgramChallengesMap.update();
     this.segmentationDimensionList.update();
-    this.customMetrics = Deployment.getSubscriberProfileDatacubeMetrics();
+    this.customMetrics = Deployment.getSubscriberProfileDatacubeConfiguration().getMetrics();
     //TODO: subscriberStatusDisplayMapping.updateFromElasticsearch(elasticsearch);
     return true;
   }

@@ -17,6 +17,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
 import org.apache.kafka.connect.data.Field;
@@ -31,7 +32,9 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.Pair;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionOperator;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.Expression.ConstantExpression;
@@ -135,6 +138,8 @@ public class Offer extends GUIManagedObject implements StockableItem
   private Integer maximumAcceptances;
   private Integer maximumAcceptancesPeriodDays;
   private Integer maximumAcceptancesPeriodMonths;
+  private String notEligibilityReason;
+  private String limitsReachedReason;
 
   //
   //  derived
@@ -170,7 +175,9 @@ public class Offer extends GUIManagedObject implements StockableItem
   public Integer getMaximumAcceptances() { return maximumAcceptances; }
   public Integer getMaximumAcceptancesPeriodDays() { return maximumAcceptancesPeriodDays; }
   public Integer getMaximumAcceptancesPeriodMonths() { return maximumAcceptancesPeriodMonths; }
- 
+  public String getNotEligibilityReason() { return notEligibilityReason; }
+  public String getLimitsReachedReason() {	return limitsReachedReason; }
+  
   /*****************************************
   *
   *  evaluateProfileCriteria
@@ -182,6 +189,111 @@ public class Offer extends GUIManagedObject implements StockableItem
     return EvaluationCriterion.evaluateCriteria(evaluationRequest, profileCriteria);
   }
 
+  
+  /*****************************************
+  *
+  *  evaluateProfileCriteriaWithReason
+  *
+  *****************************************/
+
+  public boolean evaluateProfileCriteriaWithReason(SubscriberEvaluationRequest evaluationRequest)
+  {
+	    //
+	    //  clear evaluationVariables
+	    //
+
+	    evaluationRequest.getEvaluationVariables().clear();
+
+	    setNotEligibilityReason(null);
+	    //
+	    //  evaluate
+	    //
+
+	    for (EvaluationCriterion criterion : profileCriteria)
+	      {
+	        if(!criterion.evaluate(evaluationRequest)) {
+	        	setNotEligibilityReason(criterion.getCriterionField().getName());
+	        	break;
+	        }
+	        
+	      }
+
+	    return true;
+  }
+  
+  /*****************************************
+  *
+  *  evaluateLimitsReachedWithReason
+  *
+  *****************************************/
+  public boolean evaluateLimitsReachedWithReason(Map<String,List<Date>> oldFullPurchaseHistory, Map<String, List<Pair<String, Date>>> newFullPurchaseHistory, int tenantID, boolean isLimitsReached)
+  {
+
+	Date now = SystemTime.getCurrentTime();    
+	setLimitsReachedReason(null);
+	Date earliestDateToKeepForCriteria = EvolutionEngine.computeEarliestDateForAdvanceCriteria(now, tenantID);
+    Date earliestDateToKeep = EvolutionEngine.computeEarliestDateToKeep(now, this, tenantID);
+    Date earliestDateToKeepInHistory = earliestDateToKeep.after(earliestDateToKeepForCriteria) ? earliestDateToKeepForCriteria : earliestDateToKeep; // this is advance criteria - we must have data for 4months EVPRO-1066
+    List<Pair<String, Date>> cleanPurchaseHistory = new ArrayList<Pair<String, Date>>();
+    
+  //TODO: before EVPRO-1066 all the purchase were kept like Map<String,List<Date>, now it is Map<String, List<Pair<String, Date>>> <saleschnl, Date>
+    // so it is important to migrate data, but once all customer run over this version, this should be removed
+    // ------ START DATA MIGRATION COULD BE REMOVED
+    List<Date> oldPurchaseHistory = oldFullPurchaseHistory.get(getOfferID());
+    
+    //
+    //  oldPurchaseHistory migration TO BE removed
+    //
+    if (oldPurchaseHistory != null)
+    {
+      String salesChannelIDMigration = "migrating-ActualWasntAvlbl";
+      // only keep earliestDateToKeepInHistory purchase dates (discard dates that are too old)
+      for (Date purchaseDate : oldPurchaseHistory)
+        {
+      	if (purchaseDate.after(earliestDateToKeepInHistory))
+          {
+            cleanPurchaseHistory.add(new Pair<String, Date>(salesChannelIDMigration, purchaseDate));
+          }
+        }
+        oldFullPurchaseHistory.put(getOfferID(), new ArrayList<Date>()); // old will be blank - will be removed future
+    }
+    // ------ END DATA MIGRATION COULD BE REMOVED
+    
+    //
+    //  newPurchaseHistory
+    //
+    List<Pair<String, Date>> newPurchaseHistory = newFullPurchaseHistory.get(getOfferID());
+    if (newPurchaseHistory != null)
+      {
+  	  for (Pair<String, Date> purchaseDatePair : newPurchaseHistory)
+        {
+          Date purchaseDate = purchaseDatePair.getSecondElement();
+          if (purchaseDate.after(earliestDateToKeepInHistory))
+            {
+              cleanPurchaseHistory.add(new Pair<String, Date>(purchaseDatePair.getFirstElement(), purchaseDatePair.getSecondElement()));
+            }
+        }
+      }
+    //
+    //  filter on earliestDateToKeep (this is for offer purchase limitation - not adv criteria)
+    //
+    
+    long previousPurchseCount = cleanPurchaseHistory.stream().filter(history -> history.getSecondElement().after(earliestDateToKeep)).count();
+    int totalPurchased = (int) (previousPurchseCount) + 1; //put +1 to check if possible to purchase now a new offer
+    
+    if (EvolutionEngine.isPurchaseLimitReached(this, totalPurchased))
+    {
+  	  if (log.isTraceEnabled()) log.trace("maximumAcceptances : " + getMaximumAcceptances() + " of offer " + getOfferID() + " exceeded for subscriber as totalPurchased = " + totalPurchased + " (" + cleanPurchaseHistory.size() + ") earliestDateToKeep : " + earliestDateToKeep);
+        setLimitsReachedReason("purchases limit reached");
+        if(!isLimitsReached) {
+        	return false;
+        }
+      }
+    
+    return true;
+
+  }
+  
   /*****************************************
   *
   *  constructor -- unpack
@@ -1105,6 +1217,7 @@ public class Offer extends GUIManagedObject implements StockableItem
     return result;
   }
   
+ 
   public List<String> getSubcriteriaFieldArgumentValues(List<EvaluationCriterion> allCriterions, String fieldID)
   {
     List<String> result = new ArrayList<String>();
@@ -1136,56 +1249,72 @@ public class Offer extends GUIManagedObject implements StockableItem
   private String getGUIManagedObjectIDFromDynamicCriterion(EvaluationCriterion criteria, String objectType, List<GUIService> guiServiceList)
   {
     String result = null;
-    switch (objectType.toLowerCase())
+    try
     {
-      case "loyaltyprogrampoints":
-        Pattern fieldNamePattern = Pattern.compile("^loyaltyprogram\\.([^.]+)\\.(.+)$");
-        Matcher fieldNameMatcher = fieldNamePattern.matcher(criteria.getCriterionField().getID());
-        if (fieldNameMatcher.find())
-          {
-            String loyaltyProgramID = fieldNameMatcher.group(1);
-            LoyaltyProgramService loyaltyProgramService = (LoyaltyProgramService) guiServiceList.stream().filter(srvc -> srvc.getClass() == LoyaltyProgramService.class).findFirst().orElse(null);
-            if (loyaltyProgramService != null)
-              {
-                GUIManagedObject uncheckedLoyalty = loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID);
-                if (uncheckedLoyalty !=  null && uncheckedLoyalty.getAccepted() && ((LoyaltyProgram) uncheckedLoyalty).getLoyaltyProgramType() == LoyaltyProgramType.POINTS) result = uncheckedLoyalty.getGUIManagedObjectID();
-              }
-          }
-        break;
-        
-      case "loyaltyprogramchallenge":
-        fieldNamePattern = Pattern.compile("^loyaltyprogram\\.([^.]+)\\.(.+)$");
-        fieldNameMatcher = fieldNamePattern.matcher(criteria.getCriterionField().getID());
-        if (fieldNameMatcher.find())
-          {
-            String loyaltyProgramID = fieldNameMatcher.group(1);
-            LoyaltyProgramService loyaltyProgramService = (LoyaltyProgramService) guiServiceList.stream().filter(srvc -> srvc.getClass() == LoyaltyProgramService.class).findFirst().orElse(null);
-            if (loyaltyProgramService != null)
-              {
-                GUIManagedObject uncheckedLoyalty = loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID);
-                if (uncheckedLoyalty !=  null && uncheckedLoyalty.getAccepted() && ((LoyaltyProgram) uncheckedLoyalty).getLoyaltyProgramType() == LoyaltyProgramType.CHALLENGE) result = uncheckedLoyalty.getGUIManagedObjectID();
-              }
-          }
-        break;
-        
-      case "loyaltyprogrammission":
-        fieldNamePattern = Pattern.compile("^loyaltyprogram\\.([^.]+)\\.(.+)$");
-        fieldNameMatcher = fieldNamePattern.matcher(criteria.getCriterionField().getID());
-        if (fieldNameMatcher.find())
-          {
-            String loyaltyProgramID = fieldNameMatcher.group(1);
-            LoyaltyProgramService loyaltyProgramService = (LoyaltyProgramService) guiServiceList.stream().filter(srvc -> srvc.getClass() == LoyaltyProgramService.class).findFirst().orElse(null);
-            if (loyaltyProgramService != null)
-              {
-                GUIManagedObject uncheckedLoyalty = loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID);
-                if (uncheckedLoyalty !=  null && uncheckedLoyalty.getAccepted() && ((LoyaltyProgram) uncheckedLoyalty).getLoyaltyProgramType() == LoyaltyProgramType.MISSION) result = uncheckedLoyalty.getGUIManagedObjectID();
-              }
-          }
-        break;
+      switch (objectType.toLowerCase())
+      {
+        case "loyaltyprogrampoints":
+          Pattern fieldNamePattern = Pattern.compile("^loyaltyprogram\\.([^.]+)\\.(.+)$");
+          Matcher fieldNameMatcher = fieldNamePattern.matcher(criteria.getCriterionField().getID());
+          if (fieldNameMatcher.find())
+            {
+              String loyaltyProgramID = fieldNameMatcher.group(1);
+              LoyaltyProgramService loyaltyProgramService = (LoyaltyProgramService) guiServiceList.stream().filter(srvc -> srvc.getClass() == LoyaltyProgramService.class).findFirst().orElse(null);
+              if (loyaltyProgramService != null)
+                {
+                  GUIManagedObject uncheckedLoyalty = loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID);
+                  if (uncheckedLoyalty !=  null && uncheckedLoyalty.getAccepted() && ((LoyaltyProgram) uncheckedLoyalty).getLoyaltyProgramType() == LoyaltyProgramType.POINTS) result = uncheckedLoyalty.getGUIManagedObjectID();
+                }
+            }
+          break;
+          
+        case "loyaltyprogramchallenge":
+          fieldNamePattern = Pattern.compile("^loyaltyprogram\\.([^.]+)\\.(.+)$");
+          fieldNameMatcher = fieldNamePattern.matcher(criteria.getCriterionField().getID());
+          if (fieldNameMatcher.find())
+            {
+              String loyaltyProgramID = fieldNameMatcher.group(1);
+              LoyaltyProgramService loyaltyProgramService = (LoyaltyProgramService) guiServiceList.stream().filter(srvc -> srvc.getClass() == LoyaltyProgramService.class).findFirst().orElse(null);
+              if (loyaltyProgramService != null)
+                {
+                  GUIManagedObject uncheckedLoyalty = loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID);
+                  if (uncheckedLoyalty !=  null && uncheckedLoyalty.getAccepted() && ((LoyaltyProgram) uncheckedLoyalty).getLoyaltyProgramType() == LoyaltyProgramType.CHALLENGE) result = uncheckedLoyalty.getGUIManagedObjectID();
+                }
+            }
+          break;
+          
+        case "loyaltyprogrammission":
+          fieldNamePattern = Pattern.compile("^loyaltyprogram\\.([^.]+)\\.(.+)$");
+          fieldNameMatcher = fieldNamePattern.matcher(criteria.getCriterionField().getID());
+          if (fieldNameMatcher.find())
+            {
+              String loyaltyProgramID = fieldNameMatcher.group(1);
+              LoyaltyProgramService loyaltyProgramService = (LoyaltyProgramService) guiServiceList.stream().filter(srvc -> srvc.getClass() == LoyaltyProgramService.class).findFirst().orElse(null);
+              if (loyaltyProgramService != null)
+                {
+                  GUIManagedObject uncheckedLoyalty = loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID);
+                  if (uncheckedLoyalty !=  null && uncheckedLoyalty.getAccepted() && ((LoyaltyProgram) uncheckedLoyalty).getLoyaltyProgramType() == LoyaltyProgramType.MISSION) result = uncheckedLoyalty.getGUIManagedObjectID();
+                }
+            }
+          break;
 
-      default:
-        break;
+        default:
+          break;
+      }
+    } 
+    catch (PatternSyntaxException e)
+    {
+      if(log.isTraceEnabled()) log.trace("PatternSyntaxException Description: {}, Index: ", e.getDescription(), e.getIndex());
     }
+    
     return result;
   }
+  
+  public void setNotEligibilityReason(String notEligibilityReason) {
+		this.notEligibilityReason = notEligibilityReason;
+	}
+  
+  public void setLimitsReachedReason(String limitsReachedReason) {
+		this.limitsReachedReason = limitsReachedReason;
+	}
 }

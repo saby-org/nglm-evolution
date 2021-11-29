@@ -491,6 +491,7 @@ public class VDRReportMonoPhase implements ReportCsvFactory
     loyaltyProgramService = new LoyaltyProgramService(Deployment.getBrokerServers(),
         "vdrreportcsvwriter-loyaltyprogramservice-VDRReportMonoPhase", loyaltyProgramTopic, false);
     
+    
     productService = new ProductService(Deployment.getBrokerServers(),
         "vdrreportcsvwriter-productService-VDRReportMonoPhase", productTopic, false);
     

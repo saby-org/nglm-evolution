@@ -14,4 +14,6 @@ public class CounterStat extends Stat<CounterStat> implements CounterStatMBean {
 
   public void increment() {counter.increment();}
 
+  public void add(long x) {counter.add(x);}
+
 }

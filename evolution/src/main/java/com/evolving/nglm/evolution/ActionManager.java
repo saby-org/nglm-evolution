@@ -40,7 +40,8 @@ public abstract class ActionManager
     TriggerEvent,
     UpdateProfile,
     VoucherChange,
-    deleteSubscriber;
+    deleteSubscriber,
+    BadgeChange;
   }
 
   /*****************************************
@@ -154,5 +155,5 @@ public abstract class ActionManager
   {
     return new HashMap<String, String>();
   }
-
+  
 }

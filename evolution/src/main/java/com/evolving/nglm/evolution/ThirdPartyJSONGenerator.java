@@ -106,7 +106,7 @@ public class ThirdPartyJSONGenerator
   *
   *****************************************/
   
-  public static JSONObject generateOfferJSONForThirdParty(Offer offer, OfferService offerService, OfferObjectiveService offerObjectiveService, ProductService productService, VoucherService voucherService, SalesChannelService salesChannelService, CatalogCharacteristicService catalogCharacteristicService)
+  public static JSONObject generateOfferJSONForThirdParty(Offer offer, OfferService offerService, OfferObjectiveService offerObjectiveService, ProductService productService, VoucherService voucherService, SalesChannelService salesChannelService, CatalogCharacteristicService catalogCharacteristicService, boolean notEligible, boolean limitsReached)
   {
     HashMap<String, Object> offerMap = new HashMap<String, Object>();
     if ( null == offer ) return JSONUtilities.encodeObject(offerMap);
@@ -130,6 +130,8 @@ public class ThirdPartyJSONGenerator
     offerMap.put("products", products);
     List<JSONObject> vouchers = offer.getOfferVouchers()==null?null:offer.getOfferVouchers().stream().map(voucher -> ThirdPartyJSONGenerator.generateVoucherJSONForThirdParty(voucher, voucherService)).collect(Collectors.toList());
     offerMap.put("vouchers", vouchers);
+    offerMap.put("eligibility", offer.getNotEligibilityReason()==null?"":"not eligible due to "+offer.getNotEligibilityReason());
+    offerMap.put("limitsReached", offer.getLimitsReachedReason()==null?"":offer.getLimitsReachedReason());
     return JSONUtilities.encodeObject(offerMap);
   }
   

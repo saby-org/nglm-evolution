@@ -24,6 +24,7 @@ public class SubscriberProfileDatacubeMetric extends DeploymentManagedObject
   
   private String yesterdayESField;
   private String todayESField;
+  private boolean isMetricROI;
 
   /*****************************************
   *
@@ -33,6 +34,7 @@ public class SubscriberProfileDatacubeMetric extends DeploymentManagedObject
   
   public String getYesterdayESField() { return yesterdayESField; }
   public String getTodayESField() { return todayESField; }
+  public boolean isMetricROI() {return isMetricROI; }
 
   /*****************************************
   *
@@ -45,5 +47,11 @@ public class SubscriberProfileDatacubeMetric extends DeploymentManagedObject
     super(jsonRoot);
     this.yesterdayESField = JSONUtilities.decodeString(jsonRoot, "yesterdayESField", true);
     this.todayESField = JSONUtilities.decodeString(jsonRoot, "todayESField", true);
+    try { // TODO this try/catch is to hide EVPRO-1172
+      this.isMetricROI = JSONUtilities.decodeBoolean(jsonRoot, "metricROI", true);      
+    }
+    catch (Exception e) {
+      this.isMetricROI = false;
+    }
   }
 }

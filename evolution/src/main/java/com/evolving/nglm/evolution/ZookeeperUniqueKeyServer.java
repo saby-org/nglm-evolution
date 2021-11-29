@@ -2,11 +2,9 @@ package com.evolving.nglm.evolution;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.stream.IntStream;
 
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.KeeperException.NodeExistsException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooDefs;
@@ -246,13 +244,4 @@ public class ZookeeperUniqueKeyServer
       }
   }
 
-  //
-  // test code (to be removed ?)
-  //
-  
-  public static void main(String args[])
-  {
-    ZookeeperUniqueKeyServer zuks = new ZookeeperUniqueKeyServer("evolution");
-    IntStream.range(0,5).forEach(i->{long k=zuks.getKey();System.out.printf("Unique key #%d : %d\n",i,k);});
-  }
 }

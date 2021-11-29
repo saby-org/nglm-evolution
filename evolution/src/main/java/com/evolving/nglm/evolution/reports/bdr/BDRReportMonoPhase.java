@@ -481,6 +481,7 @@ public class BDRReportMonoPhase implements ReportCsvFactory
     journeyService        = new JourneyService(Deployment.getBrokerServers(), "bdrreportcsvwriter-journeyservice-BDRReportMonoPhase", journeyTopic, false);
     offerService          = new OfferService(Deployment.getBrokerServers(), "bdrreportcsvwriter-offerservice-BDRReportMonoPhase", offerTopic, false);
     loyaltyProgramService = new LoyaltyProgramService(Deployment.getBrokerServers(), "bdrreportcsvwriter-loyaltyprogramservice-BDRReportMonoPhase", loyaltyProgramTopic, false);
+    
 
     deliverableService.start();
     journeyService.start();

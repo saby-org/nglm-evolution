@@ -118,7 +118,7 @@ public class GUIManagerGeneral extends GUIManager
    * 
    ***************************/
   
-  public GUIManagerGeneral(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService, DNBOMatrixService dnboMatrixService, DynamicCriterionFieldService dynamicCriterionFieldService, DynamicEventDeclarationsService dynamicEventDeclarationsService, JourneyTemplateService journeyTemplateService, KafkaResponseListenerService<StringKey,PurchaseFulfillmentRequest> purchaseResponseListenerService, SharedIDService subscriberGroupSharedIDService, ZookeeperUniqueKeyServer zuks, int httpTimeout, KafkaProducer<byte[], byte[]> kafkaProducer, ElasticsearchClientAPI elasticsearch, SubscriberMessageTemplateService subscriberMessageTemplateService, String getCustomerAlternateID, GUIManagerContext guiManagerContext, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader)
+  public GUIManagerGeneral(JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, OfferService offerService, ReportService reportService, PaymentMeanService paymentMeanService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberMessageTemplateService subscriberTemplateService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, BadgeObjectiveService badgeObjectiveService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService, DNBOMatrixService dnboMatrixService, DynamicCriterionFieldService dynamicCriterionFieldService, DynamicEventDeclarationsService dynamicEventDeclarationsService, JourneyTemplateService journeyTemplateService, KafkaResponseListenerService<StringKey,PurchaseFulfillmentRequest> purchaseResponseListenerService, SharedIDService subscriberGroupSharedIDService, ZookeeperUniqueKeyServer zuks, int httpTimeout, KafkaProducer<byte[], byte[]> kafkaProducer, ElasticsearchClientAPI elasticsearch, SubscriberMessageTemplateService subscriberMessageTemplateService, String getCustomerAlternateID, GUIManagerContext guiManagerContext, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader)
   {
     super.callingChannelService = callingChannelService;
     super.catalogCharacteristicService = catalogCharacteristicService;
@@ -130,6 +130,7 @@ public class GUIManagerGeneral extends GUIManager
     super.journeyObjectiveService = journeyObjectiveService;
     super.journeyService = journeyService;
     super.loyaltyProgramService = loyaltyProgramService;
+    super.badgeObjectiveService = badgeObjectiveService;
     super.offerObjectiveService = offerObjectiveService;
     super.offerService = offerService;
     super.paymentMeanService = paymentMeanService;
@@ -210,6 +211,7 @@ public class GUIManagerGeneral extends GUIManager
     guiServiceList.add(dynamicCriterionFieldService);
     guiServiceList.add(dynamicEventDeclarationsService);
     guiServiceList.add(journeyTemplateService);
+    guiServiceList.add(badgeObjectiveService);
     
     //
     //  buildGUIDependencyModelTreeMap
@@ -3005,6 +3007,7 @@ public class GUIManagerGeneral extends GUIManager
             // implementing however I think should logically have
             revalidateVoucherTypes(now, tenantID);
             revalidateVouchers(now, tenantID);
+            revalidateBadgeObjectives(now, tenantID); // internaly calls revalidateBadge
           }
 
         /*****************************************
@@ -4273,6 +4276,7 @@ public class GUIManagerGeneral extends GUIManager
              *****************************************/
 
             revalidateProducts(now, tenantID);
+            revalidateJourneys(now, tenantID);
           }
 
         /*****************************************
@@ -4308,6 +4312,7 @@ public class GUIManagerGeneral extends GUIManager
             //
 
             revalidateProducts(now, tenantID);
+            revalidateJourneys(now, tenantID);
           }
 
         //
@@ -4424,6 +4429,7 @@ public class GUIManagerGeneral extends GUIManager
          *****************************************/
 
         revalidateProducts(now, tenantID);
+        revalidateJourneys(now, tenantID);
       }
 
     /*****************************************
@@ -4509,6 +4515,7 @@ public class GUIManagerGeneral extends GUIManager
                  *****************************************/
 
                 revalidateProducts(now, tenantID);
+                revalidateJourneys(now, tenantID);
 
               }
             catch (JSONUtilitiesException | GUIManagerException e)
@@ -4529,6 +4536,7 @@ public class GUIManagerGeneral extends GUIManager
                 //
 
                 revalidateProducts(now, tenantID);
+                revalidateJourneys(now, tenantID);
 
                 //
                 // log

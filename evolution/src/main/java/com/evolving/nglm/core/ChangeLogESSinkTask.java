@@ -66,7 +66,7 @@ public abstract class ChangeLogESSinkTask<T> extends SimpleESSinkTask
               if (guiManagedObject.getDeleted())
                 {
                   DeleteRequest deleteRequest = new DeleteRequest(getDocumentIndexName(item), getDocumentID(item));
-                  deleteRequest.id(getDocumentID(item));
+                  deleteRequest.id(getDocumentID(item)); // @rl: This seems redundant with the line above, is there any reason for that ?
                   return Collections.<DocWriteRequest>singletonList(deleteRequest);
                 }
               else

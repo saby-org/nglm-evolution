@@ -72,7 +72,11 @@ import com.evolving.nglm.evolution.DeliveryRequest;
 import com.evolving.nglm.evolution.GUIManager;
 import com.evolving.nglm.evolution.GUIManager.API;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
+import com.evolving.nglm.evolution.JourneyESSinkConnector;
 import com.evolving.nglm.evolution.JourneyMetricDeclaration;
+import com.evolving.nglm.evolution.JourneyStatistic;
+import com.evolving.nglm.evolution.JourneyStatisticESSinkConnector;
 import com.evolving.nglm.evolution.MailNotificationManager.MailNotificationManagerRequest;
 import com.evolving.nglm.evolution.NotificationManager.NotificationManagerRequest;
 import com.evolving.nglm.evolution.PushNotificationManager.PushNotificationManagerRequest;
@@ -151,12 +155,15 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
   public static final String JOURNEYSTATISTIC_NODEID_FIELD = "nodeID";
   public static final String JOURNEYSTATISTIC_REWARD_FIELD = "rewards";
   public static final String JOURNEYSTATISTIC_SAMPLE_FIELD = "sample";
-  public static final String[] specialExit = {"NotEligible", "Excluded", "ObjectiveLimitReached", "UCG"};
+  public static final String WORKFLOWARCHIVE_STATUS_FIELD = "status";
+  public static final String WORKFLOWARCHIVE_JOURNEYID_FIELD = "journeyID";
+  public static final String WORKFLOWARCHIVE_NODEID_FIELD = "nodeID";
+  public static final String WORKFLOWARCHIVE_COUNT_FIELD = "count";
   public static String getJourneyIndex(String journeyID) {
     if(journeyID == null) {
       return "";
     }
-    return "journeystatistic-" + journeyID.toLowerCase(); // same rule as JourneyStatisticESSinkConnector
+    return "journeystatistic-" + JourneyStatisticESSinkConnector.journeyIDFormatterForESIndex(journeyID);
   }
 
   /*****************************************
@@ -434,10 +441,42 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
   * API
   *
   *****************************************/
+  /**
+   * This call does not account all subscribers with a SpecialExit Status
+   */
+  public Map<String, Long> getJourneyNodeCount(String journeyID, boolean isWorkflow) throws ElasticsearchClientException {
+    if(!isWorkflow) {
+      return getNodeCountFromJourneystatistic(journeyID);
+    }
+    else {
+      // Extract from journeystatistic index
+      Map<String, Long> result = getNodeCountFromJourneystatistic(journeyID);
+      
+      // Add archive counts (workflowarchive index)
+      Map<String, Long> add = getNodeCountFromWorkflowarchive(journeyID);
+      
+      // Merge with result
+      for(String nodeID: add.keySet()) {
+        if(result.get(nodeID) == null ) {
+          result.put(nodeID, 0L);
+        }
+        
+        result.put(nodeID, result.get(nodeID) + add.get(nodeID));
+      }
+      
+      return result;
+    }
+  }
   
-  public Map<String, Long> getJourneyNodeCount(String journeyID) throws ElasticsearchClientException {
+  /**
+   * This call does not account all subscribers with a SpecialExit Status
+   */
+  private Map<String, Long> getNodeCountFromJourneystatistic(String journeyID) throws ElasticsearchClientException {
     try {
       Map<String, Long> result = new HashMap<String, Long>();
+
+      // Filter out SpecialExit status
+      BoolQueryBuilder query = QueryBuilders.boolQuery().mustNot(QueryBuilders.termsQuery(JOURNEYSTATISTIC_STATUS_FIELD, SubscriberJourneyStatus.getExitStatusReprensentation()));
   
       //
       // Build Elasticsearch query
@@ -445,11 +484,12 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
       String index = getJourneyIndex(journeyID);
       String bucketName = "NODE_ID";
       SearchSourceBuilder searchSourceRequest = new SearchSourceBuilder()
-          .query(QueryBuilders.matchAllQuery())
+          .query(query)
           .size(0)
           .aggregation(AggregationBuilders.terms(bucketName).field(JOURNEYSTATISTIC_NODEID_FIELD).size(MAX_BUCKETS));
       SearchRequest searchRequest = new SearchRequest(index).source(searchSourceRequest);
-        //
+      
+      //
       // Send request & retrieve response synchronously (blocking call)
       // 
       SearchResponse searchResponse = this.search(searchRequest, RequestOptions.DEFAULT);
@@ -502,8 +542,93 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
       throw new ElasticsearchClientException(e.getMessage());
     }
   }
+
+  /**
+   * This call does not account all subscribers with a SpecialExit Status
+   */
+  private Map<String, Long> getNodeCountFromWorkflowarchive(String journeyID) throws ElasticsearchClientException {
+    try {
+      Map<String, Long> result = new HashMap<String, Long>();
+
+      // Filter out SpecialExit status
+      BoolQueryBuilder query = QueryBuilders.boolQuery()
+          .must(QueryBuilders.termsQuery(WORKFLOWARCHIVE_JOURNEYID_FIELD, journeyID))
+          .mustNot(QueryBuilders.termsQuery(WORKFLOWARCHIVE_STATUS_FIELD, SubscriberJourneyStatus.getExitStatusReprensentation()));
   
-  
+      //
+      // Build Elasticsearch query
+      // 
+      // Here we don't want to count the number of document per bucket. This index is already an AGGREGATION.
+      // We need to sum the "count" field for each document.
+      String index = JourneyStatisticESSinkConnector.WORKFLOW_ARCHIVE_INDEX;
+      String bucketName = "NODE_ID";
+      SearchSourceBuilder searchSourceRequest = new SearchSourceBuilder()
+          .query(query)
+          .size(0)
+          .aggregation(AggregationBuilders.terms(bucketName).field(WORKFLOWARCHIVE_NODEID_FIELD).size(MAX_BUCKETS)
+              .subAggregation(AggregationBuilders.sum(WORKFLOWARCHIVE_COUNT_FIELD).field(WORKFLOWARCHIVE_COUNT_FIELD)));
+      
+      SearchRequest searchRequest = new SearchRequest(index).source(searchSourceRequest);
+      
+      //
+      // Send request & retrieve response synchronously (blocking call)
+      // 
+      SearchResponse searchResponse = this.search(searchRequest, RequestOptions.DEFAULT);
+      
+      //
+      // Check search response
+      //
+      // @rl TODO checking status seems useless because it raises exception
+      if (searchResponse.isTimedOut()
+          || searchResponse.getFailedShards() > 0) {
+        throw new ElasticsearchClientException("Elasticsearch answered with bad status.");
+      }
+      
+      if(searchResponse.getAggregations() == null) {
+        throw new ElasticsearchClientException("Aggregation is missing in search response.");
+      }
+      
+      ParsedStringTerms buckets = searchResponse.getAggregations().get(bucketName);
+      if(buckets == null) {
+        throw new ElasticsearchClientException("Buckets are missing in search response.");
+      }
+
+      //
+      // Fill result map
+      //
+      // Do not count number of doc, but retrieve sum of "count" fields !
+      for(Bucket bucket : buckets.getBuckets()) {
+        ParsedSum countMetric = bucket.getAggregations().get(WORKFLOWARCHIVE_COUNT_FIELD);
+        if (countMetric == null) {
+          throw new ElasticsearchClientException("Unable to extract "+WORKFLOWARCHIVE_COUNT_FIELD+" field, aggregation is missing.");
+        }
+        
+        result.put(bucket.getKeyAsString(), (long) countMetric.getValue());
+      }
+      
+      return result;
+    }
+    catch (ElasticsearchClientException e) { // forward
+      throw e;
+    }
+    catch (ElasticsearchStatusException e)
+    {
+      if(e.status() == RestStatus.NOT_FOUND) { // index not found
+        log.debug(e.getMessage());
+        return new HashMap<String, Long>();
+      }
+      e.printStackTrace();
+      throw new ElasticsearchClientException(e.getDetailedMessage());
+    }
+    catch (ElasticsearchException e) {
+      e.printStackTrace();
+      throw new ElasticsearchClientException(e.getDetailedMessage());
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+      throw new ElasticsearchClientException(e.getMessage());
+    }
+  }
 
   // @return map<STATUS,count>
   public Map<String, Long> getJourneyStatusCount(String journeyID) throws ElasticsearchClientException {
@@ -769,30 +894,6 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
       log.info("Error in getDistributedRewards : " + e.getLocalizedMessage() + " stack : " + stackTraceWriter.toString());
       throw new ElasticsearchClientException(e.getMessage());
     }
-  }
-  
-  public long getSpecialExitCount(String journeyID) throws ElasticsearchClientException{
-	  long count = 0;
-	  if(journeyID==null)return count;
-	  String index = getJourneyIndex(journeyID);
-	  BoolQueryBuilder query=QueryBuilders.boolQuery();
-      for(String reason : specialExit)
-        query=((BoolQueryBuilder) query).should(QueryBuilders.termQuery("status", reason)); 
-      log.debug("SpecialExit count query"+query.toString());
-      CountRequest countRequest = new CountRequest(index).query(query);
-      try {
-		CountResponse countResponse = this.count(countRequest, RequestOptions.DEFAULT);
-		if(countResponse!=null)
-		count=countResponse.getCount();
-	} catch (IndexNotFoundException ese) {
-		log.info("No Index Found" + index);
-		count=0; 
-    }catch (Exception e) {
-		e.printStackTrace();
-		count=0; 
-	} 
-      log.debug("Sum aggregation of special exit is for journey id:"+journeyID+" is:" + count); 
-	  return count;
   }
   
   /*
@@ -1224,6 +1325,14 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
             }
           break;
         
+      case getCustomerBGDRs:
+        index = "detailedrecords_badges-*";
+        if (startDate != null)
+          {
+            query = query.filter(QueryBuilders.rangeQuery("eventDatetime").gte(RLMDateUtils.formatDateForElasticsearchDefault(startDate)));
+          }
+        break;
+        
       case getCustomerMessages:
         if (startDate != null)
           {
@@ -1274,6 +1383,8 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
     {
       case getCustomerBDRs:
         return getSearchRequest(GUIManager.API.getCustomerBDRs, subscriberId, startDate, filters, tenantID);
+      case getCustomerBGDRs:
+        return getSearchRequest(GUIManager.API.getCustomerBGDRs, subscriberId, startDate, filters, tenantID);
       case getCustomerEDRs:
         return getSearchRequest(GUIManager.API.getCustomerEDRs, subscriberId, startDate, filters, tenantID);
       case getCustomerODRs:
@@ -1498,7 +1609,10 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
    * getJourneySubscriberCountMap
    * 
    ****************************************************/
-  
+
+  /**
+   * This call does not account all subscribers with a SpecialExit Status
+   */
   public Map<String, Long> getJourneySubscriberCountMap(List<String> journeyIds) throws ElasticsearchClientException
   {
     Map<String, Long> result = new HashMap<String, Long>();
@@ -1512,7 +1626,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
         // Build Elasticsearch query
         //
         
-        BoolQueryBuilder query = QueryBuilders.boolQuery().mustNot(QueryBuilders.termsQuery("status", Arrays.asList(specialExit)));
+        BoolQueryBuilder query = QueryBuilders.boolQuery().mustNot(QueryBuilders.termsQuery(JOURNEYSTATISTIC_STATUS_FIELD, SubscriberJourneyStatus.getExitStatusReprensentation()));
         
         //
         //  list existing index

@@ -140,7 +140,7 @@ public class UCGEngine
     UCGRuleListener ucgListener = new UCGRuleListener()
     {
       @Override public void ucgRuleActivated(UCGRule ucgRule) { ruleActivated(ucgRule); }
-      @Override public void ucgRuleDeactivated(String guiManagedObjectID) { }
+      @Override public void ucgRuleDeactivated(String guiManagedObjectID) { ruleDeactivated(guiManagedObjectID); }
     };
     ucgRuleService = new UCGRuleService(Deployment.getBrokerServers(), "ucgengine-ucgruleservice", Deployment.getUCGRuleTopic(), false, ucgListener);
     ucgRuleService.start();
@@ -225,6 +225,12 @@ public class UCGEngine
       {
         evaluationRequests.add(activeUCGRule);
       }
+  }
+
+  private void ruleDeactivated(String guiManagedObjectID)
+  {
+    UCGRule deactivatedRule = (UCGRule) ucgRuleService.getStoredUCGRule(guiManagedObjectID,true);
+    evaluationRequests.add(deactivatedRule);
   }
 
   /*****************************************
@@ -418,35 +424,42 @@ public class UCGEngine
         *
         *****************************************/
 
-        List<Set<String>> segmentsByDimension = new LinkedList<Set<String>>();
-        for (String dimensionID : ucgRule.getSelectedDimensions())
+        Set<List<String>> strata = null;
+
+        //when rule is deactivated we don't care about strata.
+        // Just put a re cord in ucgstate to be consumed by engine that will know that ucg calculation is stopped
+        if(ucgRule.getActive())
+        {
+
+          List<Set<String>> segmentsByDimension = new LinkedList<Set<String>>();
+          for (String dimensionID : ucgRule.getSelectedDimensions())
           {
             Set<String> segmentIDs = new HashSet<String>();
-            SegmentationDimension dimension = segmentationDimensionService.getActiveSegmentationDimension(dimensionID, now); 
+            SegmentationDimension dimension = segmentationDimensionService.getActiveSegmentationDimension(dimensionID, now);
             if (dimension != null)
+            {
+              for (Segment segment : dimension.getSegments())
               {
-                for (Segment segment : dimension.getSegments())
-                  {
-                    segmentIDs.add(segment.getID());
-                  }
+                segmentIDs.add(segment.getID());
               }
+            }
             segmentsByDimension.add(segmentIDs);
           }
 
-        /*****************************************
-        *
-        *  strata
-        *
-        *****************************************/
+          /*****************************************
+           *
+           *  strata
+           *
+           *****************************************/
 
-        Set<List<String>> strata = Sets.cartesianProduct(segmentsByDimension);
+          strata = Sets.cartesianProduct(segmentsByDimension);
 
-        /*****************************************
-        *
-        *  evaluate
-        *
-        *****************************************/
-
+          /*****************************************
+           *
+           *  evaluate
+           *
+           *****************************************/
+        }
         try
           {
             //
@@ -551,43 +564,46 @@ public class UCGEngine
   private Set<UCGGroup> calculateUCGGroups(Set<List<String>> strata) throws Exception
   {
     HashSet<UCGGroup> returnUcgGroup = new HashSet<>();
-    List<FiltersAggregator.KeyedFilter> aggFilters = new ArrayList<>();
-    List<FiltersAggregator.KeyedFilter> subAggFilters = new ArrayList<>();
-    List<BoolQueryBuilder> queries = new ArrayList<BoolQueryBuilder>();
-    try 
+    //if strata null we don't calculate anything
+    if(strata != null)
+    {
+      List<FiltersAggregator.KeyedFilter> aggFilters = new ArrayList<>();
+      List<FiltersAggregator.KeyedFilter> subAggFilters = new ArrayList<>();
+      List<BoolQueryBuilder> queries = new ArrayList<BoolQueryBuilder>();
+      try
       {
         //create subaggregation used for ucg count and other info in the future
-        for (Map.Entry<String, String> entry : bucketAggCounters.entrySet()) 
-          {
-            subAggFilters.add(new FiltersAggregator.KeyedFilter(entry.getKey(), QueryBuilders.scriptQuery(new Script(entry.getValue()))));
-          }
+        for (Map.Entry<String, String> entry : bucketAggCounters.entrySet())
+        {
+          subAggFilters.add(new FiltersAggregator.KeyedFilter(entry.getKey(), QueryBuilders.scriptQuery(new Script(entry.getValue()))));
+        }
         //create bucket agg foreach stratum
-        for (List<String> stratum : strata) 
+        for (List<String> stratum : strata)
+        {
+
+          BoolQueryBuilder query = QueryBuilders.boolQuery();
+          for (String segmentId : stratum)
           {
-  
-            BoolQueryBuilder query = QueryBuilders.boolQuery();
-            for (String segmentId : stratum) 
-              {
-                query = query.filter(QueryBuilders.termQuery(subscriberGroupField, segmentId));
-              }
-            //the key foreach bucket will be stratum serialized. This will be deserialized at read
-            HashMap<String,List<String>> key = new HashMap<>();
-            key.put("stratum",stratum);
-            aggFilters.add(new FiltersAggregator.KeyedFilter(JSONUtilities.encodeObject(key).toJSONString(), query));
-  
+            query = query.filter(QueryBuilders.termQuery(subscriberGroupField, segmentId));
           }
+          //the key foreach bucket will be stratum serialized. This will be deserialized at read
+          HashMap<String, List<String>> key = new HashMap<>();
+          key.put("stratum", stratum);
+          aggFilters.add(new FiltersAggregator.KeyedFilter(JSONUtilities.encodeObject(key).toJSONString(), query));
+
+        }
         //create main aggregation
         AggregationBuilder aggregation = null;
         FiltersAggregator.KeyedFilter[] filterArray = new FiltersAggregator.KeyedFilter[aggFilters.size()];
         filterArray = aggFilters.toArray(filterArray);
         aggregation = AggregationBuilders.filters("SubscriberStateBucket", filterArray);
-  
+
         //create subagregation
         AggregationBuilder subAggregation = null;
         FiltersAggregator.KeyedFilter[] subFilterArray = new FiltersAggregator.KeyedFilter[subAggFilters.size()];
         subFilterArray = subAggFilters.toArray(subFilterArray);
         subAggregation = AggregationBuilders.filters("SubscriberState", subFilterArray);
-  
+
         //append subbagregation to main aggregation
         aggregation.subAggregation(subAggregation);
         //create search builder
@@ -600,19 +616,20 @@ public class UCGEngine
         //      Filters subAgg = agg.getBuckets().get(0).getAggregations().get("SubscriberState");
         //      subAgg.getBucketByKey("ucgSubscribers").getDocCount();
         for (Filters.Bucket element : agg.getBuckets())
-          {
-            Filters subAgg = element.getAggregations().get("SubscriberState");
-            //deserialize bucket key that contain stratum list
-            JSONObject jsonRoot = (JSONObject) (new org.json.simple.parser.JSONParser()).parse(element.getKey().toString());
-            List<String> stratum = JSONUtilities.decodeJSONArray(jsonRoot,"stratum",true);
-            //add UCGGroup object for each bucket aggregation item
-            returnUcgGroup.add(new UCGGroup(new HashSet<String>(stratum),(int)subAgg.getBucketByKey("ucgSubscribers").getDocCount(),(int)element.getDocCount()));
-          }
+        {
+          Filters subAgg = element.getAggregations().get("SubscriberState");
+          //deserialize bucket key that contain stratum list
+          JSONObject jsonRoot = (JSONObject) (new org.json.simple.parser.JSONParser()).parse(element.getKey().toString());
+          List<String> stratum = JSONUtilities.decodeJSONArray(jsonRoot, "stratum", true);
+          //add UCGGroup object for each bucket aggregation item
+          returnUcgGroup.add(new UCGGroup(new HashSet<String>(stratum), (int) subAgg.getBucketByKey("ucgSubscribers").getDocCount(), (int) element.getDocCount()));
+        }
       }
-    catch (Exception ex) 
+      catch (Exception ex)
       {
         throw ex;
       }
+    }
 
     return returnUcgGroup;
   }

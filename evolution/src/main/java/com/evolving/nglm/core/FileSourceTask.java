@@ -1,5 +1,6 @@
 package com.evolving.nglm.core;
 
+import com.evolving.nglm.evolution.SingletonServices;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -467,7 +468,7 @@ public abstract class FileSourceTask extends SourceTask {
 				// delete/archive files as necessary
 				if (processed.exists()) {
 					try {
-						boolean successfullyRemoved = (archiveDirectory != null) ? processed.getFile().renameTo(new File(archiveDirectory, processed.getName())) : processed.getFile().delete();
+						boolean successfullyRemoved = (archiveDirectory != null) ? processed.getFile().renameTo(new File(archiveDirectory, processed.getAbsolutePath().replace(File.separator, "_"))) : processed.getFile().delete();
 						if (!successfullyRemoved) {
 							log.error("{} -- commit COULD NOT REMOVE FILE {}", taskName, processed.getAbsolutePath());
 						}
@@ -607,7 +608,7 @@ public abstract class FileSourceTask extends SourceTask {
 		// call it only from kafka consumer
 		private SourceFile(ConsumerRecord<byte[], byte[]> record) {
 			StringValue filename = stringValueSerde.deserializer().deserialize(record.topic(), record.value());
-			this.file = new File(directory, filename.getValue());
+			this.file = new File(filename.getValue());
 			this.partition = new TopicPartition(record.topic(), record.partition());
 			this.offset = record.offset();
 
@@ -842,18 +843,10 @@ public abstract class FileSourceTask extends SourceTask {
 
 	// utils resolveSubscriberID
 
-	// singleton lazy init holder
-	private static class SubscriberIDServiceHolder {
-		private static SubscriberIDService INSTANCE = new SubscriberIDService(Deployment.getRedisSentinels(), "connect-file-source", true);
-	}
-	private SubscriberIDService getSubscriberIDService() {
-		return SubscriberIDServiceHolder.INSTANCE;
-	}
-
 	// child subscriber id resolver
 	protected Pair<String, Integer> resolveSubscriberIDAndTenantID(String alternateIDName, String alternateID) throws InterruptedException {
 		try {
-			return getSubscriberIDService().getSubscriberIDAndTenantIDBlocking(alternateIDName, alternateID, stopRequestedReference);
+			return SingletonServices.getSubscriberIDService().getSubscriberIDAndTenantIDBlocking(alternateIDName, alternateID, stopRequestedReference);
 		} catch (SubscriberIDServiceException e) {
 			log.error(this.taskName + " resolveSubscriberID exception", e);
 			// seems bad error if this happens, safer to crash

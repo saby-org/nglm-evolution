@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.Deployment;
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIManagedObject;
 import com.evolving.nglm.evolution.Point;
@@ -121,7 +122,17 @@ public class CustomerPointDetailsMonoPhase implements ReportCsvFactory
                             {
                               log.trace("amount is not an integer : " + insideExpiration.get("amount") + ", using " + amount);
                             }
-                            balances.put(new Date((Long) insideExpiration.get("date")), amount);
+                            Object validityDateObj = insideExpiration.get("date");
+                            if (validityDateObj instanceof Long)
+                              {
+                                balances.put(new Date((Long) validityDateObj), amount);
+                              }
+                            else if (validityDateObj instanceof String)
+                              {
+                                Date validityDate = RLMDateUtils.parseDateFromElasticsearch((String) validityDateObj);
+                                balances.put(validityDate, amount);
+                              }
+                            
                           }
 
                         loyaltyComputedFields.put(pointName, storedPoint.getDisplay());

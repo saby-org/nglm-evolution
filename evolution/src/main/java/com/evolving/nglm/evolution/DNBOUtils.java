@@ -381,7 +381,7 @@ public class DNBOUtils
 
     @Override public List<Action> executeOnEntry(EvolutionEventContext evolutionEventContext, SubscriberEvaluationRequest subscriberEvaluationRequest)
     {
-      log.info("ActionManagerToken.executeOnEntry() method call");
+      if(log.isTraceEnabled()) log.trace("ActionManagerToken.executeOnEntry() method call");
       Object[] res = handleToken(evolutionEventContext, subscriberEvaluationRequest, TokenChange.CREATE);
       @SuppressWarnings("unchecked")
       List<Action> result = (List<Action>) res[0];

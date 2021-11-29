@@ -6,6 +6,9 @@
 
 package com.evolving.nglm.core;
 
+import com.evolving.nglm.evolution.SingletonServices;
+import com.evolving.nglm.evolution.event.MapperUtils;
+import com.evolving.nglm.evolution.event.SubscriberIDAlternateID;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.config.ConfigDef;
@@ -46,6 +49,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class CleanupSubscriberESSinkConnector extends SinkConnector
 {
@@ -60,6 +64,8 @@ public class CleanupSubscriberESSinkConnector extends SinkConnector
   //
 
   protected static final Logger log = LoggerFactory.getLogger(CleanupSubscriberESSinkConnector.class);
+
+  private static final AtomicBoolean stopRequested = new AtomicBoolean(false);
   
   //
   //  configuration
@@ -220,6 +226,7 @@ public class CleanupSubscriberESSinkConnector extends SinkConnector
 
   @Override public void stop()
   {
+    stopRequested.set(true);
     log.info("{} -- Connector.stop()", connectorName);
   }
 
@@ -460,17 +467,43 @@ public class CleanupSubscriberESSinkConnector extends SinkConnector
       ****************************************/
 
       if (sinkRecords.size() > 0)
-        log.info("{} -- Task.put() - {} records.", connectorName, sinkRecords.size());
+        log.debug("Cleanup {} -- Task.put() - {} records.", connectorName, sinkRecords.size());
       else
         log.trace("{} -- Task.put() - {} records.", connectorName, sinkRecords.size());
       List<String> subscriberIDs = new ArrayList<String>();
+      List<SubscriberIDAlternateID> subscriberIDAlternateIDs = new ArrayList<>();
       for (SinkRecord sinkRecord : sinkRecords)
         {
+          log.debug("Cleanup  -- Task.put() - records. 1");
           Object cleanupSubscriberValue = sinkRecord.value();
           Schema cleanupSubscriberValueSchema = sinkRecord.valueSchema();
           CleanupSubscriber cleanupSubscriber = CleanupSubscriber.unpack(new SchemaAndValue(cleanupSubscriberValueSchema, cleanupSubscriberValue));
-          subscriberIDs.add(cleanupSubscriber.getSubscriberID());
+          log.debug("Cleanup  -- Task.put() - records. 1 addd " + cleanupSubscriber.getSubscriberID() + " Cleanup " + cleanupSubscriber.toString());
+
+          // sorry for that hack, we delete redis alternateIDs from this connector as well
+          if(cleanupSubscriber.getSubscriberAction()==SubscriberStreamEvent.SubscriberAction.Delete)
+            {
+              if(cleanupSubscriber.getAlternateIDs()!=null && !cleanupSubscriber.getAlternateIDs().isEmpty())
+                {
+                  for(Map.Entry<String,String> entry:cleanupSubscriber.getAlternateIDs().entrySet()){
+                    subscriberIDAlternateIDs.add(new SubscriberIDAlternateID(Long.valueOf(cleanupSubscriber.getSubscriberID()),entry.getKey(),entry.getValue()));
+                  }
+                }
+            }
+
+          if(cleanupSubscriber.getSubscriberAction()==SubscriberStreamEvent.SubscriberAction.DeleteImmediate && Boolean.TRUE.equals(cleanupSubscriber.getCleanExtESReady()))
+            {
+              subscriberIDs.add(cleanupSubscriber.getSubscriberID());
+            }
         }
+
+      try{
+        if(!subscriberIDAlternateIDs.isEmpty()) MapperUtils.delete(subscriberIDAlternateIDs, SingletonServices.getSubscriberIDService(),stopRequested);
+      }catch (SubscriberIDService.SubscriberIDServiceException e){
+        throw new RuntimeException(e);
+      }catch (InterruptedException e){
+        log.info("Cleanup  -- Task.put() interrupted");
+      }
 
       /****************************************
       *
@@ -480,6 +513,7 @@ public class CleanupSubscriberESSinkConnector extends SinkConnector
 
       if (Deployment.getCleanupSubscriberElasticsearchIndexes().size() > 0)
         {
+          log.debug("Cleanup  -- Task.put() - records. 2");
           int processed = 0;
           while (processed < subscriberIDs.size())
             {
@@ -491,6 +525,7 @@ public class CleanupSubscriberESSinkConnector extends SinkConnector
               int end = Math.min(processed + maxSubscribersPerRequest, subscriberIDs.size());
               String[] currentSubscriberIDs = subscriberIDs.subList(start, end).toArray(new String[0]);
               processed = end;
+              log.debug("Cleanup  -- Task.put() - records. 3");
 
               //
               //  delete - retrying on failures
@@ -501,14 +536,14 @@ public class CleanupSubscriberESSinkConnector extends SinkConnector
                   //
                   //  delete
                   //
-
+                  log.debug("Cleanup  -- Task.put() - records. 4");
                   DeleteByQueryRequest deleteByQueryRequest = new DeleteByQueryRequest(Deployment.getCleanupSubscriberElasticsearchIndexes().toArray(new String[0]));
                   deleteByQueryRequest.setQuery(QueryBuilders.termsQuery("subscriberID", currentSubscriberIDs));
                   deleteByQueryRequest.setConflicts("proceed");
                   deleteByQueryRequest.setSlices(DeleteByQueryRequest.AUTO_SLICES);
                   deleteByQueryRequest.setScroll(TimeValue.timeValueMinutes(5));
                   BulkByScrollResponse response = client.deleteByQuery(deleteByQueryRequest, RequestOptions.DEFAULT);
-
+                  log.debug("Cleanup  -- Task.put() - records. 5");
                   //
                   //  abort (and retry) on failures
                   //
@@ -538,9 +573,9 @@ public class CleanupSubscriberESSinkConnector extends SinkConnector
       *  update statistics
       *
       ****************************************/
-
+      log.debug("Cleanup  -- Task.put() - records. 6");
       updatePutCount(connectorName, taskNumber, 1);
-      updateRecordCount(connectorName, taskNumber, subscriberIDs.size());
+      updateRecordCount(connectorName, taskNumber, (subscriberIDs.size() > 0 ? subscriberIDs.size() : 1)); // to avoid reading the same event if subscriberIDs is empty...
     }
 
     /*****************************************

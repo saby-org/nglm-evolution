@@ -206,8 +206,11 @@ public class ElasticsearchUpgrade
     //   - pointBalances.expirationDates.date              (date format change)
     // - from 2.0.0 (2) to 2.0.0 (5):
     //   - complexFields                                   (new)
-    loadPatch("subscriberprofile"                 , 1, 3, "subscriberprofile_tmp", null, null); // Special - do not try to upgrade this index, remove it (or keep it, for snapshots) !
-    loadPatch("subscriberprofile"                 , 2, 3, "subscriberprofile_tmp", null, null);
+    // - from 2.0.0 (6) to 2.0.0 (7):
+    //   - badges                                          (new)
+    loadPatch("subscriberprofile"                 , 1, 4, "subscriberprofile_tmp", null, null); // Special - do not try to upgrade this index, remove it (or keep it, for snapshots) !
+    loadPatch("subscriberprofile"                 , 2, 4, "subscriberprofile_tmp", null, null);
+    loadPatch("subscriberprofile"                 , 3, 4, "subscriberprofile_tmp", null, null);
     
     /*****************************************
     *
@@ -306,7 +309,7 @@ public class ElasticsearchUpgrade
     loadPatch("detailedrecords_messages"          , 1, 3, "detailedrecords_messages-_tmp", (s) -> s,
         "ctx._source.tenantID = 1;");
     loadPatch("detailedrecords_messages"          , 2, 3, "detailedrecords_messages-_tmp", (s) -> s, "");
-
+    
     /*****************************************
     *
     * journeystatistic template
@@ -328,6 +331,14 @@ public class ElasticsearchUpgrade
       + "DateTimeFormatter outputFormat = DateTimeFormatter.ofPattern(\\\"yyyy-MM-dd HH:mm:ss.SSSZZ\\\");"
       + "ZonedDateTime zdt = ZonedDateTime.parse(dateString, inputFormat);"
       + "ctx._source.transitionDate = zdt.format(outputFormat);");
+    
+    /*****************************************
+    *
+    * workflowarchive template
+    *
+    *****************************************/
+    // Changes: 
+    // - 2.0.0_7 (1): creation
 
     /*****************************************
     *

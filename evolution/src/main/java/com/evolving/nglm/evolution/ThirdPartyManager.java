@@ -89,6 +89,7 @@ import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
 import com.evolving.nglm.core.SubscriberStreamEvent.SubscriberAction;
 import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.Badge.BadgeAction;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
 import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
@@ -198,6 +199,7 @@ public class ThirdPartyManager
   private KafkaResponseListenerService<StringKey,JourneyRequest> enterCampaignResponseListenerService;
   private KafkaResponseListenerService<StringKey,SubscriberProfileForceUpdateResponse> subscriberProfileForceUpdateResponseListenerService;
   private KafkaResponseListenerService<StringKey,LoyaltyProgramRequest> loyaltyProgramOptInOutResponseListenerService;
+  private KafkaResponseListenerService<StringKey, BadgeChange> badgeActionResponseListenerService;
   private static Map<String, ThirdPartyMethodAccessLevel> methodPermissionsMapper = new LinkedHashMap<String,ThirdPartyMethodAccessLevel>();
   private static Map<String, Constructor<? extends SubscriberStreamOutput>> JSON3rdPartyEventsConstructor = new HashMap<>();
   private static Integer authResponseCacheLifetimeInMinutes = null;
@@ -286,8 +288,10 @@ public class ThirdPartyManager
     deleteCustomer(40),
     getCustomerVouchers(41),
     getCustomerVDRs(42),
-    getOfferDetails(43);
-
+    getOfferDetails(43),
+    loyaltyAwardBadge(44),
+    loyaltyRemoveBadge(45),
+    getCustomerBGDRs(46);
     private int methodIndex;
     private API(int methodIndex) { this.methodIndex = methodIndex; }
     public int getMethodIndex() { return methodIndex; }
@@ -543,7 +547,7 @@ public class ThirdPartyManager
     
     exclusionInclusionTargetService = new ExclusionInclusionTargetService(Deployment.getBrokerServers(), "thirdpartymanager-exclusionInclusionTargetService-" + apiProcessKey, Deployment.getExclusionInclusionTargetTopic(), false);
     exclusionInclusionTargetService.start();
-
+    
     subscriberIDService = new SubscriberIDService(redisServer, "thirdpartymanager-" + apiProcessKey);
     subscriberGroupEpochReader = ReferenceDataReader.<String,SubscriberGroupEpoch>startReader("thirdpartymanager-subscribergroupepoch", bootstrapServers, subscriberGroupEpochTopic, SubscriberGroupEpoch::unpack);
 
@@ -567,6 +571,8 @@ public class ThirdPartyManager
     DeliveryManagerDeclaration dmdl = Deployment.getDeliveryManagers().get(LOYALTYPROGRAM_FULFILLMENT_MANAGER_TYPE);
     loyaltyProgramOptInOutResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),dmdl.getResponseTopic(DELIVERY_REQUEST_PRIORITY),StringKey.serde(),LoyaltyProgramRequest.serde());
     loyaltyProgramOptInOutResponseListenerService.start();
+    badgeActionResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(), Deployment.getBadgeChangeResponseTopic(), StringKey.serde(),BadgeChange.serde());
+    badgeActionResponseListenerService.start();
     
     subscriberProfileForceUpdateResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),Deployment.getSubscriberProfileForceUpdateResponseTopic(),StringKey.serde(),SubscriberProfileForceUpdateResponse.serde());
     subscriberProfileForceUpdateResponseListenerService.start();
@@ -624,6 +630,9 @@ public class ThirdPartyManager
       restServer.createContext("/nglm-thirdpartymanager/deleteCustomer", new APIHandler(API.deleteCustomer));
       restServer.createContext("/nglm-thirdpartymanager/getCustomerVouchers", new APIHandler(API.getCustomerVouchers));
       restServer.createContext("/nglm-thirdpartymanager/getOfferDetails", new APIHandler(API.getOfferDetails));
+      restServer.createContext("/nglm-thirdpartymanager/loyaltyAwardBadge", new APIHandler(API.loyaltyAwardBadge));
+      restServer.createContext("/nglm-thirdpartymanager/loyaltyRemoveBadge", new APIHandler(API.loyaltyRemoveBadge));
+      restServer.createContext("/nglm-thirdpartymanager/getCustomerBGDRs", new APIHandler(API.getCustomerBGDRs));
       restServer.setExecutor(Executors.newFixedThreadPool(threadPoolSize));
       restServer.start();
 
@@ -886,6 +895,9 @@ public class ThirdPartyManager
             case getCustomerBDRs:
               jsonResponse = processGetCustomerBDRs(jsonRoot, tenantID);
               break;
+            case getCustomerBGDRs:
+              jsonResponse = processGetCustomerBGDRs(jsonRoot, tenantID);
+              break;
             case getCustomerEDRs:
               jsonResponse = processGetCustomerEDRs(jsonRoot, tenantID);
               break;
@@ -961,6 +973,13 @@ public class ThirdPartyManager
             case loyaltyProgramOptOut:
               jsonResponse = processLoyaltyProgramOptInOut(jsonRoot, false, sync, tenantID);
               break;
+            case loyaltyAwardBadge:
+              jsonResponse = processLoyaltyBadgeRequest(jsonRoot, BadgeAction.AWARD, sync, tenantID);
+              break;
+            case loyaltyRemoveBadge:
+              jsonResponse = processLoyaltyBadgeRequest(jsonRoot, BadgeAction.REMOVE, sync, tenantID);
+              break;
+              
             case validateVoucher:
               jsonResponse = processValidateVoucher(jsonRoot, tenantID);
               break;
@@ -1293,7 +1312,7 @@ public class ThirdPartyManager
         }
       else
         {
-          response = baseSubscriberProfile.getProfileMapForThirdPartyPresentation(segmentationDimensionService, subscriberGroupEpochReader, exclusionInclusionTargetService);
+          response = baseSubscriberProfile.getProfileMapForThirdPartyPresentation(segmentationDimensionService, subscriberGroupEpochReader, exclusionInclusionTargetService, loyaltyProgramService);
           response.putAll(resolveAllSubscriberIDs(baseSubscriberProfile, tenantID));
           updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
         }
@@ -1397,6 +1416,95 @@ public class ThirdPartyManager
     }
     return JSONUtilities.encodeObject(response);
   }
+  
+  /*****************************************
+  *
+  *  processGetCustomerBGDRs
+  *
+  *****************************************/
+
+ private JSONObject processGetCustomerBGDRs(JSONObject jsonRoot, int tenantID) throws ThirdPartyManagerException
+ {
+
+   /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+
+   Map<String,Object> response = new HashMap<String,Object>();
+
+   /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+   String startDateReq = readString(jsonRoot, "startDate", false);
+   String moduleID = JSONUtilities.decodeString(jsonRoot, "moduleID", false);
+   String featureID = JSONUtilities.decodeString(jsonRoot, "featureID", false);
+   
+   //
+   //  filters
+   //
+   
+   List<QueryBuilder> filters = new ArrayList<QueryBuilder>();
+   if (moduleID != null && !moduleID.isEmpty()) filters.add(QueryBuilders.matchQuery("moduleID", moduleID));
+   if (featureID != null && !featureID.isEmpty()) filters.add(QueryBuilders.matchQuery("featureID", featureID));
+
+   //
+   // process
+   //
+   
+   String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
+   try
+   {
+     SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
+     if (baseSubscriberProfile == null)
+       {
+         updateResponse(response, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND);
+       }
+     else
+       {
+
+         List<JSONObject> BGDRsJson = new ArrayList<JSONObject>();
+         List<BadgeChange> BGDRs = new ArrayList<BadgeChange>();
+         
+         //
+         // read history
+         //
+
+         SearchRequest searchRequest = this.elasticsearch.getSearchRequest(API.getCustomerBGDRs, subscriberID, startDateReq == null ? null : RLMDateUtils.parseDateFromDay(startDateReq, Deployment.getDeployment(tenantID).getTimeZone()), filters, tenantID);
+         List<SearchHit> hits = this.elasticsearch.getESHits(searchRequest);
+         for (SearchHit hit : hits)
+           {
+             BadgeChange badgeChange = new BadgeChange(hit.getSourceAsMap());
+             BGDRs.add(badgeChange);
+           }
+         
+         //
+         // prepare json
+         //
+
+         for (BadgeChange bgdr : BGDRs)
+           {
+             Map<String, Object> presentationMap = bgdr.getThirdPartyPresentationMap(journeyService, offerService, loyaltyProgramService);
+             BGDRsJson.add(JSONUtilities.encodeObject(presentationMap));
+           }
+         
+         response.put("BGDRs", JSONUtilities.encodeArray(BGDRsJson));
+         response.putAll(resolveAllSubscriberIDs(baseSubscriberProfile, tenantID));
+         updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
+       }
+   } 
+   catch (SubscriberProfileServiceException | java.text.ParseException | GUIManagerException e)
+   {
+     log.error("SubscriberProfileServiceException ", e.getMessage());
+     throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
+   }
+   return JSONUtilities.encodeObject(response);
+ }
+ 
   
   /*****************************************
    *
@@ -2166,9 +2274,10 @@ public class ThirdPartyManager
 
               SubscriberJourneyStatus customerStatusInJourney = Journey.getSubscriberJourneyStatus(statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
               SubscriberJourneyStatus profilejourneyStatus = baseSubscriberProfile.getSubscriberJourneys().get(storeJourney.getJourneyID() + "");
-              if (profilejourneyStatus.in(SubscriberJourneyStatus.NotEligible, SubscriberJourneyStatus.UniversalControlGroup, SubscriberJourneyStatus.Excluded, SubscriberJourneyStatus.ObjectiveLimitReached))
+              if (profilejourneyStatus.isSpecialExit()) {
                 customerStatusInJourney = profilejourneyStatus;
-
+              }
+              
               if (!subscriberJourneyStatuses.isEmpty())
                 {
                   boolean criteriaSatisfied = subscriberJourneyStatuses.contains(customerStatusInJourney);
@@ -2295,14 +2404,15 @@ public class ThirdPartyManager
     JSONArray customerStatusesJSONAry = JSONUtilities.decodeJSONArray(jsonRoot, "customerStatus", new JSONArray());      //readString(jsonRoot, "customerStatus", false);
     String campaignStartDateStr = readString(jsonRoot, "campaignStartDate", false);
     String campaignEndDateStr = readString(jsonRoot, "campaignEndDate", false);
-    List<SubscriberJourneyStatus> subscriberJourneyStatuses = new ArrayList<Journey.SubscriberJourneyStatus>();
+    //List<SubscriberJourneyStatus> subscriberJourneyStatuses = new ArrayList<Journey.SubscriberJourneyStatus>();
+    List<String> subscriberStatuses = new ArrayList<String>();
     if (!customerStatusesJSONAry.isEmpty())
       {
         for (int i = 0; i < customerStatusesJSONAry.size(); i++)
           {
             String status = (String) customerStatusesJSONAry.get(i);
-            SubscriberJourneyStatus journeyStatus = SubscriberJourneyStatus.fromExternalRepresentation(status);
-            subscriberJourneyStatuses.add(journeyStatus);
+            //SubscriberJourneyStatus journeyStatus = SubscriberJourneyStatus.fromExternalRepresentation(status);
+            subscriberStatuses.add(status);
           }
       }
     
@@ -2462,12 +2572,22 @@ public class ThirdPartyManager
 
               SubscriberJourneyStatus customerStatusInJourney = Journey.getSubscriberJourneyStatus(statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
               SubscriberJourneyStatus profilejourneyStatus = baseSubscriberProfile.getSubscriberJourneys().get(storeCampaign.getJourneyID() + "");
-              if (profilejourneyStatus.in(SubscriberJourneyStatus.NotEligible, SubscriberJourneyStatus.UniversalControlGroup, SubscriberJourneyStatus.Excluded, SubscriberJourneyStatus.ObjectiveLimitReached))
+              if (profilejourneyStatus.isSpecialExit()) {
                 customerStatusInJourney = profilejourneyStatus;
-
-              if (!subscriberJourneyStatuses.isEmpty())
+              }
+              
+              if (!subscriberStatuses.isEmpty())
                 {
-                  boolean criteriaSatisfied = subscriberJourneyStatuses.contains(customerStatusInJourney);
+                  String customerStatusInJourneyDisplay = customerStatusInJourney.getDisplay();
+                  //boolean criteriaSatisfied = subscriberStatuses.contains(customerStatusInJourneyDisplay);
+                  boolean criteriaSatisfied = false;
+                  
+                  for (String subscriberStatus : subscriberStatuses) {
+                    if (subscriberStatus.equalsIgnoreCase(customerStatusInJourneyDisplay)) {
+                      criteriaSatisfied = true;
+                      break;
+                    }
+                  }
                   if (!criteriaSatisfied)
                     continue;
                 }
@@ -2999,6 +3119,11 @@ public class ThirdPartyManager
     String supplier = readString(jsonRoot, "supplier", false);
     //EVPRO-1353: add salesChannel filter
     String salesChannelName = readString(jsonRoot, "salesChannel", false);
+    //EVPRO-1260: add filtering parameters
+    boolean outOfStock = JSONUtilities.decodeBoolean(jsonRoot, "outOfStock", Boolean.FALSE);
+    boolean notEligible = JSONUtilities.decodeBoolean(jsonRoot, "notEligible", Boolean.FALSE);
+    boolean limitsReached = JSONUtilities.decodeBoolean(jsonRoot, "limitsReached", Boolean.FALSE);
+    
     JSONObject offerObjectivesCharacteristicsJSON = JSONUtilities.decodeJSONObject(jsonRoot, "offerObjectivesCharacteristics", false);
     JSONObject offerCharacteristicsJSON = JSONUtilities.decodeJSONObject(jsonRoot, "offerCharacteristics", false);
     final OfferObjectiveInstance objectiveInstanceReq = offerObjectivesCharacteristicsJSON != null ? decodeOfferObjectiveInstance(offerObjectivesCharacteristicsJSON, offerObjectiveService, catalogCharacteristicService, tenantID) : null;
@@ -3082,7 +3207,11 @@ public class ThirdPartyManager
           if (subscriberID != null)
             {
               SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, SystemTime.getCurrentTime(), tenantID);
-              offers = offers.stream().filter(offer -> offer.evaluateProfileCriteria(evaluationRequest)).collect(Collectors.toList());
+              if(!notEligible) {
+            	  offers = offers.stream().filter(offer -> offer.evaluateProfileCriteria(evaluationRequest)).collect(Collectors.toList());
+              } else {
+            	  offers = offers.stream().filter(offer -> offer.evaluateProfileCriteriaWithReason(evaluationRequest)).collect(Collectors.toList());
+              }
             }
 
           //
@@ -3148,6 +3277,27 @@ public class ThirdPartyManager
               
               offers = offers.stream().filter(offer -> offer.hasThisOfferCharacteristics(offerCharacteristicsReq)).collect(Collectors.toList());
             }
+          
+          if (outOfStock)
+          {
+            //
+            //  filter on remaningStock
+            //
+            
+            offers = offers.stream().filter(offer -> (offer.getApproximateRemainingStock()==null || (offer.getApproximateRemainingStock()!=null  && offer.getApproximateRemainingStock()>0))).collect(Collectors.toList());
+          }
+          
+
+            //
+            //  filter on limitsReached
+            //
+          if(subscriberProfile != null) {
+	          Map<String,List<Date>> oldFullPurchaseHistory = subscriberProfile.getOfferPurchaseHistory();
+	          Map<String, List<Pair<String, Date>>> newFullPurchaseHistory = subscriberProfile.getOfferPurchaseSalesChannelHistory();
+	          
+	           offers = offers.stream().filter(offer -> offer.evaluateLimitsReachedWithReason(oldFullPurchaseHistory,newFullPurchaseHistory,tenantID,limitsReached)).collect(Collectors.toList());
+          } 
+      
           
           //
           //filter using supplier
@@ -3283,7 +3433,7 @@ public class ThirdPartyManager
            *
            *****************************************/
 
-          List<JSONObject> offersJson = offers.stream().map(offer -> ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService, offerObjectiveService, productService, voucherService, salesChannelService, catalogCharacteristicService)).collect(Collectors.toList());
+          List<JSONObject> offersJson = offers.stream().map(offer -> ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService, offerObjectiveService, productService, voucherService, salesChannelService, catalogCharacteristicService,notEligible,limitsReached)).collect(Collectors.toList());
           response.put("offers", JSONUtilities.encodeArray(offersJson));
           updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
         }
@@ -5055,6 +5205,106 @@ public class ThirdPartyManager
     //response.put("deliveryRequestID", loyaltyProgramRequestID);
     return JSONUtilities.encodeObject(response);
   }
+  
+  /*****************************************
+  *
+  *  processLoyaltyProgramOptInOut
+  *
+  *****************************************/
+
+ private JSONObject processLoyaltyBadgeRequest(JSONObject jsonRoot, BadgeAction action, boolean sync, int tenantID) throws ThirdPartyManagerException
+ {
+   /****************************************
+    *
+    * response
+    *
+    ****************************************/
+
+   HashMap<String, Object> response = new HashMap<String, Object>();
+   Date now = SystemTime.getCurrentTime();
+
+   /****************************************
+    *
+    * argument
+    *
+    ****************************************/
+
+   String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
+   String badgeDisplay = JSONUtilities.decodeString(jsonRoot, "badge", true);
+   String origin = JSONUtilities.decodeString(jsonRoot, "origin", "loyalty"+action.getExternalRepresentation()+"Badge");
+
+   /*****************************************
+    *
+    * getSubscriberProfile - no history
+    *
+    *****************************************/
+
+   try
+     {
+       SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
+       if (subscriberProfile == null)
+         {
+           updateResponse(response, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND);
+           if (log.isDebugEnabled()) log.debug("SubscriberProfile is null for subscriberID {}", subscriberID);
+           return JSONUtilities.encodeObject(response);
+         }
+
+       LoyaltyProgram activeBadge = loyaltyProgramService.getActiveLoyaltyPrograms(now, tenantID).stream().filter(badgeObj -> badgeDisplay.equals(badgeObj.getGUIManagedObjectDisplay())).findFirst().orElse(null);
+       if (activeBadge == null || !(activeBadge.getLoyaltyProgramType() == LoyaltyProgramType.BADGE))
+         {
+           updateResponse(response, RESTAPIGenericReturnCodes.BADGE_NOT_FOUND);
+           return JSONUtilities.encodeObject(response);
+         }
+
+       String featureID = JSONUtilities.decodeString(jsonRoot, "loginName", DEFAULT_FEATURE_ID);
+       String moduleID = DeliveryRequest.Module.REST_API.getExternalRepresentation();
+       String deliveryRequestID = zuks.getStringKey();
+       String eventID = deliveryRequestID;
+
+       /*****************************************
+        *
+        * badgeChangeRequest
+        *
+        *****************************************/
+       
+       BadgeChange badgeChangeRequest = new BadgeChange(subscriberID, deliveryRequestID, eventID, action, activeBadge.getGUIManagedObjectID(), moduleID, featureID, origin, RESTAPIGenericReturnCodes.SUCCESS, tenantID, new ParameterMap());
+       Serializer<StringKey> keySerializer = StringKey.serde().serializer();
+       Serializer<BadgeChange> valueSerializer = BadgeChange.serde().serializer();
+       
+       Future<BadgeChange> waitingResponse = null;
+       if (sync)
+         {
+           waitingResponse = badgeActionResponseListenerService.addWithOnValueFilter(badgeChangeResponse -> badgeChangeResponse.getDeliveryRequestID().equals(deliveryRequestID));
+         }
+       
+       kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getBadgeChangeRequestTopic(), keySerializer.serialize(Deployment.getBadgeChangeRequestTopic(), new StringKey(subscriberID)), valueSerializer.serialize(Deployment.getBadgeChangeRequestTopic(), badgeChangeRequest)));
+       
+       if (sync)
+         {
+           BadgeChange result = handleWaitingResponse(waitingResponse);
+           response.put("deliveryRequestID", deliveryRequestID);
+           updateResponse(response, result.getReturnStatus());
+         } 
+       else
+         {
+           response.put("deliveryRequestID", deliveryRequestID);
+           updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
+         }
+     } 
+   catch (SubscriberProfileServiceException e)
+     {
+       log.error("unable to process request processLoyaltyProgramOptInOut {} ", e.getMessage());
+       throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
+     }
+
+   /*****************************************
+    *
+    * decorate and response
+    *
+    *****************************************/
+
+   return JSONUtilities.encodeObject(response);
+ }
 
   /*****************************************
    *
@@ -5242,11 +5492,11 @@ public class ThirdPartyManager
                 eventClass = (Class<? extends SubscriberStreamOutput>) Class.forName(eventDeclaration.getEventClassName());
                 if(AutoProvisionSubscriberStreamEvent.class.isAssignableFrom(eventClass)) 
                   {
-                    constructor = eventClass.getConstructor(new Class<?>[]{String.class, Date.class, JSONObject.class, int.class});
+                    constructor = eventClass.getConstructor(new Class<?>[]{String.class, JSONObject.class, int.class});
                   }
                 else 
                   {
-                    constructor = eventClass.getConstructor(new Class<?>[]{String.class, Date.class, JSONObject.class });
+                    constructor = eventClass.getConstructor(new Class<?>[]{String.class, JSONObject.class });
                   }
                 JSON3rdPartyEventsConstructor.put(eventName, constructor);
               }
@@ -5266,17 +5516,17 @@ public class ThirdPartyManager
               {
                 if(autoProvisionEvent != null)
                 {
-                  eev = constructor.newInstance(new Object[]{subscriberID, SystemTime.getCurrentTime(), eventBody, (short) tenantID });
+                  eev = constructor.newInstance(new Object[]{subscriberID, eventBody, (short) tenantID });
                   eev.forceDeliveryPriority(DELIVERY_REQUEST_PRIORITY);
                 }else{
-                  eev = constructor.newInstance(new Object[]{subscriberID, SystemTime.getCurrentTime(), eventBody});
+                  eev = constructor.newInstance(new Object[]{subscriberID, eventBody});
                   eev.forceDeliveryPriority(DELIVERY_REQUEST_PRIORITY);
                 }
               }
             else if(autoProvisionEvent != null)
               {
                 // means this is an autoprovision event, case 2...
-                eev = constructor.newInstance(new Object[]{subscriberParameter.getSecondElement(), SystemTime.getCurrentTime(), eventBody, (short) tenantID });
+                eev = constructor.newInstance(new Object[]{subscriberParameter.getSecondElement(), eventBody, (short) tenantID });
                 eev.forceDeliveryPriority(DELIVERY_REQUEST_PRIORITY);
               }
           }
@@ -5502,7 +5752,7 @@ public class ThirdPartyManager
     GUIManagedObject offerObject = offerService.getStoredOffer(offerID);
     if (offerObject instanceof Offer) {
       Offer offer = (Offer) offerObject;
-      offerJSON = ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService, offerObjectiveService, productService, voucherService, salesChannelService, catalogCharacteristicService);
+      offerJSON = ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService, offerObjectiveService, productService, voucherService, salesChannelService, catalogCharacteristicService,false,false);
     }
     response.put("offerDetails",offerJSON);
     return constructThirdPartyResponse(RESTAPIGenericReturnCodes.SUCCESS,response);
@@ -5521,7 +5771,7 @@ public class ThirdPartyManager
     GUIManagedObject offerObject = offerService.getStoredOffer(offerID);
     if (offerObject instanceof Offer) {
       Offer offer = (Offer) offerObject;
-      offerJSON = ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService, offerObjectiveService, productService, voucherService, salesChannelService, catalogCharacteristicService);
+      offerJSON = ThirdPartyJSONGenerator.generateOfferJSONForThirdParty(offer, offerService, offerObjectiveService, productService, voucherService, salesChannelService, catalogCharacteristicService,false,false);
     }
     Map<String,Object> offerResponse = new HashMap<>();
     offerResponse.put("offerDetails", offerJSON);
@@ -5666,6 +5916,11 @@ public class ThirdPartyManager
     if(supplier==null){
       throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.PARTNER_NOT_FOUND);
     }
+    
+    if(supplier.getTenantID() != tenantID)
+      {
+        throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_CODE_NOT_FOUND);
+      }
 
     String subscriberID=null;
     try
@@ -5686,7 +5941,20 @@ public class ThirdPartyManager
       if(voucherES==null) throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_CODE_NOT_FOUND);
       subscriberID=voucherES.getSubscriberId();
       String voucherId = voucherES.getVoucherId();
-      Boolean isTransferable = (boolean) voucherTypeService.getStoredVoucherType(voucherId).getJSONRepresentation().get("transferable");
+      
+      Boolean isTransferable = false;
+      
+      Voucher voucher = ((Voucher)voucherService.getStoredVoucher(voucherId));
+      if(voucher!=null) {
+    	  if(voucher.getVoucherTypeId()!=null) {
+    		  VoucherType voucherType = ((VoucherType)voucherTypeService.getStoredVoucherType(voucher.getVoucherTypeId()));
+    		  if(voucherType!=null) {
+    			  isTransferable = voucherType.getTransferable();
+    		  }
+    	  }
+      }
+
+
       if(!isTransferable) {
           throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_NOT_TRANSFERABLE);
       }
@@ -6649,6 +6917,7 @@ public class ThirdPartyManager
   {
     // "customerID" parameter is mapped internally to subscriberID 
     String subscriberID = JSONUtilities.decodeString(jsonRoot, CUSTOMER_ID, false);
+    
     String alternateSubscriberID = null;
     
     // support the possibility: customerIDType and customerIDValue...
@@ -6677,6 +6946,27 @@ public class ThirdPartyManager
               log.error("SubscriberIDServiceException can not resolve subscriberID from type {} and value {} error is {}", customerIDType, customerIDValue, e.getMessage());
             }
         }
+      }
+    
+    // ensure this subscriberID has the good tenant
+    if(subscriberID != null)
+      {
+        try
+          {
+            SubscriberProfile profile = subscriberProfileService.getSubscriberProfile(subscriberID);
+            if(profile == null)
+              {
+                throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND); 
+              }
+            else if(profile.getTenantID() != tenantID)
+              {
+                throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND); 
+              }              
+          }
+        catch (SubscriberProfileServiceException e)
+          {
+            log.warn("SubscriberIDServiceException can not resolve subscriberID {} ", subscriberID, e.getMessage());
+          }
       }
   
     if(alternateSubscriberID == null && subscriberID == null) 

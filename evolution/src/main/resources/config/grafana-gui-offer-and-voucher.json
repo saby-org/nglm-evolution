@@ -42,7 +42,7 @@
         "label": "Others",
         "threshold": 0
       },
-      "datasource": "Odr",
+      "datasource": "ODR",
       "fieldConfig": {
         "defaults": {},
         "overrides": []
@@ -117,7 +117,7 @@
       "cacheTimeout": null,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Odr",
+      "datasource": "ODR",
       "fieldConfig": {
         "defaults": {},
         "overrides": []
@@ -249,7 +249,7 @@
         "label": "Others",
         "threshold": 0
       },
-      "datasource": "Odr",
+      "datasource": "ODR",
       "fieldConfig": {
         "defaults": {},
         "overrides": []
@@ -324,7 +324,7 @@
       "cacheTimeout": null,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Odr",
+      "datasource": "ODR",
       "fieldConfig": {
         "defaults": {},
         "overrides": []
@@ -456,7 +456,7 @@
         "label": "Others",
         "threshold": 0
       },
-      "datasource": "Odr",
+      "datasource": "ODR",
       "fieldConfig": {
         "defaults": {},
         "overrides": []
@@ -530,7 +530,7 @@
       "cacheTimeout": null,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Odr",
+      "datasource": "ODR",
       "fieldConfig": {
         "defaults": {},
         "overrides": []
@@ -654,7 +654,7 @@
       }
     },
     {
-      "datasource": "Odr",
+      "datasource": "ODR",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -805,7 +805,7 @@
       "bars": true,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "Odr",
+      "datasource": "ODR",
       "fieldConfig": {
         "defaults": {},
         "overrides": []
@@ -1622,7 +1622,7 @@
           "text": "All",
           "value": "$__all"
         },
-        "datasource": "Odr",
+        "datasource": "ODR",
         "definition": "{\"find\": \"terms\", \"field\": \"filter.feature\"}",
         "description": null,
         "error": null,
@@ -1678,7 +1678,7 @@
           "text": "All",
           "value": "$__all"
         },
-        "datasource": "Odr",
+        "datasource": "ODR",
         "definition": "{\"find\": \"terms\", \"field\": \"filter.salesChannel\"}",
         "description": null,
         "error": null,
@@ -1706,7 +1706,7 @@
           "text": "All",
           "value": "$__all"
         },
-        "datasource": "Odr",
+        "datasource": "ODR",
         "definition": "{\"find\": \"terms\", \"field\": \"filter.offerObjectives\"}",
         "description": null,
         "error": null,

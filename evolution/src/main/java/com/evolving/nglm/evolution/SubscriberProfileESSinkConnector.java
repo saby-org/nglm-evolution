@@ -99,7 +99,16 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
     {
       Object subscriberStateValue = sinkRecord.value();
       Schema subscriberStateValueSchema = sinkRecord.valueSchema();
-      return SubscriberState.unpack(new SchemaAndValue(subscriberStateValueSchema, subscriberStateValue));
+      SubscriberState ss = SubscriberState.unpack(new SchemaAndValue(subscriberStateValueSchema, subscriberStateValue));
+      if(ss.getCleanupDate() != null && ss.getCleanupDate().before(SystemTime.getCurrentTime()))
+        {
+          // must not be registered into ES as already tagged deleted
+          return null;
+        }
+      else 
+        {
+          return ss;
+        }
     }
     
     /*****************************************
@@ -178,6 +187,8 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
       documentMap.put("complexFields", subscriberProfile.getComplexFieldsJSON(complexObjectTypeService));
       documentMap.put("universalControlGroupPrevious",subscriberProfile.getUniversalControlGroupPrevious());
       documentMap.put("universalControlGroupChangeDate",RLMDateUtils.formatDateForElasticsearchDefault(subscriberProfile.getUniversalControlGroupChangeDate()));
+      documentMap.put("badges", subscriberProfile.getBadgesJSON());
+      documentMap.put("universalControlGroupHistoryAuditInfo",subscriberProfile.getUniversalControlGroupHistoryAuditInfo());
       addToDocumentMap(documentMap, subscriberProfile, now);
       
       //

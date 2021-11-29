@@ -687,7 +687,7 @@ public class ODRReportMonoPhase implements ReportCsvFactory
     for (String esIndexWk : esIndexWks)
       {
         if (!firstEntry) esIndexOdrList.append(",");
-        String indexName = esIndexOdr + esIndexWks;
+        String indexName = esIndexOdr + esIndexWk;
         esIndexOdrList.append(indexName);
         firstEntry = false;
       }

@@ -6,6 +6,7 @@ import java.util.Date;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.ScheduledJob;
 import com.evolving.nglm.evolution.ScheduledJobConfiguration;
 import com.evolving.nglm.evolution.datacubes.generator.BDRDatacubeGenerator;
@@ -687,14 +688,28 @@ public class DatacubeJobs
         Date endOfLastHour = RLMDateUtils.addMilliseconds(truncatedHour, -1); // XX:59:59.999
        
         journeysMap.update();
+        rewardsDatacube.init(); // This special datacube need to be initialized, because we do not want to run this phase before each run inside the sequence !
         
         // Special: All those datacubes are still made sequentially, therefore we prevent any writing during it to optimize computation time.
         datacubeWriter.pause();
         
         for(String journeyID : journeysMap.keySet()) {
-          if(journeysMap.getTenant(journeyID) == config.getTenantID()) { // only journeys of this tenant
-            trafficDatacube.definitive(journeyID, journeysMap.getStartDateTime(journeyID), endOfLastHour);
-            rewardsDatacube.definitive(journeyID, journeysMap.getStartDateTime(journeyID), endOfLastHour);
+          if(journeysMap.get(journeyID) == null) {
+            continue;
+          }
+          
+          // Discard WORKFLOW, TEMPLATES, OTHERS...
+          if(journeysMap.isWorkflow(journeyID)) {  // EVPRO-1318 do not generate datacubes for Workflow, the journeystatistic does not contain all data. Plus it is not needed.
+             continue;
+          }
+          else if(journeysMap.get(journeyID).getGUIManagedObjectType() ==  GUIManagedObjectType.Journey
+              || journeysMap.get(journeyID).getGUIManagedObjectType() ==  GUIManagedObjectType.Campaign
+              || journeysMap.get(journeyID).getGUIManagedObjectType() ==  GUIManagedObjectType.BulkCampaign) { // EVPRO-1004
+            
+            if(journeysMap.getTenant(journeyID) == config.getTenantID()) { // only journeys of this tenant
+              trafficDatacube.definitive(journeyID, journeysMap.getStartDateTime(journeyID), endOfLastHour);
+              rewardsDatacube.definitive(journeyID, journeysMap.getStartDateTime(journeyID), endOfLastHour);
+            }
           }
         }
         

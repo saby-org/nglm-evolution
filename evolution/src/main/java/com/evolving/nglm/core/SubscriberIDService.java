@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.ArrayList;
@@ -145,7 +146,7 @@ public class SubscriberIDService
   *
   ****************************************/
   
-  private Map<String/*alternateID*/,Pair<String/*subscriberID*/,Integer/*tenantID*/>> getSubscriberIDs(String alternateIDName, Set<String> alternateIDs) throws SubscriberIDServiceException
+  private Map<String/*alternateID*/,Pair<Long/*subscriberID*/,Integer/*tenantID*/>> getSubscriberIDs(String alternateIDName, Set<String> alternateIDs) throws SubscriberIDServiceException
   {
     /****************************************
     *
@@ -222,12 +223,12 @@ public class SubscriberIDService
     *
     ****************************************/
 
-    Map<String,Pair<String,Integer>> result = new HashMap<>();
+    Map<String,Pair<Long,Integer>> result = new HashMap<>();
     Integer tenantID = null;
     for (int i = 0; i < binaryAlternateIDs.size(); i++)
       {
         String alternateID = new String(binaryAlternateIDs.get(i), StandardCharsets.UTF_8);
-        String subscriberID = null;        
+        Long subscriberID = null;
         if (binarySubscriberIDs.get(i) != null)
           {
             // [0, 1,                0, 1,                          0, 0, 0, 0, 0, 0, 0, 120]
@@ -239,7 +240,7 @@ public class SubscriberIDService
             int tmpTenantID = sizeModulo == 4 ? /*after mutlitenancy*/ Shorts.fromByteArray(Arrays.copyOfRange(binarySubscriberIDs.get(i), 0, 2)) : 1;
             short numberOfSubscriberIDs = sizeModulo == 4 ? /* after multitenancy */ Shorts.fromByteArray(Arrays.copyOfRange(binarySubscriberIDs.get(i), 2, 4)) : Shorts.fromByteArray(Arrays.copyOfRange(binarySubscriberIDs.get(i), 0, 2));
             if (numberOfSubscriberIDs > 1) throw new SubscriberIDServiceException("invariant violated - multiple subscriberIDs");
-            subscriberID = (numberOfSubscriberIDs == 1) ? (sizeModulo == 4 ? Long.toString(Longs.fromByteArray(Arrays.copyOfRange(binarySubscriberIDs.get(i), 4, 12))) : Long.toString(Longs.fromByteArray(Arrays.copyOfRange(binarySubscriberIDs.get(i), 2, 10))) ) : null;
+            subscriberID = (numberOfSubscriberIDs == 1) ? (sizeModulo == 4 ? Longs.fromByteArray(Arrays.copyOfRange(binarySubscriberIDs.get(i), 4, 12)) : Longs.fromByteArray(Arrays.copyOfRange(binarySubscriberIDs.get(i), 2, 10)) ) : null;
             if(tenantID == null)
               {
                 tenantID = tmpTenantID;
@@ -258,7 +259,66 @@ public class SubscriberIDService
 
     return result;
   }
-  
+
+  public boolean putAlternateIDs(AlternateID alternateID, Map<String/*alternateID*/, Pair<Integer/*tenantID*/,Set<Long/*subsriberIDs*/>>> subscribersIDs, boolean fullBatchFailureIfAtLeastOneAlreadyExists, AtomicBoolean stopRequested) throws SubscriberIDServiceException{
+
+    // use with sharedIDs not meaningful
+    if (alternateID.getSharedID()) throw new SubscriberIDServiceException("service not available for shared id '" + alternateID.getName() + "'");
+
+    // constructing bytes request to push
+    List<byte[]> binaryAlternateIDs = new ArrayList<byte[]>();
+    for (Map.Entry<String,Pair<Integer,Set<Long>>> subscriberID : subscribersIDs.entrySet()) {
+      String alternateIDValue = subscriberID.getKey();
+      Short tenantID = subscriberID.getValue().getFirstElement().shortValue();
+      Set<Long> subscriberIDs = subscriberID.getValue().getSecondElement();
+      Short nbSubscriberIDs = Integer.valueOf(subscriberIDs.size()).shortValue();
+
+      ByteBuffer byteBuffer = ByteBuffer.allocate( 2 + 2 + (8*nbSubscriberIDs) ); //2 bytes tenantID, 2 bytes nb of subscriberIDs, 8bytes per subscriberID
+      byteBuffer.putShort(tenantID);
+      byteBuffer.putShort(nbSubscriberIDs);
+      for(Long subsID:subscriberIDs) byteBuffer.putLong(subsID);
+
+      binaryAlternateIDs.add(alternateIDValue.getBytes(StandardCharsets.UTF_8));
+      binaryAlternateIDs.add(byteBuffer.array());
+    }
+    byte[][] binarySubscriberIDsArray = binaryAlternateIDs.toArray(new byte[0][0]);
+
+    while(!stopRequested.get()){
+      try (BinaryJedis jedis = jedisSentinelPool.getResource()) {
+        jedis.select(alternateID.getRedisCacheIndex());
+        if(fullBatchFailureIfAtLeastOneAlreadyExists){
+          return jedis.msetnx(binarySubscriberIDsArray)!=0;
+        }else{
+          jedis.mset(binarySubscriberIDsArray);
+          return true;//mset never fail
+        }
+      }
+      catch (JedisException e) {
+        log.warn("putAlternateIDs redis issue",e);
+      }
+    }
+
+    return false;
+
+  }
+
+  // same but blocking call if redis issue
+  public Map<String/*alternateID*/,Pair<Long/*subscriberID*/,Integer/*tenantID*/>> getSubscriberIDsBlocking(String alternateIDName, Set<String> alternateIDs, AtomicBoolean stopRequested) throws SubscriberIDServiceException, InterruptedException{
+    while(!stopRequested.get())
+    {
+      try
+      {
+        return getSubscriberIDs(alternateIDName,alternateIDs);
+      }
+      catch (SubscriberIDServiceException e)
+      {
+        if(!(e.getCause() instanceof JedisException)) throw e;
+        log.warn("JEDIS error, will retry",e);
+        try { Thread.sleep(1000); } catch (InterruptedException e1) { }
+      }
+    }
+    throw new InterruptedException("stopped requested");
+  }
   
   /****************************************
     {
@@ -614,11 +674,12 @@ public class SubscriberIDService
    * @throws SubscriberIDServiceException
    */
   public Pair<String, Integer> getSubscriberIDAndTenantID(String alternateIDName, String alternateID) throws SubscriberIDServiceException {
-    Map<String,Pair<String,Integer>> subscriberIDs = getSubscriberIDs(alternateIDName, Collections.singleton(alternateID));
-    Pair<String,Integer> subscriberID = subscriberIDs.get(alternateID);
+    Map<String,Pair<Long,Integer>> subscriberIDs = getSubscriberIDs(alternateIDName, Collections.singleton(alternateID));
+    Pair<Long,Integer> subscriberID = subscriberIDs.get(alternateID);
     if(subscriberID==null||subscriberID.getFirstElement()==null) return null;//no mapping entry return null
-    if(subscriberID.getSecondElement()==null) return new Pair<>(subscriberID.getFirstElement(),1);//no tenantID stored, default to 1 (migration to "multi-tenancy" case)
-    return subscriberID;
+    Integer tenantID = subscriberID.getSecondElement();
+    if(tenantID==null) tenantID=1;//no tenantID stored, default to 1 (migration to "multi-tenancy" case)
+    return new Pair<>(subscriberID.getFirstElement()+"",tenantID);
   }
 
   // same but blocking call if redis issue

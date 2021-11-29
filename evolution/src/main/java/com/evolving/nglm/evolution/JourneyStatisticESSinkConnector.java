@@ -6,9 +6,9 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.core.ChangeLogESSinkTask;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SimpleESSinkConnector;
+import com.evolving.nglm.core.SimpleESSinkTask;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.JourneyHistory.NodeHistory;
 import com.evolving.nglm.evolution.JourneyHistory.RewardHistory;
@@ -17,10 +17,16 @@ import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.sink.SinkRecord;
+import org.elasticsearch.action.DocWriteRequest;
+import org.elasticsearch.action.delete.DeleteRequest;
+import org.elasticsearch.action.update.UpdateRequest;
+import org.elasticsearch.script.ScriptType;
+import org.elasticsearch.script.Script;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +38,7 @@ public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
   *  static
   *
   ****************************************/
+  public static String WORKFLOW_ARCHIVE_INDEX = "workflowarchive";
   
   /**
    * Format journeyID to use it in an ES index name.
@@ -58,6 +65,14 @@ public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
     return sb.toString();
   }
   
+  public static String getWorkflowArchiveID(Map<String, Object> archiveDoc) {
+    StringBuilder sb = new StringBuilder();
+    sb.append(archiveDoc.get("journeyID")).append("_");
+    sb.append(archiveDoc.get("nodeID")).append("_");
+    sb.append(archiveDoc.get("status"));
+    return sb.toString();
+  }
+  
   /****************************************
   *
   *  taskClass
@@ -75,7 +90,16 @@ public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
   *
   ****************************************/
   
-  public static class JourneyStatisticESSinkTask extends ChangeLogESSinkTask<JourneyStatistic>
+  /**
+   * ChangeLogESSinkTask but adapted for JourneyStatisticESSinkTask
+   * We either 
+   * 1. push in journeystatistic 
+   * or
+   * 2. delete from journeystatistic and push in workflowarchive
+   *   - for workflow only
+   *   - when subscriber left workflow (metrics are disabled)
+   */
+  public static class JourneyStatisticESSinkTask extends SimpleESSinkTask
   {
     private final Logger log = LoggerFactory.getLogger(JourneyStatisticESSinkConnector.class);
     
@@ -106,26 +130,74 @@ public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
       super.stop();
     }
 
-    @Override public JourneyStatistic unpackRecord(SinkRecord sinkRecord) 
+    /*****************************************
+    *
+    *  getRequests
+    *
+    *****************************************/
+
+    @Override public List<DocWriteRequest> getRequests(SinkRecord sinkRecord)
+    {
+      if (sinkRecord.value() != null) {
+        JourneyStatistic journeystatistic = unpackRecord(sinkRecord);
+        if (journeystatistic != null) {
+          // Normal case
+          if(! journeystatistic.isArchive()) {
+            UpdateRequest request = new UpdateRequest(
+                getJourneyStatisticIndex(journeystatistic.getJourneyID(), this.getDefaultIndexName()), 
+                getJourneyStatisticID(journeystatistic.getSubscriberID(), journeystatistic.getJourneyID(), journeystatistic.getJourneyInstanceID())
+            );
+            request.doc(getDocumentMap(journeystatistic));
+            request.docAsUpsert(true);
+            request.retryOnConflict(4);
+            return Collections.<DocWriteRequest>singletonList(request);
+          }
+          // Archive case. 
+          // EVPRO-1318. It is REALLY important that, once the journeystatistic is tagged as archive, it is never push again
+          // Otherwise we would increment the count several time.
+          // That's why 'archive' means that the journeystatistic will never change again.
+          // And also: JourneyMetric is disabled here.
+          else {
+            List<DocWriteRequest> result = new ArrayList();
+            // 1. Remove from journeystatistic index
+            DeleteRequest delete = new DeleteRequest(
+                getJourneyStatisticIndex(journeystatistic.getJourneyID(), this.getDefaultIndexName()), 
+                getJourneyStatisticID(journeystatistic.getSubscriberID(), journeystatistic.getJourneyID(), journeystatistic.getJourneyInstanceID())
+            );
+            result.add(delete);
+            
+            // 2. Increment count in workflowarchive
+            Map<String, Object> archiveDoc = getArchiveDocumentMap(journeystatistic);
+            UpdateRequest update = new UpdateRequest(
+                WORKFLOW_ARCHIVE_INDEX, 
+                getWorkflowArchiveID(archiveDoc)
+            );
+            update.script(new Script(ScriptType.INLINE, "painless", "ctx._source.count += 1;", Collections.emptyMap())); // See upsert documentation
+            update.upsert(archiveDoc);
+            update.retryOnConflict(4);
+            result.add(update);
+            
+            return result;
+          }
+        }
+      }
+      return Collections.<DocWriteRequest>emptyList();
+    }
+    
+    public JourneyStatistic unpackRecord(SinkRecord sinkRecord) 
     {
       Object journeyStatisticValue = sinkRecord.value();
       Schema journeyStatisticValueSchema = sinkRecord.valueSchema();
       return JourneyStatistic.unpack(new SchemaAndValue(journeyStatisticValueSchema, journeyStatisticValue));
     }
-    
-    @Override
-    protected String getDocumentIndexName(JourneyStatistic journeyStatistic)
-    {
-      return JourneyStatisticESSinkConnector.getJourneyStatisticIndex(journeyStatistic.getJourneyID(), this.getDefaultIndexName());
-    }
 
-    @Override
-    public String getDocumentID(JourneyStatistic journeyStatistic)
-    {
-      return JourneyStatisticESSinkConnector.getJourneyStatisticID(journeyStatistic.getSubscriberID(), journeyStatistic.getJourneyID(), journeyStatistic.getJourneyInstanceID());
-    }
+    /*****************************************
+    *
+    *  journeystatistic
+    *
+    *****************************************/
     
-    @Override public Map<String,Object> getDocumentMap(JourneyStatistic journeyStatistic)
+    public Map<String,Object> getDocumentMap(JourneyStatistic journeyStatistic)
     {
       Map<String,Object> documentMap = new HashMap<String,Object>();
 
@@ -161,8 +233,8 @@ public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
       documentMap.put("nodeHistory", journeyNode);
       documentMap.put("statusHistory", journeyStatus);
       documentMap.put("rewardHistory", journeyReward);
-      
-      documentMap.put("deliveryRequestID", journeyStatistic.getDeliveryRequestID());
+      // @rl THIS SHOULD BE REMOVED FROM ES template settings later
+      // documentMap.put("deliveryRequestID", journeyStatistic.getDeliveryRequestID());
       documentMap.put("sample", journeyStatistic.getSample());
       documentMap.put("statusNotified", journeyStatistic.getStatusNotified());
       documentMap.put("statusConverted", journeyStatistic.getStatusConverted());
@@ -174,7 +246,7 @@ public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
       documentMap.put("journeyComplete", journeyStatistic.getJourneyComplete());
       documentMap.put("journeyExitDate", (journeyStatistic.getJourneyExitDate() != null)? RLMDateUtils.formatDateForElasticsearchDefault(journeyStatistic.getJourneyExitDate()) : null);
       
-      documentMap.put("nodeID", journeyStatistic.getToNodeID());
+      documentMap.put("nodeID", journeyStatistic.getCurrentNodeID());
       if(journeyStatistic.getSpecialExitStatus() != null && !journeyStatistic.getSpecialExitStatus().equalsIgnoreCase("null") && !journeyStatistic.getSpecialExitStatus().isEmpty()) {
         documentMap.put("status", SubscriberJourneyStatus.fromExternalRepresentation(journeyStatistic.getSpecialExitStatus()).getDisplay());
       } else {
@@ -188,6 +260,31 @@ public class JourneyStatisticESSinkConnector extends SimpleESSinkConnector
       //  return
       //
       
+      return documentMap;
+    }
+
+    /*****************************************
+    *
+    *  workflowarchive
+    *
+    *****************************************/
+    
+    /**
+     * Get the default document for workflowarchive. This will be used only when it does not already exist (upsert)
+     */
+    public Map<String,Object> getArchiveDocumentMap(JourneyStatistic journeyStatistic)
+    {
+      Map<String,Object> documentMap = new HashMap<String,Object>();
+     
+      documentMap.put("journeyID", journeyStatistic.getJourneyID());
+      documentMap.put("tenantID", journeyStatistic.getTenantID());
+      documentMap.put("nodeID", journeyStatistic.getCurrentNodeID());
+      if(journeyStatistic.getSpecialExitStatus() != null && !journeyStatistic.getSpecialExitStatus().equalsIgnoreCase("null") && !journeyStatistic.getSpecialExitStatus().isEmpty()) {
+        documentMap.put("status", SubscriberJourneyStatus.fromExternalRepresentation(journeyStatistic.getSpecialExitStatus()).getDisplay());
+      } else {
+        documentMap.put("status", journeyStatistic.getSubscriberJourneyStatus().getDisplay());
+      }
+      documentMap.put("count", new Long(1));
       return documentMap;
     }
   }

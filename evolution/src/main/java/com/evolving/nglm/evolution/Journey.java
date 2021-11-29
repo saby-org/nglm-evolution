@@ -27,6 +27,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
 import org.apache.kafka.common.errors.SerializationException;
@@ -65,11 +66,12 @@ import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.JourneyHistory.StatusHistory;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 import com.evolving.nglm.evolution.StockMonitor.StockableItem;
+import com.evolving.nglm.evolution.Target.TargetStatus;
 import com.evolving.nglm.evolution.notification.NotificationTemplateParameters;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientException;
 
-@GUIDependencyDef(objectType = "journey", serviceClass = JourneyService.class, dependencies = { "supplier", "deliverable", "offer", "journey", "campaign", "journeyobjective" , "target" , "workflow" , "mailtemplate" , "pushtemplate" , "dialogtemplate", "voucher", "loyaltyProgramPoints", "loyaltyprogramchallenge", "loyaltyprogrammission", "sourceaddress", "presentationstrategy"})
+@GUIDependencyDef(objectType = "journey", serviceClass = JourneyService.class, dependencies = { "badge", "supplier", "deliverable", "offer", "journey", "campaign", "journeyobjective" , "target" , "workflow" , "mailtemplate" , "pushtemplate" , "dialogtemplate", "voucher", "loyaltyProgramPoints", "loyaltyprogramchallenge", "loyaltyprogrammission", "sourceaddress", "presentationstrategy"})
 public class Journey extends GUIManagedObject implements StockableItem, GUIManagedObject.ElasticSearchMapping
 {
   /*****************************************
@@ -119,30 +121,39 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
   //
   //  SubscriberJourneyStatus
   //
-
+  
   public enum SubscriberJourneyStatus
   {
-    NotEligible("notEligible", "NotEligible"),
-    Excluded("excluded", "Excluded"),
-    ObjectiveLimitReached("objective_limitReached", "ObjectiveLimitReached"),
-    Entered("entered", "Entered"),
-    Targeted("targeted", "Targeted"),
-    Notified("notified", "Notified"),
-    ConvertedNotNotified("unnotified_converted", "Converted"),
-    ConvertedNotified("notified_converted", "ConvertedNotified"),
-    ControlGroup("controlGroup", "Control"),
-    UniversalControlGroup("UniversalControlGroup", "UCG"),
-    ControlGroupConverted("controlGroup_converted", "ControlConverted"),
-    UniversalControlGroupConverted("UniversalControlGroup_converted", "UCGConverted"),
-    Unknown("(unknown)", "Unknown");
+    NotEligible("notEligible", "NotEligible", true),
+    Excluded("excluded", "Excluded", true),
+    ObjectiveLimitReached("objective_limitReached", "ObjectiveLimitReached", true),
+    UniversalControlGroup("UniversalControlGroup", "UCG", true),
+    Entered("entered", "Entered", false),
+    Targeted("targeted", "Targeted", false),
+    Notified("notified", "Notified", false),
+    ConvertedNotNotified("unnotified_converted", "Converted", false),
+    ConvertedNotified("notified_converted", "ConvertedNotified", false),
+    ControlGroup("controlGroup", "Control", false),
+    ControlGroupConverted("controlGroup_converted", "ControlConverted", false),
+    UniversalControlGroupConverted("UniversalControlGroup_converted", "UCGConverted", false),
+    Unknown("(unknown)", "Unknown", false);
     private String externalRepresentation;
     private String display;
-    private SubscriberJourneyStatus(String externalRepresentation, String display) { this.externalRepresentation = externalRepresentation; this.display = display; }
+    private boolean specialExit; // EVPRO-742 tag special exit status
+    private SubscriberJourneyStatus(String externalRepresentation, String display, boolean specialExit) { this.externalRepresentation = externalRepresentation; this.display = display; this.specialExit = specialExit; }
     public String getExternalRepresentation() { return externalRepresentation; }
     public String getDisplay() { return display; }
+    public boolean isSpecialExit() { return specialExit; }
     public static SubscriberJourneyStatus fromExternalRepresentation(String externalRepresentation) { for (SubscriberJourneyStatus enumeratedValue : SubscriberJourneyStatus.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return Unknown; }
-    public boolean in (SubscriberJourneyStatus ... states) {
-        return Arrays.asList(states).contains(this);
+    
+    public static List<String> getExitStatusReprensentation() {
+      List<String> result = new LinkedList<String>();
+      for (SubscriberJourneyStatus status: SubscriberJourneyStatus.values()) {
+        if(status.isSpecialExit()) {
+          result.add(status.getExternalRepresentation());
+        }
+      }
+      return result;
     }
   }
 
@@ -362,6 +373,9 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
   //  derived
   //
 
+  // EVPRO-1318: it is really important that we do no try to publish JourneyMetric for Workflow otherwise it will try 
+  // to push JourneyMetric in journeystatistic ES index after its removal (workflowarchive mechanism)
+  // Therefore, journeyMetricsNeeded() call should always return false for Workflow.
   public boolean journeyMetricsNeeded()
   {
     return this.fullStatistics && this.getGUIManagedObjectType() == GUIManagedObjectType.Campaign;
@@ -2488,33 +2502,27 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
 
     if (targets != null)
       {
-        
-        for(String currentTargetID : targets.keySet()){
-          
-          //
-          //  retrieve target
-          //
-          
-          Target target = targetService.getActiveTarget(currentTargetID, date);
-
-          //
-          //  validate the target exists and is active
-          //  
-          
-          if (target == null)
-            {
-              // EVPRO-1226 only invalidate journey if we are inside the provisioning period
-              GUIManagedObject targetGMO = targetService.getStoredGUIManagedObject(currentTargetID);
-              if (targetGMO == null ||
-                  (targetGMO.getEffectiveEndDate() != null && targetGMO.getEffectiveEndDate().before(getEffectiveEntryPeriodEndDate()))) {
-                log.info("journey {} uses unknown/inactive target: {}", getJourneyID(), currentTargetID);
-                throw new GUIManagerException("journey uses unknown/inactive target", currentTargetID);
+        for (String currentTargetID : targets.keySet())
+          {
+            GUIManagedObject targetGMO = targetService.getStoredGUIManagedObject(currentTargetID);
+            // EVPRO-1226 only invalidate journey if target is unknown or invalid
+            if (targetGMO != null && (targetGMO instanceof Target))
+              {
+                TargetStatus targetStatus = ((Target) targetGMO).getTargetStatus();
+                if (targetStatus == targetStatus.Unknown || targetStatus == targetStatus.NotValid)
+                  {
+                    log.info("journey {} uses invalid target: {}", getJourneyID(), currentTargetID);
+                    throw new GUIManagerException("journey uses invalid target", currentTargetID);
+                  }
+              } 
+            else
+              {
+                log.info("journey {} uses unknown target: {}", getJourneyID(), currentTargetID);
+                throw new GUIManagerException("journey uses unknown target", currentTargetID);
               }
-            }
-          
-        }
-        
+          }
       }
+    
   }
 
   /*****************************************
@@ -4015,6 +4023,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     List<String> deliverableIDs = new ArrayList<String>();
     List<String> customCriteriaIDs = new ArrayList<String>();
     List<String> supplierIDs = new ArrayList<String>();
+    List<String> badgeIDs = new ArrayList<String>();
     switch (getGUIManagedObjectType())
       {
         case Journey:
@@ -4043,6 +4052,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
                   String presentationstrategyID = journeyNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, journeyNode, tenantID).get("presentationstrategy");
                   String deliverableID = journeyNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, journeyNode, tenantID).get("deliverable");
                   String supplierID = journeyNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, journeyNode, tenantID).get("supplier");
+                  String badgeID = journeyNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, journeyNode, tenantID).get("badge");
 
                   if (campaignID != null) campaignIDs.add(campaignID);
                   if (workflowID != null) wrkflowIDs.add(workflowID);
@@ -4056,6 +4066,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
                   if (sourceaddressID != null) sourceaddressIDs.add(sourceaddressID);
                   if (presentationstrategyID != null) presentationstrategiesIDs.add(presentationstrategyID);
                   if (deliverableID != null) deliverableIDs.add(deliverableID);
+                  if (badgeID != null) badgeIDs.add(badgeID);
                   String customCriteriaID = journeyNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, journeyNode, tenantID).get("customcriteria");
                   // We can depend on multiple customCriteria, they are separated by ','
                   if (customCriteriaID != null) {
@@ -4143,6 +4154,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
           result.put("deliverable", deliverableIDs);
           result.put("customcriteria", customCriteriaIDs);
           result.put("supplier", supplierIDs);
+          result.put("badge", badgeIDs);
           break;
           
         case Campaign:
@@ -4173,6 +4185,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
                   String presentationstrategyID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("presentationstrategy");
                   String deliverableID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("deliverable");
                   String supplierID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("supplier");
+                  String badgeID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("badge");
                   
                   if (offerID != null)  offerIDs.add(offerID);
                   if (pointID != null) pointIDs.add(pointID);
@@ -4189,6 +4202,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
                   if (tokentypeID != null) tokentypeIDs.add(tokentypeID);
                   if (presentationstrategyID != null) presentationstrategiesIDs.add(presentationstrategyID);
                   if (deliverableID != null) deliverableIDs.add(deliverableID);
+                  if (badgeID != null) badgeIDs.add(badgeID);
                   String customCriteriaID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("customcriteria");
                   // We can depend on multiple customCriteria, they are separated by ','
                   if (customCriteriaID != null) {
@@ -4285,6 +4299,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
           result.put("deliverable", deliverableIDs);
           result.put("customcriteria", customCriteriaIDs);
           result.put("supplier", supplierIDs);
+          result.put("badge", badgeIDs);
           break;
 
         case BulkCampaign:
@@ -4363,6 +4378,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
                     String presentationstrategyID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("presentationstrategy");
                     String deliverableID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("deliverable");
                     String supplierID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("supplier");
+                    String badgeID = offerNode.getNodeType().getActionManager().getGUIDependencies(guiServiceList, offerNode, tenantID).get("badge");
                     
                     if (offerID != null) offerIDs.add(offerID);
                     if (loyaltyProgramPointsID != null) loyaltyProgramPointsIDs.add(loyaltyProgramPointsID);
@@ -4375,6 +4391,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
                     if (presentationstrategyID != null) presentationstrategiesIDs.add(presentationstrategyID);
                     if (deliverableID != null) deliverableIDs.add(deliverableID);
                     if (supplierID != null) supplierIDs.add(supplierID);
+                    if (badgeID != null) badgeIDs.add(badgeID);
                   }
                
                 if (offerNode.getNodeName().equals("Profile Selection") || offerNode.getNodeName().equals("Event Multi-Selection") || offerNode.getNodeName().equals("Event Selection"))
@@ -4449,6 +4466,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
             result.put("presentationstrategy", presentationstrategiesIDs);
             result.put("deliverable", deliverableIDs);
             result.put("supplier", supplierIDs);
+            result.put("badge", badgeIDs);
             break;
         default:
           break;
@@ -4608,55 +4626,62 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
   private String getGUIManagedObjectIDFromDynamicCriterion(EvaluationCriterion criteria, String objectType, List<GUIService> guiServiceList)
   {
     String result = null;
-    switch (objectType.toLowerCase())
+    try
     {
-      case "loyaltyprogrampoints":
-        Pattern fieldNamePattern = Pattern.compile("^loyaltyprogram\\.([^.]+)\\.(.+)$");
-        Matcher fieldNameMatcher = fieldNamePattern.matcher(criteria.getCriterionField().getID());
-        if (fieldNameMatcher.find())
-          {
-            String loyaltyProgramID = fieldNameMatcher.group(1);
-            LoyaltyProgramService loyaltyProgramService = (LoyaltyProgramService) guiServiceList.stream().filter(srvc -> srvc.getClass() == LoyaltyProgramService.class).findFirst().orElse(null);
-            if (loyaltyProgramService != null)
-              {
-                GUIManagedObject uncheckedLoyalty = loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID);
-                if (uncheckedLoyalty !=  null && uncheckedLoyalty.getAccepted() && ((LoyaltyProgram) uncheckedLoyalty).getLoyaltyProgramType() == LoyaltyProgramType.POINTS) result = uncheckedLoyalty.getGUIManagedObjectID();
-              }
-          }
-        break;
-        
-      case "loyaltyprogramchallenge":
-        fieldNamePattern = Pattern.compile("^loyaltyprogram\\.([^.]+)\\.(.+)$");
-        fieldNameMatcher = fieldNamePattern.matcher(criteria.getCriterionField().getID());
-        if (fieldNameMatcher.find())
-          {
-            String loyaltyProgramID = fieldNameMatcher.group(1);
-            LoyaltyProgramService loyaltyProgramService = (LoyaltyProgramService) guiServiceList.stream().filter(srvc -> srvc.getClass() == LoyaltyProgramService.class).findFirst().orElse(null);
-            if (loyaltyProgramService != null)
-              {
-                GUIManagedObject uncheckedLoyalty = loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID);
-                if (uncheckedLoyalty !=  null && uncheckedLoyalty.getAccepted() && ((LoyaltyProgram) uncheckedLoyalty).getLoyaltyProgramType() == LoyaltyProgramType.CHALLENGE) result = uncheckedLoyalty.getGUIManagedObjectID();
-              }
-          }
-        break;
-        
-      case "loyaltyprogrammission":
-        fieldNamePattern = Pattern.compile("^loyaltyprogram\\.([^.]+)\\.(.+)$");
-        fieldNameMatcher = fieldNamePattern.matcher(criteria.getCriterionField().getID());
-        if (fieldNameMatcher.find())
-          {
-            String loyaltyProgramID = fieldNameMatcher.group(1);
-            LoyaltyProgramService loyaltyProgramService = (LoyaltyProgramService) guiServiceList.stream().filter(srvc -> srvc.getClass() == LoyaltyProgramService.class).findFirst().orElse(null);
-            if (loyaltyProgramService != null)
-              {
-                GUIManagedObject uncheckedLoyalty = loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID);
-                if (uncheckedLoyalty !=  null && uncheckedLoyalty.getAccepted() && ((LoyaltyProgram) uncheckedLoyalty).getLoyaltyProgramType() == LoyaltyProgramType.MISSION) result = uncheckedLoyalty.getGUIManagedObjectID();
-              }
-          }
-        break;
+      switch (objectType.toLowerCase())
+      {
+        case "loyaltyprogrampoints":
+          Pattern fieldNamePattern = Pattern.compile("^loyaltyprogram\\.([^.]+)\\.(.+)$");
+          Matcher fieldNameMatcher = fieldNamePattern.matcher(criteria.getCriterionField().getID());
+          if (fieldNameMatcher.find())
+            {
+              String loyaltyProgramID = fieldNameMatcher.group(1);
+              LoyaltyProgramService loyaltyProgramService = (LoyaltyProgramService) guiServiceList.stream().filter(srvc -> srvc.getClass() == LoyaltyProgramService.class).findFirst().orElse(null);
+              if (loyaltyProgramService != null)
+                {
+                  GUIManagedObject uncheckedLoyalty = loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID);
+                  if (uncheckedLoyalty !=  null && uncheckedLoyalty.getAccepted() && ((LoyaltyProgram) uncheckedLoyalty).getLoyaltyProgramType() == LoyaltyProgramType.POINTS) result = uncheckedLoyalty.getGUIManagedObjectID();
+                }
+            }
+          break;
+          
+        case "loyaltyprogramchallenge":
+          fieldNamePattern = Pattern.compile("^loyaltyprogram\\.([^.]+)\\.(.+)$");
+          fieldNameMatcher = fieldNamePattern.matcher(criteria.getCriterionField().getID());
+          if (fieldNameMatcher.find())
+            {
+              String loyaltyProgramID = fieldNameMatcher.group(1);
+              LoyaltyProgramService loyaltyProgramService = (LoyaltyProgramService) guiServiceList.stream().filter(srvc -> srvc.getClass() == LoyaltyProgramService.class).findFirst().orElse(null);
+              if (loyaltyProgramService != null)
+                {
+                  GUIManagedObject uncheckedLoyalty = loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID);
+                  if (uncheckedLoyalty !=  null && uncheckedLoyalty.getAccepted() && ((LoyaltyProgram) uncheckedLoyalty).getLoyaltyProgramType() == LoyaltyProgramType.CHALLENGE) result = uncheckedLoyalty.getGUIManagedObjectID();
+                }
+            }
+          break;
+          
+        case "loyaltyprogrammission":
+          fieldNamePattern = Pattern.compile("^loyaltyprogram\\.([^.]+)\\.(.+)$");
+          fieldNameMatcher = fieldNamePattern.matcher(criteria.getCriterionField().getID());
+          if (fieldNameMatcher.find())
+            {
+              String loyaltyProgramID = fieldNameMatcher.group(1);
+              LoyaltyProgramService loyaltyProgramService = (LoyaltyProgramService) guiServiceList.stream().filter(srvc -> srvc.getClass() == LoyaltyProgramService.class).findFirst().orElse(null);
+              if (loyaltyProgramService != null)
+                {
+                  GUIManagedObject uncheckedLoyalty = loyaltyProgramService.getStoredLoyaltyProgram(loyaltyProgramID);
+                  if (uncheckedLoyalty !=  null && uncheckedLoyalty.getAccepted() && ((LoyaltyProgram) uncheckedLoyalty).getLoyaltyProgramType() == LoyaltyProgramType.MISSION) result = uncheckedLoyalty.getGUIManagedObjectID();
+                }
+            }
+          break;
 
-      default:
-        break;
+        default:
+          break;
+      }
+    }
+  catch (PatternSyntaxException e)
+    {
+      if(log.isTraceEnabled()) log.trace("PatternSyntaxException Description: {}, Index: ", e.getDescription(), e.getIndex());
     }
     return result;
   }

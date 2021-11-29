@@ -54,10 +54,26 @@ public class GrafanaUtils
   
   public static boolean prepareGrafanaForTenants(ElasticsearchClientAPI elasticsearch)
   {
+    // check if MAG is deployed on the client side
+    boolean magDeploy = false;
+    String magDeployedString = System.getenv("MAG_DEPLOYED");
+    log.info("== MAG status ==" + magDeployedString);
+    if(magDeployedString != null && magDeployedString.trim().toLowerCase().equals("true")) 
+    { 
+      log.info("MAG status is: " + magDeployedString + " ==> MAG is deployed on the client side");
+      magDeploy = true;
+    }
+    else
+    {
+      log.info("MAG status is: " + magDeployedString + " ==> MAG is NOT deployed on the client side");
+    }
+    
     try
       {
         // prepare the curls
         Set<Tenant> tenants = Deployment.getTenants();
+        
+       
 
         HashMap<String, Integer> existingOrgs = getExistingGrafanaOrgs();
         log.info("existingOrgs: " + existingOrgs);
@@ -99,7 +115,7 @@ public class GrafanaUtils
         for (Tenant tenant : tenants)
           {
             int tenantID = tenant.getTenantID();
-
+            
             // check if organization exists
 //            String orgName = tenant.getDisplay();
             String orgName = "t" + tenantID;
@@ -158,7 +174,7 @@ public class GrafanaUtils
                         while (s.substring(index, s.length()).contains("<_"))
                           {
                             String currentString = s.substring(index, s.length());
-                            // let extract this variable...
+                            // let's extract this variable...
                             String varName = currentString.substring(currentString.indexOf("<_") + 2, currentString.indexOf("_>"));
                             String varValue = System.getenv().get(varName);
                             if (varValue == null)
@@ -228,13 +244,19 @@ public class GrafanaUtils
                     Set<String> dbFileNames = reflections.getResources(x -> x.startsWith("grafana-gui"));
                     Set<String> nonT0FileNames = new LinkedHashSet<String>();
                     Set<String> t0FileNames = new LinkedHashSet<String>();
+                    Set<String> magFileNames = new LinkedHashSet<String>();
                     for(String fileName : dbFileNames)
                     {
                       if(tenantID == 0 && fileName.startsWith("config/grafana-gui-t0"))
                       {
                         t0FileNames.add(fileName);
                       }
-                      else if(tenantID != 0 && !fileName.startsWith("config/grafana-gui-t0")){
+                      if(tenantID != 0 && !fileName.startsWith("config/grafana-gui-t0"))
+                      {
+                        magFileNames.add(fileName);
+                      }
+                      if(tenantID != 0 && !fileName.startsWith("config/grafana-gui-t0") && !fileName.startsWith("config/grafana-gui-mag"))
+                      {
                         nonT0FileNames.add(fileName);
                       }
                     }
@@ -242,8 +264,13 @@ public class GrafanaUtils
                     {
                       createDashboardForOrg(elasticsearch, existingOrgs, tenantID, orgID, t0FileNames, exisitingDashBoards);
                     }
-                    else {
-                      createDashboardForOrg(elasticsearch, existingOrgs, tenantID, orgID, nonT0FileNames, exisitingDashBoards);
+                    else if(tenantID != 0){
+                      if(magDeploy == true) {
+                        createDashboardForOrg(elasticsearch, existingOrgs, tenantID, orgID, magFileNames, exisitingDashBoards);
+                      }
+                      else {
+                        createDashboardForOrg(elasticsearch, existingOrgs, tenantID, orgID, nonT0FileNames, exisitingDashBoards);
+                      }
                     }
                   }
                 else
@@ -284,6 +311,10 @@ public class GrafanaUtils
 //                        HashMap<String,Object> mapDbEs=new HashMap<String,Object>();
 //                        UpdateRequest request = new UpdateRequest();
                         
+                        // setting the tenant timeZone in the dashboard
+                        Deployment deployment = Deployment.getDeployment(tenantID);
+                        String tz = deployment.getTimeZone();
+                        
                         log.info("The dashboard under-study is: === " + expectedTitle + " ===");
                         
                         // 1- The dashboard already exists but its uid doesn't start with t<tenantID>-
@@ -301,6 +332,7 @@ public class GrafanaUtils
                           }
                           // Then recreate it using a unique uid that starts with t<tenandID>-
                           String newUID = "t"+ tenantID + "-" + TokenUtils.generateFromRegex(regex);
+                          s= s.replace("replaceWithTenantTimeZone", tz);
                           s = s.replace("replaceWithUniqueID", newUID );
                           fulldashboardDef = (JSONObject) (new JSONParser()).parse(s);
 //                          mapDbEs.put("name",expectedTitle);
@@ -330,6 +362,7 @@ public class GrafanaUtils
                             {
                               // overwrite it using the same existing uid
                               log.info("GrafanaUtils.prepareGrafanaForTenants: Dashboard " + expectedTitle + " already exists for orgID " + orgID + " for dashboard file name " + currentFileName + " and it'll be overwritten.");
+                              s= s.replace("replaceWithTenantTimeZone", tz);
                               s= s.replace("replaceWithUniqueID", existingUID);
                               fulldashboardDef = (JSONObject) (new JSONParser()).parse(s);
                               //                          mapDbEs.put("name",expectedTitle);
@@ -345,6 +378,7 @@ public class GrafanaUtils
                           log.info("GrafanaUtils.prepareGrafanaForTenants: Dashboard " + expectedTitle + " doesn't exist for orgID " + orgID + " for dashboard file name " + currentFileName + " and it'll be created.");
                           // Create it using a unique uid that starts with t<tenandID>-
                           String newUID = "t"+ tenantID + "-" + TokenUtils.generateFromRegex(regex);
+                          s= s.replace("replaceWithTenantTimeZone", tz);
                           s = s.replace("replaceWithUniqueID", newUID );
                           fulldashboardDef = (JSONObject) (new JSONParser()).parse(s);
 //                          mapDbEs.put("name",expectedTitle);

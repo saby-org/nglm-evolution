@@ -42,6 +42,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.RLMDateUtils;
+import com.evolving.nglm.evolution.Badge.BadgeType;
 import com.evolving.nglm.evolution.DeliveryManager.DeliveryStatus;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
 import com.evolving.nglm.evolution.EvolutionEngine.EvolutionEventContext;
@@ -242,6 +243,189 @@ public abstract class CriterionFieldRetriever
     return result;
   }
   
+  public static Object getNumberOfBadgesAwardedForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
+  {
+    int result = 0;
+    SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+    List<BadgeState> badges = subscriberProfile.getBadges();
+    
+    //
+    //  args
+    //
+    
+    String badgeID = (String) subcriteriaVal.get(0);
+    String period = (String) subcriteriaVal.get(1);
+    String timeZone = Deployment.getDeployment(evaluationRequest.getTenantID()).getTimeZone();
+    Pair<Date, Date> startEndDatePair = getStartAndEndDate(period, timeZone);
+    Date startDate = startEndDatePair.getFirstElement();
+    Date endDate = startEndDatePair.getSecondElement();
+    
+    if (badges != null && !badges.isEmpty())
+      {
+        if (badgeID != null) badges = badges.stream().filter(badge -> badge.getBadgeID().equals(badgeID)).collect(Collectors.toList());
+        badges = badges.stream().filter(badge -> badge.getBadgeAwardDate() != null && badge.getBadgeAwardDate().after(startDate) && badge.getBadgeAwardDate().before(endDate)).collect(Collectors.toList());
+        result = badges.size();
+      }
+    if (log.isTraceEnabled()) log.trace("BadgeCriteria getNumberOfBadgesAwardedForPeriod subcriteriaVal {}, startEndDatePair {}, result {}", subcriteriaVal, startEndDatePair, result);
+    return result;
+  }
+  
+  public static Object getNumberOfBadgeTypesAwardedForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
+  {
+    int result = 0;
+    SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+    List<BadgeState> badges = subscriberProfile.getBadges();
+    
+    //
+    //  args
+    //
+    
+    String badgeTypeStr = (String) subcriteriaVal.get(0);
+    String period = (String) subcriteriaVal.get(1);
+    String timeZone = Deployment.getDeployment(evaluationRequest.getTenantID()).getTimeZone();
+    Pair<Date, Date> startEndDatePair = getStartAndEndDate(period, timeZone);
+    Date startDate = startEndDatePair.getFirstElement();
+    Date endDate = startEndDatePair.getSecondElement();
+    
+    if (badges != null && !badges.isEmpty())
+      {
+        if (badgeTypeStr != null) badges = badges.stream().filter(badge -> badge.getBadgeType().equals(BadgeType.fromExternalRepresentation(badgeTypeStr))).collect(Collectors.toList());
+        badges = badges.stream().filter(badge -> badge.getBadgeAwardDate() != null && badge.getBadgeAwardDate().after(startDate) && badge.getBadgeAwardDate().before(endDate)).collect(Collectors.toList());
+        result = badges.size();
+      }
+    if (log.isTraceEnabled()) log.trace("BadgeCriteria getNumberOfBadgeTypesAwardedForPeriod subcriteriaVal {}, startEndDatePair {}, result {}", subcriteriaVal, startEndDatePair, result);
+    return result;
+  }
+  
+  public static Object getNumberOfBadgeObjectivesAwardedForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
+  {
+    int result = 0;
+    SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+    List<BadgeState> badges = subscriberProfile.getBadges();
+    
+    //
+    //  args
+    //
+    
+    String badgeObjID = (String) subcriteriaVal.get(0);
+    String period = (String) subcriteriaVal.get(1);
+    String timeZone = Deployment.getDeployment(evaluationRequest.getTenantID()).getTimeZone();
+    Pair<Date, Date> startEndDatePair = getStartAndEndDate(period, timeZone);
+    Date startDate = startEndDatePair.getFirstElement();
+    Date endDate = startEndDatePair.getSecondElement();
+    
+    if (badges != null && !badges.isEmpty())
+      {
+        if (badgeObjID != null) badges = badges.stream().filter(badge -> badge.getBadgeObjectiveIDs().contains(badgeObjID)).collect(Collectors.toList());
+        badges = badges.stream().filter(badge -> badge.getBadgeAwardDate() != null && badge.getBadgeAwardDate().after(startDate) && badge.getBadgeAwardDate().before(endDate)).collect(Collectors.toList());
+        result = badges.size();
+      }
+    if (log.isTraceEnabled()) log.trace("BadgeCriteria getNumberOfBadgeObjectivesAwardedForPeriod subcriteriaVal {}, startEndDatePair {}, result {}", subcriteriaVal, startEndDatePair, result);
+    return result;
+  }
+  
+  public static Object getNumberOfBadgesRemovedForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
+  {
+    int result = 0;
+    SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+    List<BadgeState> badges = subscriberProfile.getBadges();
+    
+    //
+    //  args
+    //
+    
+    String badgeID = (String) subcriteriaVal.get(0);
+    String period = (String) subcriteriaVal.get(1);
+    String timeZone = Deployment.getDeployment(evaluationRequest.getTenantID()).getTimeZone();
+    Pair<Date, Date> startEndDatePair = getStartAndEndDate(period, timeZone);
+    Date startDate = startEndDatePair.getFirstElement();
+    Date endDate = startEndDatePair.getSecondElement();
+    
+    if (badges != null && !badges.isEmpty())
+      {
+        if (badgeID != null) badges = badges.stream().filter(badge -> badge.getBadgeID().equals(badgeID)).collect(Collectors.toList());
+        badges = badges.stream().filter(badge -> badge.getBadgeRemoveDate() != null && badge.getBadgeRemoveDate().after(startDate) && badge.getBadgeRemoveDate().before(endDate)).collect(Collectors.toList());
+        result = badges.size();
+      }
+    if (log.isTraceEnabled()) log.trace("BadgeCriteria getNumberOfBadgesRemovedForPeriod subcriteriaVal {}, startEndDatePair {}, result {}", subcriteriaVal, startEndDatePair, result);
+    return result;
+  }
+  
+  public static Object getNumberOfBadgeTypesRemovedForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
+  {
+    int result = 0;
+    SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+    List<BadgeState> badges = subscriberProfile.getBadges();
+    
+    //
+    //  args
+    //
+    
+    String badgeTypeStr = (String) subcriteriaVal.get(0);
+    String period = (String) subcriteriaVal.get(1);
+    String timeZone = Deployment.getDeployment(evaluationRequest.getTenantID()).getTimeZone();
+    Pair<Date, Date> startEndDatePair = getStartAndEndDate(period, timeZone);
+    Date startDate = startEndDatePair.getFirstElement();
+    Date endDate = startEndDatePair.getSecondElement();
+    
+    if (badges != null && !badges.isEmpty())
+      {
+        if (badgeTypeStr != null) badges = badges.stream().filter(badge -> badge.getBadgeType().equals(BadgeType.fromExternalRepresentation(badgeTypeStr))).collect(Collectors.toList());
+        badges = badges.stream().filter(badge -> badge.getBadgeRemoveDate() != null && badge.getBadgeRemoveDate().after(startDate) && badge.getBadgeRemoveDate().before(endDate)).collect(Collectors.toList());
+        result = badges.size();
+      }
+    if (log.isTraceEnabled()) log.trace("BadgeCriteria getNumberOfBadgeTypesRemovedForPeriod subcriteriaVal {}, startEndDatePair {}, result {}", subcriteriaVal, startEndDatePair, result);
+    return result;
+  }
+  
+  public static Object getNumberOfBadgeObjectivesRemovedForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
+  {
+    int result = 0;
+    SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+    List<BadgeState> badges = subscriberProfile.getBadges();
+    
+    //
+    //  args
+    //
+    
+    String badgeObjID = (String) subcriteriaVal.get(0);
+    String period = (String) subcriteriaVal.get(1);
+    String timeZone = Deployment.getDeployment(evaluationRequest.getTenantID()).getTimeZone();
+    Pair<Date, Date> startEndDatePair = getStartAndEndDate(period, timeZone);
+    Date startDate = startEndDatePair.getFirstElement();
+    Date endDate = startEndDatePair.getSecondElement();
+    
+    if (badges != null && !badges.isEmpty())
+      {
+        if (badgeObjID != null) badges = badges.stream().filter(badge -> badge.getBadgeObjectiveIDs().contains(badgeObjID)).collect(Collectors.toList());
+        badges = badges.stream().filter(badge -> badge.getBadgeRemoveDate() != null && badge.getBadgeRemoveDate().after(startDate) && badge.getBadgeRemoveDate().before(endDate)).collect(Collectors.toList());
+        result = badges.size();
+      }
+    if (log.isTraceEnabled()) log.trace("BadgeCriteria getNumberOfBadgesRemovedForPeriod subcriteriaVal {}, startEndDatePair {}, result {}", subcriteriaVal, startEndDatePair, result);
+    return result;
+  }
+  
+  public static Object getBadgeBalanceForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
+  {
+    int result = (int) getNumberOfBadgesAwardedForPeriod(evaluationRequest, fieldName, subcriteriaVal) - (int) getNumberOfBadgesRemovedForPeriod(evaluationRequest, fieldName, subcriteriaVal);
+    if (result < 0) log.error("bad badge balance value {}, should not be negative and must be checked for subcriteria {}", result, subcriteriaVal);
+    return result;
+  }
+  
+  public static Object getBadgeTypeBalanceForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
+  {
+    int result = (int) getNumberOfBadgeTypesAwardedForPeriod(evaluationRequest, fieldName, subcriteriaVal) - (int) getNumberOfBadgeTypesRemovedForPeriod(evaluationRequest, fieldName, subcriteriaVal);
+    if (result < 0) log.error("bad badge type balance value {}, should not be negative and must be checked for subcriteria {}", result, subcriteriaVal);
+    return result;
+  }
+  
+  public static Object getBadgeObjectiveBalanceForPeriod(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
+  {
+    int result = (int) getNumberOfBadgeObjectivesAwardedForPeriod(evaluationRequest, fieldName, subcriteriaVal) - (int) getNumberOfBadgeObjectivesRemovedForPeriod(evaluationRequest, fieldName, subcriteriaVal);
+    if (result < 0) log.error("bad badge objective balance value {}, should not be negative and must be checked for subcriteria {}", result, subcriteriaVal);
+    return result;
+  }
+  
   protected static Pair<Date, Date> getStartAndEndDate(String period, String timeZone)
   {
     Date now = SystemTime.getCurrentTime();
@@ -274,11 +458,30 @@ public abstract class CriterionFieldRetriever
         startDate = RLMDateUtils.addMonths(startDate, -2, timeZone);
         startDate = RLMDateUtils.truncate(startDate, Calendar.MONTH, timeZone);
         break;
+        
+      case "this.week":
+        startDate = RLMDateUtils.truncate(now, Calendar.DAY_OF_WEEK, timeZone);
+        break;
+        
+      case "last.7.days":
+        startDate = RLMDateUtils.addDays(startDate, -1, timeZone);
+        endDate = RLMDateUtils.ceiling(startDate, Calendar.DATE, timeZone);
+        startDate = RLMDateUtils.addDays(startDate, -6, timeZone);
+        startDate = RLMDateUtils.truncate(startDate, Calendar.DATE, timeZone);
+        break;
+        
+      case "last.week":
+        startDate = RLMDateUtils.addWeeks(startDate, -1, timeZone);
+        endDate = RLMDateUtils.ceiling(startDate, Calendar.DAY_OF_WEEK, timeZone);
+        startDate =RLMDateUtils.truncate(startDate, Calendar.DAY_OF_WEEK, timeZone);
+        break;
 
       default:
         break;
     }
-    return new Pair<Date, Date>(startDate, endDate);
+    Pair<Date, Date> result = new Pair<Date, Date>(startDate, endDate);
+    if (log.isTraceEnabled()) log.trace("BadgeCriteria result getStartAndEndDate {}", result);
+    return result;
   }
 
   /**
@@ -387,6 +590,12 @@ public abstract class CriterionFieldRetriever
     Set<String> res = evaluationRequest.getJourneyState().getVoucherChanges().stream().filter(vc -> vc.getReturnStatus() == RESTAPIGenericReturnCodes.SUCCESS).map(VoucherChange::getVoucherCode).collect(Collectors.toSet());
     return res;
   }
+  public static Object getSubscriberTmpSuccessBadges(SubscriberEvaluationRequest evaluationRequest, String fieldName)
+  {
+    Set<String> res = evaluationRequest.getJourneyState().getBadgeChanges().stream().filter(bc -> bc.getReturnStatus() == RESTAPIGenericReturnCodes.SUCCESS).map(BadgeChange::getBadgeID).collect(Collectors.toSet());
+    return res;
+  }
+  
   public static Object getRandom100(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return ThreadLocalRandom.current().nextInt(100); }
   public static Object getTrue(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return Boolean.TRUE; }
   public static Object getFalse(SubscriberEvaluationRequest evaluationRequest, String fieldName) { return Boolean.FALSE; }
