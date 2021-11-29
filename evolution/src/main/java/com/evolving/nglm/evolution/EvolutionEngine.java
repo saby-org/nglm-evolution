@@ -1270,7 +1270,7 @@ public class EvolutionEngine
       {
 
         // need to re-run unique key prefix computation
-        if(newState==KafkaStreams.State.RUNNING) KStreamsUniqueKeyServer.streamRebalanced();
+        KStreamsUniqueKeyServer.streamRebalanced();
         partitionHostMap.clear();// cache of which host have which partition for HTPP API
 
         //
