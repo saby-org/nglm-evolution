@@ -6842,17 +6842,6 @@ public class ThirdPartyManager
         }
       else if (httpResponse != null && httpResponse.getStatusLine() != null && httpResponse.getStatusLine().getStatusCode() == 401)
         {
-         /*Set <ThirdPartyCredential> credentials = authCache.keySet();
-            for (ThirdPartyCredential credential : credentials)
-              {
-                String loginName = credential.getLoginName();
-                String currentLogin = thirdPartyCredential.getLoginName();
-                if (loginName.equals(currentLogin))
-                  {
-                    authCache.remove(credential);
-                    break;
-                  }
-              }*/
           authCache.reset(thirdPartyCredential.getLoginName());
           log.error("FWK server HTTP reponse code {} message {} ", httpResponse.getStatusLine().getStatusCode(), EntityUtils.toString(httpResponse.getEntity(), "UTF-8"), thirdPartyCredential.getLoginName(), " : user is reset in the cache" );
           throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.AUTHENTICATION_FAILURE);
