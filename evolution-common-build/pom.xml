@@ -427,6 +427,7 @@
                   <directory>${project.build.directory}/nglm-evolution-resources</directory>
                   <includes>
                     <include>bin/guimanager-run.sh</include>
+                    <include>bin/restoreKafkaBackup.sh</include>
                     <include>config/*_jmx.yml</include>
                   </includes>
                   <filtering>true</filtering>

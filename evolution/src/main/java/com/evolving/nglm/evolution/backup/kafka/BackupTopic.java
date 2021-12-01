@@ -5,6 +5,7 @@ import org.apache.avro.io.BinaryDecoder;
 import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.io.Encoder;
 import org.apache.avro.io.EncoderFactory;
+import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -25,6 +26,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.time.Duration;
@@ -35,6 +38,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -100,13 +105,25 @@ public class BackupTopic {
     log.info("=== Backup done, "+nbRecords+" records saved in "+file);
 	}
 
-	public static void restoreBackupFileToTopic(String topicName, String filefullpath) throws IOException{
+	public static void restoreBackupFileToTopic(String topicName, String filefullpath) throws IOException, InterruptedException, ExecutionException{
 
 		File file = new File(filefullpath);
 		if(!file.exists()){
-			log.info(file+" file does not exist");
+			log.error(file+" file does not exist");
 			return;
 		}
+		
+		Properties prop = new Properties();
+    prop.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, Deployment.getBrokerServers());
+    AdminClient admin = AdminClient.create(prop);
+    boolean topicExists = admin.listTopics().names().get().stream().anyMatch(name -> name.equalsIgnoreCase(topicName));
+    List<String> allTopics = admin.listTopics().names().get().stream().collect(Collectors.toList());
+    admin.close();
+    if (!topicExists) {
+      log.error("Topic " + topicName + " does not exist");
+      log.error("Topic list : " + allTopics);
+      return;
+    }
 
 		InputStream in = new GZIPInputStream(new FileInputStream(file));
 		BinaryDecoder decoder = DecoderFactory.get().binaryDecoder(in,null);
@@ -123,6 +140,14 @@ public class BackupTopic {
 			byte[] valueByte = new byte[buffer.remaining()];
 			buffer.get(valueByte);
 
+			if (log.isDebugEnabled()) {
+	      log.debug("Restoring record");
+			  log.debug("  key : (length " + keyByte.length + " )");
+			  logByteArray(keyByte);
+			  log.debug("  value : (length " + valueByte.length + " )");
+			  logByteArray(valueByte);
+			}
+
 			kafkaProducer.send(new ProducerRecord<>(topicName,keyByte,valueByte));
 
 			nbRecords++;
@@ -132,6 +157,21 @@ public class BackupTopic {
 		in.close();
 		log.info("=== Backup restore done, "+nbRecords+" records load from "+file+" to topic "+topicName);
 	}
+
+  private static void logByteArray(byte[] byteArray)
+  {
+    try {
+      String logMsg = "    ";
+      for (int index = 0; index < byteArray.length; index++) {
+        logMsg += (byteArray[index] >= 32 && byteArray[index] <= 126) ? String.format("%c", byteArray[index]) : " ";
+        if ((index+1) % 80 == 0) {
+          log.debug(logMsg);
+          logMsg = "    ";
+        }
+      }
+      log.debug(logMsg);
+    } catch (Exception e) {} // do not crash if anything happens during trace
+  }
 
 	public static List<PartitionInfo> getPartitionsInfo(String topic, KafkaConsumer<?,?> kafkaConsumer){
 	  try {
@@ -161,7 +201,7 @@ public class BackupTopic {
 	
 	public static void main(String[] args) {
 	  if (args.length < 2) {
-	    System.err.println("This commandes requires 2 arguments : topicname backup filename");
+	    System.err.println("This commandes requires 2 arguments : <topicname> <backup filename>");
 	    return;
 	  }
 	  String topic = args[0];
@@ -170,9 +210,13 @@ public class BackupTopic {
       {
         restoreBackupFileToTopic(topic, filename);
       }
-    catch (IOException e)
+    catch (IOException | InterruptedException | ExecutionException e)
       {
-        System.err.println("An error occured while restoring data : " + e.getLocalizedMessage());
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.error("An error occured while restoring data: {}", stackTraceWriter.toString());
+        System.err.println("An error occured while restoring data: " + e.getLocalizedMessage());
+        System.err.println(stackTraceWriter.toString());
       }
 	}
 
