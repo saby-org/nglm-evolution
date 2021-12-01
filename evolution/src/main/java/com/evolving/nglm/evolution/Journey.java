@@ -4679,10 +4679,11 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
           break;
       }
     }
-  catch (PatternSyntaxException e)
+    catch (PatternSyntaxException e)
     {
       if(log.isTraceEnabled()) log.trace("PatternSyntaxException Description: {}, Index: ", e.getDescription(), e.getIndex());
     }
+    
     return result;
   }
   

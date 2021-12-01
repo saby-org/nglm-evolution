@@ -880,7 +880,7 @@ public class JourneyHistory
       String[] elements = reward.split("[;]", -1);
       this.rewardName = handleNullStringFromES(elements[0]);
       this.amount = Integer.parseInt(handleNullStringFromES(elements[1]));
-      this.rewardDate = elements[2] != null ? new Date(Long.parseLong(handleNullStringFromES(elements[2]))) : null;
+      this.rewardDate = handleNullStringFromES(elements[2]) != null ? new Date(Long.parseLong(handleNullStringFromES(elements[2]))) : null;
     }
   }
   

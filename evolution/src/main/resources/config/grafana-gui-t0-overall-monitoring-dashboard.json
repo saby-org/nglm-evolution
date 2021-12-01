@@ -17,7 +17,7 @@
   "gnetId": null,
   "graphTooltip": 0,
   "id": null,
-  "iteration": 1636968266164,
+  "iteration": 1637914216395,
   "links": [],
   "panels": [
     {
@@ -369,51 +369,19 @@
           }
         },
         {
-          "alert": {
-            "alertRuleTags": {},
-            "conditions": [
-              {
-                "evaluator": {
-                  "params": [
-                    0.8
-                  ],
-                  "type": "gt"
-                },
-                "operator": {
-                  "type": "and"
-                },
-                "query": {
-                  "params": [
-                    "A",
-                    "5m",
-                    "now"
-                  ]
-                },
-                "reducer": {
-                  "params": [],
-                  "type": "avg"
-                },
-                "type": "query"
-              }
-            ],
-            "executionErrorState": "alerting",
-            "for": "2h",
-            "frequency": "5m",
-            "handler": 1,
-            "message": "Graph : Disk Space Used / node\n\nDisk space used is above 80%\n\nPlease connect to grafana : Support - Hardware dashboard to identity node.",
-            "name": "Disk Space Usage / Node",
-            "noDataState": "no_data",
-            "notifications": []
-          },
-          "aliasColors": {},
-          "bars": false,
-          "dashLength": 10,
-          "dashes": false,
-          "datasource": "prometheus-environment",
-          "decimals": 1,
-          "fieldConfig": {
-            "defaults": {
-              "links": []
+          "exemplar": true,
+          "expr": "100 - avg by(instance) (irate(node_cpu{mode=\"idle\"}[$__interval]) * 100)",
+          "interval": "",
+          "legendFormat": "{{instance}}",
+          "refId": "A"
+        },
+        {
+          "exemplar": true,
+          "expr": "100 - avg by(instance) (irate(node_cpu_seconds_total{mode=\"idle\"}[$__interval]) * 100)",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "{{instance}}",
+          "refId": "B"
             },
             "overrides": []
           },
@@ -710,59 +678,435 @@
               "min": null,
               "show": true
             },
-            {
-              "$$hashKey": "object:7992",
-              "format": "short",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            }
-          ],
-          "yaxis": {
-            "align": false,
-            "alignLevel": null
+            "query": {
+              "params": [
+                "A",
+                "5m",
+                "now"
+              ]
+        },
+        {
+          "exemplar": true,
+          "expr": "(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "{{instance}}",
+          "refId": "B"
+        }
+      ],
+      "thresholds": [
+        {
+          "colorMode": "critical",
+          "fill": true,
+          "line": true,
+          "op": "gt",
+          "value": 0.8,
+          "visible": true
+        }
+      ],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Memory Usage / Node",
+      "tooltip": {
+        "shared": true,
+        "sort": 2,
+        "value_type": "individual"
+      },
+      "transformations": [],
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:7745",
+          "decimals": null,
+          "format": "percentunit",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:7746",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "alert": {
+        "alertRuleTags": {},
+        "conditions": [
+          {
+            "evaluator": {
+              "params": [
+                0.8
+              ],
+              "type": "gt"
+            },
+            "operator": {
+              "type": "and"
+            },
+            "query": {
+              "params": [
+                "A",
+                "5m",
+                "now"
+              ]
+            },
+            "reducer": {
+              "params": [],
+              "type": "avg"
+            },
+            "type": "query"
           }
         },
         {
-          "aliasColors": {},
-          "bars": false,
-          "dashLength": 10,
-          "dashes": false,
-          "datasource": "prometheus-environment",
-          "fieldConfig": {
-            "defaults": {
-              "links": []
-            },
-            "overrides": []
-          },
-          "fill": 1,
-          "fillGradient": 0,
-          "gridPos": {
-            "h": 9,
-            "w": 24,
-            "x": 0,
-            "y": 47
-          },
-          "hiddenSeries": false,
-          "id": 10,
-          "legend": {
-            "alignAsTable": true,
-            "avg": true,
-            "current": true,
-            "max": true,
-            "min": false,
-            "rightSide": true,
-            "show": true,
-            "sort": "current",
-            "sortDesc": true,
-            "total": false,
-            "values": true
-          },
-          "lines": true,
-          "linewidth": 1,
-          "nullPointMode": "null",
+          "expr": "max by(instance) (1 - node_filesystem_free{device!=\"rootfs\"} / node_filesystem_size{device!=\"rootfs\"})",
+          "legendFormat": "{{instance}}",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [
+        {
+          "colorMode": "critical",
+          "fill": true,
+          "line": true,
+          "op": "gt",
+          "value": 0.8,
+          "visible": true
+        }
+      ],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Disk Space Usage / Node",
+      "tooltip": {
+        "shared": true,
+        "sort": 2,
+        "value_type": "individual"
+      },
+      "transformations": [],
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+          "$$hashKey": "object:7991",
+          "format": "percentunit",
+          "label": null,
+          "logBase": 1,
+          "max": "1",
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:7992",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "prometheus-environment",
+      "fieldConfig": {
+        "defaults": {
+          "links": []
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 29
+      },
+      "hiddenSeries": false,
+      "id": 10,
+      "legend": {
+        "alignAsTable": true,
+        "avg": true,
+        "current": true,
+        "max": true,
+        "min": false,
+        "rightSide": true,
+        "show": true,
+        "sort": "current",
+        "sortDesc": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.5.2",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "sum by(instance) (rate(node_network_receive_bytes{device!~\"lo\", device!~\"docker\"}[$__interval]) + rate(node_network_transmit_bytes{device!~\"lo\", device!~\"docker\"}[$__interval]))",
+          "legendFormat": "{{instance}}",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Network Load / Node",
+      "tooltip": {
+        "shared": true,
+        "sort": 2,
+        "value_type": "individual"
+      },
+      "transformations": [
+        {
+          "id": "renameByRegex",
+            "type": "query"
+          }
+        ],
+        "executionErrorState": "alerting",
+        "for": "2h",
+        "frequency": "5m",
+        "handler": 1,
+        "message": "Graph : Disk Space Used / node\n\nDisk space used is above 80%\n\nPlease connect to grafana : Support - Hardware dashboard to identity node.",
+        "name": "Disk Space Usage / Node",
+        "noDataState": "no_data",
+        "notifications": []
+      },
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "prometheus-environment",
+      "decimals": 1,
+      "fieldConfig": {
+        "defaults": {
+          "links": []
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 20
+      },
+      "hiddenSeries": false,
+      "id": 8,
+      "legend": {
+        "alignAsTable": true,
+        "avg": true,
+        "current": true,
+        "max": true,
+        "min": false,
+        "rightSide": true,
+        "show": true,
+        "sort": "current",
+        "sortDesc": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.5.2",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "max by(instance) (1 - node_filesystem_free{device!=\"rootfs\"} / node_filesystem_size{device!=\"rootfs\"})",
+          "interval": "",
+          "legendFormat": "{{instance}}",
+          "refId": "A"
+        },
+        {
+          "exemplar": true,
+          "expr": "max by(instance) (1 - node_filesystem_free_bytes{device!=\"rootfs\"} / node_filesystem_size_bytes{device!=\"rootfs\"})",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "{{instance}}",
+          "refId": "B"
+        }
+      ],
+      "thresholds": [
+        {
+          "colorMode": "critical",
+          "fill": true,
+          "line": true,
+          "op": "gt",
+          "value": 0.8,
+          "visible": true
+        }
+      ],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Disk Space Usage / Node",
+      "tooltip": {
+        "shared": true,
+        "sort": 2,
+        "value_type": "individual"
+      },
+      "transformations": [],
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:7991",
+          "decimals": 0,
+          "format": "percent",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:7992",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "prometheus-environment",
+      "fieldConfig": {
+        "defaults": {
+          "links": []
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 29
+      },
+      "hiddenSeries": false,
+      "id": 10,
+      "legend": {
+        "alignAsTable": true,
+        "avg": true,
+        "current": true,
+        "max": true,
+        "min": false,
+        "rightSide": true,
+        "show": true,
+        "sort": "current",
+        "sortDesc": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.5.2",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "sum by(instance) (rate(node_network_receive_bytes{device!~\"lo\", device!~\"docker\"}[$__interval]) + rate(node_network_transmit_bytes{device!~\"lo\", device!~\"docker\"}[$__interval]))",
+          "legendFormat": "{{instance}}",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Network Load / Node",
+      "tooltip": {
+        "shared": true,
+        "sort": 2,
+        "value_type": "individual"
+      },
+      "transformations": [
+        {
+          "id": "renameByRegex",
           "options": {
             "alertThreshold": true
           },
@@ -1837,10 +2181,10 @@
       "1d"
     ]
   },
-  "timezone": "",
+  "timezone": "replaceWithTenantTimeZone",
   "title": "Admin - Overall Monitoring Dashboard",
   "uid": "replaceWithUniqueID",
-  "version": 58
+  "version": 28
 },
   "overwrite": true
 }

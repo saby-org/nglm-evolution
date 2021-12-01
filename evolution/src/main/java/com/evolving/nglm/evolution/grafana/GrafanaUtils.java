@@ -431,8 +431,8 @@ public class GrafanaUtils
 
     String grafanaHost = System.getenv("GRAFANA_HOST");
     String grafanaPort = System.getenv("GRAFANA_FOR_GUI_PORT");
-    String grafanaUser = System.getenv("GRAFANA_USER");
-    String grafanaPassword = System.getenv("GRAFANA_PASSWORD");
+    String grafanaUser = System.getenv("GRAFANA_USER_GUI");
+    String grafanaPassword = System.getenv("GRAFANA_PASSWORD_GUI");
 
     CloseableHttpResponse response = null;
     try {

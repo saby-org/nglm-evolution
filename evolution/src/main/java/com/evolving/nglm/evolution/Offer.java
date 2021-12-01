@@ -1301,10 +1301,10 @@ public class Offer extends GUIManagedObject implements StockableItem
         default:
           break;
       }
-    } 
-    catch (PatternSyntaxException e)
+    }
+  catch (PatternSyntaxException e)
     {
-      if(log.isTraceEnabled()) log.trace("PatternSyntaxException Description: {}, Index: ", e.getDescription(), e.getIndex());
+      if (log.isTraceEnabled()) log.trace("PatternSyntaxException Description: {}, Index: ", e.getDescription(), e.getIndex());
     }
     
     return result;

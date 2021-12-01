@@ -1621,8 +1621,12 @@ public class EvaluationCriterion
 
     if ("internal.targets".equals(esField))
       {
-        QueryBuilder query = handleTargetsCriterion(esField);
-        return query;
+        //QueryBuilder query = handleTargetsCriterion(esField);
+        //return query;
+        //the current target is not working fine by using constant_score implemented in handleTargetsCriterion. Above is initial code
+        //code changed to work on no painless implemented functionality.
+        esField = "targets";
+        useESQueryNoPainless = true;
       }
 
     //

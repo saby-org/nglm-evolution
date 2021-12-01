@@ -469,7 +469,7 @@ public class VDRReportMonoPhase implements ReportCsvFactory
     esIndexWithQuery.put(esIndexVDRList.toString(), 
         QueryBuilders.boolQuery()
         .filter(QueryBuilders.termQuery("tenantID", tenantID))
-        .filter(QueryBuilders.rangeQuery("eventDatetime").gte(RLMDateUtils.formatDateForElasticsearchDefault(fromDate)).lte(RLMDateUtils.formatDateForElasticsearchDefault(toDate))));
+        .filter(QueryBuilders.rangeQuery("eventDatetime").gte(RLMDateUtils.formatDateForElasticsearchDefault(fromDate)).lt(RLMDateUtils.formatDateForElasticsearchDefault(RLMDateUtils.truncate(toDate, Calendar.DATE, Deployment.getDefault().getTimeZone())))));
 
     String journeyTopic = Deployment.getJourneyTopic();
     String offerTopic = Deployment.getOfferTopic();

@@ -470,7 +470,7 @@ public class BDRReportMonoPhase implements ReportCsvFactory
     esIndexWithQuery.put(esIndexBdrList.toString(), 
         QueryBuilders.boolQuery()
            .filter(QueryBuilders.termQuery("tenantID", tenantID))
-           .filter(QueryBuilders.rangeQuery("eventDatetime").gte(RLMDateUtils.formatDateForElasticsearchDefault(fromDate)).lte(RLMDateUtils.formatDateForElasticsearchDefault(toDate)))); 
+           .filter(QueryBuilders.rangeQuery("eventDatetime").gte(RLMDateUtils.formatDateForElasticsearchDefault(fromDate)).lt(RLMDateUtils.formatDateForElasticsearchDefault(RLMDateUtils.truncate(toDate, Calendar.DATE, Deployment.getDefault().getTimeZone())))));
 
     String deliverableServiceTopic = Deployment.getDeliverableTopic();
     String offerTopic = Deployment.getOfferTopic();
