@@ -16,6 +16,7 @@ import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 import com.evolving.nglm.evolution.extracts.ExtractDownloader;
 import com.evolving.nglm.evolution.extracts.ExtractItem;
 import com.evolving.nglm.evolution.extracts.ExtractService;
+import com.evolving.nglm.evolution.uniquekey.ZookeeperUniqueKeyServer;
 import com.sun.net.httpserver.HttpExchange;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.zookeeper.ZooKeeper;

@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 import com.evolving.nglm.core.*;
 import com.evolving.nglm.evolution.commoditydelivery.CommodityDeliveryException;
 import com.evolving.nglm.evolution.commoditydelivery.CommodityDeliveryManagerRemovalUtils;
+import com.evolving.nglm.evolution.uniquekey.ZookeeperUniqueKeyServer;
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -190,7 +191,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     //  unique key server
     //
     
-    zookeeperUniqueKeyServer = new ZookeeperUniqueKeyServer(CommodityDeliveryManager.COMMODITY_DELIVERY_TYPE);
+    zookeeperUniqueKeyServer = ZookeeperUniqueKeyServer.get(CommodityDeliveryManager.COMMODITY_DELIVERY_TYPE);
     
     //
     //  plugin instanciation
@@ -1581,7 +1582,6 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   {
     log.info("PurchaseFulfillmentManager: shutdown called");
     if (stockService != null) stockService.close();
-    if (zookeeperUniqueKeyServer != null) zookeeperUniqueKeyServer.close();
     if (kafkaProducer != null) kafkaProducer.close();
     log.info("PurchaseFulfillmentManager: shutdown DONE");
   }

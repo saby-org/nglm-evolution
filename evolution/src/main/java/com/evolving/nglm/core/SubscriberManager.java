@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.core;
 
+import com.evolving.nglm.evolution.uniquekey.KStreamsUniqueKeyServer;
 import org.apache.kafka.common.metrics.Sensor;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.connect.data.Schema;

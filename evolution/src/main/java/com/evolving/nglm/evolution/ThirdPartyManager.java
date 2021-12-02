@@ -39,6 +39,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.evolving.nglm.evolution.uniquekey.ZookeeperUniqueKeyServer;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
@@ -73,7 +74,6 @@ import com.evolving.nglm.core.AutoProvisionSubscriberStreamEvent;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.KStreamsUniqueKeyServer;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.LicenseChecker;
 import com.evolving.nglm.core.LicenseChecker.LicenseState;
@@ -133,8 +133,6 @@ public class ThirdPartyManager
   private static final String CUSTOMER_ID_TYPE = "customerIDType";
   private static final String CUSTOMER_ID_VALUE = "customerIDValue";
   private static final DeliveryRequest.DeliveryPriority DELIVERY_REQUEST_PRIORITY = DeliveryRequest.DeliveryPriority.High;
-  
-  private static KStreamsUniqueKeyServer uniqueKeyServer = new KStreamsUniqueKeyServer();
 
   /*****************************************
    *
@@ -404,8 +402,8 @@ public class ThirdPartyManager
     // ZookeeperUniqueKeyServer
     //
     
-    zuks = new ZookeeperUniqueKeyServer(CommodityDeliveryManager.COMMODITY_DELIVERY_TYPE);
-    zuksVoucherChange = new ZookeeperUniqueKeyServer("voucherchange");
+    zuks = ZookeeperUniqueKeyServer.get(CommodityDeliveryManager.COMMODITY_DELIVERY_TYPE);
+    zuksVoucherChange = ZookeeperUniqueKeyServer.get("voucherchange");
 
     //
     // elasticsearch

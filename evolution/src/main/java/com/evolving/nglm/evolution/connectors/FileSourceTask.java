@@ -248,7 +248,7 @@ public abstract class FileSourceTask extends SourceTask {
 			}
 		}
 
-		log.debug("{} -- poll returning {} records", taskName, results.size());
+		log.debug("{} -- poll returning {} records", taskName, (results!=null?results.size():0));
 		return results;
 	}
 

@@ -1,4 +1,4 @@
-package com.evolving.nglm.core;
+package com.evolving.nglm.evolution.uniquekey;
 
 import org.apache.kafka.streams.processor.TaskId;
 import org.apache.kafka.streams.processor.internals.StreamThread;
@@ -57,41 +57,4 @@ public class KStreamsUniqueKeyServer {
 
   }
 
-  private class UniqueKeyServer {
-
-    /*****************************************************************************
-    *
-    *  long value split as follow:
-    *  max long : 922|3372036854|775807
-    *  max key  : 921|9999999999|999999
-    *  - 3 first digits [0-921] : thread unique id (so max nb of partitions/threads is 921 with this implementation)
-    *  - 10 following digits [0-9999999999] : unix epoch in seconds
-    *  - 6 following digits [0-999999] : the incrementing counter (so every max 1 0000 000, unix epoch digits will be updated)
-    *
-    ******************************************************************************/
-
-    private int threadIdPrefix;
-    private int incrementingCounterPart;
-
-    // hold threadIdPrefixPart+epochPrefixPart
-    private long threadIdAndEpochPrefixPart;
-
-    private UniqueKeyServer(int uniqueKeyNode) {
-      setPrefix(uniqueKeyNode);
-    }
-
-    private void setPrefix(int uniqueKeyNode){
-      if(uniqueKeyNode>921) throw new UnsupportedOperationException("KStreamsUniqueKeyServer$UniqueKeyServer number of partitions/streamthreads is greater than 921, not allowed with current implementation");
-      this.threadIdPrefix=uniqueKeyNode;
-      threadIdAndEpochPrefixPart = (this.threadIdPrefix * 10000000000000000L) + ((System.currentTimeMillis()/1000) * 1000000L);
-      incrementingCounterPart=-1;
-      log.info("KStreamsUniqueKeyServer "+Thread.currentThread().getName()+" init with "+threadIdPrefix+", "+threadIdAndEpochPrefixPart+", "+incrementingCounterPart);
-    }
-
-    private long getKey() {
-      incrementingCounterPart++;
-      if(incrementingCounterPart>999999) setPrefix(threadIdPrefix);
-      return threadIdAndEpochPrefixPart + incrementingCounterPart;
-    }
-  }
 }

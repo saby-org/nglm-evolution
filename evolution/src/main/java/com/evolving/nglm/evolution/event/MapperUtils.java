@@ -3,7 +3,7 @@ package com.evolving.nglm.evolution.event;
 import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.Pair;
 import com.evolving.nglm.core.SubscriberIDService;
-import com.evolving.nglm.evolution.ZookeeperUniqueKeyServer;
+import com.evolving.nglm.evolution.uniquekey.ZookeeperUniqueKeyServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -128,9 +128,7 @@ public class MapperUtils {
 		}
 	}
 
-	private static class UniqueKeyServerHolder{
-		private final static ZookeeperUniqueKeyServer uniqueKeyServer = new ZookeeperUniqueKeyServer("subscriberID");
-	}
-	public static Long generateNewSubscriberID(){return UniqueKeyServerHolder.uniqueKeyServer.getKey();}
+	public static final String SUBSCRIBERID_GROUP = "subscriberID";
+	public static Long generateNewSubscriberID(){return ZookeeperUniqueKeyServer.get(SUBSCRIBERID_GROUP).getKey();}
 
 }

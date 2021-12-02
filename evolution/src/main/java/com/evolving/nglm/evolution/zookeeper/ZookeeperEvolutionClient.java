@@ -2,11 +2,13 @@ package com.evolving.nglm.evolution.zookeeper;
 
 import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.Pair;
+import com.evolving.nglm.evolution.event.MapperUtils;
 import org.apache.zookeeper.*;
 import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -15,7 +17,7 @@ import java.util.concurrent.CountDownLatch;
 
 import static com.evolving.nglm.evolution.zookeeper.Configuration.NODE;
 
-public class ZookeeperEvolutionClient {
+public class ZookeeperEvolutionClient implements Closeable {
 
 	private static final Logger log = LoggerFactory.getLogger(ZookeeperEvolutionClient.class);
 
@@ -27,10 +29,13 @@ public class ZookeeperEvolutionClient {
 	private Map<String, String> onHoldLocks;
 	// keep list of persistent node already created (or already checked "is exists") to avoid always calling zookeeper to check
 	private List<String> persistentNodesAlreadyCreated;
+	// keep the uniqueID we hold per group
+	private Map<String, Integer> onHoldUniqueID;
 
 	public ZookeeperEvolutionClient(){
 		onHoldLocks = new ConcurrentHashMap<>();
 		persistentNodesAlreadyCreated = new CopyOnWriteArrayList<>();
+		onHoldUniqueID = new ConcurrentHashMap<>();
 		// just reset the "already exist" cache every minute (hope thats enough, it seems not possible to put a watcher only on delete event)
 		new Timer("zookeeper-nodes-cache-cleaner",true).schedule(new TimerTask() {
 			@Override
@@ -42,9 +47,11 @@ public class ZookeeperEvolutionClient {
 		// object hold a connected zookeeper client
 		ensureConnected();
 		createPersistentNodeIfNotExists(NODE.LOCKS.node());
+		createPersistentNodeIfNotExists(NODE.UNIQKEYSERVER.node());
 	}
 
 	// this is a closable resource as is the underlying zookeeper client
+	@Override
 	public void close(){
 		if(zookeeper!=null)
 		try {
@@ -95,6 +102,70 @@ public class ZookeeperEvolutionClient {
 
 	}
 
+	// get the a globally uniqueID per group
+	// this should be called each time to make sure we still have it (if we lost connection, this is not ensure that we still have it)
+	public int getGlobalUniqueID(String group){
+
+		if(log.isDebugEnabled()) log.debug("ZookeeperEvolutionClient.getGlobalUniqueID : "+group);
+
+		ensureConnected();// we need to make sure we still have the connection
+
+		// if we already got it return directly
+		Integer uniqueID = onHoldUniqueID.get(group);
+		if(uniqueID!=null){
+			if(log.isDebugEnabled()) log.debug("ZookeeperEvolutionClient.getGlobalUniqueID : "+group+" already hold");
+			return uniqueID;
+		}
+
+		Node uniqueIDNode = NODE.UNIQKEYSERVER.node().newChild(group);
+		// a lock one thread only should do the work with zookeeper
+		Object lock = new Object();
+		synchronized (lock){
+
+			// if one other thread already made it
+			uniqueID = onHoldUniqueID.get(group);
+			if(uniqueID!=null){
+				log.info("ZookeeperEvolutionClient.getGlobalUniqueID : "+group+" already hold");
+				return uniqueID;
+			}
+
+			// will block till we got the uniqueID
+			while(true){
+				int min=group.equals(MapperUtils.SUBSCRIBERID_GROUP) ? 500 : 0;//TODO: remove this once subscribermanager fully removed, this is just to not overlap with subscribermanager uids
+				int maxID=999;
+				for(int i=min;i<=maxID;i++){
+					ensureConnected();
+					synchronized(lock){
+						try{
+							// create a node named "lock" with sequential numeric suffix
+							zookeeper.create(uniqueIDNode.fullPath()+"_"+i, null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
+							if(log.isDebugEnabled()) log.debug("ZookeeperEvolutionClient.getGlobalUniqueID : got from zookeeper "+i+" for "+group);
+							onHoldUniqueID.put(group,i);
+							return i;
+						}catch (KeeperException.NodeExistsException e){
+							// normal case, need to search an other one
+							continue;
+						}
+						catch (KeeperException e) {
+							log.error("ZookeeperEvolutionClient.getGlobalUniqueID : exception while getting uniqueID "+group,e);
+						} catch (InterruptedException e) {
+							log.warn("ZookeeperEvolutionClient.getGlobalUniqueID : exception while creating uniqueID "+group,e);
+						}
+
+						try{
+							// error happened will give a CPU release
+							lock.wait(THREAD_SLEEP_BEFORE_RETRY_MS);
+						}catch (InterruptedException e){/*normal notify*/}
+					}
+					log.info("ZookeeperEvolutionClient.getGlobalUniqueID : issue while trying getting "+uniqueID+" will retry");
+				}
+				log.error("ZookeeperEvolutionClient.getGlobalUniqueID : we could not find a uniqueID for "+group+" among "+maxID+", we keep trying");
+			}
+
+		}
+
+	}
+
 	// delete a node if not exist
 	public void deletePersistentNodeIfNotExists(Node node){
 		if(log.isDebugEnabled()) log.debug("ZookeeperEvolutionClient.deletePersistentNodeIfNotExists : will delete if exists "+node);
@@ -132,7 +203,7 @@ public class ZookeeperEvolutionClient {
 
 		// if we already got it return directly
 		if(onHoldLocks.get(lock)!=null){
-			log.info("ZookeeperEvolutionClient.getLock : "+lock+" already hold");
+			if(log.isDebugEnabled()) log.debug("ZookeeperEvolutionClient.getLock : "+lock+" already hold");
 			return;
 		}
 
@@ -221,6 +292,7 @@ public class ZookeeperEvolutionClient {
 	// check if client has the lock
 	public boolean hasLock(String lock){
 		if(log.isDebugEnabled()) log.debug("ZookeeperEvolutionClient.hasLock : "+lock);
+		ensureConnected();
 		if(onHoldLocks.get(lock)!=null){
 			if(log.isDebugEnabled()) log.debug("ZookeeperEvolutionClient.hasLock : has "+lock);
 			return true;
@@ -240,6 +312,7 @@ public class ZookeeperEvolutionClient {
 			try { zookeeper.close(); } catch (InterruptedException e) {}
 			zookeeper = null;
 			onHoldLocks.clear();// we don't have any locks if we lost connection
+			onHoldUniqueID.clear();// we don't have any uniqueID if we lost connection
 		}
 
 		// will block till we do not have a connected zookeeper
@@ -251,6 +324,7 @@ public class ZookeeperEvolutionClient {
 				try{
 					zookeeper.close();
 					onHoldLocks.clear();// we don't have any locks if connection loose connection
+					onHoldUniqueID.clear();// we don't have any uniqueID if we lost connection
 				}catch (InterruptedException e){
 					log.info("ZookeeperEvolutionClient.ensureConnected : exception while closing ",e);
 				}
