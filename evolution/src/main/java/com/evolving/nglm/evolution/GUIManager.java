@@ -28215,7 +28215,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           }
       }
   }
-
+  
   private void validateJourneyNodeParams(Journey journey, Date now) throws GUIManagerException
   {
     Map<String, JSONArray> nodesJSON = new HashMap<String, JSONArray>();
