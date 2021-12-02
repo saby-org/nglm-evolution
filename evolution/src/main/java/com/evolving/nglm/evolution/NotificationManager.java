@@ -1173,6 +1173,8 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
         dialogRequest.setMessageStatus(MessageStatus.fromReturnCode(result));
         dialogRequest.setDeliveryStatus(getDeliveryStatus(dialogRequest.getMessageStatus()));
         dialogRequest.setDeliveryDate(SystemTime.getCurrentTime());
+        dialogRequest.setReturnCode(result);
+        dialogRequest.setReturnCodeDetails(MessageStatus.fromReturnCode(result).toString());
         completeDeliveryRequest(dialogRequest);
       }
   }
