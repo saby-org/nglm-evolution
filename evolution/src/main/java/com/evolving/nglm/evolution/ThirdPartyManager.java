@@ -6635,17 +6635,20 @@ public class ThirdPartyManager
         }
       else if (httpResponse != null && httpResponse.getStatusLine() != null && httpResponse.getStatusLine().getStatusCode() == 401)
         {
-          log.error("FWK server HTTP reponse code {} message {} ", httpResponse.getStatusLine().getStatusCode(), EntityUtils.toString(httpResponse.getEntity(), "UTF-8"));
+          authCache.reset(thirdPartyCredential.getLoginName());
+          log.error("FWK server HTTP reponse code {} message {} ", httpResponse.getStatusLine().getStatusCode(), EntityUtils.toString(httpResponse.getEntity(), "UTF-8"), thirdPartyCredential.getLoginName(), " : user is reset in the cache" );
           throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.AUTHENTICATION_FAILURE);
         }
       else if (httpResponse != null && httpResponse.getStatusLine() != null)
         {
-          log.error("FWK server HTTP reponse code is invalid {}", httpResponse.getStatusLine().getStatusCode());
+          authCache.reset(thirdPartyCredential.getLoginName());
+          log.error("FWK server HTTP reponse code is invalid {}", httpResponse.getStatusLine().getStatusCode(), thirdPartyCredential.getLoginName(), " : user is reset in the cache");
           throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.AUTHENTICATION_FAILURE);
         }
       else
         {
-          log.error("FWK server error httpResponse or httpResponse.getStatusLine() is null {} {} ", httpResponse, httpResponse.getStatusLine());
+          authCache.reset(thirdPartyCredential.getLoginName());
+          log.error("FWK server error httpResponse or httpResponse.getStatusLine() is null {} {} ", httpResponse, httpResponse.getStatusLine(), thirdPartyCredential.getLoginName(), " : user is reset in the cache");
           throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.AUTHENTICATION_FAILURE);
         }
     }

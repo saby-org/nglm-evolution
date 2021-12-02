@@ -799,20 +799,26 @@ public class ReportUtils {
                     while ((line = br.readLine()) != null) {
                       if (line.length() != 0) 
                         {
+                          // EVPRO-1430 ;'Stephen';'O\'Connor'; -> ;'Stephen';'O Connor'; 
+                          String line2 = line.replaceAll("\\\\"+fieldSurrounder, " ");
                           String regex = fieldSeparator + "(?=(?:[^\\" + fieldSurrounder + "]*\\" + fieldSurrounder + "[^\\"
                               + fieldSurrounder + "]*\\" + fieldSurrounder + ")*[^\\" + fieldSurrounder + "]*$)";
-                          String[] cols = line.split(regex, -1);
-
-                          for (int cpt = 0; cpt < indexOfColsToExtract.length -1; cpt++) 
-                            {
-                              if (indexOfColsToExtract[cpt] != -1) 
-                                {
-                                  colsToExtract = colsToExtract + cols[indexOfColsToExtract[cpt]] + fieldSeparator;
-                                }
-                            }
-                          bw.write(colsToExtract);
-                          bw.write(cols[indexOfColsToExtract[indexOfColsToExtract.length-1]]); // to avoid having the fieldSeparator at the end of each written line
-                          bw.write("\n");
+                          String[] cols = line2.split(regex, -1);
+                          // EVPRO-1430 if parsing went wrong, do not crash with ArrayIndexOutOfBoundsException later
+                          if (cols.length < wordsOfHeader.length) {
+                            log.info("Issue when parsing report, not enough columns : " + cols.length+ " instead of " + wordsOfHeader.length + ", line : " + line + " line2 : " + line2);
+                          } else {
+                            for (int cpt = 0; cpt < indexOfColsToExtract.length -1; cpt++) 
+                              {
+                                if (indexOfColsToExtract[cpt] != -1) 
+                                  {
+                                    colsToExtract = colsToExtract + cols[indexOfColsToExtract[cpt]] + fieldSeparator;
+                                  }
+                              }
+                            bw.write(colsToExtract);
+                            bw.write(cols[indexOfColsToExtract[indexOfColsToExtract.length-1]]); // to avoid having the fieldSeparator at the end of each written line
+                            bw.write("\n");
+                          }
                           colsToExtract = "";
 
                         }

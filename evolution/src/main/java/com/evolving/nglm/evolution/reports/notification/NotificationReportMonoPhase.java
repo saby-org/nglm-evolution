@@ -573,7 +573,8 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
     esIndexWithQuery.put(esIndexNotifList.toString(), 
         QueryBuilders.boolQuery()
         .filter(QueryBuilders.termQuery("tenantID", tenantID))
-        .filter(QueryBuilders.rangeQuery("creationDate").gte(RLMDateUtils.formatDateForElasticsearchDefault(fromDate)).lte(RLMDateUtils.formatDateForElasticsearchDefault(toDate))));
+        .filter(QueryBuilders.rangeQuery("creationDate").gte(RLMDateUtils.formatDateForElasticsearchDefault(fromDate)).lt(RLMDateUtils.formatDateForElasticsearchDefault(RLMDateUtils.truncate(toDate, Calendar.DATE, Deployment.getDefault().getTimeZone())))));
+
 
     String journeyTopic = Deployment.getJourneyTopic();
     String offerTopic = Deployment.getOfferTopic();

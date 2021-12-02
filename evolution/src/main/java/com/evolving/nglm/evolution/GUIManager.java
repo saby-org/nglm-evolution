@@ -19851,7 +19851,7 @@ public class GUIManager
 
                     SubscriberJourneyStatus customerStatusInJourney = Journey.getSubscriberJourneyStatus(statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
                     SubscriberJourneyStatus profilejourneyStatus = baseSubscriberProfile.getSubscriberJourneys().get(storeJourney.getJourneyID() + "");
-                    if (profilejourneyStatus.in(SubscriberJourneyStatus.NotEligible, SubscriberJourneyStatus.UniversalControlGroup, SubscriberJourneyStatus.Excluded, SubscriberJourneyStatus.ObjectiveLimitReached)) {
+                    if (profilejourneyStatus != null && profilejourneyStatus.in(SubscriberJourneyStatus.NotEligible, SubscriberJourneyStatus.UniversalControlGroup, SubscriberJourneyStatus.Excluded, SubscriberJourneyStatus.ObjectiveLimitReached)) {
                       customerStatusInJourney = profilejourneyStatus;
                     }
 
@@ -20146,7 +20146,7 @@ public class GUIManager
                     boolean campaignComplete = subsLatestStatistic.getStatusHistory().stream().filter(campaignStat -> campaignStat.getJourneyComplete()).count() > 0L; // ??
                     SubscriberJourneyStatus customerStatusInJourney = Journey.getSubscriberJourneyStatus(statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
                     SubscriberJourneyStatus profilejourneyStatus = baseSubscriberProfile.getSubscriberJourneys().get(storeCampaign.getJourneyID() + "");
-                    if (profilejourneyStatus.in(SubscriberJourneyStatus.NotEligible, SubscriberJourneyStatus.UniversalControlGroup, SubscriberJourneyStatus.Excluded, SubscriberJourneyStatus.ObjectiveLimitReached))
+                    if (profilejourneyStatus != null && profilejourneyStatus.in(SubscriberJourneyStatus.NotEligible, SubscriberJourneyStatus.UniversalControlGroup, SubscriberJourneyStatus.Excluded, SubscriberJourneyStatus.ObjectiveLimitReached))
                       customerStatusInJourney = profilejourneyStatus;
 
                     if (customerStatus != null)
@@ -28215,7 +28215,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           }
       }
   }
-
+  
   private void validateJourneyNodeParams(Journey journey, Date now) throws GUIManagerException
   {
     Map<String, JSONArray> nodesJSON = new HashMap<String, JSONArray>();
@@ -28247,30 +28247,53 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                 String id = JSONUtilities.decodeString(parameterJSON, "id", true);
                 String name = JSONUtilities.decodeString(parameterJSON, "name", id);
                 JSONObject parametersJSON = (JSONObject) nodesJSON.get(journeyNode.getNodeID()).stream().filter(paramJson -> id.equals(JSONUtilities.decodeString((JSONObject) paramJson, "parameterName", false))).findFirst().orElse(new JSONObject());
-                if (parametersJSON.get("value") instanceof JSONObject)
+                JSONArray availableValuesJSON = JSONUtilities.decodeJSONArray(parameterJSON, "availableValues", false);
+                JSONArray expressionValuesJSON = JSONUtilities.decodeJSONArray(parameterJSON, "expressionFields", false);
+                JSONArray availableValuesJSONArray = new JSONArray();
+                if (availableValuesJSON != null) availableValuesJSONArray.addAll(availableValuesJSON);
+                if (expressionValuesJSON != null) availableValuesJSONArray.addAll(expressionValuesJSON);
+                List<JSONObject> availableValues = evaluateAvailableValues(availableValuesJSONArray, now, journey.getTenantID());
+                boolean shouldBeValidated = ((availableValuesJSON != null && !availableValuesJSON.isEmpty()) || (expressionValuesJSON != null && !expressionValuesJSON.isEmpty()));
+                boolean found = false;
+                if (parametersJSON.get("value") instanceof String && shouldBeValidated)
                   {
+                    //
+                    //  normal value
+                    //
+                    
+                    String actualVal = (String) parametersJSON.get("value");
+                    if (actualVal != null)
+                      {
+                        for (JSONObject jsn : availableValues)
+                          {
+                            Object idVal = jsn.get("id");
+                            found = actualVal.equals(idVal);
+                            if (found) break;
+                          }
+                        if (!found)
+                          {
+                            log.warn("configured value {} not found in the availableValues {} in node {}", actualVal, availableValues, journeyNode.getNodeName());
+                            throw new GUIManagerException("bad node parameter value for", name);
+                          }
+                      }
+                  }
+                else if (parametersJSON.get("value") instanceof JSONObject && shouldBeValidated)
+                  {
+                    //
+                    //  expression value
+                    //
+                    
                     JSONObject parameterValueJSON = JSONUtilities.decodeJSONObject(parametersJSON, "value", new JSONObject());
                     boolean isFixedValueType = JSONUtilities.decodeString(parameterValueJSON, "valueType", "").equals("simple"); // valueType is only used by GUI but here we need to know the value is fixed or set from a drop down
-                    
-                    //
-                    // availableValues
-                    //
-                    
-                    JSONArray availableValuesJSON = JSONUtilities.decodeJSONArray(parameterJSON, "availableValues", false);
-                    JSONArray expressionValuesJSON = JSONUtilities.decodeJSONArray(parameterJSON, "expressionFields", false);
-                    boolean shouldBeValidated = !isFixedValueType && (availableValuesJSON != null || expressionValuesJSON != null);
+                    shouldBeValidated = shouldBeValidated && !isFixedValueType;
                     if (shouldBeValidated)
                       {
-                        JSONArray availableValuesJSONArray = new JSONArray();
-                        if (availableValuesJSON != null) availableValuesJSONArray.addAll(availableValuesJSON);
-                        if (expressionValuesJSON != null) availableValuesJSONArray.addAll(expressionValuesJSON);
-                        List<JSONObject> availableValues = evaluateAvailableValues(availableValuesJSONArray, now, journey.getTenantID());
                         Object nodeParamObjVal = journeyNode.getNodeParameters().get(id);
-                        boolean found = false;
                         Object actualVal = null;
                         if (nodeParamObjVal instanceof ParameterExpression && ((ParameterExpression) nodeParamObjVal).getExpression() instanceof ConstantExpression)
                           {
                             actualVal  = ((ParameterExpression) nodeParamObjVal).getExpression().evaluateConstant(); // context vars are ParameterExpression but not constant so value will be null - no need to do seperate check for context vars.
+                            availableValues.stream().forEach(avlValue -> avlValue.put("id", transformID(avlValue))); // special for expression
                           }
                         else if (nodeParamObjVal instanceof String)
                           {
@@ -28284,15 +28307,32 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                                 found = actualVal.equals(idVal);
                                 if (found) break;
                               }
-                            if (!found) throw new GUIManagerException("bad node parameter value for", name);
+                            if (!found)
+                              {
+                                log.warn("configured value {} not found in the availableValues {} in node {}", actualVal, availableValues, journeyNode.getNodeName());
+                                throw new GUIManagerException("bad node parameter value for", name);
+                              }
                           }
                       }
-                  }
+                  } 
               }
           }
       }
   }
-
+  
+  private Object transformID(JSONObject avlValue)
+  {
+    Object result = avlValue.get("id");
+    if (result instanceof String)
+      {
+        String idStr = (String) result;
+        if (idStr.startsWith("'") && idStr.endsWith("'"))
+          {
+            result = idStr.substring(1, idStr.length() - 1);;
+          }
+      }
+    return result;
+  }
   /*****************************************
   *
   *  revalidateSubscriberMessageTemplates

@@ -1212,7 +1212,6 @@ public class StockMonitor implements Runnable
     @Override protected ReaderStock updateAtomic(ReaderStock storedInZookeeperObject) { return storedInZookeeperObject; }//not used
     @Override protected void onUpdateAtomicSucces() { }//not used
   }
-
   /*****************************************
   *
   *  class LocalAllocation
