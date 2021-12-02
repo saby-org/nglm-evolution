@@ -1037,8 +1037,14 @@ public class Offer extends GUIManagedObject implements StockableItem
   @Override public Map<String, List<String>> getGUIDependencies(List<GUIService> guiServiceList, int tenantID)
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
-    List<String> productIDs = getOfferProducts().stream().map(product -> product.getProductID()).collect(Collectors.toList());
-    List<String> voucherIDs = getOfferVouchers().stream().map(voucher -> voucher.getVoucherID()).collect(Collectors.toList());
+    List<String> productIDs = new ArrayList<String>();
+    if (getOfferProducts() != null && !getOfferProducts().isEmpty()){
+      productIDs = getOfferProducts().stream().map(product -> product.getProductID()).collect(Collectors.toList());
+    }
+    List<String> voucherIDs = new ArrayList<String>();
+    if (getOfferVouchers() != null && !getOfferVouchers().isEmpty()){
+      voucherIDs = getOfferVouchers().stream().map(voucher -> voucher.getVoucherID()).collect(Collectors.toList());
+    }
     List<String> saleschannelIDs = new ArrayList<String>();
     List<String> offerObjectiveIDs = getOfferObjectives().stream().map(offerObjective -> offerObjective.getOfferObjectiveID()).collect(Collectors.toList());
     List<String> targetIDs = new ArrayList<String>();
