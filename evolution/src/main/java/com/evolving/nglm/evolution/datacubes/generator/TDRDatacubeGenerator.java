@@ -56,7 +56,6 @@ public class TDRDatacubeGenerator extends SimpleDatacubeGenerator
   * Properties
   *
   *****************************************/
-  private List<AggregationBuilder> metricAggregations;
   private OffersMap offersMap;
   private ModulesMap modulesMap;
   private LoyaltyProgramsMap loyaltyProgramsMap;
@@ -84,15 +83,6 @@ public class TDRDatacubeGenerator extends SimpleDatacubeGenerator
     this.loyaltyProgramsMap = new LoyaltyProgramsMap(loyaltyProgramService);
     this.deliverablesMap = new DeliverablesMap();
     this.journeysMap = new JourneysMap(journeyService);
-    
-    //
-    // Data Aggregations
-    // - totalAmount
-    //
-    this.metricAggregations = new ArrayList<AggregationBuilder>();
-    
-    AggregationBuilder totalCount = AggregationBuilders.sum(METRIC_COUNT).field("count");
-    metricAggregations.add(totalCount);
   }
   
   public TDRDatacubeGenerator(String datacubeName, int tenantID, DatacubeManager datacubeManager) {
@@ -233,7 +223,7 @@ public class TDRDatacubeGenerator extends SimpleDatacubeGenerator
   * Metrics settings
   *
   *****************************************/
-  @Override protected List<AggregationBuilder> getMetricAggregations()  { return  this.metricAggregations; }
+  @Override protected List<AggregationBuilder> getMetricAggregations()  { return Collections.emptyList(); }
     
   @Override
   protected Map<String, Long> extractMetrics(ParsedBucket compositeBucket) throws ClassCastException { return Collections.emptyMap(); }
