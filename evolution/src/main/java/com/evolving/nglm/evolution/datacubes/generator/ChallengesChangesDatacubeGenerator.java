@@ -154,24 +154,26 @@ public class ChallengesChangesDatacubeGenerator extends DatacubeGenerator
         .addRange(targetPeriodStartIncluded, targetPeriodStartIncluded + targetPeriod); // Reminder: from is included, to is excluded
     
     //
-    // Sub Aggregations dimensions (only statistic dimensions)
+    // Sub Aggregations dimensions (only statistic dimensions + tenantID)
     //
-    TermsAggregationBuilder rootStratumBuilder = null; // first aggregation
-    TermsAggregationBuilder termStratumBuilder = null; // last aggregation
-    
+    TermsAggregationBuilder rootStratumBuilder; // first aggregation
+    TermsAggregationBuilder termStratumBuilder; // last aggregation
+    // Initial set of rootStratumBuilder
+    //
+    // @rl: Yes, this aggregation is not really useful because its result could be hardcoded (this.tenantID).
+    // Reminder: the tenantID is filtered out in the query (see above)
+    // Here the main purpose is to ensure there is at least one aggregation (in case there is 0 statistics dimensions)
+    // It will be treated as a "dimension" by extractSegmentationStratum - but it is equivalent
+    rootStratumBuilder = AggregationBuilders.terms("tenantID").field("tenantID").missing(0);
+    termStratumBuilder = rootStratumBuilder;
+   
+    // Adding statistics dimensions
     for (String dimensionID : segmentationDimensionList.keySet()) {
       if (segmentationDimensionList.isFlaggedStatistics(dimensionID)) {
-        if (termStratumBuilder != null) {
-          TermsAggregationBuilder temp = AggregationBuilders.terms(DATA_FILTER_STRATUM_PREFIX + dimensionID)
-              .field(DATA_FILTER_STRATUM_PREFIX + dimensionID).missing("undefined");
-          termStratumBuilder = termStratumBuilder.subAggregation(temp);
-          termStratumBuilder = temp;
-        }
-        else {
-          termStratumBuilder = AggregationBuilders.terms(DATA_FILTER_STRATUM_PREFIX + dimensionID)
-              .field(DATA_FILTER_STRATUM_PREFIX + dimensionID).missing("undefined");
-          rootStratumBuilder = termStratumBuilder;
-        }
+        TermsAggregationBuilder temp = AggregationBuilders.terms(DATA_FILTER_STRATUM_PREFIX + dimensionID)
+            .field(DATA_FILTER_STRATUM_PREFIX + dimensionID).missing("undefined");
+        termStratumBuilder.subAggregation(temp);
+        termStratumBuilder = temp;
       }
     }
     
@@ -223,6 +225,8 @@ public class ChallengesChangesDatacubeGenerator extends DatacubeGenerator
    * 
    * This recursive function will return every combination created from this 
    * node as it was the root of the tree.
+   * 
+   * The first pair also contains ("tenantID", <tenantID>) - see comment above in getElasticsearchRequest()
    * 
    * @return List[ Combination(Dimension, Segment) -> Count ]
    */
@@ -308,9 +312,6 @@ public class ChallengesChangesDatacubeGenerator extends DatacubeGenerator
         }
       }
       
-      // Special filter: tenantID 
-      filters.put("tenantID", this.tenantID);
-
       //
       // Extract only the change of the day
       //
@@ -345,8 +346,13 @@ public class ChallengesChangesDatacubeGenerator extends DatacubeGenerator
             Map<String, Object> filtersCopy = new HashMap<String, Object>(filters);
             Long docCount = stratum.getSecondElement();
             
-            for (String dimensionID : stratum.getFirstElement().keySet()) {
-              filtersCopy.put(dimensionID, stratum.getFirstElement().get(dimensionID));
+            for (String dimensionID : stratum.getFirstElement().keySet()) {               // This map also contains (tenantID, value) but the treatment is equivalent
+              if(dimensionID.equals("tenantID")) {
+                filtersCopy.put(dimensionID, Integer.parseInt(stratum.getFirstElement().get(dimensionID)));
+              }
+              else {
+                filtersCopy.put(dimensionID, stratum.getFirstElement().get(dimensionID));
+              }
             }
             
             //

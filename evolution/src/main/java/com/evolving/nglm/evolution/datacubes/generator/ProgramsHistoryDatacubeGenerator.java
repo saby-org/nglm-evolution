@@ -178,24 +178,26 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
     statusAgg.subAggregation(dateBuckets);
 
     //
-    // Sub Aggregations dimensions (only statistic dimensions)
+    // Sub Aggregations dimensions (only statistic dimensions + tenantID)
     //
-    TermsAggregationBuilder rootStratumBuilder = null; // first aggregation
-    TermsAggregationBuilder termStratumBuilder = null; // last aggregation
+    TermsAggregationBuilder rootStratumBuilder; // first aggregation
+    TermsAggregationBuilder termStratumBuilder; // last aggregation
+    // Initial set of rootStratumBuilder
+    //
+    // @rl: Yes, this aggregation is not really useful because its result could be hardcoded (this.tenantID).
+    // Reminder: the tenantID is filtered out in the query (see above)
+    // Here the main purpose is to ensure there is at least one aggregation (in case there is 0 statistics dimensions)
+    // It will be treated as a "dimension" by extractSegmentationStratum - but it is equivalent
+    rootStratumBuilder = AggregationBuilders.terms("tenantID").field("tenantID").missing(0);
+    termStratumBuilder = rootStratumBuilder;
    
+    // Adding statistics dimensions
     for (String dimensionID : segmentationDimensionList.keySet()) {
       if (segmentationDimensionList.isFlaggedStatistics(dimensionID)) {
-        if (termStratumBuilder != null) {
-          TermsAggregationBuilder temp = AggregationBuilders.terms(DATA_FILTER_STRATUM_PREFIX + dimensionID)
-              .field(DATA_FILTER_STRATUM_PREFIX + dimensionID).missing("undefined");
-          termStratumBuilder = termStratumBuilder.subAggregation(temp);
-          termStratumBuilder = temp;
-        }
-        else {
-          termStratumBuilder = AggregationBuilders.terms(DATA_FILTER_STRATUM_PREFIX + dimensionID)
-              .field(DATA_FILTER_STRATUM_PREFIX + dimensionID).missing("undefined");
-          rootStratumBuilder = termStratumBuilder;
-        }
+        TermsAggregationBuilder temp = AggregationBuilders.terms(DATA_FILTER_STRATUM_PREFIX + dimensionID)
+            .field(DATA_FILTER_STRATUM_PREFIX + dimensionID).missing("undefined");
+        termStratumBuilder.subAggregation(temp);
+        termStratumBuilder = temp;
       }
     }
     dateBuckets.subAggregation(rootStratumBuilder);
@@ -365,6 +367,8 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
    * The return is hacky, it contains metrics: Map(field, value) with a special pair ("count",c)
    * This pair need to be removed from the metrics afterward.
    * 
+   * The first pair also contains ("tenantID", <tenantID>) - see comment above in getElasticsearchRequest()
+   * 
    * @return List[ Combination(Dimension, Segment) -> Metrics+Count ]
    */
   private List<Pair<Map<String, String>, Map<String, Long>>> extractSegmentationStratum(ParsedTerms parsedTerms, String metricPrefix, String rewardID)
@@ -467,9 +471,6 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
         }
       }
       
-      // Special filter: tenantID 
-      filters.put("tenantID", this.tenantID);
-      
       // Remove redeemer, the right one will be added later
       Boolean redeemerToday = (Boolean) filters.remove("redeemerToday");
       Boolean redeemerYesterday = (Boolean) filters.remove("redeemerYesterday");
@@ -540,8 +541,13 @@ public class ProgramsHistoryDatacubeGenerator extends DatacubeGenerator
               Map<String, Object> filtersCopy = new HashMap<String, Object>(filters);
               filtersCopy.put("evolutionSubscriberStatus", evolutionSubscriberStatus);
               filtersCopy.put("redeemer", redeemerFilter);
-              for (String dimensionID : stratum.getFirstElement().keySet()) {
-                filtersCopy.put(dimensionID, stratum.getFirstElement().get(dimensionID));
+              for (String dimensionID : stratum.getFirstElement().keySet()) {               // This map also contains (tenantID, value) but the treatment is equivalent
+                if(dimensionID.equals("tenantID")) {
+                  filtersCopy.put(dimensionID, Integer.parseInt(stratum.getFirstElement().get(dimensionID)));
+                }
+                else {
+                  filtersCopy.put(dimensionID, stratum.getFirstElement().get(dimensionID));
+                }
               }
               
               Map<String, Long> metrics = stratum.getSecondElement();
