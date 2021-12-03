@@ -74,4 +74,15 @@ public class SegmentationDimensionsMap extends GUIManagedObjectMap<SegmentationD
       return segmentID; // When missing, return default.
     }
   }
+  
+  public boolean isFlaggedStatistics(String dimensionID)
+  {
+    SegmentationDimension dimension = this.guiManagedObjects.get(dimensionID);
+    if(dimension != null) {
+      return dimension.getStatistics();
+    } else {
+      logWarningOnlyOnce("Unable to retrieve statistics flag for dimension id: " + dimensionID);
+      return false; // When missing, return default.
+    }
+  }
 }

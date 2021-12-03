@@ -56,7 +56,6 @@ public class TDRDatacubeGenerator extends SimpleDatacubeGenerator
   * Properties
   *
   *****************************************/
-  private List<String> filterFields;
   private List<AggregationBuilder> metricAggregations;
   private OffersMap offersMap;
   private ModulesMap modulesMap;
@@ -85,19 +84,8 @@ public class TDRDatacubeGenerator extends SimpleDatacubeGenerator
     this.loyaltyProgramsMap = new LoyaltyProgramsMap(loyaltyProgramService);
     this.deliverablesMap = new DeliverablesMap();
     this.journeysMap = new JourneysMap(journeyService);
+    
     //
-    // Filter fields
-    //
-      
-    this.filterFields = new ArrayList<String>();
-    this.filterFields.add("moduleID");
-    this.filterFields.add("featureID");
-    this.filterFields.add("action");
-    this.filterFields.add("acceptedOfferID");
-    this.filterFields.add("returnCode");
-    this.filterFields.add("origin");
-
-     //
     // Data Aggregations
     // - totalAmount
     //
@@ -145,7 +133,31 @@ public class TDRDatacubeGenerator extends SimpleDatacubeGenerator
   * Filters settings
   *
   *****************************************/
-  @Override protected List<String> getFilterFields() { return filterFields; }
+  @Override 
+  protected List<String> getFilterFields() {
+    //
+    // Build filter fields
+    //
+    List<String> filterFields = new ArrayList<String>();
+    filterFields.add("moduleID");
+    filterFields.add("featureID");
+    filterFields.add("action");
+    filterFields.add("acceptedOfferID");
+    filterFields.add("returnCode");
+    filterFields.add("origin");
+
+    // getFilterFields is called after runPreGenerationPhase. It safe to assume segmentationDimensionList is up to date.
+    // Regarding dimensions, in TDR ES indices, there is already only the "statistics" ones (see TokenChangeESSinkConnector.java)
+    // Nonetheless, to avoid having plenty of "null" dimensions in the datacube (and pollute the index settings) we also 
+    // filter out "non statistics" dimensions here.
+    for(String dimensionID: segmentationDimensionList.keySet()) {
+      if (segmentationDimensionList.isFlaggedStatistics(dimensionID)) {
+        filterFields.add(FILTER_STRATUM_PREFIX + dimensionID);
+      }
+    }
+    
+    return filterFields; 
+  }
   
   @Override
   protected CompositeValuesSourceBuilder<?> getSpecialSourceFilter() {
@@ -171,16 +183,7 @@ public class TDRDatacubeGenerator extends SimpleDatacubeGenerator
     deliverablesMap.updateFromElasticsearch(elasticsearch);
     journeysMap.update();
     segmentationDimensionList.update();
-    
-    for(String dimensionID: segmentationDimensionList.keySet())
-      {
-        this.filterFields.add(FILTER_STRATUM_PREFIX + dimensionID);
-      }
-    
-    if(this.filterFields.isEmpty()) {
-      log.warn("Found no dimension defined.");
-      return false;
-    }
+
     return true;
   }
   
@@ -214,14 +217,15 @@ public class TDRDatacubeGenerator extends SimpleDatacubeGenerator
     //
     // subscriberStratum dimensions
     //
-    for(String dimensionID: segmentationDimensionList.keySet())
-      {
+    for(String dimensionID: segmentationDimensionList.keySet()) {
+      if (segmentationDimensionList.isFlaggedStatistics(dimensionID)) {
         String fieldName = FILTER_STRATUM_PREFIX + dimensionID;
         String segmentID = (String) filters.remove(fieldName);
         
         String newFieldName = FILTER_STRATUM_PREFIX + segmentationDimensionList.getDimensionDisplay(dimensionID, fieldName);
         filters.put(newFieldName, segmentationDimensionList.getSegmentDisplay(dimensionID, segmentID, fieldName));
       }
+    }
   }
 
   /*****************************************

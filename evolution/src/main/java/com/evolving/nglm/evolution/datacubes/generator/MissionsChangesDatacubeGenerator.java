@@ -158,8 +158,7 @@ public class MissionsChangesDatacubeGenerator extends DatacubeGenerator
     TermsAggregationBuilder termStratumBuilder = null; // last aggregation
     
     for (String dimensionID : segmentationDimensionList.keySet()) {
-      GUIManagedObject segmentationObject = segmentationDimensionList.get(dimensionID);
-      if (segmentationObject != null && SegmentationDimension.class.isAssignableFrom(segmentationObject.getClass()) && ((SegmentationDimension) segmentationObject).getStatistics()) {
+      if (segmentationDimensionList.isFlaggedStatistics(dimensionID)) {
         if (termStratumBuilder != null) {
           TermsAggregationBuilder temp = AggregationBuilders.terms(DATA_FILTER_STRATUM_PREFIX + dimensionID)
               .field(DATA_FILTER_STRATUM_PREFIX + dimensionID).missing("undefined");
@@ -205,8 +204,7 @@ public class MissionsChangesDatacubeGenerator extends DatacubeGenerator
     // Dimensions
     //
     for (String dimensionID : segmentationDimensionList.keySet()) {
-      GUIManagedObject segmentationObject = segmentationDimensionList.get(dimensionID);
-      if (segmentationObject != null && segmentationObject instanceof SegmentationDimension && ((SegmentationDimension) segmentationObject).getStatistics()) {
+      if (segmentationDimensionList.isFlaggedStatistics(dimensionID)) {
         String segmentID = (String) filters.remove(DATA_FILTER_STRATUM_PREFIX + dimensionID);
         String dimensionDisplay = segmentationDimensionList.getDimensionDisplay(dimensionID, DATA_FILTER_STRATUM_PREFIX + dimensionID);
         String fieldName = DATACUBE_FILTER_STRATUM_PREFIX + dimensionDisplay;
