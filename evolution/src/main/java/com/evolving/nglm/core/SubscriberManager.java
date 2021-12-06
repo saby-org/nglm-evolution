@@ -537,7 +537,7 @@ public class SubscriberManager
       {
 
         // need to re-run unique key prefix computation
-        if(newState==KafkaStreams.State.RUNNING) KStreamsUniqueKeyServer.streamRebalanced();
+        KStreamsUniqueKeyServer.streamRebalanced();
 
       }
     };
