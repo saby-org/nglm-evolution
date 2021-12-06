@@ -165,6 +165,16 @@ public class JourneyCustomerStatesReportMonoPhase implements ReportCsvFactory
                     Date date = decodeDate(split, 1);
                     sbStatuses.append("(").append(SubscriberJourneyStatus.fromExternalRepresentation(statusName).getDisplay()).append(",").append(ReportsCommonCode.getDateString(date)).append("),");
                   }
+                // EVPRO-1441 If last status is notEligible, patch the customerStatus in the report
+                String lastStatus = statusHistory.get(statusHistory.size()-1);
+                String[] split = lastStatus.split(";");
+                if (split[0] != null && !split[0].equals("null"))
+                  {
+                    String statusName = split[0];
+                    if (SubscriberJourneyStatus.fromExternalRepresentation(statusName).equals(SubscriberJourneyStatus.NotEligible)) {
+                      journeyInfo.put("customerStatus", SubscriberJourneyStatus.NotEligible);
+                    }
+                  }
               }
 
             String statuses = null;
