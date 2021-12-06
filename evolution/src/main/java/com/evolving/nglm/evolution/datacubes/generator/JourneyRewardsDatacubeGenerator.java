@@ -44,7 +44,6 @@ public class JourneyRewardsDatacubeGenerator extends SimpleDatacubeGenerator
   * Properties
   *
   *****************************************/
-  private List<String> filterFields;
   private SegmentationDimensionsMap segmentationDimensionList;
   private JourneysMap journeysMap;
   private JourneyRewardsMap journeyRewardsList;
@@ -66,11 +65,6 @@ public class JourneyRewardsDatacubeGenerator extends SimpleDatacubeGenerator
     this.journeysMap = new JourneysMap(journeyService);
     this.journeyService = journeyService;
     this.journeyRewardsList = new JourneyRewardsMap(journeyService, elasticsearch);
-    
-    //
-    // Filter fields
-    //
-    this.filterFields = new ArrayList<String>();
   }
   
   public JourneyRewardsDatacubeGenerator(String datacubeName, int tenantID, DatacubeManager datacubeManager) {
@@ -103,8 +97,26 @@ public class JourneyRewardsDatacubeGenerator extends SimpleDatacubeGenerator
   * Filters settings
   *
   *****************************************/
-  @Override protected List<String> getFilterFields() { return filterFields; }
+  @Override 
+  protected List<String> getFilterFields() {
+    //
+    // Build filter fields
+    //
+    List<String> filterFields = new ArrayList<String>();
 
+    // getFilterFields is called after runPreGenerationPhase. It safe to assume segmentationDimensionList is up to date.
+    // Regarding dimensions, in journeystatistic ES indices, there is already only the "statistics" ones (see JourneyStatisticESSinkConnector.java)
+    // Nonetheless, to avoid having plenty of "null" dimensions in the datacube (and pollute the index settings) we also 
+    // filter out "non statistics" dimensions here.
+    for(String dimensionID: segmentationDimensionList.keySet()) {
+      if (segmentationDimensionList.isFlaggedStatistics(dimensionID)) {
+        filterFields.add(FILTER_STRATUM_PREFIX + dimensionID);
+      }
+    }
+    
+    return filterFields; 
+  }
+  
   @Override
   protected boolean runPreGenerationPhase() throws ElasticsearchException, IOException, ClassCastException
   {
@@ -141,11 +153,6 @@ public class JourneyRewardsDatacubeGenerator extends SimpleDatacubeGenerator
       return false;
     }
     
-    this.filterFields = new ArrayList<String>();
-    for(String dimensionID: segmentationDimensionList.keySet()) {
-      this.filterFields.add(FILTER_STRATUM_PREFIX + dimensionID);
-    }
-    
     return true;
   }
   
@@ -165,14 +172,15 @@ public class JourneyRewardsDatacubeGenerator extends SimpleDatacubeGenerator
     //
     // subscriberStratum dimensions
     //
-    for(String dimensionID: segmentationDimensionList.keySet())
-      {
+    for(String dimensionID: segmentationDimensionList.keySet()) {
+      if (segmentationDimensionList.isFlaggedStatistics(dimensionID)) {
         String fieldName = FILTER_STRATUM_PREFIX + dimensionID;
         String segmentID = (String) filters.remove(fieldName);
 
         String newFieldName = FILTER_STRATUM_PREFIX + segmentationDimensionList.getDimensionDisplay(dimensionID, fieldName);
         filters.put(newFieldName, segmentationDimensionList.getSegmentDisplay(dimensionID, segmentID, fieldName));
       }
+    }
   }
   
   /*****************************************

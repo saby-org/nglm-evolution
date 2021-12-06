@@ -43,7 +43,6 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
   * Properties
   *
   *****************************************/
-  private List<String> filterFields;
   private SegmentationDimensionsMap segmentationDimensionList;
 
   private String metricTargetDay;
@@ -62,11 +61,6 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
     super(datacubeName, elasticsearch, datacubeWriter, tenantID, timeZone);
 
     this.segmentationDimensionList = new SegmentationDimensionsMap(segmentationDimensionService);
-    
-    //
-    // Filter fields
-    //
-    this.filterFields = new ArrayList<String>();
   }
   
   public SubscriberProfileDatacubeGenerator(String datacubeName, int tenantID, DatacubeManager datacubeManager) {
@@ -106,22 +100,29 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
   * Filters settings
   *
   *****************************************/
-  @Override protected List<String> getFilterFields() { return filterFields; }
+  @Override 
+  protected List<String> getFilterFields() {
+    //
+    // Build filter fields
+    //
+    List<String> filterFields = new ArrayList<String>();
+
+    // getFilterFields is called after runPreGenerationPhase. It safe to assume segmentationDimensionList is up to date.
+    // Filter out "non statistics" dimensions.
+    for(String dimensionID: segmentationDimensionList.keySet()) {
+      if (segmentationDimensionList.isFlaggedStatistics(dimensionID)) {
+        filterFields.add(FILTER_STRATUM_PREFIX + dimensionID);
+      }
+    }
+    
+    return filterFields; 
+  }
+  
   
   @Override
   protected boolean runPreGenerationPhase() throws ElasticsearchException, IOException, ClassCastException
   {
     this.segmentationDimensionList.update();
-    this.filterFields = new ArrayList<String>();
-    for(String dimensionID: segmentationDimensionList.keySet())
-      {
-        this.filterFields.add(FILTER_STRATUM_PREFIX + dimensionID);
-      }
-    
-    if(this.filterFields.isEmpty()) {
-      log.warn("Found no dimension defined.");
-      return false;
-    }
     
     return true;
   }
@@ -137,14 +138,15 @@ public class SubscriberProfileDatacubeGenerator extends SimpleDatacubeGenerator
     //
     // subscriberStratum dimensions
     //
-    for(String dimensionID: segmentationDimensionList.keySet())
-      {
+    for(String dimensionID: segmentationDimensionList.keySet()) {
+      if (segmentationDimensionList.isFlaggedStatistics(dimensionID)) {
         String fieldName = FILTER_STRATUM_PREFIX + dimensionID;
         String segmentID = (String) filters.remove(fieldName);
         
         String newFieldName = FILTER_STRATUM_PREFIX + segmentationDimensionList.getDimensionDisplay(dimensionID, fieldName);
         filters.put(newFieldName, segmentationDimensionList.getSegmentDisplay(dimensionID, segmentID, fieldName));
       }
+    }
   }
 
   /*****************************************

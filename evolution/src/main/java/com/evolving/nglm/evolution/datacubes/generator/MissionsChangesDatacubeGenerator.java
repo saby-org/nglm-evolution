@@ -152,25 +152,26 @@ public class MissionsChangesDatacubeGenerator extends DatacubeGenerator
         .addRange(targetPeriodStartIncluded, targetPeriodStartIncluded + targetPeriod); // Reminder: from is included, to is excluded
     
     //
-    // Sub Aggregations dimensions (only statistic dimensions)
+    // Sub Aggregations dimensions (only statistic dimensions + tenantID)
     //
-    TermsAggregationBuilder rootStratumBuilder = null; // first aggregation
-    TermsAggregationBuilder termStratumBuilder = null; // last aggregation
-    
+    TermsAggregationBuilder rootStratumBuilder; // first aggregation
+    TermsAggregationBuilder termStratumBuilder; // last aggregation
+    // Initial set of rootStratumBuilder
+    //
+    // @rl: Yes, this aggregation is not really useful because its result could be hardcoded (this.tenantID).
+    // Reminder: the tenantID is filtered out in the query (see above)
+    // Here the main purpose is to ensure there is at least one aggregation (in case there is 0 statistics dimensions)
+    // It will be treated as a "dimension" by extractSegmentationStratum - but it is equivalent
+    rootStratumBuilder = AggregationBuilders.terms("tenantID").field("tenantID").missing(0);
+    termStratumBuilder = rootStratumBuilder;
+   
+    // Adding statistics dimensions
     for (String dimensionID : segmentationDimensionList.keySet()) {
-      GUIManagedObject segmentationObject = segmentationDimensionList.get(dimensionID);
-      if (segmentationObject != null && SegmentationDimension.class.isAssignableFrom(segmentationObject.getClass()) && ((SegmentationDimension) segmentationObject).getStatistics()) {
-        if (termStratumBuilder != null) {
-          TermsAggregationBuilder temp = AggregationBuilders.terms(DATA_FILTER_STRATUM_PREFIX + dimensionID)
-              .field(DATA_FILTER_STRATUM_PREFIX + dimensionID).missing("undefined");
-          termStratumBuilder = termStratumBuilder.subAggregation(temp);
-          termStratumBuilder = temp;
-        }
-        else {
-          termStratumBuilder = AggregationBuilders.terms(DATA_FILTER_STRATUM_PREFIX + dimensionID)
-              .field(DATA_FILTER_STRATUM_PREFIX + dimensionID).missing("undefined");
-          rootStratumBuilder = termStratumBuilder;
-        }
+      if (segmentationDimensionList.isFlaggedStatistics(dimensionID)) {
+        TermsAggregationBuilder temp = AggregationBuilders.terms(DATA_FILTER_STRATUM_PREFIX + dimensionID)
+            .field(DATA_FILTER_STRATUM_PREFIX + dimensionID).missing("undefined");
+        termStratumBuilder.subAggregation(temp);
+        termStratumBuilder = temp;
       }
     }
     
@@ -205,8 +206,7 @@ public class MissionsChangesDatacubeGenerator extends DatacubeGenerator
     // Dimensions
     //
     for (String dimensionID : segmentationDimensionList.keySet()) {
-      GUIManagedObject segmentationObject = segmentationDimensionList.get(dimensionID);
-      if (segmentationObject != null && segmentationObject instanceof SegmentationDimension && ((SegmentationDimension) segmentationObject).getStatistics()) {
+      if (segmentationDimensionList.isFlaggedStatistics(dimensionID)) {
         String segmentID = (String) filters.remove(DATA_FILTER_STRATUM_PREFIX + dimensionID);
         String dimensionDisplay = segmentationDimensionList.getDimensionDisplay(dimensionID, DATA_FILTER_STRATUM_PREFIX + dimensionID);
         String fieldName = DATACUBE_FILTER_STRATUM_PREFIX + dimensionDisplay;
@@ -224,6 +224,8 @@ public class MissionsChangesDatacubeGenerator extends DatacubeGenerator
    * 
    * This recursive function will return every combination created from this 
    * node as it was the root of the tree.
+   * 
+   * The first pair also contains ("tenantID", <tenantID>) - see comment above in getElasticsearchRequest()
    * 
    * @return List[ Combination(Dimension, Segment) -> Count ]
    */
@@ -309,9 +311,6 @@ public class MissionsChangesDatacubeGenerator extends DatacubeGenerator
         }
       }
       
-      // Special filter: tenantID 
-      filters.put("tenantID", this.tenantID);
-
       //
       // Extract only the change of the day
       //
@@ -346,8 +345,13 @@ public class MissionsChangesDatacubeGenerator extends DatacubeGenerator
             Map<String, Object> filtersCopy = new HashMap<String, Object>(filters);
             Long docCount = stratum.getSecondElement();
             
-            for (String dimensionID : stratum.getFirstElement().keySet()) {
-              filtersCopy.put(dimensionID, stratum.getFirstElement().get(dimensionID));
+            for (String dimensionID : stratum.getFirstElement().keySet()) {               // This map also contains (tenantID, value) but the treatment is equivalent
+              if(dimensionID.equals("tenantID")) {
+                filtersCopy.put(dimensionID, Integer.parseInt(stratum.getFirstElement().get(dimensionID)));
+              }
+              else {
+                filtersCopy.put(dimensionID, stratum.getFirstElement().get(dimensionID));
+              }
             }
             
             //
