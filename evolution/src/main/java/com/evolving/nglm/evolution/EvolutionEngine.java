@@ -7117,7 +7117,10 @@ public class EvolutionEngine
                     // retrieve the journey state of the calling campaign
                     if(subscriberState.getJourneyStates() != null)
                       {
-                        for(JourneyState parentState : subscriberState.getJourneyStates())
+                        Set<JourneyState> parentCampaignsStates = subscriberState.getJourneyStates();
+                        // EVPRO-1442 add parent campaigns that have finished in the meantime
+                        if (inactiveJourneyStates != null) parentCampaignsStates.addAll(inactiveJourneyStates);
+                        for(JourneyState parentState : parentCampaignsStates)
                           {
                             if(parentState.getJourneyID().equals(journeyState.getsourceFeatureID()) && DeliveryRequest.Module.Journey_Manager.getExternalRepresentation().equals(journeyState.getSourceModuleID()))
                               {
