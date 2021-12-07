@@ -3,7 +3,7 @@
   <groupId>com.evolving.nglm</groupId>
   <artifactId>nglm-evolution-common-build</artifactId>
   <packaging>pom</packaging>
-  <version>2.1.0_1-SNAPSHOT</version>
+  <version>2.1.0_2-SNAPSHOT</version>
   <name>evolution-common-build</name>
 
   <repositories> 
@@ -170,6 +170,9 @@
     <topic.otpinstancechange.response>otpinstancechange-response</topic.otpinstancechange.response>
     <topic.badgechange.request>badgechange-request</topic.badgechange.request>
     <topic.badgechange.response>badgechange-response</topic.badgechange.response>
+    <topic.productexternalevent.request>productexternalevent-request</topic.productexternalevent.request>
+    <topic.productexternalevent.response>productexternalevent-response</topic.productexternalevent.response>
+    <topic.loopback>loopback-event</topic.loopback>
     
     <topic.tenant>tenant</topic.tenant>
     <topic.edrdetails>edrdetails</topic.edrdetails>

@@ -376,6 +376,9 @@ public class DeploymentCommon
   private static String customCriteriaTopic;
   private static String badgeChangeRequestTopic;
   private static String badgeChangeResponseTopic;
+  private static String productExternalEventRequestTopic;
+  private static String productExternalEventResponseTopic;
+  private static String loopbackTopic;
     
   //
   // Others
@@ -720,14 +723,22 @@ public class DeploymentCommon
   public static String getCustomCriteriaTopic() { return customCriteriaTopic; }
   public static String getBadgeChangeRequestTopic() { return badgeChangeRequestTopic; }
   public static String getBadgeChangeResponseTopic() { return badgeChangeResponseTopic; }
+  public static String getProductExternalEventRequestTopic() { return productExternalEventRequestTopic; }
+  public static String getProductExternalEventResponseTopic() { return productExternalEventResponseTopic; }
+  public static String getLoopbackTopic() { return loopbackTopic; }
+
   
   //
   // Others
   //
   
   public static Map<String,AlternateID> getAlternateIDs() { return alternateIDs; }
+  public static AlternateID getAlternateIDOrNull(String id){
+    if(getAlternateIDs()==null) return null;
+    return getAlternateIDs().get(id);
+  }
   public static AlternateID getAlternateID(String id) {
-    AlternateID toRet = getAlternateIDs().get(id);
+    AlternateID toRet = getAlternateIDOrNull(id);
     if(toRet==null) throw new RuntimeException("unknwown alternateID "+id);
     return toRet;
   }
@@ -1051,6 +1062,9 @@ public class DeploymentCommon
     customCriteriaTopic = jsonReader.decodeString("customCriteriaTopic");
     badgeChangeRequestTopic = jsonReader.decodeString("badgeChangeRequestTopic");
     badgeChangeResponseTopic = jsonReader.decodeString("badgeChangeResponseTopic");
+    productExternalEventRequestTopic = jsonReader.decodeString("productExternalEventRequestTopic");
+    productExternalEventResponseTopic = jsonReader.decodeString("productExternalEventResponseTopic");
+    loopbackTopic = jsonReader.decodeString("loopbackTopic");
     
     alternateIDs = jsonReader.decodeMapFromArray(AlternateID.class, "alternateIDs");
     

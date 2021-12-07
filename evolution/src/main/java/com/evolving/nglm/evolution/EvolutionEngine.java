@@ -27,6 +27,7 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
@@ -52,7 +53,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.evolution.event.ExternalEvent;
+import com.evolving.nglm.evolution.event.ProductExternalEvent;
+import com.evolving.nglm.evolution.event.SubscriberUpdated;
+import com.evolving.nglm.evolution.event.UpdateOtherSubscriber;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -392,6 +397,8 @@ public class EvolutionEngine
     String otpInstanceChangeEventRequestTopic = Deployment.getOTPInstanceChangeRequestTopic();
     String notificationEventTopic = Deployment.getNotificationEventTopic();
     String badgeChangeRequestEventTopic = Deployment.getBadgeChangeRequestTopic();
+    String loopbackTopic = Deployment.getLoopbackTopic();
+    String productExternalEventRequestTopic = Deployment.getProductExternalEventRequestTopic();
     
     //
     //  changelogs
@@ -808,6 +815,9 @@ public class EvolutionEngine
     final ConnectSerde<SubscriberProfileForceUpdateResponse> subscriberProfileForceUpdateResponseSerde = SubscriberProfileForceUpdateResponse.serde();
     final ConnectSerde<NotificationEvent> notificationEventSerde = NotificationEvent.serde();
     final ConnectSerde<BadgeChange> badgeChangeEventSerde = BadgeChange.serde();
+    final ConnectSerde<UpdateOtherSubscriber> updateOtherSubscriberSerde = UpdateOtherSubscriber.serde();
+    final ConnectSerde<SubscriberUpdated> subscriberUpdatedSerde = SubscriberUpdated.serde();
+    final ConnectSerde<ProductExternalEvent> productExternalEventSerde = ProductExternalEvent.serde();
 
     //
     //  special serdes
@@ -878,6 +888,8 @@ public class EvolutionEngine
     KStream<StringKey, OTPInstanceChangeEvent> otpInstanceChangeEventRequestStream = builder.stream(otpInstanceChangeEventRequestTopic, Consumed.with(stringKeySerde, otpInstanceChangeEventSerde));
     KStream<StringKey, NotificationEvent> notificationEventStream = builder.stream(notificationEventTopic, Consumed.with(stringKeySerde, notificationEventSerde));
     KStream<StringKey, BadgeChange> badgeChangeEventStream = builder.stream(badgeChangeRequestEventTopic, Consumed.with(stringKeySerde, badgeChangeEventSerde));
+    KStream<StringKey, UpdateOtherSubscriber> updateOtherSubscriberStream = builder.stream(loopbackTopic, Consumed.with(stringKeySerde, updateOtherSubscriberSerde));
+    KStream<StringKey, ProductExternalEvent> productExternalEventStream = builder.stream(productExternalEventRequestTopic, Consumed.with(stringKeySerde, productExternalEventSerde));
     
     //
     //  timedEvaluationStreams
@@ -1027,6 +1039,8 @@ public class EvolutionEngine
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) notificationEventStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) otpInstanceChangeEventRequestStream);
     evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) badgeChangeEventStream);
+    evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) updateOtherSubscriberStream);
+    evolutionEventStreams.add((KStream<StringKey, ? extends SubscriberStreamEvent>) productExternalEventStream);
     evolutionEventStreams.addAll(standardEvolutionEngineEventStreams);
     evolutionEventStreams.addAll(deliveryManagerResponseStreams);
     evolutionEventStreams.addAll(deliveryManagerRequestToProcessStreams);
@@ -1086,7 +1100,9 @@ public class EvolutionEngine
         (key,value) -> (value instanceof AssignSubscriberIDs),
 
         (key,value) -> (value instanceof BadgeChange && ((BadgeChange) value).IsResponseEvent()),
-        (key,value) -> (value instanceof BadgeChange && !((BadgeChange) value).IsResponseEvent())
+        (key,value) -> (value instanceof BadgeChange && !((BadgeChange) value).IsResponseEvent()),
+        (key,value) -> (value instanceof UpdateOtherSubscriber),
+        (key,value) -> (value instanceof SubscriberUpdated)
     );
 
     KStream<StringKey, DeliveryRequest> deliveryRequestStream = (KStream<StringKey, DeliveryRequest>) branchedEvolutionEngineOutputs[0];
@@ -1115,6 +1131,8 @@ public class EvolutionEngine
 
     KStream<StringKey, BadgeChange> badgeChangeResponseStream = (KStream<StringKey, BadgeChange>) branchedEvolutionEngineOutputs[20];
     KStream<StringKey, BadgeChange> badgeChangeRequestStream = (KStream<StringKey, BadgeChange>) branchedEvolutionEngineOutputs[21];
+    KStream<StringKey, UpdateOtherSubscriber> updateOtherSubscriberStreamOut = (KStream<StringKey, UpdateOtherSubscriber>) branchedEvolutionEngineOutputs[22];
+    KStream<StringKey, SubscriberUpdated> subscriberUpdatedStreamOut = (KStream<StringKey, SubscriberUpdated>) branchedEvolutionEngineOutputs[23];
     
     /*****************************************
     *
@@ -1146,6 +1164,8 @@ public class EvolutionEngine
     deleteActionStream.to(Deployment.getAssignSubscriberIDsTopic(), Produced.with(stringKeySerde, assignSubscriberIDsSerde));
     badgeChangeResponseStream.to(Deployment.getBadgeChangeResponseTopic(), Produced.with(stringKeySerde, badgeChangeEventSerde));
     badgeChangeRequestStream.to(Deployment.getBadgeChangeRequestTopic(), Produced.with(stringKeySerde, badgeChangeEventSerde));
+    updateOtherSubscriberStreamOut.map((key,value)->new KeyValue<>(new StringKey(value.getSubscriberID()),value)).to(Deployment.getLoopbackTopic(), Produced.with(stringKeySerde, updateOtherSubscriberSerde));
+    subscriberUpdatedStreamOut.to(Deployment.getProductExternalEventResponseTopic(), Produced.with(stringKeySerde, subscriberUpdatedSerde));
 
     //
     //  sink DeliveryRequest
@@ -1940,8 +1960,9 @@ public class EvolutionEngine
       //    * Trig a schedule for the good date...
 
       // send a delete for redis alternateIDs
-      CleanupSubscriber cleanupEvent = new CleanupSubscriber(subscriberState.getSubscriberID(), SubscriberAction.Delete);
-      subscriberState.getImmediateCleanupActions().add(cleanupEvent);
+      SubscriberUpdated subscriberUpdated = new SubscriberUpdated(context.getSubscriberState().getSubscriberID(),context.getSubscriberState().getSubscriberProfile().getTenantID());
+      subscriberUpdated.subscriberDeleted();
+      context.getSubscriberState().getUpdateSubscriberResponses().add(subscriberUpdated);
       
       if(subscriberState.getCleanupDate() == null || evolutionEvent.getSubscriberAction()==SubscriberAction.CleanupImmediate)
         {
@@ -2011,128 +2032,7 @@ public class EvolutionEngine
     subscriberStateUpdated = true;
   }
 
-  /*****************************************
-   *
-   * update subscriber hierarchy
-   *
-   *****************************************/
 
-  if (evolutionEvent instanceof UpdateParentRelationshipEvent
-      && ((UpdateParentRelationshipEvent) evolutionEvent).getNewParent() != null
-      && ((UpdateParentRelationshipEvent) evolutionEvent).getRelationshipDisplay() != null) {
-        UpdateParentRelationshipEvent updateParentRelationshipEvent = (UpdateParentRelationshipEvent)evolutionEvent;
-        // This is the children that set or unset a parent for a given type of relation
-        String relationshipDisplay = updateParentRelationshipEvent.getRelationshipDisplay();
-        String relationshipID = null;
-        for (SupportedRelationship supportedRelationship : Deployment.getDeployment(tenantID).getSupportedRelationships().values())
-          {
-            if (supportedRelationship.getDisplay().equals(relationshipDisplay))
-              {
-                relationshipID = supportedRelationship.getID();
-                break;
-              }
-          }
-        if(relationshipID != null)
-          {
-            if(!updateParentRelationshipEvent.isDeletion())
-              {
-                // set a parent
-                SubscriberRelatives sr = subscriberProfile.getRelations().get(relationshipID);
-                if(sr == null)
-                  {
-                    sr = new SubscriberRelatives();
-                    subscriberProfile.getRelations().put(relationshipID, sr);
-                  }
-                sr.setParentSubscriberID(updateParentRelationshipEvent.getNewParent());
-              }
-            else
-              {
-                // delete a parent
-                SubscriberRelatives sr = subscriberProfile.getRelations().get(relationshipID);
-                if(sr != null)
-                  {
-                    // no need to keep this parent
-                    if(!updateParentRelationshipEvent.getNewParent().equals(sr.getParentSubscriberID()))
-                      {
-                        // just log a warn as we remove a parent for a relation that is not the expected one...
-                        log.warn("Delete parent " + sr.getParentSubscriberID() + " instead of " + updateParentRelationshipEvent.getNewParent() + " for suscriber " + evolutionEvent.getSubscriberID());
-                      }
-                    sr.setParentSubscriberID(null);
-                  }
-                else
-                  {
-                    // we tried to delete a parent that does not exist, just log a WARN
-                    log.warn("Delete parent where no parent is referenced " + updateParentRelationshipEvent.getNewParent() + " for suscriber " + evolutionEvent.getSubscriberID());
-                  }
-              }
-          }
-        else
-          {
-            log.warn("relationshipDisplay is unknown " + relationshipDisplay);
-          }
-      }
-    if(evolutionEvent instanceof UpdateChildrenRelationshipEvent)
-      {
-        // This is the parent that inserts or remove a childrem from its list for a given type of relation
-        UpdateChildrenRelationshipEvent updateChildrenRelationshipEvent = (UpdateChildrenRelationshipEvent)evolutionEvent;
-        String relationshipDisplay = updateChildrenRelationshipEvent.getRelationshipDisplay();
-        String relationshipID = null;
-        for (SupportedRelationship supportedRelationship : Deployment.getDeployment(tenantID).getSupportedRelationships().values())
-          {
-            if (supportedRelationship.getDisplay().equals(relationshipDisplay))
-              {
-                relationshipID = supportedRelationship.getID();
-                break;
-              }
-          }
-        if(relationshipID != null)
-          {
-            if(!updateChildrenRelationshipEvent.isDeletion())
-              {
-                // add a children
-                SubscriberRelatives sr = subscriberProfile.getRelations().get(relationshipID);
-                if(sr == null)
-                  {
-                    sr = new SubscriberRelatives();
-                    subscriberProfile.getRelations().put(relationshipID, sr);
-                  }
-                sr.addChildSubscriberID(updateChildrenRelationshipEvent.getChildren());
-              }
-            else
-              {
-                // remove a children
-                SubscriberRelatives sr = subscriberProfile.getRelations().get(relationshipID);
-                if(sr != null)
-                  {
-                    sr.removeChildSubscriberID(updateChildrenRelationshipEvent.getChildren());
-                  }
-                else
-                  {
-                    // we tried to delete a child that does not exist, just log a WARN
-                    log.warn("Delete child where no child is referenced " + updateChildrenRelationshipEvent.getChildren() + " for suscriber " + evolutionEvent.getSubscriberID());
-                  }
-              }
-          }
-        else
-          {
-            log.warn("relationshipDisplay is unknown " + relationshipDisplay );
-          }
-      }
-
-    // now clean unused relations
-    ArrayList<String> toRemove = new ArrayList<>();
-    for(Map.Entry<String, SubscriberRelatives> sr : subscriberProfile.getRelations().entrySet())
-      {
-        if((sr.getValue().getChildrenSubscriberIDs() == null || sr.getValue().getChildrenSubscriberIDs().size() == 0) && sr.getValue().getParentSubscriberID() == null)
-          {
-            toRemove.add(sr.getKey());
-          }
-      }
-    for(String s : toRemove)
-      {
-        subscriberProfile.getRelations().remove(s);
-      }
-    
     /*****************************************
     *
     *  profileChangeEvent get Old Values
@@ -2148,6 +2048,14 @@ public class EvolutionEngine
     *****************************************/
     
     ParameterMap profileSegmentChangeOldValues = saveProfileSegmentChangeOldValues(subscriberEvaluationRequest);
+
+    /*****************************************
+    *
+    *  update hierarchy
+    *
+    *****************************************/
+
+    subscriberStateUpdated = updateSubscriberHierarchy(context, evolutionEvent) || subscriberStateUpdated;
     
     /*****************************************
     *
@@ -2160,11 +2068,7 @@ public class EvolutionEngine
         subscriberStateUpdated = updateEDRs(context, evolutionEvent) || subscriberStateUpdated;
       }
 
-    /*****************************************
-    *
-    *  update SubscriberProfile
-    *
-    *****************************************/
+    subscriberStateUpdated = detectAlternateIDUpdate(context, evolutionEvent) || subscriberStateUpdated;
 
     subscriberStateUpdated = updateSubscriberProfile(context, evolutionEvent) || subscriberStateUpdated;
 
@@ -2434,6 +2338,204 @@ public class EvolutionEngine
       }   
     }
     return oldSubscriberSegmentPerDimension;
+  }
+
+  private static boolean updateSubscriberHierarchy(EvolutionEventContext context, SubscriberStreamEvent evolutionEvent) {
+
+    SubscriberState subscriberState = context.getSubscriberState();
+    SubscriberProfile subscriberProfile = subscriberState.getSubscriberProfile();
+    int tenantID = subscriberProfile.getTenantID();
+    boolean subscriberUpdated = false;
+
+    // OLD WAY BEFORE EVPRO-1306 (to clean, but keeping for now)
+    if(evolutionEvent instanceof UpdateParentRelationshipEvent || evolutionEvent instanceof UpdateChildrenRelationshipEvent){
+
+      if (evolutionEvent instanceof UpdateParentRelationshipEvent
+                  && ((UpdateParentRelationshipEvent) evolutionEvent).getNewParent() != null
+                  && ((UpdateParentRelationshipEvent) evolutionEvent).getRelationshipDisplay() != null) {
+        UpdateParentRelationshipEvent updateParentRelationshipEvent = (UpdateParentRelationshipEvent)evolutionEvent;
+        // This is the children that set or unset a parent for a given type of relation
+        String relationshipDisplay = updateParentRelationshipEvent.getRelationshipDisplay();
+        String relationshipID = null;
+        for (SupportedRelationship supportedRelationship : Deployment.getDeployment(tenantID).getSupportedRelationships().values()) {
+          if (supportedRelationship.getDisplay().equals(relationshipDisplay)) {
+            relationshipID = supportedRelationship.getID();
+            break;
+          }
+        }
+        if(relationshipID != null) {
+          subscriberUpdated = true;
+          if(!updateParentRelationshipEvent.isDeletion()) {
+            // set a parent
+            SubscriberRelatives sr = subscriberProfile.getRelations().get(relationshipID);
+            if(sr == null) {
+              sr = new SubscriberRelatives();
+              subscriberProfile.getRelations().put(relationshipID, sr);
+            }
+            sr.setParentSubscriberID(updateParentRelationshipEvent.getNewParent());
+          }
+          else {
+            // delete a parent
+            SubscriberRelatives sr = subscriberProfile.getRelations().get(relationshipID);
+            if(sr != null) {
+              // no need to keep this parent
+              if(!updateParentRelationshipEvent.getNewParent().equals(sr.getParentSubscriberID())) {
+                // just log a warn as we remove a parent for a relation that is not the expected one...
+                log.warn("Delete parent " + sr.getParentSubscriberID() + " instead of " + updateParentRelationshipEvent.getNewParent() + " for suscriber " + evolutionEvent.getSubscriberID());
+              }
+              sr.setParentSubscriberID(null);
+            }
+            else {
+              // we tried to delete a parent that does not exist, just log a WARN
+              log.warn("Delete parent where no parent is referenced " + updateParentRelationshipEvent.getNewParent() + " for suscriber " + evolutionEvent.getSubscriberID());
+            }
+          }
+        }
+        else {
+          log.warn("relationshipDisplay is unknown " + relationshipDisplay);
+        }
+      }
+
+      if(evolutionEvent instanceof UpdateChildrenRelationshipEvent) {
+        // This is the parent that inserts or remove a children from its list for a given type of relation
+        UpdateChildrenRelationshipEvent updateChildrenRelationshipEvent = (UpdateChildrenRelationshipEvent)evolutionEvent;
+        String relationshipDisplay = updateChildrenRelationshipEvent.getRelationshipDisplay();
+        String relationshipID = null;
+        for (SupportedRelationship supportedRelationship : Deployment.getDeployment(tenantID).getSupportedRelationships().values()) {
+          if (supportedRelationship.getDisplay().equals(relationshipDisplay)) {
+            relationshipID = supportedRelationship.getID();
+            break;
+          }
+        }
+        if(relationshipID != null) {
+          subscriberUpdated=true;
+          if(!updateChildrenRelationshipEvent.isDeletion()) {
+            // add a children
+            SubscriberRelatives sr = subscriberProfile.getRelations().get(relationshipID);
+            if(sr == null) {
+              sr = new SubscriberRelatives();
+              subscriberProfile.getRelations().put(relationshipID, sr);
+            }
+            sr.addChildSubscriberID(updateChildrenRelationshipEvent.getChildren());
+          }
+          else {
+            // remove a children
+            SubscriberRelatives sr = subscriberProfile.getRelations().get(relationshipID);
+            if(sr != null) {
+              sr.removeChildSubscriberID(updateChildrenRelationshipEvent.getChildren());
+            }
+            else {
+              // we tried to delete a child that does not exist, just log a WARN
+              log.warn("Delete child where no child is referenced " + updateChildrenRelationshipEvent.getChildren() + " for suscriber " + evolutionEvent.getSubscriberID());
+            }
+          }
+        }
+        else {
+          log.warn("relationshipDisplay is unknown " + relationshipDisplay );
+        }
+      }
+
+      // now clean unused relations
+      ArrayList<String> toRemove = new ArrayList<>();
+      for(Map.Entry<String, SubscriberRelatives> sr : subscriberProfile.getRelations().entrySet()) {
+        if((sr.getValue().getChildrenSubscriberIDs() == null || sr.getValue().getChildrenSubscriberIDs().size() == 0) && sr.getValue().getParentSubscriberID() == null) {
+          toRemove.add(sr.getKey());
+          subscriberUpdated=true;
+        }
+      }
+      for(String s : toRemove) {
+        subscriberProfile.getRelations().remove(s);
+      }
+
+    }
+
+    // NEW WAY AFTER EVPRO-1306
+    // child update part ( only child can assign 1 parent )
+    if(evolutionEvent instanceof ExternalEvent){
+      ExternalEvent externalEvent = (ExternalEvent) evolutionEvent;
+
+      // add parent
+      for(Map.Entry<SupportedRelationship,Long> entry:externalEvent.getParentRelationshipToAddSubscriberIDs().entrySet()){
+        String parentToAdd = entry.getValue()+"";
+        SubscriberRelatives existingRelation = subscriberProfile.getRelations().get(entry.getKey().getID());
+        String existingParent = existingRelation!=null ? existingRelation.getParentSubscriberID() : null;
+        if(existingParent!=null && !existingParent.equals(parentToAdd)){
+          if(log.isDebugEnabled()) log.debug("updating parent for "+entry.getKey().getDisplay()+" old was "+existingParent+", new is "+parentToAdd);
+          // trigger previous parent to remove this as a child
+          UpdateOtherSubscriber updateOtherSubscriber = new UpdateOtherSubscriber(existingParent);
+          updateOtherSubscriber.parentRemoved(Long.valueOf(subscriberState.getSubscriberID()),entry.getKey());
+          subscriberState.getUpdateOtherSubscriberRequests().add(updateOtherSubscriber);
+        }else if(existingParent!=null && existingParent.equals(parentToAdd)){
+          // nothing to do, this was already the parent
+          if(log.isDebugEnabled()) log.debug("updating parent for "+entry.getKey().getDisplay()+" old "+existingParent+" was already "+parentToAdd+", doing nothing");
+          continue;
+        }
+        // update subscriber parent
+        subscriberUpdated = true;
+        SubscriberRelatives newRelation = existingRelation != null ? existingRelation : new SubscriberRelatives();
+        newRelation.setParentSubscriberID(parentToAdd);
+        subscriberProfile.getRelations().put(entry.getKey().getID(),newRelation);
+        // trigger new parent to add this as a child
+        UpdateOtherSubscriber updateOtherSubscriber = new UpdateOtherSubscriber(parentToAdd);
+        updateOtherSubscriber.parentAdded(Long.valueOf(subscriberState.getSubscriberID()),entry.getKey());
+        subscriberState.getUpdateOtherSubscriberRequests().add(updateOtherSubscriber);
+      }
+
+      // remove parent
+      for(Map.Entry<SupportedRelationship,Long> entry:externalEvent.getParentRelationshipToRemoveSubscriberIDs().entrySet()){
+        String parentToRemove = entry.getValue()+"";
+        SubscriberRelatives existingRelation = subscriberProfile.getRelations().get(entry.getKey().getID());
+        String existingParent = existingRelation!=null ? existingRelation.getParentSubscriberID() : null;
+        if(existingParent==null){
+          // nothing to do, no relation
+          if(log.isDebugEnabled()) log.debug("removing parent "+parentToRemove+" for does not existing relation, nothing to do");
+          continue;
+        }
+        if(!parentToRemove.equals(existingParent)){
+          // parent to be removed does not match current one, ignoring
+          if(log.isDebugEnabled()) log.debug("removing parent for "+entry.getKey().getDisplay()+" "+parentToRemove+" does not match current "+existingParent+", doing nothing");
+          continue;
+        }
+        subscriberUpdated = true;
+        // remove subscriber parent
+        if(existingRelation.getChildrenSubscriberIDs().isEmpty()){
+          subscriberProfile.getRelations().remove(entry.getKey().getID());
+        }else{
+          existingRelation.setParentSubscriberID(null);
+        }
+        // trigger parent to remove this as a child
+        UpdateOtherSubscriber updateOtherSubscriber = new UpdateOtherSubscriber(parentToRemove);
+        updateOtherSubscriber.parentRemoved(Long.valueOf(subscriberState.getSubscriberID()),entry.getKey());
+        subscriberState.getUpdateOtherSubscriberRequests().add(updateOtherSubscriber);
+      }
+
+    }
+
+    // parent update part ( need to keep list of its children  )
+    if(evolutionEvent instanceof UpdateOtherSubscriber){
+      subscriberUpdated = true;
+      UpdateOtherSubscriber updateOtherSubscriber = (UpdateOtherSubscriber) evolutionEvent;
+      // a child added us as parent
+      if(updateOtherSubscriber.getParentAdded()!=null){
+        String relationID = updateOtherSubscriber.getParentAdded().getSecondElement().getID();
+        SubscriberRelatives relation = subscriberProfile.getRelations().get(relationID);
+        if(relation==null) relation = new SubscriberRelatives();
+        relation.addChildSubscriberID(updateOtherSubscriber.getParentAdded().getFirstElement()+"");
+        subscriberProfile.getRelations().put(relationID,relation);
+      }
+      // a child removed us as parent
+      if(updateOtherSubscriber.getParentRemoved()!=null){
+        String relationID = updateOtherSubscriber.getParentRemoved().getSecondElement().getID();
+        SubscriberRelatives relation = subscriberProfile.getRelations().get(relationID);
+        if(relation!=null){
+          relation.removeChildSubscriberID(updateOtherSubscriber.getParentRemoved().getFirstElement()+"");
+          if(relation.getParentSubscriberID()==null && relation.getChildrenSubscriberIDs().isEmpty()) subscriberProfile.getRelations().remove(relationID);
+        }
+      }
+    }
+
+    return subscriberUpdated;
+
   }
   
   /*****************************************
@@ -3253,11 +3355,23 @@ public class EvolutionEngine
     return result;
   }
 
-  /*****************************************
-  *
-  *  updateSubscriberProfile
-  *
-  *****************************************/
+  private static boolean detectAlternateIDUpdate(EvolutionEventContext context, SubscriberStreamEvent evolutionEvent){
+    boolean updated = false;
+    if(!(evolutionEvent instanceof ExternalEvent)) return false;
+    ExternalEvent externalEvent = (ExternalEvent) evolutionEvent;
+    if(externalEvent.getAlternateIDsCreated().isEmpty()) return false;
+    Map<String,String> existing = SubscriberStreamOutput.buildAlternateIDs(context.getSubscriberState().getSubscriberProfile(),context.getSubscriberGroupEpochReader());
+    for(Map.Entry<AlternateID,String> entry:externalEvent.getAlternateIDsCreated().entrySet()){
+      String valueStored = existing.get(entry.getKey().getID());
+      if(valueStored==null || valueStored.equals(entry.getValue())) continue;//here we just want to delete old mapping in redis if changed
+      updated = true;
+      // need to output for redis sink to delete the previous entry
+      SubscriberUpdated subscriberUpdated = new SubscriberUpdated(context.getSubscriberState().getSubscriberID(),context.getSubscriberState().getSubscriberProfile().getTenantID());
+      subscriberUpdated.addAlternateIDToRemove(entry.getKey(),valueStored);
+      context.getSubscriberState().getUpdateSubscriberResponses().add(subscriberUpdated);
+    }
+    return updated;
+  }
 
   private static boolean updateSubscriberProfile(EvolutionEventContext context, SubscriberStreamEvent evolutionEvent)
   {
@@ -4243,8 +4357,8 @@ public class EvolutionEngine
     }
     catch(Exception ex)
     {
-      ex.printStackTrace();
-      log.error("Error processing ucg for subscriber "+subscriberProfile.getSubscriberID(),ex);
+      ex.setStackTrace(Arrays.copyOf(ex.getStackTrace(),Math.min(ex.getStackTrace().length,3)));
+      log.error("ERROR PROCESSING UCG FOR SUBSCRIBER "+subscriberProfile.getSubscriberID(),ex);
     }
 
 
@@ -8069,6 +8183,8 @@ public class EvolutionEngine
         result.addAll(subscriberState.getDeleteActions());
         result.addAll(subscriberState.getBadgeChangeResponses());
         result.addAll(subscriberState.getBadgeChangeRequests());
+        result.addAll(subscriberState.getUpdateOtherSubscriberRequests());
+        result.addAll(subscriberState.getUpdateSubscriberResponses());
       }
 
     // add stats about voucherChange done

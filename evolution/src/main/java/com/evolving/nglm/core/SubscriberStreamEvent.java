@@ -3,6 +3,7 @@ package com.evolving.nglm.core;
 import org.apache.kafka.connect.data.Schema;
 
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.UUID;
 
 public interface SubscriberStreamEvent extends SubscriberStreamPriority, SubscriberStreamTimeStamped
@@ -22,6 +23,7 @@ public interface SubscriberStreamEvent extends SubscriberStreamPriority, Subscri
     public String getExternalRepresentation() { return externalRepresentation; }
     public static SubscriberAction fromExternalRepresentation(String externalRepresentation) { for (SubscriberAction enumeratedValue : SubscriberAction.values()) { if (enumeratedValue.getExternalRepresentation().equalsIgnoreCase(externalRepresentation)) return enumeratedValue; } return null; }
   }
+  EnumSet<SubscriberAction> Delete_actions = EnumSet.of(SubscriberAction.Delete,SubscriberAction.DeleteImmediate,SubscriberAction.Cleanup,SubscriberAction.CleanupImmediate);
 
   String getSubscriberID();
   Schema subscriberStreamEventSchema();
