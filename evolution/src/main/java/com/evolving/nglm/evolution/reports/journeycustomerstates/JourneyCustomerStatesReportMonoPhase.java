@@ -170,9 +170,15 @@ public class JourneyCustomerStatesReportMonoPhase implements ReportCsvFactory
                 String[] split = lastStatus.split(";");
                 if (split[0] != null && !split[0].equals("null"))
                   {
-                    String statusName = split[0];
-                    if (SubscriberJourneyStatus.fromExternalRepresentation(statusName).equals(SubscriberJourneyStatus.NotEligible)) {
+                    SubscriberJourneyStatus status = SubscriberJourneyStatus.fromExternalRepresentation(split[0]);
+                    if (SubscriberJourneyStatus.NotEligible.equals(status)) {
                       journeyInfo.put("customerStatus", SubscriberJourneyStatus.NotEligible);
+                    } else if (SubscriberJourneyStatus.Excluded.equals(status)) {
+                      journeyInfo.put("customerStatus", SubscriberJourneyStatus.Excluded);
+                    } else if (SubscriberJourneyStatus.ObjectiveLimitReached.equals(status)) {
+                      journeyInfo.put("customerStatus", SubscriberJourneyStatus.ObjectiveLimitReached);
+                    } else if (SubscriberJourneyStatus.UniversalControlGroup.equals(status)) {
+                      journeyInfo.put("customerStatus", SubscriberJourneyStatus.UniversalControlGroup);
                     }
                   }
               }
