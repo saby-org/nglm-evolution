@@ -217,10 +217,11 @@ public abstract class FileSourceTask extends SourceTask {
 			// move out the one existing resolved from redis
 			try{
 				for(ExternalEvent externalEvent:MapperUtils.resolve(externalEvents, SingletonServices.getSubscriberIDService(),stopRequestedReference)){
-					results.add(externalEvent.toSourceRecord());
+					List<SourceRecord> toSend = externalEvent.toSourceRecords();
+					results.addAll(toSend);
 					eventStats.withLabel(StatsBuilders.LABEL.name.name(), externalEvent.getEventName())
 							.withLabel(StatsBuilders.LABEL.status.name(), StatsBuilders.STATUS.ok.name())
-							.getStats().increment();
+							.getStats().add(toSend.size());
 				}
 			}catch (SubscriberIDServiceException e){
 				//TODO to check what to do, we should make sure we never have this

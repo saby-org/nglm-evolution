@@ -3,6 +3,7 @@ package com.evolving.nglm.evolution.event;
 import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.Pair;
 import com.evolving.nglm.core.SubscriberIDService;
+import com.evolving.nglm.evolution.redis.UpdateAlternateIDSubscriberIDs;
 import com.evolving.nglm.evolution.uniquekey.ZookeeperUniqueKeyServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,59 +38,124 @@ public class MapperUtils {
 		Iterator<ExternalEvent> iterator = toResolveEvents.iterator();
 		while(iterator.hasNext()){
 			ExternalEvent externalEvent = iterator.next();
-			if(externalEvent.getSubscriberIDLong()!=null){
+			if(externalEvent.getSubscriberIDLong()!=null && externalEvent.getParentToResolved()==null){
 				// check if nothing to do
-				if(log.isTraceEnabled()) log.trace("resolve subscriberID "+externalEvent.getSubscriberIDLong()+" known, doing nothing");
+				if(log.isTraceEnabled()) log.trace(externalEvent.getEventName()+" resolve subscriberID "+externalEvent.getSubscriberIDLong()+" known, doing nothing");
 				resolvedEvents.add(externalEvent);
 				iterator.remove();
 			}else{
 				// prepare for resolution query
-				AlternateID alternateID = externalEvent.getAlternateID().getFirstElement();
-				alternateIDValues.computeIfAbsent(alternateID, k ->new HashSet<>()).add(externalEvent.getAlternateID().getSecondElement());
+				// possible subscriber itself
+				if(externalEvent.getSubscriberIDLong()==null){
+					alternateIDValues.computeIfAbsent(externalEvent.getAlternateID().getFirstElement(), k ->new HashSet<>()).add(externalEvent.getAlternateID().getSecondElement());
+				}
+				// possible parents relationship
+				if(!externalEvent.getParentToResolved().isEmpty()){
+					for(Pair<AlternateID,String> parent:externalEvent.getParentToResolved()) alternateIDValues.computeIfAbsent(parent.getFirstElement(), k ->new HashSet<>()).add(parent.getSecondElement());
+				}
+				// possible swap existing alternateID to new value
+				if(externalEvent.getOldAlternateIDValueToSwapWith()!=null){
+					alternateIDValues.computeIfAbsent(externalEvent.getAlternateID().getFirstElement(), k ->new HashSet<>()).add(externalEvent.getOldAlternateIDValueToSwapWith());
+				}
 			}
 		}
 
-		if(log.isTraceEnabled()) log.trace("resolve needed for "+toResolveEvents.size()+" events");
+		if(log.isTraceEnabled()){
+			int nbResolution = 0;
+			for(Set<String> resolutionBatch:alternateIDValues.values()) nbResolution+=resolutionBatch.size();
+			log.trace("resolve needed for "+toResolveEvents.size()+" events, into "+alternateIDValues.keySet().size()+" batch and total of "+nbResolution);
+		}
 
 		// resolve each batch
 		for(Map.Entry<AlternateID,Set<String>> alternateIDEntry:alternateIDValues.entrySet()){
 			if(log.isTraceEnabled()) log.trace("resolve checking resolution for "+alternateIDEntry.getKey().getName()+" with "+alternateIDEntry.getValue().size()+" elements");
-			Map<String, Pair<Long,Integer>> alternateIDs = subscriberIDService.getSubscriberIDsBlocking(alternateIDEntry.getKey().getName(),alternateIDEntry.getValue(),stopRequested);
+			Map<String, Pair<Integer,List<Long>>> alternateIDs = subscriberIDService.getSubscriberIDsBlocking(alternateIDEntry.getKey().getName(),alternateIDEntry.getValue(),stopRequested);
 			iterator = toResolveEvents.iterator();
 			while(iterator.hasNext()){
 				ExternalEvent externalEvent = iterator.next();
-				if(externalEvent.getAlternateID().getFirstElement()!=alternateIDEntry.getKey()) continue;// not the same alternateID batch resolution
-				Pair<Long,Integer> resolvedSubscriberID = alternateIDs.get(externalEvent.getAlternateID().getSecondElement());
-				// not existing
-				if(resolvedSubscriberID==null){
-					if(externalEvent.getTenantID()==null){
+
+				// into subscriber resolution batch
+				if(externalEvent.getAlternateID().getFirstElement()==alternateIDEntry.getKey()){
+					Pair<Integer,List<Long>> resolvedSubscriberID = alternateIDs.get(externalEvent.getAlternateID().getSecondElement());
+					Pair<Integer,List<Long>> resolvedSubscriberIDForSwapping = null;
+					if(externalEvent.getOldAlternateIDValueToSwapWith()!=null) resolvedSubscriberIDForSwapping = alternateIDs.get(externalEvent.getOldAlternateIDValueToSwapWith());
+					// not existing
+					if(resolvedSubscriberID==null && resolvedSubscriberIDForSwapping==null){
 						//not for creation doing nothing
-						if(log.isTraceEnabled()) log.trace("resolve "+externalEvent.getSubscriberForLogging()+" does not exist, not marked for creation, doing nothing");
-						iterator.remove();
-						continue;
+						if(externalEvent.getTenantID()==null){
+							if(log.isTraceEnabled()) log.trace(externalEvent.getEventName()+" resolve "+externalEvent.getSubscriberForLogging()+" does not exist, not marked for creation, doing nothing");
+							iterator.remove();
+							continue;
+						}
+					// normal case subscriber id resolution
+					}else if(resolvedSubscriberIDForSwapping==null){
+						if(log.isTraceEnabled()) log.trace(externalEvent.getEventName()+" resolve "+externalEvent.getSubscriberForLogging()+" to "+resolvedSubscriberID.getFirstElement()+":"+resolvedSubscriberID.getSecondElement());
+						externalEvent.resolve(resolvedSubscriberID);
+						// logging case of swap asked but current already exist, and old not
+						if(externalEvent.getOldAlternateIDValueToSwapWith()!=null) log.info(externalEvent.getEventName()+" swap asked "+externalEvent.getSubscriberForLogging()+" new entry "+externalEvent.getAlternateID().getSecondElement()+" already there, and old entry "+externalEvent.getOldAlternateIDValueToSwapWith()+" not, not changing any mapping");
+					// alternateID swap with an already existing one cases
+					}else if(resolvedSubscriberIDForSwapping!=null){
+						if(resolvedSubscriberIDForSwapping.getSecondElement().size()>1 || resolvedSubscriberID.getSecondElement().size()>1) throw new RuntimeException(externalEvent.getSubscriberForLogging()+" trying to swap with shared alternateID "+resolvedSubscriberIDForSwapping.getSecondElement());
+						// the new one already exist
+						if(resolvedSubscriberID!=null){
+							// they are just already matching, we delete the old entry
+							if(resolvedSubscriberID.equals(resolvedSubscriberIDForSwapping)){
+								if(log.isTraceEnabled()) log.trace(externalEvent.getEventName()+" swap asked "+externalEvent.getSubscriberForLogging()+" new entry already there, just deleting old entry "+externalEvent.getAlternateID().getSecondElement());
+								// instant delete request
+								subscriberIDService.deleteRedisStraightAlternateID(alternateIDEntry.getKey().getID(),externalEvent.getOldAlternateIDValueToSwapWith());
+							}
+							// they mismatch, it is an issue, we warn it, but doing nothing, this need troubleshoot
+							else{
+								log.warn(externalEvent.getEventName()+" resolve "+externalEvent.getSubscriberForLogging()+" swaping to "+externalEvent.getOldAlternateIDValueToSwapWith()+" "+resolvedSubscriberIDForSwapping+" asked but current already exist mismatching "+externalEvent.getAlternateID().getSecondElement()+" "+resolvedSubscriberID+", not changing any mapping");
+							}
+							// in both cases resolved the same
+							externalEvent.resolve(resolvedSubscriberID);
+						}
+						// the normal case, new one does not exist, old one yes
+						else{
+							// instant delete old
+							subscriberIDService.deleteRedisStraightAlternateID(alternateIDEntry.getKey().getID(),externalEvent.getOldAlternateIDValueToSwapWith());
+							// prepare for creation of new
+							externalEvent.setMappingCreationSwapWith(resolvedSubscriberIDForSwapping);
+						}
 					}
-				}else{
-					// subscriberID resolved
-					if(log.isTraceEnabled()) log.trace("resolve "+externalEvent.getSubscriberForLogging()+" to "+resolvedSubscriberID.getFirstElement()+":"+resolvedSubscriberID.getSecondElement());
-					externalEvent.resolve(resolvedSubscriberID);
+
+				}
+
+				// any parent resolution
+				for(Pair<AlternateID,String> parentToResolve:externalEvent.getParentToResolved()){
+					// into parent resolution batch
+					if(parentToResolve.getFirstElement()==alternateIDEntry.getKey()){
+						Pair<Integer,List<Long>> resolvedSubscriberID = alternateIDs.get(parentToResolve.getSecondElement());
+						// not existing, we don't create parent
+						if(resolvedSubscriberID==null) log.info(externalEvent.getEventName()+" resolved for non existing parent "+parentToResolve.getSecondElement()+" "+parentToResolve.getFirstElement().getDisplay()+" for "+externalEvent.getSubscriberForLogging()+", this is ignored");
+						if(resolvedSubscriberID!=null && resolvedSubscriberID.getSecondElement().size()>1) throw new RuntimeException(externalEvent.getSubscriberForLogging()+" trying to change parent with shared alternateID "+resolvedSubscriberID.getSecondElement());
+						externalEvent.parentResolved(parentToResolve.getFirstElement(),parentToResolve.getSecondElement(),resolvedSubscriberID!=null?resolvedSubscriberID.getSecondElement().get(0):null);
+					}
+				}
+
+				// if no more job to do
+				if(externalEvent.getSubscriberIDLong()!=null && externalEvent.getParentToResolved().isEmpty()){
 					resolvedEvents.add(externalEvent);
 					iterator.remove();
+					continue;
 				}
 			}
 		}
 
 		if(log.isTraceEnabled()) log.trace("resolve creation needed for "+toResolveEvents.size()+" events");
 
-		// prepare redis creation per batch of different alternateID returned
-		HashMap<AlternateID, HashMap<String/*alternateIDValue*/,Pair<Integer/*tenantID*/,Set<Long/*subscriberIDValue*/>>>> alternateIDsToCreate = new HashMap<>();
+		// prepare main alternateID redis creation per batch of different alternateID returned
+		HashMap<AlternateID, Map<String/*alternateIDValue*/,Pair<Integer/*tenantID*/,Set<Long/*subscriberIDValue*/>>>> alternateIDsToCreate = new HashMap<>();
 		for(ExternalEvent externalEvent:toResolveEvents){
+			if(externalEvent.getSubscriberIDLong()!=null) continue;// this one is resolved, not for main alternateID creation
 			// prepare for resolution query
 			AlternateID alternateID = externalEvent.getAlternateID().getFirstElement();
 			if(externalEvent.getSubscriberIDToAssign()==null) externalEvent.setSubscriberIDToAssign(generateNewSubscriberID());
 			alternateIDsToCreate.computeIfAbsent(alternateID, k ->new HashMap<>()).put(externalEvent.getAlternateID().getSecondElement(),new Pair<>(externalEvent.getTenantID(), Collections.singleton(externalEvent.getSubscriberIDToAssign())));
 		}
 		// create redis mapping if not exist
-		for(Map.Entry<AlternateID, HashMap<String/*alternateIDValue*/,Pair<Integer/*tenantID*/,Set<Long>/*subscriberIDs*/>>> perAlternateID:alternateIDsToCreate.entrySet()){
+		for(Map.Entry<AlternateID, Map<String/*alternateIDValue*/,Pair<Integer/*tenantID*/,Set<Long>/*subscriberIDs*/>>> perAlternateID:alternateIDsToCreate.entrySet()){
 			if(subscriberIDService.putAlternateIDs(perAlternateID.getKey(), perAlternateID.getValue(), true, stopRequested)){
 				// created with our values
 				iterator = toResolveEvents.iterator();
@@ -111,20 +177,44 @@ public class MapperUtils {
 		}
 		if(toResolveEvents.size()>0) resolvedEvents.addAll(resolve(recursiveOccurrence+1,toResolveEvents,subscriberIDService,stopRequested));
 
+		//TODO: we should extra check tenantID consistency among subscriber/parents
+
+		// prepare for secondary alternateID update if needed, once resolved over
+		Map<AlternateID,Map<UpdateAlternateIDSubscriberIDs,ExternalEvent>> sharedAlternateIDsToCreate = new HashMap<>();
+		for(ExternalEvent externalEvent:resolvedEvents){
+			if(externalEvent.getOtherAlternateIDsToAdd().isEmpty() && externalEvent.getOtherAlternateIDsToRemove().isEmpty()) continue;//no secondary alternateID to update
+			for(Map.Entry<AlternateID,String> entry:externalEvent.getOtherAlternateIDsToAdd().entrySet()){
+				sharedAlternateIDsToCreate.computeIfAbsent(entry.getKey(), k ->new HashMap<>()).put(new UpdateAlternateIDSubscriberIDs(entry.getKey(),entry.getValue(),externalEvent.getTenantID()).setSubscriberIDToAdd(externalEvent.getSubscriberIDLong()),externalEvent);
+			}
+			for(Map.Entry<AlternateID,String> entry:externalEvent.getOtherAlternateIDsToRemove().entrySet()){
+				sharedAlternateIDsToCreate.computeIfAbsent(entry.getKey(), k ->new HashMap<>()).put(new UpdateAlternateIDSubscriberIDs(entry.getKey(),entry.getValue(),externalEvent.getTenantID()).setSubscriberIDToRemove(externalEvent.getSubscriberIDLong()),externalEvent);
+			}
+		}
+		// execute it and enrich event if executed
+		for(Map.Entry<AlternateID,Map<UpdateAlternateIDSubscriberIDs,ExternalEvent>> entry:sharedAlternateIDsToCreate.entrySet()){
+			for(UpdateAlternateIDSubscriberIDs updated:subscriberIDService.updateAlternateIDsAddOrRemoveSubscriberID(entry.getKey(),new ArrayList<>(entry.getValue().keySet()),stopRequested)){
+				entry.getValue().get(updated).updatedOnRedisSecondary(entry.getKey());
+			}
+		}
+
 		if(log.isTraceEnabled()) log.trace("resolve complete with "+toResolveEvents.size()+" returned events");
 		if(!toResolveEvents.isEmpty()) log.error("resolve skipped "+toResolveEvents.size()+" events, this is a bug. "+toResolveEvents);
 		return resolvedEvents;
 	}
 
-	//TODO: need to do it right, this is a very quick way
-	// this delete the alternateID/susbcriberID entry
-	public static void delete(List<SubscriberIDAlternateID> toDelete, SubscriberIDService subscriberIDService, AtomicBoolean stopRequested) throws SubscriberIDService.SubscriberIDServiceException, InterruptedException {
-		if(log.isTraceEnabled()) log.trace("resolve delete for "+toDelete.size()+" entries");
-		for(SubscriberIDAlternateID subscriberIDAlternateID:toDelete){
-			if(subscriberIDAlternateID.getAlternateIDValue()!=null){
-				if(log.isTraceEnabled()) log.trace("deleting "+subscriberIDAlternateID.getAlternateIDConf().getID()+" "+subscriberIDAlternateID.getAlternateIDValue());
-				subscriberIDService.deleteRedisStraightAlternateID(subscriberIDAlternateID.getAlternateIDConf().getID(),subscriberIDAlternateID.getAlternateIDValue());
+	public static void deleteAlternateIDs(List<UpdateAlternateIDSubscriberIDs> deletes, SubscriberIDService subscriberIDService, AtomicBoolean stopRequested) {
+		if(log.isTraceEnabled()) log.trace("deleteAlternateIDs for "+deletes.size()+" entries");
+		// prepare per alternateID
+		Map<AlternateID,List<UpdateAlternateIDSubscriberIDs>> perAlternateIDRequests = new HashMap<>();
+		for(UpdateAlternateIDSubscriberIDs delete:deletes){
+			if(delete.getAlternateIDValue()!=null && delete.getSubscriberIDToRemove()!=null){
+				if(log.isTraceEnabled()) log.trace("will delete "+ delete.getAlternateIDConf().getID()+" "+ delete.getAlternateIDValue()+" "+delete.getSubscriberIDToRemove());
+				perAlternateIDRequests.computeIfAbsent(delete.getAlternateIDConf(),k->new ArrayList<>()).add(delete);
 			}
+		}
+		// execute
+		for(Map.Entry<AlternateID,List<UpdateAlternateIDSubscriberIDs>> entry:perAlternateIDRequests.entrySet()){
+			subscriberIDService.updateAlternateIDsAddOrRemoveSubscriberID(entry.getKey(),entry.getValue(),stopRequested);
 		}
 	}
 

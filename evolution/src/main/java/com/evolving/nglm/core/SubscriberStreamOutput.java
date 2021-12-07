@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -113,7 +114,7 @@ public abstract class SubscriberStreamOutput implements SubscriberStreamPriority
 	}
 
 	// build alternateIDs populated
-	private Map<String,String> buildAlternateIDs(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader) {
+	public static Map<String,String> buildAlternateIDs(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader) {
 		Map<String,String> alternateIDs = new LinkedHashMap<>();
 		SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, SystemTime.getCurrentTime(), subscriberProfile.getTenantID());
 
@@ -129,6 +130,21 @@ public abstract class SubscriberStreamOutput implements SubscriberStreamPriority
 			alternateIDs.put(entry.getKey(), criterionFieldValue);
 		}
 		return alternateIDs;
+	}
+
+	public static Map<String,String> packAlternateIDs(Map<AlternateID,String> alternateIDs){
+		Map<String,String> toRet = new HashMap<>();
+		for(Map.Entry<AlternateID,String> entry:alternateIDs.entrySet()) toRet.put(entry.getKey().getID(),entry.getValue());
+		return toRet;
+	}
+	public static Map<AlternateID,String> unpackAlternateIDs(Map<String,String> packedAlternateIDs){
+		Map<AlternateID,String> toRet = new HashMap<>();
+		for(Map.Entry<String,String> entry:packedAlternateIDs.entrySet()){
+			AlternateID alternateID = DeploymentCommon.getAlternateIDOrNull(entry.getKey());
+			if(alternateID==null) continue;
+			toRet.put(alternateID,entry.getValue());
+		}
+		return toRet;
 	}
 
 }

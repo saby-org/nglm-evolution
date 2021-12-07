@@ -228,7 +228,7 @@
   "cleanupSubscriberTopic"                               : "${topic.cleanupsubscriber}",
   "subscriberProfileForceUpdateTopic"                    : "${topic.subscriberprofileforceupdate}",
   "executeActionOtherSubscriberTopic"                    : "${topic.executeactionothersubscriber}",
-  "voucherActionTopic"                               	 : "${topic.voucheraction}",
+  "voucherActionTopic"                               	   : "${topic.voucheraction}",
   "tokenRedeemedTopic"                                   : "${topic.tokenredeemed}",
   "subscriberStateChangeLog"                             : "${changelog.evolutionengine.subscriberstate}",
   "subscriberStateChangeLogTopic"                        : "${changelog.evolutionengine.subscriberstate.topic}",
@@ -268,7 +268,7 @@
   "sourceAddressTopic"                                   : "${topic.sourceaddress}",
   "voucherChangeRequestTopic"                            : "${topic.voucherchange.request}",
   "voucherChangeResponseTopic"                           : "${topic.voucherchange.response}",
-  "edrDetailsTopic"                           			 : "${topic.edrdetails}",
+  "edrDetailsTopic"                           			     : "${topic.edrdetails}",
   "fileWithVariableEventTopic"                           : "${topic.filewithvariableevent}",
   "workflowEventTopic"                                   : "${topic.workflowEvent}",
   "subscriberProfileForceUpdateResponseTopic"            : "${topic.subscriberProfileForceUpdateResponse}",
@@ -276,6 +276,9 @@
   "customCriteriaTopic"                                  : "${topic.customcriteria}",
   "badgeChangeRequestTopic"                            	 : "${topic.badgechange.request}",
   "badgeChangeResponseTopic"                           	 : "${topic.badgechange.response}",
+  "productExternalEventRequestTopic"                     : "${topic.productexternalevent.request}",
+  "productExternalEventResponseTopic"                    : "${topic.productexternalevent.response}",
+  "loopbackTopic"                                        : "${topic.loopback}",
 
   "supportedDataTypes" :
     [

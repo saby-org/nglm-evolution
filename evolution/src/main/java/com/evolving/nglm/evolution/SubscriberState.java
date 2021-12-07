@@ -9,6 +9,8 @@ package com.evolving.nglm.evolution;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
+import com.evolving.nglm.evolution.event.SubscriberUpdated;
+import com.evolving.nglm.evolution.event.UpdateOtherSubscriber;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
@@ -149,6 +151,8 @@ public class SubscriberState implements StateStore
   private List<SubscriberProfileForceUpdateResponse> subscriberProfileForceUpdatesResponse;
   private List<BadgeChange> badgeChangeRequests;
   private List<BadgeChange> badgeChangeResponses;
+  private List<UpdateOtherSubscriber> updateOtherSubscriberRequests;//to loop back some change for other subscriber
+  private List<SubscriberUpdated> updateSubscriberResponses;
   
   //
   //  in memory only
@@ -212,6 +216,8 @@ public class SubscriberState implements StateStore
   public List<SubscriberProfileForceUpdateResponse> getSubscriberProfileForceUpdatesResponse() { return subscriberProfileForceUpdatesResponse; }
   public List<BadgeChange> getBadgeChangeRequests() { return badgeChangeRequests; }
   public List<BadgeChange> getBadgeChangeResponses() { return badgeChangeResponses; }
+  public List<UpdateOtherSubscriber> getUpdateOtherSubscriberRequests() { return updateOtherSubscriberRequests; }
+  public List<SubscriberUpdated> getUpdateSubscriberResponses() { return updateSubscriberResponses; }
 
   public Map<Pair<String, String>, Integer> getSegments() {return (subscriberProfile==null) ? new LinkedHashMap<>() : subscriberProfile.getSegments(); }
   //
@@ -328,6 +334,8 @@ public class SubscriberState implements StateStore
         this.subscriberProfileForceUpdatesResponse = new ArrayList<>();
         this.badgeChangeResponses = new ArrayList<BadgeChange>();
         this.badgeChangeRequests = new ArrayList<BadgeChange>();
+        this.updateOtherSubscriberRequests = new ArrayList<>();
+        this.updateSubscriberResponses = new ArrayList<>();
       }
     catch (InvocationTargetException e)
       {
@@ -394,6 +402,8 @@ public class SubscriberState implements StateStore
     this.subscriberProfileForceUpdatesResponse = new ArrayList<>();
     this.badgeChangeResponses = new ArrayList<>();
     this.badgeChangeRequests = new ArrayList<>();
+    this.updateOtherSubscriberRequests = new ArrayList<>();
+    this.updateSubscriberResponses = new ArrayList<>();
   }
 
   /*****************************************

@@ -437,4 +437,21 @@ prepare-curl -XPOST $CONNECT_URL_EDR_ES/connectors -H "Content-Type: application
        }
    }'
 
+#
+#  sink connector -- updated subscriber (redis sink now)
+#
+
+export CONNECT_URL_UPDATED_SUBSCRIBER=${CONNECT_URL_UPDATED_SUBSCRIBER:-$DEFAULT_CONNECT_URL}
+export CONNECT_UPDATED_SUBSCRIBER_SINK_TASKS=${CONNECT_UPDATED_SUBSCRIBER_SINK_TASKS:-$CONNECT_ES_DEFAULT_SINK_TASKS}
+prepare-curl -XPOST $CONNECT_URL_UPDATED_SUBSCRIBER/connectors -H "Content-Type: application/json" -d '
+   {
+     "name": "updatedsubscriber_sink_connector",
+     "config" :
+       {
+       "connector.class": "com.evolving.nglm.evolution.connectors.UpdateSubscriberSinkConnector",
+       "tasks.max": "1",
+       "topics": "${topic.productexternalevent.response}"
+       }
+   }'
+
 wait
