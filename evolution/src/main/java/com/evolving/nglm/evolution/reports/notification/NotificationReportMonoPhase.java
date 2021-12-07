@@ -619,6 +619,28 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
     }
   }
   
+  /*************************************
+   * 
+   * Add headers for empty file   * 
+   * 
+   *****************************************/
+@Override public void dumpHeaderToCsv(ZipOutputStream writer, boolean addHeaders)
+  {
+    try
+      {
+        if (addHeaders)
+          {
+            addHeaders(writer, headerFieldsOrder, 1);
+          }
+      } 
+    catch (IOException e)
+      {
+        e.printStackTrace();
+      }
+  }
+
+
+  
   @Deprecated // TO BE FACTORIZED
   private static List<String> getEsIndexDates(final Date fromDate, Date toDate)
   {

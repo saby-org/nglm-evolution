@@ -95,19 +95,36 @@ public class ProductReportDriver extends ReportDriver
     ZipOutputStream writer = null;
     try
       {
+        fos = new FileOutputStream(file);
+        writer = new ZipOutputStream(fos);
+        ZipEntry entry = new ZipEntry(new File(csvFilename).getName()); // do not include tree structure in
+                                                                        // zipentry, just csv filename
+        writer.putNextEntry(entry);
         log.info("productService.getStoredProducts().size(): " + productService.getStoredProducts(tenantID).size());
         if (productService.getStoredProducts(tenantID).size() == 0)
           {
+
+            if (headerFieldsOrder != null && !headerFieldsOrder.isEmpty())
+              {
+                String csvSeparator = ReportUtils.getSeparator();
+                int offset = 1;
+                String headers = "";
+                for (String field : headerFieldsOrder)
+                  {
+                    headers += field + csvSeparator;
+                  }
+                headers = headers.substring(0, headers.length() - offset);
+                writer.write(headers.getBytes());
+                if (offset == 1)
+                  {
+                    writer.write("\n".getBytes());
+                  }
+              }
+
             log.info("No products ");
-          } else
+          }
+        else
           {
-
-            fos = new FileOutputStream(file);
-            writer = new ZipOutputStream(fos);
-            ZipEntry entry = new ZipEntry(new File(csvFilename).getName()); // do not include tree structure in
-                                                                            // zipentry, just csv filename
-            writer.putNextEntry(entry);
-
             List<JSONObject> productJsonList = new ArrayList<JSONObject>();
 
             for (GUIManagedObject guiManagedObject : productService.getStoredProducts(tenantID))

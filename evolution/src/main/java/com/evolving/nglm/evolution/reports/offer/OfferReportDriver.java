@@ -139,20 +139,38 @@ public class OfferReportDriver extends ReportDriver
     File file = new File(csvFilename + ".zip");
     FileOutputStream fos = null;
     ZipOutputStream writer = null;
+    
     try
       {
+
+        fos = new FileOutputStream(file);
+        writer = new ZipOutputStream(fos);
+        // do not include tree structure in zipentry, just csv filename
+        ZipEntry entry = new ZipEntry(new File(csvFilename).getName());
+        writer.putNextEntry(entry);
         log.info("no. of Offers :" + offerService.getStoredOffers(tenantID).size());
         if (offerService.getStoredOffers(tenantID).size() == 0)
           {
+            if (headerFieldsOrder != null && !headerFieldsOrder.isEmpty())
+              {
+                String csvSeparator = ReportUtils.getSeparator();
+                int offset = 1;
+                String headers = "";
+                for (String field : headerFieldsOrder)
+                  {
+                    headers += field + csvSeparator;
+                  }
+                headers = headers.substring(0, headers.length() - offset);
+                writer.write(headers.getBytes());
+                if (offset == 1)
+                  {
+                    writer.write("\n".getBytes());
+                  }
+              }
             log.info("No Offers ");
           }
         else
           {
-            fos = new FileOutputStream(file);
-            writer = new ZipOutputStream(fos);
-            // do not include tree structure in zipentry, just csv filename
-            ZipEntry entry = new ZipEntry(new File(csvFilename).getName());
-            writer.putNextEntry(entry);
             Collection<GUIManagedObject> offers = offerService.getStoredOffers(tenantID);
             int nbOffers = offers.size();
             log.debug("offer list size : " + nbOffers);

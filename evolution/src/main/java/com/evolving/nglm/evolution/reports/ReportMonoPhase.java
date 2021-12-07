@@ -195,6 +195,8 @@ public class ReportMonoPhase
 
           if (indicesToRead == null || indicesToRead.length == 0)
             {
+              reportFactory.dumpHeaderToCsv(writer, addHeader);
+              addHeader = false;
               i++;
               continue;
             }
@@ -339,6 +341,7 @@ public class ReportMonoPhase
 
   public final boolean startOneToOne(boolean multipleFile)
   {
+    boolean isEmptyFile = false;
     if (!multipleFile)
       {
 		return startOneToOne();
@@ -392,6 +395,7 @@ public class ReportMonoPhase
 
                 if (indicesToRead == null || indicesToRead.length == 0)
                   {
+                    isEmptyFile = true;
                     i++;
                     continue;
                   }
@@ -573,6 +577,15 @@ public class ReportMonoPhase
 
             FileOutputStream fos = new FileOutputStream(file);
             ZipOutputStream writer = new ZipOutputStream(fos);
+            
+            if (isEmptyFile) {
+              ZipEntry entry = new ZipEntry(new File(csvfile).getName());
+              writer.putNextEntry(entry);
+              writer.setLevel(Deflater.BEST_SPEED);
+              boolean addHeader = true;
+              reportFactory.dumpHeaderToCsv(writer, addHeader);
+              addHeader = false;
+            }
 
             for(String tmpFile:tmpZipFiles.keySet()){
 
@@ -610,6 +623,7 @@ public class ReportMonoPhase
 
   public final boolean startOneToOneMultiThread(JourneyService journeyService, List<Journey> activeJourneys )
   {
+    
     if (csvfile == null) {
         log.info("csvfile is null !");
         return false;
@@ -630,7 +644,20 @@ public class ReportMonoPhase
     try {
       elasticsearchReaderClient = getESAPI(esNode);    // used by getIndices()
       String[] indicesToRead = getIndices(indexList);
-      if (indicesToRead == null || indicesToRead.length == 0) return true;
+      if (indicesToRead == null || indicesToRead.length == 0) 
+        {
+          FileOutputStream fos = new FileOutputStream(file);
+          ZipOutputStream writer = new ZipOutputStream(fos);
+          ZipEntry entry = new ZipEntry(new File(csvfile).getName());
+          writer.putNextEntry(entry);
+          writer.setLevel(Deflater.BEST_SPEED);
+          boolean addHeader = true;
+          reportFactory.dumpHeaderToCsv(writer, addHeader);
+          writer.flush();
+          writer.closeEntry();
+          writer.close();
+          return true;
+        }
       List<String> indicesNotWokflows = new ArrayList<>();
       for (String singleIndex : indicesToRead) { // list is in lowercase, need to find back real journeyIDs
         String exactJourneyID = null;

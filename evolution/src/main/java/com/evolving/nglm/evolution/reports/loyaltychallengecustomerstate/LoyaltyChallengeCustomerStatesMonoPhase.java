@@ -287,6 +287,41 @@ public class LoyaltyChallengeCustomerStatesMonoPhase implements ReportCsvFactory
       }
   }
   
+  /*************************************
+   * 
+   * Add headers for empty file   * 
+   * 
+   *****************************************/
+  
+  @Override public void dumpHeaderToCsv(ZipOutputStream writer, boolean addHeaders)
+  {
+    try
+      {
+        if (addHeaders)
+          {
+            if (headerFieldsOrder != null && !headerFieldsOrder.isEmpty())
+              {
+                int offset = 1;
+                String header = "";
+                for (String field : headerFieldsOrder)
+                  {
+                    header += field + CSV_SEPARATOR;
+                  }
+                header = header.substring(0, header.length() - offset);
+                writer.write(header.getBytes());
+                if (offset == 1)
+                  {
+                    writer.write("\n".getBytes());
+                  }
+              }
+          }
+      } 
+    catch (IOException e)
+      {
+        e.printStackTrace();
+      }
+  }
+  
   /****************************************************************
    * 
    * getReportFormattedDate

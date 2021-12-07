@@ -133,6 +133,33 @@ public class JourneysReportDriver extends ReportDriver
 
         boolean addHeaders = true;
         int ignoredExceptions = -3; // we display 3 INFO exception before moving to DEBUG level
+        
+        if (nbJourneys == 0)
+          {
+            try
+              {
+                if (headerFieldsOrder != null && !headerFieldsOrder.isEmpty())
+                  {
+                    String csvSeparator = ReportUtils.getSeparator();
+                    int offset = 1;
+                    String headers = "";
+                    for (String field : headerFieldsOrder)
+                      {
+                        headers += field + csvSeparator;
+                      }
+                    headers = headers.substring(0, headers.length() - offset);
+                    writer.write(headers.getBytes());
+                    if (offset == 1)
+                      {
+                        writer.write("\n".getBytes());
+                      }
+                  }
+              }
+            catch (IOException e)
+              {
+                log.error("Error writing to " + file, e);
+              }
+          }
         for (GUIManagedObject guiManagedObject : journeys)
           {
             try
