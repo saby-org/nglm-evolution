@@ -98,7 +98,13 @@ public abstract class SimpleDatacubeGenerator extends DatacubeGenerator
     //
     // Composite sources are created from datacube filters
     //
+    // @rl: Yes, this filter is not really useful because its result could be hardcoded (this.tenantID).
+    // Reminder: the tenantID is filtered out in the query (see below, at the end of this function)
+    // But, its main purpose is to avoid any "Composite [sources] cannot be null or empty" error.
+    // Therefore, we ensure we always have at least one element: the tenantID filter.
     List<CompositeValuesSourceBuilder<?>> sources = new ArrayList<>();
+    sources.add(new TermsValuesSourceBuilder("tenantID").field("tenantID").missingBucket(true));
+    
     for(String datacubeFilter: datacubeFilterFields) {
       TermsValuesSourceBuilder sourceTerms = new TermsValuesSourceBuilder(datacubeFilter).field(datacubeFilter).missingBucket(true);
       sources.add(sourceTerms);
@@ -176,9 +182,6 @@ public abstract class SimpleDatacubeGenerator extends DatacubeGenerator
           filters.replace(key, UNDEFINED_BUCKET_VALUE);
         }
       }
-      
-      // Special filter: tenantID 
-      filters.put("tenantID", this.tenantID);
       
       //
       // Extract metrics

@@ -54,7 +54,6 @@ public class VDRDatacubeGenerator extends SimpleDatacubeGenerator
   * Properties
   *
   *****************************************/
-  private List<String> filterFields;
   private OffersMap offersMap;
   private ModulesMap modulesMap;
   private LoyaltyProgramsMap loyaltyProgramsMap;
@@ -86,18 +85,6 @@ public class VDRDatacubeGenerator extends SimpleDatacubeGenerator
     this.journeysMap = new JourneysMap(journeyService);
     this.vouchersMap = new VouchersMap(voucherService);
     this.suppliersMap = new SuppliersMap(supplierService);
-    
-    //
-    // Filter fields
-    //
-    this.filterFields = new ArrayList<String>();
-    this.filterFields.add("voucherID");
-    this.filterFields.add("moduleID");
-    this.filterFields.add("featureID");
-    this.filterFields.add("returnCode");
-    this.filterFields.add("origin");
-    this.filterFields.add("action");
-    
    }
   
   public VDRDatacubeGenerator(String datacubeName, int tenantID, DatacubeManager datacubeManager) {
@@ -139,7 +126,31 @@ public class VDRDatacubeGenerator extends SimpleDatacubeGenerator
   * Filters settings
   *
   *****************************************/
-  @Override protected List<String> getFilterFields() { return filterFields; }
+  @Override 
+  protected List<String> getFilterFields() {
+    //
+    // Build filter fields
+    //
+    List<String> filterFields = new ArrayList<String>();
+    filterFields.add("voucherID");
+    filterFields.add("moduleID");
+    filterFields.add("featureID");
+    filterFields.add("returnCode");
+    filterFields.add("origin");
+    filterFields.add("action");
+
+    // getFilterFields is called after runPreGenerationPhase. It safe to assume segmentationDimensionList is up to date.
+    // Regarding dimensions, in VDR ES indices, there is already only the "statistics" ones (see VDRSinkConnector.java)
+    // Nonetheless, to avoid having plenty of "null" dimensions in the datacube (and pollute the index settings) we also 
+    // filter out "non statistics" dimensions here.
+    for(String dimensionID: segmentationDimensionList.keySet()) {
+      if (segmentationDimensionList.isFlaggedStatistics(dimensionID)) {
+        filterFields.add(FILTER_STRATUM_PREFIX + dimensionID);
+      }
+    }
+    
+    return filterFields; 
+  }
   
   @Override
   protected CompositeValuesSourceBuilder<?> getSpecialSourceFilter() {
@@ -167,15 +178,6 @@ public class VDRDatacubeGenerator extends SimpleDatacubeGenerator
     suppliersMap.update();
     segmentationDimensionList.update();
 
-    for(String dimensionID: segmentationDimensionList.keySet())
-      {
-        this.filterFields.add(FILTER_STRATUM_PREFIX + dimensionID);
-      }
-    
-    if(this.filterFields.isEmpty()) {
-      log.warn("Found no dimension defined.");
-      return false;
-    }
     return true;
   }
   
@@ -212,14 +214,15 @@ public class VDRDatacubeGenerator extends SimpleDatacubeGenerator
     //
     // subscriberStratum dimensions
     //
-    for(String dimensionID: segmentationDimensionList.keySet())
-      {
+    for(String dimensionID: segmentationDimensionList.keySet()) {
+      if (segmentationDimensionList.isFlaggedStatistics(dimensionID)) {
         String fieldName = FILTER_STRATUM_PREFIX + dimensionID;
         String segmentID = (String) filters.remove(fieldName);
         
         String newFieldName = FILTER_STRATUM_PREFIX + segmentationDimensionList.getDimensionDisplay(dimensionID, fieldName);
         filters.put(newFieldName, segmentationDimensionList.getSegmentDisplay(dimensionID, segmentID, fieldName));
       }
+    }
   }
 
   /*****************************************

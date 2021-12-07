@@ -57,7 +57,6 @@ public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
   *
   *****************************************/
 
-  private List<String> filterFields;
   private OffersMap offersMap;
   private ModulesMap modulesMap;
   private LoyaltyProgramsMap loyaltyProgramsMap;
@@ -88,20 +87,6 @@ public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
     this.deliverablesMap = new DeliverablesMap();
     this.journeysMap = new JourneysMap(journeyService);
     this.subscriberMessageTemplatesMap = new SubscriberMessageTemplatesMap(subscriberMessageTemplateService);
-    
-    //
-    // Filter fields
-    //
-
-    this.filterFields = new ArrayList<String>();
-    this.filterFields.add("moduleID");
-    this.filterFields.add("featureID");
-    this.filterFields.add("language");
-    this.filterFields.add("templateID");
-    this.filterFields.add("returnCode");
-    this.filterFields.add("channelID");
-    this.filterFields.add("contactType");
-    this.filterFields.add("origin");
   }
   
   public MDRDatacubeGenerator(String datacubeName, int tenantID, DatacubeManager datacubeManager) {
@@ -143,7 +128,33 @@ public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
   * Filters settings
   *
   *****************************************/
-  @Override protected List<String> getFilterFields() { return filterFields; }
+  @Override 
+  protected List<String> getFilterFields() {
+    //
+    // Build filter fields
+    //
+    List<String> filterFields = new ArrayList<String>();
+    filterFields.add("moduleID");
+    filterFields.add("featureID");
+    filterFields.add("language");
+    filterFields.add("templateID");
+    filterFields.add("returnCode");
+    filterFields.add("channelID");
+    filterFields.add("contactType");
+    filterFields.add("origin");
+
+    // getFilterFields is called after runPreGenerationPhase. It safe to assume segmentationDimensionList is up to date.
+    // Regarding dimensions, in MDR ES indices, there is already only the "statistics" ones (see NotificationSinkConnector.java)
+    // Nonetheless, to avoid having plenty of "null" dimensions in the datacube (and pollute the index settings) we also 
+    // filter out "non statistics" dimensions here.
+    for(String dimensionID: segmentationDimensionList.keySet()) {
+      if (segmentationDimensionList.isFlaggedStatistics(dimensionID)) {
+        filterFields.add(FILTER_STRATUM_PREFIX + dimensionID);
+      }
+    }
+    
+    return filterFields; 
+  }
   
   @Override
   protected CompositeValuesSourceBuilder<?> getSpecialSourceFilter() {
@@ -169,16 +180,6 @@ public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
     journeysMap.update();
     subscriberMessageTemplatesMap.update();
     segmentationDimensionList.update();
-
-    for(String dimensionID: segmentationDimensionList.keySet())
-      {
-        this.filterFields.add(FILTER_STRATUM_PREFIX + dimensionID);
-      }
-    
-    if(this.filterFields.isEmpty()) {
-      log.warn("Found no dimension defined.");
-      return false;
-    }
 
     return true;
   }
@@ -216,14 +217,15 @@ public class MDRDatacubeGenerator extends SimpleDatacubeGenerator
     //
     // subscriberStratum dimensions
     //
-    for(String dimensionID: segmentationDimensionList.keySet())
-      {
+    for(String dimensionID: segmentationDimensionList.keySet()) {
+      if (segmentationDimensionList.isFlaggedStatistics(dimensionID)) {
         String fieldName = FILTER_STRATUM_PREFIX + dimensionID;
         String segmentID = (String) filters.remove(fieldName);
         
         String newFieldName = FILTER_STRATUM_PREFIX + segmentationDimensionList.getDimensionDisplay(dimensionID, fieldName);
         filters.put(newFieldName, segmentationDimensionList.getSegmentDisplay(dimensionID, segmentID, fieldName));
       }
+    }
   }
 
   /*****************************************
