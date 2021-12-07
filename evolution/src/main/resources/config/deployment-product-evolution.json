@@ -1220,7 +1220,7 @@
     "backupManagerDateFormat"      : "yyyy-MM-dd_HH-mm-ss",
     "backupManagerFileExtension"   : "bin.gz",
     "backupManagerRequestTimeoutMS": 120000,
-    "backupManagerTopics"          : ["journey", "streams-evolutionengine-subscriberstate-changelog"]
+    "backupManagerTopics"          : ["journey", "streams-evolutionengine-subscriberstate-changelog", "streams-evolutionengine-extendedprofile-changelog"]
   },
 
   "licenseManagement" :
