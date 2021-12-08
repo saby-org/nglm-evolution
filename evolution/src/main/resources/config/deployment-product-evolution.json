@@ -1268,6 +1268,9 @@
       { "id" : "product.validity",        "display" : "Product Validity(days)",   "dataType" : "integer", "minValue" : null, "maxValue" : null, "excludedOperators" : [ ".*null.*" ],                         "includedComparableFields" : null,  "excludedComparableFields" : null,  "availableValues" : null,                  "type": "positions" }
     ],
     
+  "gracePeriodWorkflowsMs.comment" : "grace delay before stopping a workflow after mother campaign has ended, defaults to 12 hours",
+  "gracePeriodWorkflowsMs" : 43200000,
+    
   "journeyMetrics" : {},
     
   "subscriberProfileDatacubeMetrics" : [],

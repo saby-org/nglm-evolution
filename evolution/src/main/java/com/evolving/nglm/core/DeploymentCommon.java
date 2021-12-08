@@ -470,6 +470,7 @@ public class DeploymentCommon
   private static int propensityReaderRefreshPeriodMs;
   private static int propensityWriterRefreshPeriodMs;
   private static boolean enableContactPolicyProcessing;
+  private static int gracePeriodWorkflowsMs;
   private static String extractManagerZookeeperDir;
   private static String extractManagerOutputPath;
   private static String extractManagerDateFormat;
@@ -801,6 +802,7 @@ public class DeploymentCommon
   public static int getPropensityReaderRefreshPeriodMs() { return propensityReaderRefreshPeriodMs; }
   public static int getPropensityWriterRefreshPeriodMs() { return propensityWriterRefreshPeriodMs; }
   public static boolean getEnableContactPolicyProcessing(){ return  enableContactPolicyProcessing;}
+  public static int getGracePeriodWorkflowsMs() {return gracePeriodWorkflowsMs;}
   public static String getExtractManagerZookeeperDir() { return extractManagerZookeeperDir; }
   public static String getExtractManagerOutputPath() { return extractManagerOutputPath; } // TODO EVPRO-99 check tenant ?
   public static String getExtractManagerDateFormat() { return extractManagerDateFormat; }// TODO EVPRO-99 check tenant ?
@@ -1413,6 +1415,8 @@ public class DeploymentCommon
     propensityReaderRefreshPeriodMs = jsonReader.decodeInteger("propensityReaderRefreshPeriodMs");
     // period in ms local propensity state will be write to zookeeper :
     propensityWriterRefreshPeriodMs = jsonReader.decodeInteger("propensityWriterRefreshPeriodMs");
+    
+    gracePeriodWorkflowsMs = jsonReader.decodeInteger("gracePeriodWorkflowsMs");
 
     enableContactPolicyProcessing = jsonReader.decodeBoolean("enableContactPolicyProcessing");
     recurrentCampaignCreationDaysRange = jsonReader.decodeInteger("recurrentCampaignCreationDaysRange");
