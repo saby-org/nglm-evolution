@@ -6905,21 +6905,40 @@ public class EvolutionEngine
             case Loyalty_Program:
               caller = loyaltyProgramService.getStoredLoyaltyProgram(featureID);
               break;
-              
+            case Offer_Catalog:
+              caller = offerService.getStoredOffer(featureID);
+              break;
             case Unknown:
               log.debug("Unknown moduleID : " + moduleID.getExternalRepresentation());
               mustCheck = false;
               break;
           }
           if (mustCheck) {
+            boolean mustCheckGraceDelay = false;
             if (caller == null) {
-              // if source was removed, just stop workflow
-              inactiveJourneyStates.add(journeyState);
-              continue;
+              // if caller was removed
+              mustCheckGraceDelay = true;
             } else if (!caller.getActive()) {
-              // if source stopped, just ignore workflow
-              continue;
-            } 
+              // if caller stopped
+              mustCheckGraceDelay = true;
+            } else {
+              Date callerEndDate = caller.getRawEffectiveEndDate();
+              if (callerEndDate != null && context.event.getEventDate().after(callerEndDate)) {
+                // caller has finished
+                if(log.isTraceEnabled()) log.trace(caller.getGUIManagedObjectDisplay()+" ended on "+caller.getRawEffectiveEndDate());
+                mustCheckGraceDelay = true;
+              }
+            }
+            if (mustCheckGraceDelay) {
+              // EVPRO-1447 grace delay when caller has finished
+              Date waitUntil = new Date(((caller == null || caller.getEffectiveEndDate() == null) ? context.processingDate().getTime() : caller.getEffectiveEndDate().getTime())+Deployment.getGracePeriodWorkflowsMs());
+              if (context.event.getEventDate().before(waitUntil)){
+                if(log.isTraceEnabled() && caller != null) log.trace(caller.getGUIManagedObjectDisplay()+" ended on "+caller.getEffectiveEndDate()," but need to wait till "+waitUntil+" before stopping workflow");
+                continue;
+              } else {
+                inactiveJourneyStates.add(journeyState);
+              }
+            }
           }
         }
 
