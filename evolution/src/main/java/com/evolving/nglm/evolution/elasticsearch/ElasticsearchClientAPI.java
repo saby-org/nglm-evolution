@@ -512,17 +512,16 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
 
   // @return map<STATUS,count>
   public Map<String, Long> getJourneyBonusesCount(String journeyDisplay, int tenantID) throws ElasticsearchClientException {
-    return getJourneyGenericDeliveryCount(journeyDisplay, "returnCode", BDRDatacubeGenerator.DATACUBE_ES_INDEX(tenantID));  // tX_datacube_bdr
+    return getJourneyGenericDeliveryCount(journeyDisplay, BDRDatacubeGenerator.DATACUBE_ES_INDEX(tenantID));  // tX_datacube_bdr
   }
-
 
   // @return map<STATUS,count>
   public Map<String, Long> getJourneyMessagesCount(String journeyDisplay, int tenantID) throws ElasticsearchClientException {
-    return getJourneyGenericDeliveryCount(journeyDisplay, "returnCode", MDRDatacubeGenerator.DATACUBE_ES_INDEX(tenantID));  // tX_datacube_messages
+    return getJourneyGenericDeliveryCount(journeyDisplay, MDRDatacubeGenerator.DATACUBE_ES_INDEX(tenantID));  // tX_datacube_messages
   }
   
   // @return map<STATUS,count>
-  private Map<String, Long> getJourneyGenericDeliveryCount(String journeyDisplay, String campaignFilter, String datacubeIndex) throws ElasticsearchClientException {
+  private Map<String, Long> getJourneyGenericDeliveryCount(String journeyDisplay, String datacubeIndex) throws ElasticsearchClientException {
     try {
       Map<String, Long> result = new HashMap<String, Long>();
   
