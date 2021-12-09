@@ -262,7 +262,7 @@
           "targets": [
             {
               "exemplar": true,
-              "expr": "sum(rate(com_evolving_nglm_evolution_notificationdelivery_count_total{tenant=\"replaceWithTenantID\"}[$__interval])) by(channel)",
+              "expr": "sum(rate(com_evolving_nglm_evolution_notificationdelivery_count_total{tenant=\"replaceWithTenantID\",status=~\"acknowledged|failed\"}[$__interval])) by(channel)",
               "interval": "",
               "legendFormat": "{{channel}} ",
               "refId": "A"
