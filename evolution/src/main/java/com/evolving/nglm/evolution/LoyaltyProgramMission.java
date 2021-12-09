@@ -210,8 +210,7 @@ public class LoyaltyProgramMission extends LoyaltyProgram
     MissionStep result = null;
     if (steps != null && !steps.isEmpty())
       {
-        Collections.sort(steps);
-        result = steps.get(0);
+        result = steps.stream().sorted().findFirst().orElse(null);
       }
     return result;
   }
@@ -221,8 +220,7 @@ public class LoyaltyProgramMission extends LoyaltyProgram
     MissionStep result = null;
     if (steps != null && !steps.isEmpty())
       {
-        Collections.sort(steps, Collections.reverseOrder());
-        result = steps.get(0);
+        result = steps.stream().sorted(Collections.reverseOrder()).findFirst().orElse(null);
       }
     return result;
   }

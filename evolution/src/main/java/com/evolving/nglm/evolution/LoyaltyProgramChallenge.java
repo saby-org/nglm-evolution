@@ -211,8 +211,7 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
     ChallengeLevel result = null;
     if (levels != null && !levels.isEmpty())
       {
-        Collections.sort(levels);
-        result = levels.get(0);
+        result = levels.stream().sorted().findFirst().orElse(null);
       }
     return result;
   }
@@ -222,8 +221,7 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
     ChallengeLevel result = null;
     if (levels != null && !levels.isEmpty())
       {
-        Collections.sort(levels, Collections.reverseOrder());
-        result = levels.get(0);
+        result = levels.stream().sorted(Collections.reverseOrder()).findFirst().orElse(null);
       }
     return result;
   }
