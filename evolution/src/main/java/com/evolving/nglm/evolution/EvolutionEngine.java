@@ -4091,7 +4091,7 @@ public class EvolutionEngine
       //at start or when a new state were calculated the current ucg state is replaced
 
       //if no ucg rule active stop subscriber ucg processing
-      if(ucgState.getUCGRule().getActive())
+      if(ucgState!= null &&  ucgState.getUCGRule() != null && ucgState.getUCGRule().getActive())
       {
 
         if (currentUCGState == null || currentUCGState.getEvaluationDate().compareTo(ucgState.getEvaluationDate()) < 0)
