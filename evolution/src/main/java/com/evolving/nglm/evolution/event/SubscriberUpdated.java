@@ -26,6 +26,7 @@ public class SubscriberUpdated extends SubscriberStreamOutput implements Subscri
 		schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
 		schemaBuilder.field("subscriberDeleted", Schema.OPTIONAL_BOOLEAN_SCHEMA);
 		schemaBuilder.field("alternateIDsToRemove", SchemaBuilder.map(Schema.STRING_SCHEMA,Schema.STRING_SCHEMA).optional().schema());
+		schemaBuilder.field("alternateIDsToAdd", SchemaBuilder.map(Schema.STRING_SCHEMA,Schema.STRING_SCHEMA).optional().schema());
 		schema = schemaBuilder.build();
 	}
 	public static Schema schema() { return schema; }
@@ -39,6 +40,7 @@ public class SubscriberUpdated extends SubscriberStreamOutput implements Subscri
 		struct.put("tenantID", subscriberUpdated.getTenantID().shortValue());
 		struct.put("subscriberDeleted", subscriberUpdated.getSubscriberDeleted());
 		if(!subscriberUpdated.getAlternateIDsToRemove().isEmpty()) struct.put("alternateIDsToRemove",SubscriberStreamOutput.packAlternateIDs(subscriberUpdated.getAlternateIDsToRemove()));
+		if(!subscriberUpdated.getAlternateIDsToAdd().isEmpty()) struct.put("alternateIDsToAdd",SubscriberStreamOutput.packAlternateIDs(subscriberUpdated.getAlternateIDsToAdd()));
 		return struct;
 	}
 	@Override public Object subscriberStreamEventPack(Object value) {return pack(value);}
@@ -54,6 +56,8 @@ public class SubscriberUpdated extends SubscriberStreamOutput implements Subscri
 		this.subscriberDeleted = schema.field("subscriberDeleted")!=null ? valueStruct.getBoolean("subscriberDeleted") : false;
 		Map<String,String> packedAlternateIDsToRemove = schema.field("alternateIDsToRemove")!=null ? valueStruct.getMap("alternateIDsToRemove") : null;
 		if(packedAlternateIDsToRemove!=null) this.alternateIDsToRemove=SubscriberStreamOutput.unpackAlternateIDs(packedAlternateIDsToRemove);
+		Map<String,String> packedAlternateIDsToAdd = schema.field("alternateIDsToAdd")!=null ? valueStruct.getMap("alternateIDsToAdd") : null;
+		if(packedAlternateIDsToAdd!=null) this.alternateIDsToAdd=SubscriberStreamOutput.unpackAlternateIDs(packedAlternateIDsToAdd);
 	}
 
 	private static ConnectSerde<SubscriberUpdated> serde = new ConnectSerde<>(schema, false, SubscriberUpdated.class, SubscriberUpdated::pack, SubscriberUpdated::unpack);
@@ -63,6 +67,7 @@ public class SubscriberUpdated extends SubscriberStreamOutput implements Subscri
 	private Integer tenantID;
 	private boolean subscriberDeleted = false;
 	private Map<AlternateID,String> alternateIDsToRemove = new HashMap<>();
+	private Map<AlternateID,String> alternateIDsToAdd = new HashMap<>();
 
 	public SubscriberUpdated(String subscriberID, Integer tenantID){this.subscriberID = subscriberID; this.tenantID=tenantID;}
 
@@ -70,8 +75,10 @@ public class SubscriberUpdated extends SubscriberStreamOutput implements Subscri
 	public Integer getTenantID(){return this.tenantID;}
 	public boolean getSubscriberDeleted(){return this.subscriberDeleted;}
 	public Map<AlternateID,String> getAlternateIDsToRemove(){return this.alternateIDsToRemove;}
+	public Map<AlternateID,String> getAlternateIDsToAdd(){return this.alternateIDsToAdd;}
 
 	public void subscriberDeleted(){this.subscriberDeleted=true;}
 	public void addAlternateIDToRemove(AlternateID alternateID, String value){this.alternateIDsToRemove.put(alternateID,value);}
+	public void addAlternateIDToAdd(AlternateID alternateID, String value){this.alternateIDsToAdd.put(alternateID,value);}
 
 }

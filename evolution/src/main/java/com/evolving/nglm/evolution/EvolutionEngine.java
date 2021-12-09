@@ -2033,21 +2033,9 @@ public class EvolutionEngine
   }
 
 
-    /*****************************************
-    *
-    *  profileChangeEvent get Old Values
-    *
-    *****************************************/
-
-    ParameterMap profileChangeOldValues = saveProfileChangeOldValues(subscriberEvaluationRequest); 
-    
-    /*****************************************
-    *
-    *  profileSegmentChangeEvent get Old Values
-    *
-    *****************************************/
-    
+    ParameterMap profileChangeOldValues = saveProfileChangeOldValues(subscriberEvaluationRequest);
     ParameterMap profileSegmentChangeOldValues = saveProfileSegmentChangeOldValues(subscriberEvaluationRequest);
+    Map<AlternateID,String> alternateIDOldValues = getAlternateIDsIfPossibleUpdate(context, evolutionEvent);
 
     /*****************************************
     *
@@ -2067,8 +2055,6 @@ public class EvolutionEngine
       {
         subscriberStateUpdated = updateEDRs(context, evolutionEvent) || subscriberStateUpdated;
       }
-
-    subscriberStateUpdated = detectAlternateIDUpdate(context, evolutionEvent) || subscriberStateUpdated;
 
     subscriberStateUpdated = updateSubscriberProfile(context, evolutionEvent) || subscriberStateUpdated;
 
@@ -2200,6 +2186,8 @@ public class EvolutionEngine
     *
     *****************************************/
     subscriberStateUpdated = updateNotificationMetricHistory(context, tenantID) || subscriberStateUpdated;
+
+    subscriberStateUpdated = detectAlternateIDUpdate(context, evolutionEvent, alternateIDOldValues) || subscriberStateUpdated;
 
     /*****************************************
     *
@@ -3355,22 +3343,43 @@ public class EvolutionEngine
     return result;
   }
 
-  private static boolean detectAlternateIDUpdate(EvolutionEventContext context, SubscriberStreamEvent evolutionEvent){
-    boolean updated = false;
-    if(!(evolutionEvent instanceof ExternalEvent)) return false;
-    ExternalEvent externalEvent = (ExternalEvent) evolutionEvent;
-    if(externalEvent.getAlternateIDsCreated().isEmpty()) return false;
-    Map<String,String> existing = SubscriberStreamOutput.buildAlternateIDs(context.getSubscriberState().getSubscriberProfile(),context.getSubscriberGroupEpochReader());
-    for(Map.Entry<AlternateID,String> entry:externalEvent.getAlternateIDsCreated().entrySet()){
-      String valueStored = existing.get(entry.getKey().getID());
-      if(valueStored==null || valueStored.equals(entry.getValue())) continue;//here we just want to delete old mapping in redis if changed
-      updated = true;
-      // need to output for redis sink to delete the previous entry
-      SubscriberUpdated subscriberUpdated = new SubscriberUpdated(context.getSubscriberState().getSubscriberID(),context.getSubscriberState().getSubscriberProfile().getTenantID());
-      subscriberUpdated.addAlternateIDToRemove(entry.getKey(),valueStored);
-      context.getSubscriberState().getUpdateSubscriberResponses().add(subscriberUpdated);
+  private static Map<AlternateID,String> getAlternateIDsIfPossibleUpdate(EvolutionEventContext context, SubscriberStreamEvent evolutionEvent){
+    // events that might lead to a change in alternateID
+    if(evolutionEvent instanceof ExternalEvent || evolutionEvent instanceof SubscriberProfileForceUpdate){
+      return SubscriberStreamOutput.unpackAlternateIDs(SubscriberStreamOutput.buildAlternateIDs(context.getSubscriberState().getSubscriberProfile(),context.getSubscriberGroupEpochReader()));
+    }else{
+      return null;
     }
-    return updated;
+  }
+  private static boolean detectAlternateIDUpdate(EvolutionEventContext context, SubscriberStreamEvent evolutionEvent, Map<AlternateID,String> oldValues){
+    if(oldValues==null) return false;// job done in previous method, provides map only on events that might update those
+    Map<AlternateID,String> newValues = SubscriberStreamOutput.unpackAlternateIDs(SubscriberStreamOutput.buildAlternateIDs(context.getSubscriberState().getSubscriberProfile(),context.getSubscriberGroupEpochReader()));
+    SubscriberUpdated subscriberUpdated = new SubscriberUpdated(context.getSubscriberState().getSubscriberID(),context.getSubscriberState().getSubscriberProfile().getTenantID());
+    oldValues.forEach((key,oldValue)->{
+      String newValue = newValues.get(key);
+      if(newValue==null){
+        if(!(evolutionEvent instanceof ExternalEvent)) subscriberUpdated.addAlternateIDToRemove(key,oldValue);//external event does that on connector side
+      }else if(!newValue.equals(oldValue)){
+        subscriberUpdated.addAlternateIDToRemove(key,oldValue);
+        if(!(evolutionEvent instanceof ExternalEvent)) subscriberUpdated.addAlternateIDToAdd(key,newValue);//external event does that on connector side
+      }
+    });
+    //external event does that on connector side
+    if(!(evolutionEvent instanceof ExternalEvent)){
+      newValues.forEach((key,newValue)->{
+        String oldValue = oldValues.get(key);
+        if(oldValue==null) subscriberUpdated.addAlternateIDToAdd(key,newValue);
+      });
+    }
+
+    // need to output for redis sink to delete the previous entry
+    if(!subscriberUpdated.getAlternateIDsToAdd().isEmpty() || !subscriberUpdated.getAlternateIDsToRemove().isEmpty()){
+      context.getSubscriberState().getUpdateSubscriberResponses().add(subscriberUpdated);
+      return true;
+    }
+
+    return false;
+
   }
 
   private static boolean updateSubscriberProfile(EvolutionEventContext context, SubscriberStreamEvent evolutionEvent)

@@ -79,23 +79,27 @@ public class UpdateSubscriberSinkConnector extends SinkConnector {
       if(log.isDebugEnabled()) log.debug(taskName+" put "+sinkRecords.size());
 
       // prepare the delete alternateID request
-      List<UpdateAlternateIDSubscriberIDs> alternateIDsToDelete = new ArrayList<>();
+      List<UpdateAlternateIDSubscriberIDs> alternateIDsToUpdate = new ArrayList<>();
       for (SinkRecord sinkRecord : sinkRecords) {
         SubscriberUpdated subscriberUpdated = SubscriberUpdated.unpack(new SchemaAndValue(sinkRecord.valueSchema(), sinkRecord.value()));
         // need to remove all alternateIDs
         if(subscriberUpdated.getSubscriberDeleted()){
           for(Map.Entry<AlternateID,String> entry:SubscriberStreamOutput.unpackAlternateIDs(subscriberUpdated.getAlternateIDs()).entrySet()){
-            alternateIDsToDelete.add(new UpdateAlternateIDSubscriberIDs(entry.getKey(),entry.getValue(),subscriberUpdated.getTenantID()).setSubscriberIDToRemove(Long.valueOf(subscriberUpdated.getSubscriberID())));
+            alternateIDsToUpdate.add(new UpdateAlternateIDSubscriberIDs(entry.getKey(),entry.getValue(),subscriberUpdated.getTenantID()).setSubscriberIDToRemove(Long.valueOf(subscriberUpdated.getSubscriberID())));
           }
         }
-        // need to remove some some alternateIDs
-        else if (!subscriberUpdated.getAlternateIDsToRemove().isEmpty()){
+        else if (!subscriberUpdated.getAlternateIDsToRemove().isEmpty() || !subscriberUpdated.getAlternateIDsToAdd().isEmpty()){
+          // need to remove some alternateIDs
           for(Map.Entry<AlternateID,String> entry:subscriberUpdated.getAlternateIDsToRemove().entrySet()){
-            alternateIDsToDelete.add(new UpdateAlternateIDSubscriberIDs(entry.getKey(),entry.getValue(),subscriberUpdated.getTenantID()).setSubscriberIDToRemove(Long.valueOf(subscriberUpdated.getSubscriberID())));
+            alternateIDsToUpdate.add(new UpdateAlternateIDSubscriberIDs(entry.getKey(),entry.getValue(),subscriberUpdated.getTenantID()).setSubscriberIDToRemove(Long.valueOf(subscriberUpdated.getSubscriberID())));
+          }
+          // need to add some alternateIDs
+          for(Map.Entry<AlternateID,String> entry:subscriberUpdated.getAlternateIDsToAdd().entrySet()){
+            alternateIDsToUpdate.add(new UpdateAlternateIDSubscriberIDs(entry.getKey(),entry.getValue(),subscriberUpdated.getTenantID()).setSubscriberIDToAdd(Long.valueOf(subscriberUpdated.getSubscriberID())));
           }
         }
       }
-      MapperUtils.deleteAlternateIDs(alternateIDsToDelete, SingletonServices.getSubscriberIDService(),stopRequested);
+      MapperUtils.updateAlternateIDs(alternateIDsToUpdate, SingletonServices.getSubscriberIDService(),stopRequested);
 
     }
 

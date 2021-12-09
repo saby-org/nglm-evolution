@@ -95,7 +95,7 @@ public class MapperUtils {
 						if(externalEvent.getOldAlternateIDValueToSwapWith()!=null) log.info(externalEvent.getEventName()+" swap asked "+externalEvent.getSubscriberForLogging()+" new entry "+externalEvent.getAlternateID().getSecondElement()+" already there, and old entry "+externalEvent.getOldAlternateIDValueToSwapWith()+" not, not changing any mapping");
 					// alternateID swap with an already existing one cases
 					}else if(resolvedSubscriberIDForSwapping!=null){
-						if(resolvedSubscriberIDForSwapping.getSecondElement().size()>1 || resolvedSubscriberID.getSecondElement().size()>1) throw new RuntimeException(externalEvent.getSubscriberForLogging()+" trying to swap with shared alternateID "+resolvedSubscriberIDForSwapping.getSecondElement());
+						if(resolvedSubscriberIDForSwapping.getSecondElement().size()>1 || (resolvedSubscriberID!=null&&resolvedSubscriberID.getSecondElement().size()>1)) throw new RuntimeException(externalEvent.getSubscriberForLogging()+" trying to swap with shared alternateID "+resolvedSubscriberIDForSwapping.getSecondElement());
 						// the new one already exist
 						if(resolvedSubscriberID!=null){
 							// they are just already matching, we delete the old entry
@@ -202,14 +202,14 @@ public class MapperUtils {
 		return resolvedEvents;
 	}
 
-	public static void deleteAlternateIDs(List<UpdateAlternateIDSubscriberIDs> deletes, SubscriberIDService subscriberIDService, AtomicBoolean stopRequested) {
-		if(log.isTraceEnabled()) log.trace("deleteAlternateIDs for "+deletes.size()+" entries");
+	public static void updateAlternateIDs(List<UpdateAlternateIDSubscriberIDs> updates, SubscriberIDService subscriberIDService, AtomicBoolean stopRequested) {
+		if(log.isTraceEnabled()) log.trace("updateAlternateIDs for "+updates.size()+" entries");
 		// prepare per alternateID
 		Map<AlternateID,List<UpdateAlternateIDSubscriberIDs>> perAlternateIDRequests = new HashMap<>();
-		for(UpdateAlternateIDSubscriberIDs delete:deletes){
-			if(delete.getAlternateIDValue()!=null && delete.getSubscriberIDToRemove()!=null){
-				if(log.isTraceEnabled()) log.trace("will delete "+ delete.getAlternateIDConf().getID()+" "+ delete.getAlternateIDValue()+" "+delete.getSubscriberIDToRemove());
-				perAlternateIDRequests.computeIfAbsent(delete.getAlternateIDConf(),k->new ArrayList<>()).add(delete);
+		for(UpdateAlternateIDSubscriberIDs update:updates){
+			if(update.getAlternateIDValue()!=null && (update.getSubscriberIDToRemove()!=null||update.getSubscriberIDToAdd()!=null)){
+				if(log.isTraceEnabled()) log.trace("will update "+ update.getAlternateIDConf().getID()+" "+ update.getAlternateIDValue()+" remove "+update.getSubscriberIDToRemove()+" add "+update.getSubscriberIDToAdd());
+				perAlternateIDRequests.computeIfAbsent(update.getAlternateIDConf(),k->new ArrayList<>()).add(update);
 			}
 		}
 		// execute
