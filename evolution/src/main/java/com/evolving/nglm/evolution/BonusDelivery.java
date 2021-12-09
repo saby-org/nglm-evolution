@@ -1,7 +1,10 @@
 package com.evolving.nglm.evolution;
 
 import com.evolving.nglm.core.DeploymentCommon;
+import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.ReferenceDataReader;
+import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
+
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -109,14 +112,58 @@ public abstract class BonusDelivery extends DeliveryRequest
   //  accessors map through commodityDeliveryRequest
   //
 
-  public int getBonusDeliveryReturnCode(){ return this.commodityDeliveryRequest.getCommodityDeliveryStatus().getReturnCode(); }
-  public String getBonusDeliveryReturnCodeDetails() { return this.commodityDeliveryRequest.getStatusMessage(); }
-  public String getBonusDeliveryOrigin() { return this.commodityDeliveryRequest.getOrigin(); }
-  public String getBonusDeliveryProviderId() { return this.commodityDeliveryRequest.getProviderID(); }
-  public String getBonusDeliveryDeliverableId() { return this.commodityDeliveryRequest.getCommodityID(); }
-  public String getBonusDeliveryDeliverableName() { return this.commodityDeliveryRequest.getCommodityName(); }
-  public int getBonusDeliveryDeliverableQty() { return this.commodityDeliveryRequest.getAmount(); }
-  public String getBonusDeliveryOperation() { return this.commodityDeliveryRequest.getOperation().getExternalRepresentation(); }
-  public Date getBonusDeliveryDeliverableExpirationDate() { return this.commodityDeliveryRequest.getDeliverableExpirationDate(); }
-
+  public int getBonusDeliveryReturnCode(){
+    if (this.commodityDeliveryRequest == null){
+      return 0;
+    }
+    return this.commodityDeliveryRequest.getCommodityDeliveryStatus().getReturnCode(); 
+  }
+  public String getBonusDeliveryReturnCodeDetails() { 
+    if (this.commodityDeliveryRequest == null){
+      return "";
+    }
+    return this.commodityDeliveryRequest.getStatusMessage(); 
+  }
+  public String getBonusDeliveryOrigin() { 
+    if (this.commodityDeliveryRequest == null){
+      return "";
+    }
+    return this.commodityDeliveryRequest.getOrigin(); 
+  }
+  public String getBonusDeliveryProviderId() { 
+    if (this.commodityDeliveryRequest == null){
+      return "0";
+    }
+    return this.commodityDeliveryRequest.getProviderID(); 
+  }
+  public String getBonusDeliveryDeliverableId() { 
+    if (this.commodityDeliveryRequest == null){
+      return "0";
+    }
+    return this.commodityDeliveryRequest.getCommodityID(); 
+  }
+  public String getBonusDeliveryDeliverableName() { 
+    if (this.commodityDeliveryRequest == null){
+      return "";
+    }
+    return this.commodityDeliveryRequest.getCommodityName(); 
+  }
+  public int getBonusDeliveryDeliverableQty() { 
+    if (this.commodityDeliveryRequest == null){
+      return 0;
+    }
+    return this.commodityDeliveryRequest.getAmount(); 
+  }
+  public String getBonusDeliveryOperation() { 
+    if (this.commodityDeliveryRequest == null){
+      return CommodityDeliveryOperation.Unknown.getExternalRepresentation();
+    }
+    return this.commodityDeliveryRequest.getOperation().getExternalRepresentation(); 
+  }
+  public Date getBonusDeliveryDeliverableExpirationDate() { 
+    if (this.commodityDeliveryRequest == null){
+      return NGLMRuntime.BEGINNING_OF_TIME;
+    }
+    return this.commodityDeliveryRequest.getDeliverableExpirationDate(); 
+  }
 }
