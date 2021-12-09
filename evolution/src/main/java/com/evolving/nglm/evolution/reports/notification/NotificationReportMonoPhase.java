@@ -211,23 +211,26 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
                     // template.
                     // current format comes from ES and is :
                     // 2020-04-20T09:51:38.953Z
-                    try
-                    {
-                      Date date = parseSDF1.parse(creationDateStr);
-                      notifRecs.put(creationDate, ReportsCommonCode.getDateString(date)); // replace with new value
-                    } catch (ParseException e1)
-                    {
-                      // Could also be 2019-11-27 15:39:30.276+0100
-                      try
-                      {
-                        Date date = parseSDF2.parse(creationDateStr);
-                        notifRecs.put(creationDate, ReportsCommonCode.getDateString(date)); // replace with new value
-                      } catch (ParseException e2)
-                      {
-                        log.info("Unable to parse " + creationDateStr);
-                      }
+                    if (creationDateStr.isEmpty()){
+                      notifRecs.put(creationDate, "");                    	
+                    }else {
+	                    try
+	                    {
+	                      Date date = parseSDF1.parse(creationDateStr);
+	                      notifRecs.put(creationDate, ReportsCommonCode.getDateString(date)); // replace with new value
+	                    } catch (ParseException e1)
+	                    {
+	                      // Could also be 2019-11-27 15:39:30.276+0100
+	                      try
+	                      {
+	                        Date date = parseSDF2.parse(creationDateStr);
+	                        notifRecs.put(creationDate, ReportsCommonCode.getDateString(date)); // replace with new value
+	                      } catch (ParseException e2)
+	                      {
+	                        log.info("Unable to parse " + creationDateStr);
+	                      }
+	                    }
                     }
-
                   } else
                     {
                       log.info(creationDate + " is of wrong type : " + creationDateObj.getClass().getName());
