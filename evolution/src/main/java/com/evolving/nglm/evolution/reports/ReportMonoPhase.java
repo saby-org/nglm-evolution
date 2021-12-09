@@ -212,6 +212,10 @@ public class ReportMonoPhase
           
           String scrollId = searchResponse.getScrollId(); // always null
           SearchHit[] searchHits = searchResponse.getHits().getHits();
+          if (searchHits == null || searchHits.length == 0) {
+            reportFactory.dumpHeaderToCsv(writer, addHeader);
+            addHeader = false;
+          }
           logSearchResponse(indicesToRead, searchResponse, searchHits);
           boolean alreadyTraced = false;
           while (searchHits != null && searchHits.length > 0 && !stopReadingAndWriting)
