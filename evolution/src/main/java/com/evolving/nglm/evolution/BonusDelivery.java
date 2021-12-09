@@ -110,6 +110,7 @@ public abstract class BonusDelivery extends DeliveryRequest
 
   //
   //  accessors map through commodityDeliveryRequest
+  //  commodityDeliveryRequest can be null in the very special case of Reward Manager and that needs to be checked
   //
 
   public int getBonusDeliveryReturnCode(){
