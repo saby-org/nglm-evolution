@@ -429,7 +429,7 @@ public class CommodityDeliveryManager
         this.commodityID = (String) esFields.get("deliverableID");
         String esOperation = (String) esFields.get("operation");
         this.operation = CommodityDeliveryOperation.fromExternalRepresentation(esOperation != null ? esOperation.toLowerCase() : esOperation);
-        this.amount = (int) esFields.get("deliverableQty");
+        this.amount = ((Integer) esFields.get("deliverableQty")).intValue(); // Integer proper cast to int, raise NPE if any
         this.validityPeriodType = TimeUnit.Year;
         this.validityPeriodQuantity = 1;
         this.deliverableExpirationDate = RLMDateUtils.parseDateFromElasticsearch((String) esFields.get("deliverableExpirationDate"));
