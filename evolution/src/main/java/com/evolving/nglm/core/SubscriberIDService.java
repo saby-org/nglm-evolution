@@ -193,19 +193,21 @@ public class SubscriberIDService implements Closeable {
    */
   private static final byte[] luaScriptSetIfEqualsBulk = (
           "local i = 1;" +
-          "local old = ARGV[i];" +
+          "local j = 1;" +
           "while KEYS[i] do" +
+          "  local old = ARGV[j];" +
           "  if string.len(old) == 0 then old = false end" +//redis.call('GET', KEYS[i]) return value if existing, or false boolean if not existing
           "  if redis.call('GET', KEYS[i]) == old then" +
-          "      if string.len(ARGV[i+1]) == 0 then" +
+          "      if string.len(ARGV[j+1]) == 0 then" +
           "        redis.call('DEL', KEYS[i])" +
           "      else" +
-          "        redis.call('SET', KEYS[i], ARGV[i+1])" +
+          "        redis.call('SET', KEYS[i], ARGV[j+1])" +
           "      end" +
           "  else" +
           "    return KEYS[i]" +
           "  end" +
-          "  i = i + 2;" +
+          "  i = i + 1;" +
+          "  j = j + 2;" +
           "end"
   ).trim().getBytes(StandardCharsets.UTF_8);
 
@@ -324,7 +326,10 @@ public class SubscriberIDService implements Closeable {
         // we run the request
         Object evalResult = jedis.eval(luaScriptSetIfEqualsBulk,updateKeys,updateArgs);
         // null response means all OK
-        if(evalResult==null) return stored;
+        if(evalResult==null){
+          stored.addAll(requests);
+          return stored;
+        }
 
         // else, we had a concurrency update at one point, we got back the key of the failure, we need to re-execute from that point
         String failedAt = new String((byte[])evalResult);

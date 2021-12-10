@@ -264,7 +264,7 @@ public class ConnectSerde<T> implements Serde<T>
           if (packData instanceof Struct)
           {
             Struct struct = (Struct) packData;
-
+            log.error("to topic " +topic+", for schema "+schema.name()+" "+schema.fields()+", for object "+struct);
             struct.validate(); // this should throw the more useful exception
 
           }
