@@ -322,11 +322,15 @@ public abstract class ExternalEvent implements EvolutionEngineEvent {
 			return this;
 		}
 		if(alternateID.equals(this.alternateID.getFirstElement())){
-			log.info(getEventName()+" withOtherAlternateID called for same AlternateID than main "+getSubscriberForLogging()+", ignoring");
+			log.info(getEventName()+" addOtherAlternateID called for same AlternateID than main "+getSubscriberForLogging()+", ignoring");
+			return this;
+		}
+		if(alternateIDValue==null){
+			log.info(getEventName()+" "+getSubscriberForLogging()+" addOtherAlternateID called with value "+alternateIDValue+", ignoring");
 			return this;
 		}
 		String alreadyCalledFor = this.otherAlternateIDsToAdd.get(alternateID);
-		if(alreadyCalledFor!=null) log.info(getEventName()+" withOtherAlternateID called for "+alternateID.getDisplay()+", new "+alternateIDValue+" will override previous call "+alreadyCalledFor);
+		if(alreadyCalledFor!=null) log.info(getEventName()+" addOtherAlternateID called for "+alternateID.getDisplay()+", new "+alternateIDValue+" will override previous call "+alreadyCalledFor);
 		this.otherAlternateIDsToAdd.put(alternateID,alternateIDValue);
 		return this;
 	}
@@ -337,6 +341,10 @@ public abstract class ExternalEvent implements EvolutionEngineEvent {
 		}
 		if(alternateID.equals(this.alternateID.getFirstElement())){
 			log.info(getEventName()+" removeOtherAlternateID called for same AlternateID than main "+getSubscriberForLogging()+", ignoring");
+			return this;
+		}
+		if(alternateIDValue==null){
+			log.info(getEventName()+" "+getSubscriberForLogging()+" removeOtherAlternateID called with value "+alternateIDValue+", ignoring");
 			return this;
 		}
 		String alreadyCalledFor = this.otherAlternateIDsToRemove.get(alternateID);
