@@ -20,13 +20,13 @@ public class SubscriberUpdated extends SubscriberStreamOutput implements Subscri
 	static {
 		SchemaBuilder schemaBuilder = SchemaBuilder.struct();
 		schemaBuilder.name("subscriber_updated");
-		schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),0));
+		schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),1));
 		for(Field field:subscriberStreamOutputSchema().fields()) schemaBuilder.field(field.name(),field.schema());
 		schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
 		schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
 		schemaBuilder.field("subscriberDeleted", Schema.OPTIONAL_BOOLEAN_SCHEMA);
-		schemaBuilder.field("alternateIDsToRemove", SchemaBuilder.map(Schema.STRING_SCHEMA,Schema.STRING_SCHEMA).optional().schema());
-		schemaBuilder.field("alternateIDsToAdd", SchemaBuilder.map(Schema.STRING_SCHEMA,Schema.STRING_SCHEMA).optional().schema());
+		schemaBuilder.field("alternateIDsToRemove", SchemaBuilder.map(Schema.STRING_SCHEMA,Schema.OPTIONAL_STRING_SCHEMA).optional().schema());
+		schemaBuilder.field("alternateIDsToAdd", SchemaBuilder.map(Schema.STRING_SCHEMA,Schema.OPTIONAL_STRING_SCHEMA).optional().schema());
 		schema = schemaBuilder.build();
 	}
 	public static Schema schema() { return schema; }

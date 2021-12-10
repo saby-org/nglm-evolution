@@ -3346,14 +3346,14 @@ public class EvolutionEngine
   private static Map<AlternateID,String> getAlternateIDsIfPossibleUpdate(EvolutionEventContext context, SubscriberStreamEvent evolutionEvent){
     // events that might lead to a change in alternateID
     if(evolutionEvent instanceof ExternalEvent || evolutionEvent instanceof SubscriberProfileForceUpdate){
-      return SubscriberStreamOutput.unpackAlternateIDs(SubscriberStreamOutput.buildAlternateIDs(context.getSubscriberState().getSubscriberProfile(),context.getSubscriberGroupEpochReader()));
+      return SubscriberStreamOutput.getSubscriberAlternateIDValues(context.getSubscriberState().getSubscriberProfile(),context.getSubscriberGroupEpochReader());
     }else{
       return null;
     }
   }
   private static boolean detectAlternateIDUpdate(EvolutionEventContext context, SubscriberStreamEvent evolutionEvent, Map<AlternateID,String> oldValues){
     if(oldValues==null) return false;// job done in previous method, provides map only on events that might update those
-    Map<AlternateID,String> newValues = SubscriberStreamOutput.unpackAlternateIDs(SubscriberStreamOutput.buildAlternateIDs(context.getSubscriberState().getSubscriberProfile(),context.getSubscriberGroupEpochReader()));
+    Map<AlternateID,String> newValues = SubscriberStreamOutput.getSubscriberAlternateIDValues(context.getSubscriberState().getSubscriberProfile(),context.getSubscriberGroupEpochReader());
     SubscriberUpdated subscriberUpdated = new SubscriberUpdated(context.getSubscriberState().getSubscriberID(),context.getSubscriberState().getSubscriberProfile().getTenantID());
     oldValues.forEach((key,oldValue)->{
       String newValue = newValues.get(key);

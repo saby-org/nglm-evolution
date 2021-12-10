@@ -132,6 +132,17 @@ public abstract class SubscriberStreamOutput implements SubscriberStreamPriority
 		return alternateIDs;
 	}
 
+	public static Map<AlternateID,String> getSubscriberAlternateIDValues(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader){
+		Map<AlternateID,String> alternateIDs = new HashMap<>();
+		SubscriberStreamOutput.buildAlternateIDs(subscriberProfile,subscriberGroupEpochReader).forEach(
+				(key,value)->{
+					AlternateID alternateID = Deployment.getAlternateIDOrNull(key);
+					if(alternateID!=null && value!=null) alternateIDs.put(alternateID,value);
+				}
+		);
+		return alternateIDs;
+	}
+
 	public static Map<String,String> packAlternateIDs(Map<AlternateID,String> alternateIDs){
 		Map<String,String> toRet = new HashMap<>();
 		for(Map.Entry<AlternateID,String> entry:alternateIDs.entrySet()) toRet.put(entry.getKey().getID(),entry.getValue());
