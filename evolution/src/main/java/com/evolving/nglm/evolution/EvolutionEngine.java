@@ -4957,6 +4957,10 @@ public class EvolutionEngine
 
                             launchChangeTierWorkflows(profileLoyaltyProgramChangeEvent, subscriberState, loyaltyProgramPoints, currentTier, newTierName, currentLoyaltyProgramState.getLoyaltyProgramID());
                           }
+                        else
+                          {
+                            loyaltyProgramPointsState.setLoyaltyProgramExitDate(null);
+                          }
                       }
 
                     //
