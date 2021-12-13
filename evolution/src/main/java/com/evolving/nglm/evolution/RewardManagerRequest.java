@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
@@ -109,6 +110,14 @@ public class RewardManagerRequest extends BonusDelivery
   public Integer getReturnCode() { return returnCode; }
   public String getReturnCodeDetails() { return returnCodeDetails; }
   public Integer getReturnStatus() { return returnStatus; }
+
+  //inspired from CommodityDeliveryRequest
+  public Date getDeliverableExpirationDate() {
+    if(getDeliveryDate()!= null && getPeriodType()!=null && getPeriodType()!=TimeUnit.Unknown){
+      return EvolutionUtilities.addTime(getDeliveryDate(), getPeriodQuantity(), getPeriodType(), Deployment.getDeployment(this.getTenantID()).getTimeZone(), EvolutionUtilities.RoundingSelection.NoRound);
+    }
+    return NGLMRuntime.BEGINNING_OF_TIME;
+  }
 
   //
   //  setters
