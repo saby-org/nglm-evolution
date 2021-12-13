@@ -154,6 +154,8 @@ public class LoyaltyChallengeCustomerStatesMonoPhase implements ReportCsvFactory
               {
                 if (subscriberFields.get("loyaltyPrograms") == null)
                   {
+                    this.dumpHeaderToCsv(writer, addHeaders);
+                    addHeaders = false;
                     return true;
                   }
                 List<Map<String, Object>> loyaltyProgramsArray = (List<Map<String, Object>>) subscriberFields.get("loyaltyPrograms");
@@ -165,6 +167,8 @@ public class LoyaltyChallengeCustomerStatesMonoPhase implements ReportCsvFactory
                 if (loyaltyProgramsArray != null) loyaltyProgramsArray = loyaltyProgramsArray.stream().filter(loyaltyProgramMap -> LoyaltyProgram.LoyaltyProgramType.CHALLENGE.getExternalRepresentation().equals(loyaltyProgramMap.get("loyaltyProgramType"))).collect(Collectors.toList());
                 if (loyaltyProgramsArray.isEmpty())
                   {
+                    this.dumpHeaderToCsv(writer, addHeaders);
+                    addHeaders = false;
                     return true;
                   }
                 subscriberComputedFields.put(customerID, subscriberID);
@@ -258,12 +262,6 @@ public class LoyaltyChallengeCustomerStatesMonoPhase implements ReportCsvFactory
                 log.trace("Empty line => not writing");
               }
           }
-      }
-
-    else
-      {
-        this.dumpHeaderToCsv(writer, addHeaders);
-        addHeaders = false;
       }
     return addHeaders;
   }

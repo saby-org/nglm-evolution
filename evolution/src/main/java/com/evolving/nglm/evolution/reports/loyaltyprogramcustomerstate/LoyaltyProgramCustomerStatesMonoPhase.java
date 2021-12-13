@@ -93,6 +93,8 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
               {
                 if (subscriberFields.get("loyaltyPrograms") == null)
                   {
+                    this.dumpHeaderToCsv(writer, addHeaders);
+                    addHeaders = false;
                     return true;
                   }
                 List<Map<String, Object>> loyaltyProgramsArray = (List<Map<String, Object>>) subscriberFields.get("loyaltyPrograms");
