@@ -209,6 +209,25 @@ public class JourneyImpactReportDriver extends ReportDriver
                     dumpLineToCsv(mapPerStatus, writer, addHeader);
                     addHeader = false;
                   }
+                if (journeyStatusCount == null || journeyStatusCount.isEmpty()) {
+                  if (headerFieldsOrder != null && !headerFieldsOrder.isEmpty())
+                    {
+                      String csvSeparator = ReportUtils.getSeparator();
+                      int offset = 1;
+                      String headers = "";
+                      for (String field : headerFieldsOrder)
+                        {
+                          headers += field + csvSeparator;
+                        }
+                      headers = headers.substring(0, headers.length() - offset);
+                      writer.write(headers.getBytes());
+                      if (offset == 1)
+                        {
+                          writer.write("\n".getBytes());
+                        }
+                    }
+                  addHeader = false;
+                } 
               } catch (IOException e) {
                 log.error("Error writing to " + tmpFileName, e);
               } finally {

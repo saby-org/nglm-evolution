@@ -242,6 +242,10 @@ public class TokenOfferReportMonoPhase implements ReportCsvFactory
                     writer.write(line.getBytes());
                   }
               }
+            else {
+              this.dumpHeaderToCsv(writer, addHeaders);
+              addHeaders = false;
+            }
           }
       }
     return addHeaders;

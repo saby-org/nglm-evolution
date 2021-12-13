@@ -223,6 +223,8 @@ public class LoyaltyMissionCustomerStatesMonoPhase implements ReportCsvFactory
               }
           }
       }
+    
+    
 
     if (!records.isEmpty())
       {
@@ -247,6 +249,11 @@ public class LoyaltyMissionCustomerStatesMonoPhase implements ReportCsvFactory
                 log.trace("Empty line => not writing");
               }
           }
+      }
+    else
+      {
+        this.dumpHeaderToCsv(writer, addHeaders);
+        addHeaders = false;
       }
     return addHeaders;
   }

@@ -241,6 +241,10 @@ public class TokenReportMonoPhase implements ReportCsvFactory
                       }
                   }
               }
+            else {
+              this.dumpHeaderToCsv(writer, addHeaders);
+              addHeaders = false;
+            }
           }
       }
     return addHeaders;

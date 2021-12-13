@@ -104,6 +104,8 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
                 if (loyaltyProgramsArray != null) loyaltyProgramsArray = loyaltyProgramsArray.stream().filter(loyaltyProgramMap -> LoyaltyProgram.LoyaltyProgramType.POINTS.getExternalRepresentation().equals(loyaltyProgramMap.get("loyaltyProgramType"))).collect(Collectors.toList());
                 if (loyaltyProgramsArray.isEmpty())
                   {
+                    this.dumpHeaderToCsv(writer, addHeaders);
+                    addHeaders = false;
                     return true;
                   }
                 subscriberComputedFields.put(customerID, subscriberID);
