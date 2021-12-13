@@ -1551,12 +1551,26 @@ public class EvaluationCriterion
 
     if (esField == null)
     {
-      if (criterionField.hasSubcriterias())
-        {
-          if (log.isDebugEnabled()) log.debug("a dummy query will be executed for criterion {}, which will return true - will impact the count", criterionField.getDisplay());
-          return alwaysTrueESQuery();
-        }
-      throw new CriterionException("invalid criterionField " + criterionField);
+      if (log.isDebugEnabled()) log.debug("a dummy query will be executed for criterion {}, which will return true - will impact the count", criterionField.getDisplay());
+      return alwaysTrueESQuery();
+      //throw new CriterionException("invalid criterionField " + criterionField);
+    }
+
+    //if criterion field have subscriterias will be considered as complex criteria
+    if(criterionField.hasSubcriterias())
+    {
+      //here I assumed that complex object name is coming in second position. Other solution was to pass this name to criterion when criterion is created but I don't want to add another property to this object
+      String[] criterionIDSplit = criterionField.getID().split("\\.", 3);
+      BoolQueryBuilder query = QueryBuilders.boolQuery();
+      query = query.must(QueryBuilders.matchQuery("complexFields.complexObjectName", criterionIDSplit[1]));
+      for(Expression exp:getSubcriteriaExpressions().values())
+      {
+        query = query.filter(noPainlessEsQuery("complexFields.elements."+exp.evaluateConstant()+"."+esField,criterionOperator,argument));
+      }
+      QueryBuilder queryBuilder = QueryBuilders.nestedQuery("complexFields", query, ScoreMode.Total);
+      if (log.isDebugEnabled()) log.debug("a dummy query will be executed for criterion {}, which will return true - will impact the count", criterionField.getDisplay());
+      return queryBuilder;
+
     }
 
     //
@@ -1650,7 +1664,7 @@ public class EvaluationCriterion
     }
     if(evaluateNoQuery)
     {
-      return noPainlessEsQuery(esField);
+      return noPainlessEsQuery(esField,criterionOperator,argument);
     }
     else
     {
@@ -2052,7 +2066,7 @@ public class EvaluationCriterion
    *
    *****************************************/
 
-  private QueryBuilder noPainlessEsQuery(String esField) throws CriterionException
+  private QueryBuilder noPainlessEsQuery(String esField,CriterionOperator criterionOperator,Expression argument) throws CriterionException
   {
 
     /*****************************************
