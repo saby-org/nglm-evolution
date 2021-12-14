@@ -1404,16 +1404,29 @@ public class GUIManager
           }
       }
 
-    Map<String, CriterionField> profileCriterionFields = DeploymentCommon.getProfileCriterionFields();
-    for ( CriterionField profileCriterionField : profileCriterionFields.values()) {
-      Object av = profileCriterionField.getJSONRepresentation().get("availableValues");
-      if (av != null && av instanceof JSONArray) {
-        JSONArray avArray = (JSONArray) av;
-        if (avArray.size() > 0) {
-          Object value = avArray.get(0);
-          if (value != null && value instanceof String) {
-            String valueString = (String) value;
-            processPutCriterionFieldAvailableValues("0", callingChannel, tenantID);
+    for(Tenant tenant : Deployment.getRealTenants()) { 
+      int tenantID = tenant.getTenantID();
+      Map<String, CriterionField> baseProfileCriterionFields = DeploymentCommon.getBaseProfileCriterionFields(); // custo
+      List<String> alreadyCreated = new ArrayList<>();
+      for ( CriterionField profileCriterionField : baseProfileCriterionFields.values()) {
+        Object av = profileCriterionField.getJSONRepresentation().get("availableValues");
+        if (av != null && av instanceof JSONArray) {
+          JSONArray avArray = (JSONArray) av;
+          if (avArray.size() > 0) {
+            Object value = avArray.get(0);
+            if (value != null && value instanceof String) {
+              String valueString = (String) value; // #segments#
+              if (valueString.length() > 2) {
+                String tag = valueString.substring(1, valueString.length()-2); // #segments# -> segments
+                log.info("Add empty CriterionFieldAvailableValues for " + tag + " for tenant " + tenantID);
+                JSONObject emptyFieldAvailableValues = new JSONObject();
+                emptyFieldAvailableValues.put("id", tag);
+                emptyFieldAvailableValues.put("name", tag);
+                emptyFieldAvailableValues.put("display", tag);
+                emptyFieldAvailableValues.put("availableValues", new JSONArray());
+                processPutCriterionFieldAvailableValues("0", emptyFieldAvailableValues, tenantID);
+              }
+            }
           }
         }
       }
