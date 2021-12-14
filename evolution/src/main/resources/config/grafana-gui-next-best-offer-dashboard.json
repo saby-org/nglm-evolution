@@ -1046,7 +1046,7 @@
     "to": "now"
   },
   "timepicker": {},
-  "timezone": "",
+  "timezone": "replaceWithTenantTimeZone",
   "title": "Next Best Offer",
   "uid": "replaceWithUniqueID",
   "version": 82

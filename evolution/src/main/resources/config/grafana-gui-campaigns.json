@@ -3219,7 +3219,7 @@
       "1d"
     ]
   },
-  "timezone": "",
+  "timezone": "replaceWithTenantTimeZone",
   "title": "Business - Campaigns Dashboard",
   "uid": "replaceWithUniqueID",
   "version": 7

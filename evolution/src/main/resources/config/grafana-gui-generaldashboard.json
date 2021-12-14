@@ -3185,7 +3185,7 @@
       "1d"
     ]
   },
-  "timezone": "",
+  "timezone": "replaceWithTenantTimeZone",
   "title": "General Dashboard",
   "uid": "replaceWithUniqueID",
   "version": 32

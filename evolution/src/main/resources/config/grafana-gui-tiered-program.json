@@ -2729,7 +2729,7 @@
       "1d"
     ]
   },
-  "timezone": "",
+  "timezone": "replaceWithTenantTimeZone",
   "title": "Tiered Program",
   "uid": "replaceWithUniqueID",
   "version": 95

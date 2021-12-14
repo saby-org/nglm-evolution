@@ -734,7 +734,7 @@
       "1d"
     ]
   },
-  "timezone": "",
+  "timezone": "replaceWithTenantTimeZone",
   "title": "Business - Base Management Dashboard",
   "uid": "replaceWithUniqueID",
   "version": 23

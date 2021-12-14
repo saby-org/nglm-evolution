@@ -1935,7 +1935,7 @@
     "to": "now"
   },
   "timepicker": {},
-  "timezone": "",
+  "timezone": "replaceWithTenantTimeZone",
   "title": "MAG - API Monitoring Dashboard",
   "uid": "replaceWithUniqueID",
   "version": 49

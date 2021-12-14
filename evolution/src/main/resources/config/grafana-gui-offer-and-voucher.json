@@ -1822,7 +1822,7 @@
     "to": "now"
   },
   "timepicker": {},
-  "timezone": "",
+  "timezone": "replaceWithTenantTimeZone",
   "title": "Business _ Offer and Voucher Dashboard",
   "uid": "replaceWithUniqueID",
   "version": 6

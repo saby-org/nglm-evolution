@@ -2323,7 +2323,7 @@
       "1d"
     ]
   },
-  "timezone": "",
+  "timezone": "replaceWithTenantTimeZone",
   "title": "Missions Program Dashboard",
   "uid": "replaceWithUniqueID",
   "version": 6

@@ -2364,7 +2364,7 @@
       "1d"
     ]
   },
-  "timezone": "",
+  "timezone": "replaceWithTenantTimeZone",
   "title": "Challenges Program Dashboard",
   "uid": "replaceWithUniqueID",
   "version": 45

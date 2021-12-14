@@ -1281,7 +1281,7 @@
       "1d"
     ]
   },
-  "timezone": "",
+  "timezone": "replaceWithTenantTimeZone",
   "title": "Business - Base Analytics Dashboard",
   "uid": "replaceWithUniqueID",
   "version": 73
