@@ -181,6 +181,10 @@ public class BadgeCustomerReportMonoPhase implements ReportCsvFactory
                         writer.write(line.getBytes());
                       }
                   }
+                else {
+                  this.dumpHeaderToCsv(writer, addHeaders);
+                  addHeaders = false;
+                }
               }
             else
               {

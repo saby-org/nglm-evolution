@@ -240,6 +240,10 @@ public class TokenReportMonoPhase implements ReportCsvFactory
                         writer.write(line.getBytes());
                       }
                   }
+                else {
+                  this.dumpHeaderToCsv(writer, addHeaders);
+                  addHeaders = false;
+                }
               }
             else {
               this.dumpHeaderToCsv(writer, addHeaders);

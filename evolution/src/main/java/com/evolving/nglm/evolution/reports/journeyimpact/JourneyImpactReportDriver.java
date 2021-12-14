@@ -263,10 +263,10 @@ public class JourneyImpactReportDriver extends ReportDriver
       try {
         fos = new FileOutputStream(file);
         writer = new ZipOutputStream(fos);
-        ZipEntry entry = new ZipEntry(new File(csvFilename).getName());
-        writer.putNextEntry(entry);
-        writer.setLevel(Deflater.BEST_SPEED);
         if (nbJourneys == 0) {
+          ZipEntry entry = new ZipEntry(new File(csvFilename).getName());
+          writer.putNextEntry(entry);
+          writer.setLevel(Deflater.BEST_SPEED);
           if (headerFieldsOrder != null && !headerFieldsOrder.isEmpty())
             {
               String csvSeparator = ReportUtils.getSeparator();

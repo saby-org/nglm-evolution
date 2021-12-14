@@ -156,12 +156,15 @@ public class CustomerPointDetailsMonoPhase implements ReportCsvFactory
                       }
                   }
               }
+            else {
+              this.dumpHeaderToCsv(writer, addHeaders);
+              addHeaders = false;
+            }
             }
           else
             {
               this.dumpHeaderToCsv(writer, addHeaders);
-              addHeaders = false; 
-              return addHeaders;
+              addHeaders = false;
             }
         }
         catch (Exception e){
