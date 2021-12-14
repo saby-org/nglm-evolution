@@ -1404,6 +1404,22 @@ public class GUIManager
           }
       }
 
+    Map<String, CriterionField> profileCriterionFields = DeploymentCommon.getProfileCriterionFields();
+    for ( CriterionField profileCriterionField : profileCriterionFields.values()) {
+      Object av = profileCriterionField.getJSONRepresentation().get("availableValues");
+      if (av != null && av instanceof JSONArray) {
+        JSONArray avArray = (JSONArray) av;
+        if (avArray.size() > 0) {
+          Object value = avArray.get(0);
+          if (value != null && value instanceof String) {
+            String valueString = (String) value;
+            processPutCriterionFieldAvailableValues("0", callingChannel, tenantID);
+          }
+        }
+      }
+    }
+    
+    
     //
     //  reports
     //
