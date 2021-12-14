@@ -95,7 +95,7 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
                   {
                     this.dumpHeaderToCsv(writer, addHeaders);
                     addHeaders = false;
-                    return true;
+                    return addHeaders;
                   }
                 List<Map<String, Object>> loyaltyProgramsArray = (List<Map<String, Object>>) subscriberFields.get("loyaltyPrograms");
                 
@@ -108,7 +108,7 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
                   {
                     this.dumpHeaderToCsv(writer, addHeaders);
                     addHeaders = false;
-                    return true;
+                    return addHeaders;
                   }
                 subscriberComputedFields.put(customerID, subscriberID);
                 for (AlternateID alternateID : Deployment.getAlternateIDs().values())
