@@ -76,7 +76,7 @@ public abstract class SubscriberStreamOutput implements SubscriberStreamPriority
 		Struct valueStruct = (Struct) value;
 		this.alternateIDs = (schema.field("alternateIDs")!=null && valueStruct.get("alternateIDs") != null) ? (Map<String,String>) valueStruct.get("alternateIDs") : new LinkedHashMap<>();
 		this.deliveryPriority = schema.field("deliveryPriority")!=null ? DeliveryPriority.fromExternalRepresentation(valueStruct.getString("deliveryPriority")) : DeliveryPriority.Standard;
-		this.eventDate = (schema.field("eventDate")!=null && valueStruct.get("eventDate") != null) ? new Date(valueStruct.getInt64("eventDate")) : SystemTime.getCurrentTime();
+		this.eventDate = (schema.field("eventDate")!=null && valueStruct.get("eventDate") != null && (valueStruct.get("eventDate") instanceof Long)/*before EVPRO-1202 some child classes had event date as Date*/) ? new Date(valueStruct.getInt64("eventDate")) : SystemTime.getCurrentTime();
 		this.eventID = schema.field("eventID")!=null ? valueStruct.getString("eventID") : null;
 	}
 	// the copy constructor
