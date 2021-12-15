@@ -361,7 +361,7 @@ public class JourneyImpactReportDriver extends ReportDriver
       String headers="";
       StringBuilder sbHeader = new StringBuilder();
       for (String fields : values.keySet()) {
-        //headerFieldsOrder.add(fields);
+        headerFieldsOrder.add(fields);
         sbHeader.append(fields).append(CSV_SEPARATOR);
       }
       if (sbHeader.toString().length() > 0) {
@@ -378,6 +378,7 @@ public class JourneyImpactReportDriver extends ReportDriver
     {
       if (addHeaders)
         {
+          headerFieldsOrder.clear();
           addHeaders(writer, lineMap);
         }
       String line = ReportUtils.formatResult(lineMap);
