@@ -38,6 +38,8 @@ import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
 import com.evolving.nglm.evolution.reports.bdr.BDRReportMonoPhase;
 
+import javassist.expr.NewArray;
+
 public class JourneyImpactReportDriver extends ReportDriver
 {
   private static final Logger log = LoggerFactory.getLogger(JourneyImpactReportDriver.class);
@@ -195,6 +197,27 @@ public class JourneyImpactReportDriver extends ReportDriver
                 writer.setLevel(Deflater.BEST_SPEED);
                 tmpZipFiles.put(tmpFileName,writer); // to add it later to final ZIP file
                 boolean addHeader = true;
+
+                if (journeyStatusCount == null || journeyStatusCount.isEmpty()) {
+                  if (headerFieldsOrder != null && !headerFieldsOrder.isEmpty())
+                    {
+                      String csvSeparator = ReportUtils.getSeparator();
+                      int offset = 1;
+                      String headers = "";
+                      for (String field : headerFieldsOrder)
+                        {
+                          headers += field + csvSeparator;
+                          
+                        }
+                      headers = headers.substring(0, headers.length() - offset);
+                      writer.write(headers.getBytes());
+                      if (offset == 1)
+                        {
+                          writer.write("\n".getBytes());
+                        }
+                    }
+                  addHeader = false;
+                }
                 for (String status : journeyStatusCount.keySet())
                   {
                     Map<String, Object> mapPerStatus = new LinkedHashMap<>();
@@ -208,26 +231,7 @@ public class JourneyImpactReportDriver extends ReportDriver
                     }
                     dumpLineToCsv(mapPerStatus, writer, addHeader);
                     addHeader = false;
-                  }
-                if (journeyStatusCount == null || journeyStatusCount.isEmpty()) {
-                  if (headerFieldsOrder != null && !headerFieldsOrder.isEmpty())
-                    {
-                      String csvSeparator = ReportUtils.getSeparator();
-                      int offset = 1;
-                      String headers = "";
-                      for (String field : headerFieldsOrder)
-                        {
-                          headers += field + csvSeparator;
-                        }
-                      headers = headers.substring(0, headers.length() - offset);
-                      writer.write(headers.getBytes());
-                      if (offset == 1)
-                        {
-                          writer.write("\n".getBytes());
-                        }
-                    }
-                  addHeader = false;
-                } 
+                  } 
               } catch (IOException e) {
                 log.error("Error writing to " + tmpFileName, e);
               } finally {
@@ -359,7 +363,7 @@ public class JourneyImpactReportDriver extends ReportDriver
       String headers="";
       StringBuilder sbHeader = new StringBuilder();
       for (String fields : values.keySet()) {
-        headerFieldsOrder.add(fields);
+        //headerFieldsOrder.add(fields);
         sbHeader.append(fields).append(CSV_SEPARATOR);
       }
       if (sbHeader.toString().length() > 0) {
