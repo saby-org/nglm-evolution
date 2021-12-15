@@ -43,8 +43,8 @@ public class JourneyTrafficDatacubeGenerator extends SimpleDatacubeGenerator
   private static final String FILTER_STRATUM_PREFIX = "subscriberStratum.";
   private static final String METRIC_CONVERSION_COUNT = "metricConversionCount";
   private static final String METRIC_CONVERTED_TODAY = "metricConvertedToday";
-  private static final String METRIC_COUNT_RANGE = "POSITIVE_VALUES";
-  private static final double METRIC_COUNT_FROM = 0.000001d; // Hacky: see range aggregation, because "from" is included. Here we want positive values only.
+  public static final String METRIC_COUNT_RANGE = "POSITIVE_VALUES";
+  public static final double METRIC_COUNT_FROM = 0.000001d; // Hacky: see range aggregation, because "from" is included. Here we want positive values only.
 
   /*****************************************
   *

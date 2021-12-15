@@ -53,6 +53,7 @@ public class JourneyImpactReportDriver extends ReportDriver
   private static final String startDate = "startDate";
   private static final String endDate = "endDate";
   private static final String rewards = "rewards";
+  public static final String customersWithPrefix = "customersWith";
   
   static List<String> headerFieldsOrder = new ArrayList<String>();
   static
@@ -71,6 +72,13 @@ public class JourneyImpactReportDriver extends ReportDriver
       headerFieldsOrder.add(journeyMetricDeclaration.getESFieldPrior());
       headerFieldsOrder.add(journeyMetricDeclaration.getESFieldDuring());
       headerFieldsOrder.add(journeyMetricDeclaration.getESFieldPost());
+      
+      if(journeyMetricDeclaration.isCustomerCount()) // Also add the 3 "customersWith" metrics (EVPRO-1366)
+        { 
+          headerFieldsOrder.add(customersWithPrefix + journeyMetricDeclaration.getESFieldPrior());
+          headerFieldsOrder.add(customersWithPrefix + journeyMetricDeclaration.getESFieldDuring());
+          headerFieldsOrder.add(customersWithPrefix + journeyMetricDeclaration.getESFieldPost());
+        }
     }
   }
   
