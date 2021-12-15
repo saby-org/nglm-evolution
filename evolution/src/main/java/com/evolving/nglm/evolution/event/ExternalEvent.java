@@ -101,11 +101,11 @@ public abstract class ExternalEvent implements EvolutionEngineEvent {
 	// packed
 	private Long subscriberID;// TODO can we not pack it, this is a duplication of message key
 	private Integer tenantID;
-	private SubscriberStreamEvent.SubscriberAction subscriberAction;
+	private SubscriberStreamEvent.SubscriberAction subscriberAction = SubscriberAction.Standard;
 	private Date eventDate;
 	private String eventID;
-	private DeliveryRequest.DeliveryPriority priority;
-	private Map<AlternateID,String> alternateIDsCreated;
+	private DeliveryRequest.DeliveryPriority priority = DeliveryRequest.DeliveryPriority.Standard;
+	private Map<AlternateID,String> alternateIDsCreated = new HashMap<>();
 	private Map<String/*relationshipID*/,Long> parentToAddSubscriberIDs = new HashMap<>();
 	private Map<String/*relationshipID*/,Long> parentToRemoveSubscriberIDs = new HashMap<>();
 	// not packed

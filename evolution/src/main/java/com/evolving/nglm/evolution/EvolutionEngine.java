@@ -1902,6 +1902,7 @@ public class EvolutionEngine
         }
         if(externalEvent.getTenantID()==null) {
           log.warn("Event " + evolutionEvent.getClass() + " received for a creation without tenantID");
+          return null;
         }
         tenantID = externalEvent.getTenantID();
       }
