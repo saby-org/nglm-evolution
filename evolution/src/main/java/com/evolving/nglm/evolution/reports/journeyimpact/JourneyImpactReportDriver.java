@@ -38,8 +38,6 @@ import com.evolving.nglm.evolution.reports.ReportUtils;
 import com.evolving.nglm.evolution.reports.ReportsCommonCode;
 import com.evolving.nglm.evolution.reports.bdr.BDRReportMonoPhase;
 
-import javassist.expr.NewArray;
-
 public class JourneyImpactReportDriver extends ReportDriver
 {
   private static final Logger log = LoggerFactory.getLogger(JourneyImpactReportDriver.class);
