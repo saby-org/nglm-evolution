@@ -2012,13 +2012,13 @@ public class EvaluationCriterion
           break;
 
         case DoesNotContainsKeywordOperator:
-            query = QueryBuilders.boolQuery().must(QueryBuilders.existsQuery(esField)).mustNot(baseQuery);
+            query = QueryBuilders.boolQuery().must(QueryBuilders.existsQuery(esField)).mustNot(baseQuery).filter(QueryBuilders.termQuery("tenantID",tenantID));;
           break;
 
 
         default:
           if (criterionDefault)
-            query = QueryBuilders.boolQuery().should(QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery(esField))).should(baseQuery);
+            query = QueryBuilders.boolQuery().should(QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery(esField))).should(baseQuery).filter(QueryBuilders.termQuery("tenantID",tenantID));
           else if (argument != null && argument instanceof Expression.FunctionCallExpression) { // redpoint.earliestexpirydate + 1 month
             Expression.FunctionCallExpression fce = (Expression.FunctionCallExpression) argument;
             // check if fce.arguments[0] is a ReferenceExpression, then add an exist clause with fce.arguments[0].reference.esField
@@ -2027,7 +2027,7 @@ public class EvaluationCriterion
             for (String esFieldArgument : esFieldsList) {
               subQuery = subQuery.must(QueryBuilders.existsQuery(esFieldArgument));
             }
-            query = subQuery;
+            query = subQuery.filter(QueryBuilders.termQuery("tenantID",tenantID));;
           } else if (argument != null && argument instanceof Expression.ReferenceExpression) { // redpoint.earliestexpirydate (instant)
             Expression.ReferenceExpression re = (ReferenceExpression) argument;
             BoolQueryBuilder subQuery = QueryBuilders.boolQuery().must(QueryBuilders.existsQuery(esField)).must(baseQuery);
@@ -2035,9 +2035,9 @@ public class EvaluationCriterion
             if (esFieldArg != null) {
               subQuery = subQuery.must(QueryBuilders.existsQuery(esFieldArg));
             }
-            query = subQuery;
+            query = subQuery.filter(QueryBuilders.termQuery("tenantID",tenantID));
           } else
-            query = QueryBuilders.boolQuery().must(QueryBuilders.existsQuery(esField)).must(baseQuery);
+            query = QueryBuilders.boolQuery().must(QueryBuilders.existsQuery(esField)).must(baseQuery).filter(QueryBuilders.termQuery("tenantID",tenantID));
           break;
       }
 
@@ -2066,11 +2066,6 @@ public class EvaluationCriterion
      ****************************************/
     QueryBuilder queryBuilder = null;
 
-    /*****************************************
-     *
-     *  left -- generate code to evaluate left
-     *
-     *****************************************/
 
     //verify is null or not
     switch (criterionOperator)
@@ -2327,7 +2322,9 @@ public class EvaluationCriterion
      *
      *****************************************/
 
-    return queryBuilder;
+    QueryBuilder returnQuery = QueryBuilders.boolQuery().must(queryBuilder).filter(QueryBuilders.termQuery("tenantID",tenantID));
+
+    return returnQuery;
   }
 
   /*****************************************

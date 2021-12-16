@@ -111,7 +111,7 @@ public class CriterionField extends DeploymentManagedObject
     schemaBuilder.field("tagMaxLength", Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("variableType", SchemaBuilder.string().defaultValue("local").schema());
     schemaBuilder.field("profileChangeEvent", SchemaBuilder.bool().defaultValue(false).schema());
-    schemaBuilder.field("useESQueryNoPainless",SchemaBuilder.bool().defaultValue(false).schema());
+    schemaBuilder.field("useESQueryNoPainless",SchemaBuilder.bool().defaultValue(true).schema());
     schemaBuilder.field("subcriteria", SchemaBuilder.array(Schema.STRING_SCHEMA).defaultValue(Collections.<String>emptyList()).schema());
     schema = schemaBuilder.build();
   };
@@ -217,7 +217,7 @@ public class CriterionField extends DeploymentManagedObject
     this.tagMaxLength = JSONUtilities.decodeInteger(jsonRoot, "tagMaxLength", false);
     this.variableType = VariableType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "variableType", "local"));
     this.profileChangeEvent = JSONUtilities.decodeBoolean(jsonRoot, "profileChangeEvent", Boolean.FALSE);
-    this.useESQueryNoPainless = JSONUtilities.decodeBoolean(jsonRoot,"useESQueryNoPainless",Boolean.FALSE);
+    this.useESQueryNoPainless = JSONUtilities.decodeBoolean(jsonRoot,"useESQueryNoPainless",Boolean.TRUE);
     this.subcriterias = new LinkedHashSet<String>();
     JSONArray subcriteriaArray = JSONUtilities.decodeJSONArray(jsonRoot, "subcriteria", new JSONArray());
     for (int i = 0; i < subcriteriaArray.size(); i++)
