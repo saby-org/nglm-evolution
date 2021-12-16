@@ -43,12 +43,11 @@ import org.apache.kafka.clients.admin.DeleteTopicsResult;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.KafkaFuture;
+import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.Serializer;
-import org.apache.kafka.streams.examples.pageview.JsonPOJODeserializer;
-import org.apache.kafka.streams.examples.pageview.JsonPOJOSerializer;
 import org.apache.kafka.streams.processor.TimestampExtractor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,6 +55,7 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.EvolutionSetup;
 import com.evolving.nglm.core.JSONUtilities;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * This class defines constants and utility functions than can be used in custom reports.
@@ -1010,4 +1010,72 @@ public class ReportUtils {
       log.error("Error processing " + inputFileName + " or " + outputFileName, e);
     }
   }
+  
+  public static class JsonPOJOSerializer<T> implements Serializer<T> {
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    /**
+     * Default constructor needed by Kafka
+     */
+    public JsonPOJOSerializer() {
+    }
+    
+    @Override
+    public void configure(Map<String, ?> props, boolean isKey) {
+    }
+
+    @Override
+    public byte[] serialize(String topic, T data) {
+        if (data == null)
+            return null;
+
+        try {
+            return objectMapper.writeValueAsBytes(data);
+        } catch (Exception e) {
+            throw new SerializationException("Error serializing JSON message", e);
+        }
+    }
+
+    @Override
+    public void close() {
+    }
+  }
+  
+  public static class JsonPOJODeserializer<T> implements Deserializer<T> {
+    private ObjectMapper objectMapper = new ObjectMapper();
+
+    private Class<T> tClass;
+
+    /**
+     * Default constructor needed by Kafka
+     */
+    public JsonPOJODeserializer() {
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public void configure(Map<String, ?> props, boolean isKey) {
+        tClass = (Class<T>) props.get("JsonPOJOClass");
+    }
+
+    @Override
+    public T deserialize(String topic, byte[] bytes) {
+        if (bytes == null)
+            return null;
+
+        T data;
+        try {
+            data = objectMapper.readValue(bytes, tClass);
+        } catch (Exception e) {
+            throw new SerializationException(e);
+        }
+
+        return data;
+    }
+
+    @Override
+    public void close() {
+
+    }
+}
 }

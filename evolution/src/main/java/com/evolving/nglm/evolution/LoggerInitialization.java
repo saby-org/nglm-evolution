@@ -4,8 +4,8 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 
-import org.apache.log4j.PropertyConfigurator;
-import org.apache.log4j.xml.DOMConfigurator;
+//import org.apache.log4j.PropertyConfigurator;
+//import org.apache.log4j.xml.DOMConfigurator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,11 +36,11 @@ public class LoggerInitialization
 			  String filename = new URL(confFile).toURI().getPath();
 			  if (filename.endsWith(".xml"))
 			    {
-			      DOMConfigurator.configureAndWatch(filename, 10000L); // milliseconds
+//			      DOMConfigurator.configureAndWatch(filename, 10000L); // milliseconds
 			    }
 			  else if (filename.endsWith(".properties"))
 			    {
-			      PropertyConfigurator.configureAndWatch(filename, 10000L); // milliseconds
+//			      PropertyConfigurator.configureAndWatch(filename, 10000L); // milliseconds
 			    }
 			  else
 			    {

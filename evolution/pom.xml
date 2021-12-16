@@ -3,7 +3,7 @@
   <groupId>com.evolving.nglm</groupId>
   <artifactId>nglm-evolution</artifactId>
   <packaging>jar</packaging>
-  <version>2.1.0_2-SNAPSHOT</version>
+  <version>2.1.0_2-EVPRO-1471-SNAPSHOT</version>
   <name>evolution</name>
   <url>http://10.100.0.6:8090/artifactory/evolving-internal</url>
   <description>NGLM EVOLUTION</description>
@@ -27,7 +27,7 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>2.1.0_1-SNAPSHOT</version>
+    <version>2.1.0_1-EVPRO-1471-SNAPSHOT</version>
   </parent>
 
   <scm>
@@ -39,7 +39,7 @@
   <properties>
 
     <!-- core version -->
-    <nglm.core.version>2.1.0_1-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>2.1.0_1-EVPRO-1471-SNAPSHOT</nglm.core.version>
 
     <!-- dependencies - gui -->
     <gui-fwk.version>2.1.0</gui-fwk.version>
@@ -114,12 +114,12 @@
     </dependency>
 
     <!-- Reports -->
-    <dependency>
+    <!--  <dependency>
       <groupId>org.apache.kafka</groupId>
       <artifactId>kafka-streams-examples</artifactId>
-      <version>1.0.1-cp1</version>
+      <version>6.2.1-ce</version>
       <scope>compile</scope>
-    </dependency>
+    </dependency> -->
 
     <!-- Gson -->
     <dependency>
@@ -145,7 +145,7 @@
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-api</artifactId>
-	  <version>2.7</version>
+	  <version>2.15.0</version>
     </dependency>
     
     <dependency>
