@@ -195,6 +195,7 @@ public class ThirdPartyJSONGenerator
                             offerObjectives.add(offerObjectiveJSON);
                           }
                       }
+                    offerObjectives.add(offerObjectiveJSON);
                   }
               }
           }
