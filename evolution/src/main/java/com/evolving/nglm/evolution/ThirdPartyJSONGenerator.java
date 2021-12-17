@@ -191,8 +191,6 @@ public class ThirdPartyJSONGenerator
 
                               }
                             offerObjectiveJSON.put("catalogCharacteristics", newCatalogCharateristics);
-
-                            offerObjectives.add(offerObjectiveJSON);
                           }
                       }
                     offerObjectives.add(offerObjectiveJSON);
