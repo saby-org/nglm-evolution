@@ -271,14 +271,14 @@
           "targets": [
             {
               "exemplar": true,
-              "expr": "sum(rate(com_evolving_nglm_evolution_notificationdelivery_count_total{tenant=\"replaceWithTenantID\"}[$__rate_interval])) ",
+              "expr": "sum(rate(com_evolving_nglm_evolution_notificationdelivery_count_total{tenant=\"replaceWithTenantID\",status=~\"acknowledged|failed\"}[$__rate_interval])) ",
               "interval": "",
               "legendFormat": "Total",
               "refId": "A"
             },
             {
               "exemplar": true,
-              "expr": "sum(rate(com_evolving_nglm_evolution_notificationdelivery_count_total{tenant=\"replaceWithTenantID\"}[$__rate_interval])) by(channel)",
+              "expr": "sum(rate(com_evolving_nglm_evolution_notificationdelivery_count_total{tenant=\"replaceWithTenantID\",status=~\"acknowledged|failed\"}[$__rate_interval])) by(channel)",
               "hide": false,
               "interval": "",
               "legendFormat": "{{channel}} ",
