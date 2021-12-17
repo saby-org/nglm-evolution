@@ -9,6 +9,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -230,6 +231,29 @@ public class VoucherUploadedReportMonoPhase implements ReportCsvFactory
           {
             writer.write("\n".getBytes());
           }
+      }
+  }
+  
+  
+  /*************************************
+   * 
+   * Add headers for empty file   * 
+   * 
+   *****************************************/
+  
+  @Override public void dumpHeaderToCsv(ZipOutputStream writer, boolean addHeaders)
+  {
+    try
+      {
+        if (addHeaders)
+          {
+            Set<String> headers = new HashSet<String>(headerFieldsOrder);
+            addHeaders(writer, headers, 1);
+          }
+      } 
+    catch (IOException e)
+      {
+        e.printStackTrace();
       }
   }
   

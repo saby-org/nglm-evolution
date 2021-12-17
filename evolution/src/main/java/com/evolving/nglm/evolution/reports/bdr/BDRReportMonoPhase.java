@@ -160,6 +160,27 @@ public class BDRReportMonoPhase implements ReportCsvFactory
         e.printStackTrace();
       }
   }
+  
+  /*************************************
+   * 
+   * Add headers for empty file   * 
+   * 
+   *****************************************/
+  
+  @Override public void dumpHeaderToCsv(ZipOutputStream writer, boolean addHeaders)
+  {
+    try
+      {
+        if (addHeaders)
+          {
+            addHeaders(writer, headerFieldsOrder, 1);
+          }
+      } 
+    catch (IOException e)
+      {
+        e.printStackTrace();
+      }
+  }
 
   public Map<String, List<Map<String, Object>>> getSplittedReportElementsForFileMono(Map<String, Object> map)
   {

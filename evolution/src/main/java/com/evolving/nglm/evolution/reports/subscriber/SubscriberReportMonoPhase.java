@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -228,6 +229,28 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
           }
       }
   }
+  
+  /*************************************
+   * 
+   * Add headers for empty file   * 
+   * 
+   *****************************************/
+ @Override public void dumpHeaderToCsv(ZipOutputStream writer, boolean addHeaders)
+  {
+    try
+      {
+        if (addHeaders)
+          {
+            Set<String> headers = new HashSet<String>(headerFieldsOrder);
+            addHeaders(writer, headers, 1);
+          }
+      } 
+    catch (IOException e)
+      {
+        e.printStackTrace();
+      }
+  }
+  
 
   /****************************************
   *

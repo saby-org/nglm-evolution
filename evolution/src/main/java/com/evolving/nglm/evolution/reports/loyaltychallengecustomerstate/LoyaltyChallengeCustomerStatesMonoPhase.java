@@ -154,7 +154,9 @@ public class LoyaltyChallengeCustomerStatesMonoPhase implements ReportCsvFactory
               {
                 if (subscriberFields.get("loyaltyPrograms") == null)
                   {
-                    return true;
+                    this.dumpHeaderToCsv(writer, addHeaders);
+                    addHeaders = false;
+                    return addHeaders;
                   }
                 List<Map<String, Object>> loyaltyProgramsArray = (List<Map<String, Object>>) subscriberFields.get("loyaltyPrograms");
 
@@ -165,7 +167,9 @@ public class LoyaltyChallengeCustomerStatesMonoPhase implements ReportCsvFactory
                 if (loyaltyProgramsArray != null) loyaltyProgramsArray = loyaltyProgramsArray.stream().filter(loyaltyProgramMap -> LoyaltyProgram.LoyaltyProgramType.CHALLENGE.getExternalRepresentation().equals(loyaltyProgramMap.get("loyaltyProgramType"))).collect(Collectors.toList());
                 if (loyaltyProgramsArray.isEmpty())
                   {
-                    return true;
+                    this.dumpHeaderToCsv(writer, addHeaders);
+                    addHeaders = false;
+                    return addHeaders;
                   }
                 subscriberComputedFields.put(customerID, subscriberID);
                 for (AlternateID alternateID : Deployment.getAlternateIDs().values())
@@ -284,6 +288,41 @@ public class LoyaltyChallengeCustomerStatesMonoPhase implements ReportCsvFactory
           {
             writer.write("\n".getBytes());
           }
+      }
+  }
+  
+  /*************************************
+   * 
+   * Add headers for empty file   * 
+   * 
+   *****************************************/
+  
+  @Override public void dumpHeaderToCsv(ZipOutputStream writer, boolean addHeaders)
+  {
+    try
+      {
+        if (addHeaders)
+          {
+            if (headerFieldsOrder != null && !headerFieldsOrder.isEmpty())
+              {
+                int offset = 1;
+                String header = "";
+                for (String field : headerFieldsOrder)
+                  {
+                    header += field + CSV_SEPARATOR;
+                  }
+                header = header.substring(0, header.length() - offset);
+                writer.write(header.getBytes());
+                if (offset == 1)
+                  {
+                    writer.write("\n".getBytes());
+                  }
+              }
+          }
+      } 
+    catch (IOException e)
+      {
+        e.printStackTrace();
       }
   }
   
