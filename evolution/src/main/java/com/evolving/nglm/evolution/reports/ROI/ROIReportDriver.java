@@ -7,6 +7,7 @@
 package com.evolving.nglm.evolution.reports.ROI;
 
 import com.evolving.nglm.evolution.Report;
+import com.evolving.nglm.evolution.datacubes.generator.SubscriberProfileDatacubeGenerator;
 import com.evolving.nglm.evolution.reports.FilterObject;
 import com.evolving.nglm.evolution.reports.ReportDriver;
 import com.evolving.nglm.evolution.reports.ReportUtils;
@@ -30,7 +31,7 @@ public class ROIReportDriver extends ReportDriver
   {
     log.debug("Processing ROI Report with " + report.getName());
 
-    String esIndexSubscriber = getSubscriberProfileIndex(reportGenerationDate);
+    String esIndexSubscriber = SubscriberProfileDatacubeGenerator.DATACUBE_ES_INDEX(tenantID);
 
     ROIReportMonoPhase.main(new String[] { elasticSearch, esIndexSubscriber, csvFilename, tenantID+"" }, reportGenerationDate);
 

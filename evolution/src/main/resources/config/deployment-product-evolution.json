@@ -1203,6 +1203,13 @@
       "description"         : "Description of status of badges delivered to customers",
       "class"               : "com.evolving.nglm.evolution.reports.badgeCustomer.BadgeCustomerReportDriver",
       "availableScheduling" : [ "none","daily", "weekly", "monthly" ]
+    },
+    {
+      "name"                : "ROIReport",
+      "display"             : "ROI Report",
+      "description"         : "Description of the Return On Investment Report",
+      "class"               : "com.evolving.nglm.evolution.reports.ROI.ROIReportDriver",
+      "availableScheduling" : [ "none","daily", "weekly", "monthly" ]
     }
   ],
 
@@ -1336,7 +1343,7 @@
   "gracePeriodWorkflowsMs" : 43200000,
     
   "journeyMetrics" : {},
-  "subscriberProfileDatacubeMetrics" : [],
+  "subscriberProfileDatacubeMetrics" : {},
   "enableProfileSegmentChange" : true,
   "enableEvaluateTargetRandomness" : false,
   "enableContactPolicyProcessing" : true,
