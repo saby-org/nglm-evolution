@@ -33,6 +33,7 @@ public class JourneyMetricDeclaration extends DeploymentManagedObject
   private String esFieldPrior;
   private String esFieldDuring;
   private String esFieldPost;
+  private boolean customerCount;
 
   /*****************************************
   *
@@ -44,6 +45,7 @@ public class JourneyMetricDeclaration extends DeploymentManagedObject
   public String getESFieldPrior() { return esFieldPrior; }
   public String getESFieldDuring() { return esFieldDuring; }
   public String getESFieldPost() { return esFieldPost; }
+  public boolean isCustomerCount() { return customerCount; } 
 
   /*****************************************
   *
@@ -83,6 +85,7 @@ public class JourneyMetricDeclaration extends DeploymentManagedObject
     this.esFieldPrior = JSONUtilities.decodeString(jsonRoot, "esFieldPrior", true);
     this.esFieldDuring = JSONUtilities.decodeString(jsonRoot, "esFieldDuring", true);
     this.esFieldPost = JSONUtilities.decodeString(jsonRoot, "esFieldPost", true);
+    this.customerCount = JSONUtilities.decodeBoolean(jsonRoot, "customerCount", true);
   }
 
   /*****************************************

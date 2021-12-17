@@ -15,6 +15,8 @@ import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.composite.ParsedComposite.ParsedBucket;
 import org.elasticsearch.search.aggregations.bucket.range.ParsedDateRange;
+import org.elasticsearch.search.aggregations.bucket.range.ParsedRange;
+import org.elasticsearch.search.aggregations.bucket.range.RangeAggregator.Range;
 import org.elasticsearch.search.aggregations.bucket.filter.ParsedFilter;
 import org.elasticsearch.search.aggregations.metrics.ParsedSum;
 
@@ -41,6 +43,8 @@ public class JourneyTrafficDatacubeGenerator extends SimpleDatacubeGenerator
   private static final String FILTER_STRATUM_PREFIX = "subscriberStratum.";
   private static final String METRIC_CONVERSION_COUNT = "metricConversionCount";
   private static final String METRIC_CONVERTED_TODAY = "metricConvertedToday";
+  private static final String METRIC_COUNT_RANGE = "POSITIVE_VALUES";
+  private static final double METRIC_COUNT_FROM = 0.000001d; // Hacky: see range aggregation, because "from" is included. Here we want positive values only.
 
   /*****************************************
   *
@@ -213,6 +217,17 @@ public class JourneyTrafficDatacubeGenerator extends SimpleDatacubeGenerator
         metricAggregations.add(AggregationBuilders.sum(entry.getValue().getID() + "_" + entry.getValue().getESFieldPrior()).field(entry.getValue().getESFieldPrior()));
         metricAggregations.add(AggregationBuilders.sum(entry.getValue().getID() + "_" + entry.getValue().getESFieldDuring()).field(entry.getValue().getESFieldDuring()));
         metricAggregations.add(AggregationBuilders.sum(entry.getValue().getID() + "_" + entry.getValue().getESFieldPost()).field(entry.getValue().getESFieldPost()));
+        
+        if(entry.getValue().isCustomerCount()) {
+          // Also add the 3 "count" metrics
+          metricAggregations.add(AggregationBuilders.range(entry.getValue().getID() + "_" + entry.getValue().getESFieldPrior() + "_COUNT")
+              .field(entry.getValue().getESFieldPrior()).addRange(new Range(METRIC_COUNT_RANGE, METRIC_COUNT_FROM, null)));
+          metricAggregations.add(AggregationBuilders.range(entry.getValue().getID() + "_" + entry.getValue().getESFieldDuring() + "_COUNT")
+              .field(entry.getValue().getESFieldDuring()).addRange(new Range(METRIC_COUNT_RANGE, METRIC_COUNT_FROM, null)));
+          metricAggregations.add(AggregationBuilders.range(entry.getValue().getID() + "_" + entry.getValue().getESFieldPost() + "_COUNT")
+              .field(entry.getValue().getESFieldPost()).addRange(new Range(METRIC_COUNT_RANGE, METRIC_COUNT_FROM, null)));
+          
+        }
       }
     }
 
@@ -282,6 +297,45 @@ public class JourneyTrafficDatacubeGenerator extends SimpleDatacubeGenerator
   
         if(postAggregation != null) {
           metrics.put("custom." + entry.getValue().getESFieldPost(), (long) postAggregation.getValue());
+        }
+        
+
+        if(entry.getValue().isCustomerCount()) {
+          // Also extract the 3 "count" metrics
+          ParsedRange priorAggregationCount = compositeBucket.getAggregations().get(entry.getValue().getID() + "_" + entry.getValue().getESFieldPrior() + "_COUNT");
+          ParsedRange duringAggregationCount = compositeBucket.getAggregations().get(entry.getValue().getID() + "_" + entry.getValue().getESFieldDuring() + "_COUNT");
+          ParsedRange postAggregationCount = compositeBucket.getAggregations().get(entry.getValue().getID() + "_" + entry.getValue().getESFieldPost( )+ "_COUNT");
+          
+          if (priorAggregationCount != null ) {
+            // This list should only contain ONE bucket (the METRIC_COUNT_RANGE one)
+            for(org.elasticsearch.search.aggregations.ParsedMultiBucketAggregation.Bucket bucket: priorAggregationCount.getBuckets()) {
+              if(bucket.getKeyAsString().equals(METRIC_COUNT_RANGE)) {
+                metrics.put("custom.customerCount." + entry.getValue().getESFieldPrior(), bucket.getDocCount());
+                break;
+              }
+            }
+          }
+          
+          if (duringAggregationCount != null ) {
+            // This list should only contain ONE bucket (the METRIC_COUNT_RANGE one)
+            for(org.elasticsearch.search.aggregations.ParsedMultiBucketAggregation.Bucket bucket: duringAggregationCount.getBuckets()) {
+              if(bucket.getKeyAsString().equals(METRIC_COUNT_RANGE)) {
+                metrics.put("custom.customerCount." + entry.getValue().getESFieldDuring(), bucket.getDocCount());
+                break;
+              }
+            }
+          }
+          
+          if (postAggregationCount != null ) {
+            // This list should only contain ONE bucket (the METRIC_COUNT_RANGE one)
+            for(org.elasticsearch.search.aggregations.ParsedMultiBucketAggregation.Bucket bucket: postAggregationCount.getBuckets()) {
+              if(bucket.getKeyAsString().equals(METRIC_COUNT_RANGE)) {
+                metrics.put("custom.customerCount." + entry.getValue().getESFieldPost(), bucket.getDocCount());
+                break;
+              }
+            }
+          }
+          
         }
       }
     }
