@@ -79,7 +79,7 @@
           "targets": [
             {
               "exemplar": true,
-              "expr": "topk(10,sum (increase(com_evolving_nglm_evolution_notificationdelivery_count_total{tenant=\"replaceWithTenantID\"}[$interval])))",
+              "expr": "topk(10,sum (increase(com_evolving_nglm_evolution_notificationdelivery_count_total{tenant=\"replaceWithTenantID\", status !=\"pending\"}[$interval])))",
               "format": "time_series",
               "interval": "",
               "legendFormat": "Total",
@@ -87,7 +87,7 @@
             },
             {
               "exemplar": true,
-              "expr": "topk(10,sum by(channel)(increase(com_evolving_nglm_evolution_notificationdelivery_count_total{tenant=\"replaceWithTenantID\"}[$interval])))",
+              "expr": "topk(10,sum by(channel)(increase(com_evolving_nglm_evolution_notificationdelivery_count_total{tenant=\"replaceWithTenantID\", status !=\"pending\"}[$interval])))",
               "format": "time_series",
               "hide": false,
               "interval": "",
