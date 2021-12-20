@@ -53,7 +53,7 @@ public class JourneyImpactReportDriver extends ReportDriver
   private static final String startDate = "startDate";
   private static final String endDate = "endDate";
   private static final String rewards = "rewards";
-  public static final String customersWithPrefix = "customersWith";
+  public static final String customersWithPrefix = "customersWith_";
   
   static List<String> headerFieldsOrder = new ArrayList<String>();
   static
@@ -67,18 +67,24 @@ public class JourneyImpactReportDriver extends ReportDriver
     headerFieldsOrder.add(startDate);
     headerFieldsOrder.add(endDate);
     headerFieldsOrder.add(rewards);
+
+    // @rl This seems to be not used. What is the point of doing that ? 
     for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricConfiguration().getMetrics().values())
     {
       headerFieldsOrder.add(journeyMetricDeclaration.getESFieldPrior());
-      headerFieldsOrder.add(journeyMetricDeclaration.getESFieldDuring());
-      headerFieldsOrder.add(journeyMetricDeclaration.getESFieldPost());
+      if(journeyMetricDeclaration.isCustomerCount()) { // Also add the "customersWith" metrics (EVPRO-1366)
+        headerFieldsOrder.add(customersWithPrefix + journeyMetricDeclaration.getESFieldPrior());
+      }
       
-      if(journeyMetricDeclaration.isCustomerCount()) // Also add the 3 "customersWith" metrics (EVPRO-1366)
-        { 
-          headerFieldsOrder.add(customersWithPrefix + journeyMetricDeclaration.getESFieldPrior());
-          headerFieldsOrder.add(customersWithPrefix + journeyMetricDeclaration.getESFieldDuring());
-          headerFieldsOrder.add(customersWithPrefix + journeyMetricDeclaration.getESFieldPost());
-        }
+      headerFieldsOrder.add(journeyMetricDeclaration.getESFieldDuring());
+      if(journeyMetricDeclaration.isCustomerCount()) { // Also add the "customersWith" metrics (EVPRO-1366)
+        headerFieldsOrder.add(customersWithPrefix + journeyMetricDeclaration.getESFieldDuring());
+      }
+      
+      headerFieldsOrder.add(journeyMetricDeclaration.getESFieldPost());
+      if(journeyMetricDeclaration.isCustomerCount()) { // Also add the "customersWith" metrics (EVPRO-1366)
+        headerFieldsOrder.add(customersWithPrefix + journeyMetricDeclaration.getESFieldPost());
+      }
     }
   }
   
@@ -322,6 +328,9 @@ public class JourneyImpactReportDriver extends ReportDriver
     }
   }
 
+  // @rl This seems hacky
+  // - the headerFieldsOrder is not used for the order - it is the keySet order of the extraction map
+  // - the headerFieldsOrder is re-filled with current fields (from first line)
   private void addHeaders(ZipOutputStream writer, Map<String,Object> values) throws IOException {
     if (values != null && !values.isEmpty()) {
       String headers="";

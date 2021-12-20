@@ -1091,13 +1091,19 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
         Aggregations subAgg = bucket.getAggregations();
         Map<String, Long> result2 = new LinkedHashMap<>();
         for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricConfiguration().getMetrics().values()) {
+          // @rl Hacky: this need to be extracted in the display order
           extractFieldFromSubAgg(journeyMetricDeclaration.getESFieldPrior(),  subAgg, result2);
-          extractFieldFromSubAgg(journeyMetricDeclaration.getESFieldDuring(), subAgg, result2);
-          extractFieldFromSubAgg(journeyMetricDeclaration.getESFieldPost(),   subAgg, result2);
-          
-          if(journeyMetricDeclaration.isCustomerCount()) { // Extract the 3 "count" metrics (same way it is done in JourneyTrafficDatacubeGenerator)
+          if(journeyMetricDeclaration.isCustomerCount()) { // Extract the "count" metrics (same way it is done in JourneyTrafficDatacubeGenerator)
             extractMetricCountFromSubAgg(journeyMetricDeclaration.getESFieldPrior() , subAgg, result2);
+          }
+          
+          extractFieldFromSubAgg(journeyMetricDeclaration.getESFieldDuring(), subAgg, result2);
+          if(journeyMetricDeclaration.isCustomerCount()) { // Extract the "count" metrics (same way it is done in JourneyTrafficDatacubeGenerator)
             extractMetricCountFromSubAgg(journeyMetricDeclaration.getESFieldDuring(), subAgg, result2);
+          }
+          
+          extractFieldFromSubAgg(journeyMetricDeclaration.getESFieldPost(),   subAgg, result2);
+          if(journeyMetricDeclaration.isCustomerCount()) { // Extract the "count" metrics (same way it is done in JourneyTrafficDatacubeGenerator)
             extractMetricCountFromSubAgg(journeyMetricDeclaration.getESFieldPost()  , subAgg, result2);
           }
         }
