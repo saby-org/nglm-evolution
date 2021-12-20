@@ -267,6 +267,7 @@ public class DeploymentCommon
   // Kafka
   //
   private static int topicSubscriberPartitions;
+  private static int topicSubscriberPartitionsOut;
   private static int topicReplication;
   private static String topicMinInSyncReplicas;
   private static String topicRetentionShortMs;
@@ -606,6 +607,7 @@ public class DeploymentCommon
   // Kafka
   //
   public static int getTopicSubscriberPartitions() { return topicSubscriberPartitions; }
+  public static int getTopicSubscriberPartitionsOut() { return topicSubscriberPartitionsOut; }
   public static int getTopicReplication() { return topicReplication; }
   public static String getTopicMinInSyncReplicas() { return topicMinInSyncReplicas; }
   public static String getTopicRetentionShortMs() { return topicRetentionShortMs; }
@@ -954,6 +956,7 @@ public class DeploymentCommon
     // Kafka
     //
     topicSubscriberPartitions = Integer.parseInt(jsonReader.decodeString("topicSubscriberPartitions"));
+    topicSubscriberPartitionsOut = Integer.parseInt(jsonReader.decodeString("topicSubscriberPartitionsOut"));
     topicReplication = Integer.parseInt(jsonReader.decodeString("topicReplication"));
     topicMinInSyncReplicas = jsonReader.decodeString("topicMinInSyncReplicas");
     topicRetentionShortMs = ""+(jsonReader.decodeInteger("topicRetentionShortHour") * 3600 * 1000L);
