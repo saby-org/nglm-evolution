@@ -571,7 +571,7 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "loginNam
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "loginName" : "Administrator", "password" : "password", "ids" : ["1", "2", "3", "4"] }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getVoucherList; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "loginName" : "Administrator", "password" : "password" }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/getVoucherList; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "loginName" : "Administrator", "password" : "password", "deleteImmediate" : true }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/deleteSubscriber; echo
- 
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "loginName" : "admint1", "password" : "password", "customerIDType" : "<_THIRDPARTYAPI_CUSTOMER_ID_>", "customerIDValue" : "19195551000", "mainAccountBalance" : 9 }' http://<_THIRDPARTYMANAGER_SERVER_>/nglm-thirdpartymanager/createCustomer; echo
 --
 --  dnbo proxy
 --
