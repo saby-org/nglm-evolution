@@ -2188,7 +2188,7 @@ public class EvolutionEngine
     *****************************************/
     subscriberStateUpdated = updateNotificationMetricHistory(context, tenantID) || subscriberStateUpdated;
 
-    subscriberStateUpdated = detectAlternateIDUpdate(context, evolutionEvent, alternateIDOldValues) || subscriberStateUpdated;
+    subscriberStateUpdated = detectSubscriberUpdate(context, evolutionEvent, alternateIDOldValues, previousSubscriberState) || subscriberStateUpdated;
 
     /*****************************************
     *
@@ -3352,7 +3352,7 @@ public class EvolutionEngine
       return null;
     }
   }
-  private static boolean detectAlternateIDUpdate(EvolutionEventContext context, SubscriberStreamEvent evolutionEvent, Map<AlternateID,String> oldValues){
+  private static boolean detectSubscriberUpdate(EvolutionEventContext context, SubscriberStreamEvent evolutionEvent, Map<AlternateID,String> oldValues, SubscriberState previousSubscriberState){
     if(oldValues==null) return false;// job done in previous method, provides map only on events that might update those
     Map<AlternateID,String> newValues = SubscriberStreamOutput.getSubscriberAlternateIDValues(context.getSubscriberState().getSubscriberProfile(),context.getSubscriberGroupEpochReader());
     SubscriberUpdated subscriberUpdated = new SubscriberUpdated(context.getSubscriberState().getSubscriberID(),context.getSubscriberState().getSubscriberProfile().getTenantID());
@@ -3372,9 +3372,18 @@ public class EvolutionEngine
         if(oldValue==null) subscriberUpdated.addAlternateIDToAdd(key,newValue);
       });
     }
+    // check if response from external API needed
+    if(evolutionEvent instanceof ProductExternalEvent){
+      if(previousSubscriberState==null){
+        subscriberUpdated.subscriberCreated();
+      }else{
+        subscriberUpdated.subscriberUpdated();
+      }
+    }
 
     // need to output for redis sink to delete the previous entry
-    if(!subscriberUpdated.getAlternateIDsToAdd().isEmpty() || !subscriberUpdated.getAlternateIDsToRemove().isEmpty()){
+    if(!subscriberUpdated.getAlternateIDsToAdd().isEmpty() || !subscriberUpdated.getAlternateIDsToRemove().isEmpty()
+      || subscriberUpdated.getSubscriberUpdated() || subscriberUpdated.getSubscriberCreated()){
       context.getSubscriberState().getUpdateSubscriberResponses().add(subscriberUpdated);
       return true;
     }

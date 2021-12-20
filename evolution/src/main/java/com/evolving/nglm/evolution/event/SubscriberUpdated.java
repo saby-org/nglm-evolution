@@ -20,11 +20,13 @@ public class SubscriberUpdated extends SubscriberStreamOutput implements Subscri
 	static {
 		SchemaBuilder schemaBuilder = SchemaBuilder.struct();
 		schemaBuilder.name("subscriber_updated");
-		schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),1));
+		schemaBuilder.version(SchemaUtilities.packSchemaVersion(subscriberStreamOutputSchema().version(),2));
 		for(Field field:subscriberStreamOutputSchema().fields()) schemaBuilder.field(field.name(),field.schema());
 		schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
 		schemaBuilder.field("tenantID", Schema.INT16_SCHEMA);
 		schemaBuilder.field("subscriberDeleted", Schema.OPTIONAL_BOOLEAN_SCHEMA);
+		schemaBuilder.field("subscriberCreated", Schema.OPTIONAL_BOOLEAN_SCHEMA);
+		schemaBuilder.field("subscriberUpdated", Schema.OPTIONAL_BOOLEAN_SCHEMA);
 		schemaBuilder.field("alternateIDsToRemove", SchemaBuilder.map(Schema.STRING_SCHEMA,Schema.OPTIONAL_STRING_SCHEMA).optional().schema());
 		schemaBuilder.field("alternateIDsToAdd", SchemaBuilder.map(Schema.STRING_SCHEMA,Schema.OPTIONAL_STRING_SCHEMA).optional().schema());
 		schema = schemaBuilder.build();
@@ -39,6 +41,8 @@ public class SubscriberUpdated extends SubscriberStreamOutput implements Subscri
 		struct.put("subscriberID", subscriberUpdated.getSubscriberID());
 		struct.put("tenantID", subscriberUpdated.getTenantID().shortValue());
 		struct.put("subscriberDeleted", subscriberUpdated.getSubscriberDeleted());
+		struct.put("subscriberCreated", subscriberUpdated.getSubscriberCreated());
+		struct.put("subscriberUpdated", subscriberUpdated.getSubscriberUpdated());
 		if(!subscriberUpdated.getAlternateIDsToRemove().isEmpty()) struct.put("alternateIDsToRemove",SubscriberStreamOutput.packAlternateIDs(subscriberUpdated.getAlternateIDsToRemove()));
 		if(!subscriberUpdated.getAlternateIDsToAdd().isEmpty()) struct.put("alternateIDsToAdd",SubscriberStreamOutput.packAlternateIDs(subscriberUpdated.getAlternateIDsToAdd()));
 		return struct;
@@ -54,6 +58,8 @@ public class SubscriberUpdated extends SubscriberStreamOutput implements Subscri
 		this.subscriberID = valueStruct.getString("subscriberID");
 		this.tenantID = schema.field("tenantID") != null ? valueStruct.getInt16("tenantID").intValue() : 1;
 		this.subscriberDeleted = schema.field("subscriberDeleted")!=null ? valueStruct.getBoolean("subscriberDeleted") : false;
+		this.subscriberCreated = schema.field("subscriberCreated")!=null ? valueStruct.getBoolean("subscriberCreated") : false;
+		this.subscriberUpdated = schema.field("subscriberUpdated")!=null ? valueStruct.getBoolean("subscriberUpdated") : false;
 		Map<String,String> packedAlternateIDsToRemove = schema.field("alternateIDsToRemove")!=null ? valueStruct.getMap("alternateIDsToRemove") : null;
 		if(packedAlternateIDsToRemove!=null) this.alternateIDsToRemove=SubscriberStreamOutput.unpackAlternateIDs(packedAlternateIDsToRemove);
 		Map<String,String> packedAlternateIDsToAdd = schema.field("alternateIDsToAdd")!=null ? valueStruct.getMap("alternateIDsToAdd") : null;
@@ -66,6 +72,8 @@ public class SubscriberUpdated extends SubscriberStreamOutput implements Subscri
 	private String subscriberID;
 	private Integer tenantID;
 	private boolean subscriberDeleted = false;
+	private boolean subscriberCreated = false;
+	private boolean subscriberUpdated = false;
 	private Map<AlternateID,String> alternateIDsToRemove = new HashMap<>();
 	private Map<AlternateID,String> alternateIDsToAdd = new HashMap<>();
 
@@ -74,10 +82,14 @@ public class SubscriberUpdated extends SubscriberStreamOutput implements Subscri
 	@Override public String getSubscriberID(){return this.subscriberID;}
 	public Integer getTenantID(){return this.tenantID;}
 	public boolean getSubscriberDeleted(){return this.subscriberDeleted;}
+	public boolean getSubscriberCreated(){return this.subscriberCreated;}
+	public boolean getSubscriberUpdated(){return this.subscriberUpdated;}
 	public Map<AlternateID,String> getAlternateIDsToRemove(){return this.alternateIDsToRemove;}
 	public Map<AlternateID,String> getAlternateIDsToAdd(){return this.alternateIDsToAdd;}
 
 	public void subscriberDeleted(){this.subscriberDeleted=true;}
+	public void subscriberCreated(){this.subscriberCreated=true;}
+	public void subscriberUpdated(){this.subscriberUpdated=true;}
 	public void addAlternateIDToRemove(AlternateID alternateID, String value){this.alternateIDsToRemove.put(alternateID,value);}
 	public void addAlternateIDToAdd(AlternateID alternateID, String value){this.alternateIDsToAdd.put(alternateID,value);}
 

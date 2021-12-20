@@ -22,23 +22,23 @@ public class MapperUtils {
 
 	private static final Logger log = LoggerFactory.getLogger(MapperUtils.class);
 
-	public static List<ExternalEvent> resolve(List<ExternalEvent> externalEvents, SubscriberIDService subscriberIDService, AtomicBoolean stopRequested) throws SubscriberIDService.SubscriberIDServiceException, InterruptedException {
+	public static <T extends ExternalEvent> List<T> resolve(List<T> externalEvents, SubscriberIDService subscriberIDService, AtomicBoolean stopRequested) throws SubscriberIDService.SubscriberIDServiceException, InterruptedException {
 		return resolve(1,externalEvents,subscriberIDService,stopRequested);
 	}
 	// this resolve the subscriberID for the existing entry, or create if not existing and needed
-	private static List<ExternalEvent> resolve(int recursiveOccurrence, List<ExternalEvent> externalEvents, SubscriberIDService subscriberIDService, AtomicBoolean stopRequested) throws SubscriberIDService.SubscriberIDServiceException, InterruptedException {
+	private static <T extends ExternalEvent> List<T> resolve(int recursiveOccurrence, List<T> externalEvents, SubscriberIDService subscriberIDService, AtomicBoolean stopRequested) throws SubscriberIDService.SubscriberIDServiceException, InterruptedException {
 
 		if(log.isTraceEnabled()) log.trace("resolve called for "+externalEvents.size()+" events");
 
-		List<ExternalEvent> toResolveEvents = new ArrayList<>(externalEvents);
-		List<ExternalEvent> resolvedEvents = new ArrayList<>(externalEvents.size());
+		List<T> toResolveEvents = new ArrayList<>(externalEvents);
+		List<T> resolvedEvents = new ArrayList<>(externalEvents.size());
 
 		// prepare redis resolution per batch of different alternateID returned
 		HashMap<AlternateID, Set<String>> alternateIDValues = new HashMap<>();
-		Iterator<ExternalEvent> iterator = toResolveEvents.iterator();
+		Iterator<T> iterator = toResolveEvents.iterator();
 		while(iterator.hasNext()){
-			ExternalEvent externalEvent = iterator.next();
-			if(externalEvent.getSubscriberIDLong()!=null && externalEvent.getParentToResolved()==null){
+			T externalEvent = iterator.next();
+			if(externalEvent.getSubscriberIDLong()!=null && externalEvent.getParentToResolved().isEmpty()){
 				// check if nothing to do
 				if(log.isTraceEnabled()) log.trace(externalEvent.getEventName()+" resolve subscriberID "+externalEvent.getSubscriberIDLong()+" known, doing nothing");
 				resolvedEvents.add(externalEvent);
@@ -72,10 +72,10 @@ public class MapperUtils {
 			Map<String, Pair<Integer,List<Long>>> alternateIDs = subscriberIDService.getSubscriberIDsBlocking(alternateIDEntry.getKey().getName(),alternateIDEntry.getValue(),stopRequested);
 			iterator = toResolveEvents.iterator();
 			while(iterator.hasNext()){
-				ExternalEvent externalEvent = iterator.next();
+				T externalEvent = iterator.next();
 
 				// into subscriber resolution batch
-				if(externalEvent.getAlternateID().getFirstElement()==alternateIDEntry.getKey()){
+				if(externalEvent.getAlternateID()!=null && externalEvent.getAlternateID().getFirstElement()==alternateIDEntry.getKey()){
 					Pair<Integer,List<Long>> resolvedSubscriberID = alternateIDs.get(externalEvent.getAlternateID().getSecondElement());
 					Pair<Integer,List<Long>> resolvedSubscriberIDForSwapping = null;
 					if(externalEvent.getOldAlternateIDValueToSwapWith()!=null) resolvedSubscriberIDForSwapping = alternateIDs.get(externalEvent.getOldAlternateIDValueToSwapWith());
@@ -160,7 +160,7 @@ public class MapperUtils {
 				// created with our values
 				iterator = toResolveEvents.iterator();
 				while(iterator.hasNext()){
-					ExternalEvent externalEvent = iterator.next();
+					T externalEvent = iterator.next();
 					if(externalEvent.getAlternateID().getFirstElement()!=perAlternateID.getKey()) continue;// not the same alternateID batch resolution
 					// mark as resolved
 					externalEvent.createdOnRedis(perAlternateID.getKey(),externalEvent.getAlternateID().getSecondElement());

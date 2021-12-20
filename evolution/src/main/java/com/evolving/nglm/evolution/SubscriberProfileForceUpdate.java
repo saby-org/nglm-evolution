@@ -97,21 +97,13 @@ public class SubscriberProfileForceUpdate extends SubscriberStreamOutput impleme
 
   public SubscriberProfileForceUpdate(JSONObject jsonRoot) throws GUIManagerException
   {
-    /*****************************************
-    *
-    *  simple attributes
-    *
-    *****************************************/
-
     this.subscriberID = JSONUtilities.decodeString(jsonRoot, "subscriberID", true);
+    this.parameterMap = buildParameterMap(jsonRoot);
+    this.subscriberProfileForceUpdateRequestID = JSONUtilities.decodeString(jsonRoot, "subscriberProfileForceUpdateRequestID", false);
+  }
 
-    /*****************************************
-    *
-    *  parameterMap
-    *
-    *****************************************/
-
-    this.parameterMap = new ParameterMap();
+  public static ParameterMap buildParameterMap(JSONObject jsonRoot) throws GUIManagerException{
+    ParameterMap toRet = new ParameterMap();
     for (MetaData metaData : Deployment.getCustomerMetaData().getGeneralDetailsMetaData())
       {
         if (metaData.getEditable() && jsonRoot.containsKey(metaData.getName()))
@@ -122,23 +114,23 @@ public class SubscriberProfileForceUpdate extends SubscriberStreamOutput impleme
                 case IntegerCriterion:
                   value = JSONUtilities.decodeInteger(jsonRoot, metaData.getName(), false);
                   break;
-                  
+
                 case DoubleCriterion:
                   value = JSONUtilities.decodeDouble(jsonRoot, metaData.getName(), false);
                   break;
-                  
+
                 case StringCriterion:
                   value = JSONUtilities.decodeString(jsonRoot, metaData.getName(), false);
                   break;
-                  
+
                 case BooleanCriterion:
                   value = JSONUtilities.decodeBoolean(jsonRoot, metaData.getName(), false);
                   break;
-                  
+
                 case DateCriterion:
                   value = GUIManagedObject.parseDateField(JSONUtilities.decodeString(jsonRoot, metaData.getName(), false));
                   break;
-                  
+
                 case StringSetCriterion:
                   Set<String> stringSetValue = new HashSet<String>();
                   JSONArray stringSetArray = JSONUtilities.decodeJSONArray(jsonRoot, metaData.getName(), new JSONArray());
@@ -152,23 +144,24 @@ public class SubscriberProfileForceUpdate extends SubscriberStreamOutput impleme
                 default:
                   throw new GUIManagerException("unsupported data type", metaData.getDataType().getExternalRepresentation());
               }
-            this.parameterMap.put(metaData.getName(), value);
+            toRet.put(metaData.getName(), value);
           }
       }
-    
+
     //
     // score can be updated // hack
     //
-    
+
     Integer score = JSONUtilities.decodeInteger(jsonRoot, "score", false);
     String challengeID = JSONUtilities.decodeString(jsonRoot, "challengeID", false);
     if (challengeID != null && !challengeID.isEmpty() && score != null)
       {
-        this.parameterMap.put("score", score);
-        this.parameterMap.put("challengeID", challengeID);
+        toRet.put("score", score);
+        toRet.put("challengeID", challengeID);
       }
-    
-    this.subscriberProfileForceUpdateRequestID = JSONUtilities.decodeString(jsonRoot, "subscriberProfileForceUpdateRequestID", false);
+
+    return toRet;
+
   }
 
   /*****************************************

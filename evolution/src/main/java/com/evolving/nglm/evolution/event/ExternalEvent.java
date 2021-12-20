@@ -228,7 +228,7 @@ public abstract class ExternalEvent implements EvolutionEngineEvent {
 	// optional settings
 
 	public ExternalEvent createIfDoesNotExist(int tenantID){
-		if(this.alternateID.getFirstElement().getSharedID()){
+		if(this.alternateID!=null && this.alternateID.getFirstElement().getSharedID()){
 			log.info(getEventName()+" "+getSubscriberForLogging()+" can not create on sharedID, will ignore if not existing");
 			return this;
 		}
@@ -245,7 +245,7 @@ public abstract class ExternalEvent implements EvolutionEngineEvent {
 		return createIfDoesNotExist(tenantID);
 	}
 	public ExternalEvent delete(){
-		if(this.alternateID.getFirstElement().getSharedID()){
+		if(this.alternateID!=null && this.alternateID.getFirstElement().getSharedID()){
 			log.info(getEventName()+" "+getSubscriberForLogging()+" can not delete on sharedID, will ignore if not existing");
 			return this;
 		}
@@ -254,7 +254,7 @@ public abstract class ExternalEvent implements EvolutionEngineEvent {
 		return this;
 	}
 	public ExternalEvent deleteImmediate(){
-		if(this.alternateID.getFirstElement().getSharedID()){
+		if(this.alternateID!=null && this.alternateID.getFirstElement().getSharedID()){
 			log.info(getEventName()+" "+getSubscriberForLogging()+" can not delete on sharedID, will ignore if not existing");
 			return this;
 		}
@@ -275,7 +275,7 @@ public abstract class ExternalEvent implements EvolutionEngineEvent {
 		return this;
 	}
 	public ExternalEvent addParent(SupportedRelationship relationship, AlternateID parentAlternateID, String parentAlternateIDValue){
-		if(this.alternateID.getFirstElement().getSharedID() || parentAlternateID.getSharedID()){
+		if(this.alternateID!=null && this.alternateID.getFirstElement().getSharedID() || parentAlternateID.getSharedID()){
 			log.info(getEventName()+" "+getSubscriberForLogging()+" can not addParent on sharedID, will ignore if not existing");
 			return this;
 		}
@@ -288,7 +288,7 @@ public abstract class ExternalEvent implements EvolutionEngineEvent {
 		return this;
 	}
 	public ExternalEvent removeParent(SupportedRelationship relationship, AlternateID parentAlternateID, String parentAlternateIDValue){
-		if(this.alternateID.getFirstElement().getSharedID() || parentAlternateID.getSharedID()){
+		if(this.alternateID!=null && this.alternateID.getFirstElement().getSharedID() || parentAlternateID.getSharedID()){
 			log.info(getEventName()+" "+getSubscriberForLogging()+" can not removeParent on sharedID, will ignore if not existing");
 			return this;
 		}
@@ -317,11 +317,11 @@ public abstract class ExternalEvent implements EvolutionEngineEvent {
 		return this;
 	}
 	public ExternalEvent addOtherAlternateID(AlternateID alternateID, String alternateIDValue){
-		if(this.alternateID.getFirstElement().getSharedID()){
+		if(this.alternateID!=null && this.alternateID.getFirstElement().getSharedID()){
 			log.info(getEventName()+" "+getSubscriberForLogging()+" can not addOtherAlternateID on sharedID, will ignore if not existing");
 			return this;
 		}
-		if(alternateID.equals(this.alternateID.getFirstElement())){
+		if(this.alternateID!=null && alternateID.equals(this.alternateID.getFirstElement())){
 			log.info(getEventName()+" addOtherAlternateID called for same AlternateID than main "+getSubscriberForLogging()+", ignoring");
 			return this;
 		}
@@ -335,11 +335,11 @@ public abstract class ExternalEvent implements EvolutionEngineEvent {
 		return this;
 	}
 	public ExternalEvent removeOtherAlternateID(AlternateID alternateID, String alternateIDValue){
-		if(this.alternateID.getFirstElement().getSharedID()){
+		if(this.alternateID!=null && this.alternateID.getFirstElement().getSharedID()){
 			log.info(getEventName()+" "+getSubscriberForLogging()+" can not removeOtherAlternateID on sharedID, will ignore if not existing");
 			return this;
 		}
-		if(alternateID.equals(this.alternateID.getFirstElement())){
+		if(this.alternateID!=null && alternateID.equals(this.alternateID.getFirstElement())){
 			log.info(getEventName()+" removeOtherAlternateID called for same AlternateID than main "+getSubscriberForLogging()+", ignoring");
 			return this;
 		}

@@ -14,11 +14,13 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.net.InetSocketAddress;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -34,11 +36,16 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.evolving.nglm.evolution.event.ExternalEvent;
+import com.evolving.nglm.evolution.event.MapperUtils;
+import com.evolving.nglm.evolution.event.ProductExternalEvent;
+import com.evolving.nglm.evolution.event.SubscriberUpdated;
 import com.evolving.nglm.evolution.uniquekey.ZookeeperUniqueKeyServer;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -154,6 +161,7 @@ public class ThirdPartyManager
    *
    *****************************************/
 
+  private AtomicBoolean stopRequested = new AtomicBoolean(false);
   private KafkaProducer<byte[], byte[]> kafkaProducer;
   private OfferService offerService;
   private SubscriberProfileService subscriberProfileService;
@@ -197,7 +205,8 @@ public class ThirdPartyManager
   private KafkaResponseListenerService<StringKey,JourneyRequest> enterCampaignResponseListenerService;
   private KafkaResponseListenerService<StringKey,SubscriberProfileForceUpdateResponse> subscriberProfileForceUpdateResponseListenerService;
   private KafkaResponseListenerService<StringKey,LoyaltyProgramRequest> loyaltyProgramOptInOutResponseListenerService;
-  private KafkaResponseListenerService<StringKey, BadgeChange> badgeActionResponseListenerService;
+  private KafkaResponseListenerService<StringKey,BadgeChange> badgeActionResponseListenerService;
+  private KafkaResponseListenerService<StringKey,SubscriberUpdated> subscriberUpdatedResponseListenerService;
   private static Map<String, ThirdPartyMethodAccessLevel> methodPermissionsMapper = new LinkedHashMap<String,ThirdPartyMethodAccessLevel>();
   private static Map<String, Constructor<? extends SubscriberStreamOutput>> JSON3rdPartyEventsConstructor = new HashMap<>();
   private static Integer authResponseCacheLifetimeInMinutes = null;
@@ -289,7 +298,8 @@ public class ThirdPartyManager
     getOfferDetails(43),
     loyaltyAwardBadge(44),
     loyaltyRemoveBadge(45),
-    getCustomerBGDRs(46);
+    getCustomerBGDRs(46),
+    createCustomer(47);
     private int methodIndex;
     private API(int methodIndex) { this.methodIndex = methodIndex; }
     public int getMethodIndex() { return methodIndex; }
@@ -575,6 +585,9 @@ public class ThirdPartyManager
     subscriberProfileForceUpdateResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),Deployment.getSubscriberProfileForceUpdateResponseTopic(),StringKey.serde(),SubscriberProfileForceUpdateResponse.serde());
     subscriberProfileForceUpdateResponseListenerService.start();
 
+    subscriberUpdatedResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(), Deployment.getProductExternalEventResponseTopic(), StringKey.serde(), SubscriberUpdated.serde());
+    subscriberUpdatedResponseListenerService.start();
+
     uploadedFileService = new UploadedFileService(Deployment.getBrokerServers(),Deployment.getUploadedFileTopic(),false);
     uploadedFileService.start();
 
@@ -631,6 +644,7 @@ public class ThirdPartyManager
       restServer.createContext("/nglm-thirdpartymanager/loyaltyAwardBadge", new APIHandler(API.loyaltyAwardBadge));
       restServer.createContext("/nglm-thirdpartymanager/loyaltyRemoveBadge", new APIHandler(API.loyaltyRemoveBadge));
       restServer.createContext("/nglm-thirdpartymanager/getCustomerBGDRs", new APIHandler(API.getCustomerBGDRs));
+      restServer.createContext("/nglm-thirdpartymanager/createCustomer", new APIHandler(API.createCustomer));
       restServer.setExecutor(Executors.newFixedThreadPool(threadPoolSize));
       restServer.start();
 
@@ -646,7 +660,7 @@ public class ThirdPartyManager
      *
      *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, dynamicCriterionFieldService, offerService, subscriberProfileService, segmentationDimensionService, journeyService, journeyObjectiveService, loyaltyProgramService, pointService, paymentMeanService, offerObjectiveService, subscriberMessageTemplateService, salesChannelService, resellerService, subscriberIDService, subscriberGroupEpochReader, productService, deliverableService, callingChannelService, exclusionInclusionTargetService, uploadedFileService));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(stopRequested, kafkaProducer, restServer, dynamicCriterionFieldService, offerService, subscriberProfileService, segmentationDimensionService, journeyService, journeyObjectiveService, loyaltyProgramService, pointService, paymentMeanService, offerObjectiveService, subscriberMessageTemplateService, salesChannelService, resellerService, subscriberIDService, subscriberGroupEpochReader, productService, deliverableService, callingChannelService, exclusionInclusionTargetService, uploadedFileService));
 
     /*****************************************
      *
@@ -670,6 +684,7 @@ public class ThirdPartyManager
     //  data
     //
 
+    private AtomicBoolean stopRequested;
     private KafkaProducer<byte[], byte[]> kafkaProducer;
     private HttpServer restServer;
     private OfferService offerService;
@@ -697,8 +712,9 @@ public class ThirdPartyManager
     //  constructor
     //
 
-    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, DynamicCriterionFieldService dynamicCriterionFieldService, OfferService offerService, SubscriberProfileService subscriberProfileService, SegmentationDimensionService segmentationDimensionService, JourneyService journeyService, JourneyObjectiveService journeyObjectiveService, LoyaltyProgramService loyaltyProgramService, PointService pointService, PaymentMeanService paymentMeanService, OfferObjectiveService offerObjectiveService, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, ResellerService resellerService, SubscriberIDService subscriberIDService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader, ProductService productService, DeliverableService deliverableService, CallingChannelService callingChannelService, ExclusionInclusionTargetService exclusionInclusionTargetService, UploadedFileService uploadedFileService)
+    private ShutdownHook(AtomicBoolean stopRequested, KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, DynamicCriterionFieldService dynamicCriterionFieldService, OfferService offerService, SubscriberProfileService subscriberProfileService, SegmentationDimensionService segmentationDimensionService, JourneyService journeyService, JourneyObjectiveService journeyObjectiveService, LoyaltyProgramService loyaltyProgramService, PointService pointService, PaymentMeanService paymentMeanService, OfferObjectiveService offerObjectiveService, SubscriberMessageTemplateService subscriberMessageTemplateService, SalesChannelService salesChannelService, ResellerService resellerService, SubscriberIDService subscriberIDService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader, ProductService productService, DeliverableService deliverableService, CallingChannelService callingChannelService, ExclusionInclusionTargetService exclusionInclusionTargetService, UploadedFileService uploadedFileService)
     {
+      this.stopRequested = stopRequested;
       this.kafkaProducer = kafkaProducer;
       this.restServer = restServer;
       this.dynamicCriterionFieldService = dynamicCriterionFieldService;
@@ -734,6 +750,7 @@ public class ThirdPartyManager
       //  services
       //
 
+      if(stopRequested!=null) stopRequested.set(true);
       if (dynamicCriterionFieldService != null) dynamicCriterionFieldService.stop();
       if (offerService != null) offerService.stop();
       if (subscriberProfileService != null) subscriberProfileService.stop();
@@ -1013,6 +1030,9 @@ public class ThirdPartyManager
               break;
             case getOfferDetails:
                 jsonResponse = processGetOfferDetails(jsonRoot, tenantID);
+                break;
+            case createCustomer:
+                jsonResponse = processCreateCustomer(jsonRoot, sync, tenantID);
                 break;
           }
         }
@@ -6645,6 +6665,99 @@ public class ThirdPartyManager
       }
   }
 
+  private JSONObject processCreateCustomer(JSONObject jsonRoot, Boolean sync, int tenantID) throws ThirdPartyManagerException
+  {
+
+    Map<String, Object> response = new HashMap<>();
+
+    boolean alreadyExist = true;
+    try{
+      resolveCustomerIDTypeAndValue(jsonRoot,tenantID);
+    }catch (ThirdPartyManagerException e){
+      if(e.getResponseCode()==RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND.getGenericResponseCode()){
+        alreadyExist = false;
+      }else{
+        throw e;
+      }
+    }
+    if(alreadyExist) throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.CUSTOMER_ALREADY_EXISTS);
+
+    Pair<String,String> customerID = parseCustomerIDTypeAndValue(jsonRoot);
+    ProductExternalEvent productExternalEvent;
+    String possibleForcedSubscriberID = null;
+    if(customerID.getFirstElement().equals(CUSTOMER_ID)){
+      productExternalEvent = new ProductExternalEvent(customerID.getSecondElement());
+    }else{
+      productExternalEvent = new ProductExternalEvent(Deployment.getAlternateID(customerID.getFirstElement()),customerID.getSecondElement());
+      possibleForcedSubscriberID = JSONUtilities.decodeString(jsonRoot, CUSTOMER_ID, false);
+    }
+    if(possibleForcedSubscriberID==null){
+      productExternalEvent.createIfDoesNotExist(tenantID);
+    }else{
+      productExternalEvent.createIfDoesNotExistWithForcedSubscriberID(tenantID,Long.valueOf(possibleForcedSubscriberID));
+    }
+
+    try {
+      ((SubscriberProfile) SubscriberProfile.getSubscriberProfileConstructor().newInstance("", tenantID)).validateUpdateProfileRequest(jsonRoot);
+      productExternalEvent.setProfileUpdates(SubscriberProfileForceUpdate.buildParameterMap(jsonRoot));
+    } catch (InstantiationException|IllegalAccessException|InvocationTargetException|GUIManagerException e) {
+      throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
+    } catch (ValidateUpdateProfileRequestException e) {
+      throw new ThirdPartyManagerException(e.getMessage(),e.getResponseCode());
+    }
+
+    // check if secondary alternateID created
+    if(productExternalEvent.getProfileUpdates()!=null){
+      for(AlternateID alternateID:Deployment.getAlternateIDs().values()){
+        Object maybeAlternateIDValue = productExternalEvent.getProfileUpdates().get(alternateID.getID());
+        if(maybeAlternateIDValue==null) continue;
+        if(!(maybeAlternateIDValue instanceof String)){
+          log.info("processCreateCustomer "+maybeAlternateIDValue+" can not be an alternateID "+alternateID.getID()+" value, not a String");
+          throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE);
+        }
+        productExternalEvent.addOtherAlternateID(alternateID,(String)maybeAlternateIDValue);
+      }
+    }
+
+    String eventID = zuks.getStringKey();
+    productExternalEvent.eventID(eventID);
+
+    List<ProductExternalEvent> resolvedEvents;
+    try {
+      resolvedEvents = MapperUtils.resolve(Collections.singletonList(productExternalEvent),subscriberIDService,stopRequested);
+    } catch (SubscriberIDServiceException|InterruptedException e) {
+      throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
+    }
+
+    if(resolvedEvents==null || resolvedEvents.size()!=1){
+      throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
+    }
+    ProductExternalEvent resolvedEvent = resolvedEvents.get(0);
+
+    Future<SubscriberUpdated> waitingResponse=null;
+    if(sync){
+      waitingResponse = subscriberUpdatedResponseListenerService.addWithOnValueFilter((value)->value.getEventID().equals(eventID));
+    }
+
+    resolvedEvent.sendToEngine(kafkaProducer);
+
+    if(sync){
+      SubscriberUpdated subscriberUpdated = handleWaitingResponse(waitingResponse);
+      response.put(CUSTOMER_ID,subscriberUpdated.getSubscriberID());
+      if(subscriberUpdated.getSubscriberCreated()){
+        updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
+      }else if(subscriberUpdated.getSubscriberUpdated()){
+        updateResponse(response, RESTAPIGenericReturnCodes.CUSTOMER_ALREADY_EXISTS);
+      } else {
+        updateResponse(response, RESTAPIGenericReturnCodes.SYSTEM_ERROR);
+      }
+    } else {
+      updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
+    }
+
+    return JSONUtilities.encodeObject(response);
+  }
+
   private JSONObject constructThirdPartyResponse(RESTAPIGenericReturnCodes genericCode, Map<String,Object> response){
     if(response==null) response=new HashMap<>();
     updateResponse(response, genericCode);
@@ -7073,6 +7186,70 @@ public class ThirdPartyManager
     }
     // Returns a value, or an exception
     return new Pair<String, String>(subscriberkey, subscriberValue);
+  }
+
+  // resolve or exception
+  public String resolveCustomerIDTypeAndValue(JSONObject jsonObject, int tenantID) throws ThirdPartyManagerException{
+
+    Pair<String,String> customerIDTypeAndValue = parseCustomerIDTypeAndValue(jsonObject);
+
+    Integer subscriberTenantID;
+    String subscriberID;
+
+    // subscriberID provided, but need to check tenantID, so need the getProfile
+    if(customerIDTypeAndValue.getFirstElement().equals(CUSTOMER_ID)){
+      subscriberID = customerIDTypeAndValue.getSecondElement();
+      try {
+        SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID);
+        if(subscriberProfile==null) throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND);
+        subscriberTenantID = subscriberProfile.getTenantID();
+      } catch (SubscriberProfileServiceException e) {
+        log.warn("resolveCustomerIDTypeAndValue getSubscriberProfile "+subscriberID+" issue",e);
+        throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
+      }
+    // alternateID provided, subscriberID and tenantID comes from redis
+    }else{
+      try {
+        Pair<String,Integer> redisSubscriberIDTenantID = subscriberIDService.getSubscriberIDAndTenantID(customerIDTypeAndValue.getFirstElement(),customerIDTypeAndValue.getSecondElement());
+        if(redisSubscriberIDTenantID==null) throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND);
+        subscriberID = redisSubscriberIDTenantID.getFirstElement();
+        subscriberTenantID = redisSubscriberIDTenantID.getSecondElement();
+      } catch (SubscriberIDServiceException e) {
+        log.warn("resolveCustomerIDTypeAndValue getSubscriberIDAndTenantID issue",e);
+        throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
+      }
+    }
+
+    if(subscriberTenantID!=tenantID){
+      log.info("resolveCustomerIDTypeAndValue user tenantID "+tenantID+ "does not match subscriber tenantID "+subscriberTenantID);
+      throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND);
+    }
+
+    return subscriberID;
+
+  }
+
+  // return a value, or null if mandatory=false, or an exception if true
+  public static Pair<String,String> parseCustomerIDTypeAndValue(JSONObject jsonRoot) throws ThirdPartyManagerException{
+
+    String customerIDType = JSONUtilities.decodeString(jsonRoot, CUSTOMER_ID_TYPE, false);
+    String customerIDValue = JSONUtilities.decodeString(jsonRoot, CUSTOMER_ID_VALUE, false);
+
+    if(customerIDType==null||customerIDValue==null){
+      log.info("getCustomerIDTypeAndValue missing "+CUSTOMER_ID_TYPE+":"+customerIDType+", "+CUSTOMER_ID_VALUE+":"+customerIDValue);
+      throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.MISSING_PARAMETERS);
+    }
+
+    if(!customerIDType.equals(CUSTOMER_ID)){
+      AlternateID alternateID = Deployment.getAlternateIDOrNull(customerIDType);
+      if(alternateID==null || alternateID.getSharedID()/*not allowing shared alternateID now*/){
+        log.info("getCustomerIDTypeAndValue bad "+CUSTOMER_ID_TYPE+":"+customerIDType);
+        throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE);
+      }
+    }
+
+    return new Pair<>(customerIDType,customerIDValue);
+
   }
 
 

@@ -1017,6 +1017,11 @@
       "id"           : "getCustomerBGDRs",
       "methodName"   : "getCustomerBGDRs",
       "permissions"  : ["API-GET-CUSTOMER-BGDRS"]
+    },
+    {
+      "id"           : "createCustomer",
+      "methodName"   : "createCustomer",
+      "permissions"  : ["API-CREATE-CUSTOMER"]
     }
   ],
 
