@@ -57,6 +57,8 @@ import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.Aggregations;
+import org.elasticsearch.search.aggregations.bucket.range.ParsedRange;
+import org.elasticsearch.search.aggregations.bucket.range.RangeAggregator.Range;
 import org.elasticsearch.search.aggregations.bucket.terms.ParsedStringTerms;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket;
@@ -83,12 +85,14 @@ import com.evolving.nglm.evolution.PushNotificationManager.PushNotificationManag
 import com.evolving.nglm.evolution.SMSNotificationManager.SMSNotificationManagerRequest;
 import com.evolving.nglm.evolution.ThirdPartyManager;
 import com.evolving.nglm.evolution.datacubes.generator.BDRDatacubeGenerator;
+import com.evolving.nglm.evolution.datacubes.generator.JourneyTrafficDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.generator.MDRDatacubeGenerator;
 import com.evolving.nglm.evolution.reports.ReportCsvFactory;
 import com.evolving.nglm.evolution.reports.ReportMonoPhase;
 import com.evolving.nglm.evolution.reports.bdr.BDRReportDriver;
 import com.evolving.nglm.evolution.reports.bdr.BDRReportMonoPhase;
 import com.evolving.nglm.evolution.reports.journeycustomerstatistics.JourneyCustomerStatisticsReportDriver;
+import com.evolving.nglm.evolution.reports.journeyimpact.JourneyImpactReportDriver;
 import com.evolving.nglm.evolution.reports.notification.NotificationReportDriver;
 import com.evolving.nglm.evolution.reports.notification.NotificationReportMonoPhase;
 import com.evolving.nglm.evolution.reports.odr.ODRReportDriver;
@@ -1023,6 +1027,21 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
         aggregationStatus = aggregationStatus.subAggregation(AggregationBuilders.sum(field).field(field));
         field = journeyMetricDeclaration.getESFieldPost();
         aggregationStatus = aggregationStatus.subAggregation(AggregationBuilders.sum(field).field(field));
+        
+        if(journeyMetricDeclaration.isCustomerCount()) { // Extract the 3 "count" metrics (same way it is done in JourneyTrafficDatacubeGenerator)
+          aggregationStatus = aggregationStatus.subAggregation(AggregationBuilders
+              .range(journeyMetricDeclaration.getESFieldPrior() + "_COUNT")
+              .field(journeyMetricDeclaration.getESFieldPrior())
+              .addRange(new Range(JourneyTrafficDatacubeGenerator.METRIC_COUNT_RANGE, JourneyTrafficDatacubeGenerator.METRIC_COUNT_FROM, null)));
+          aggregationStatus = aggregationStatus.subAggregation(AggregationBuilders
+              .range(journeyMetricDeclaration.getESFieldDuring() + "_COUNT")
+              .field(journeyMetricDeclaration.getESFieldDuring())
+              .addRange(new Range(JourneyTrafficDatacubeGenerator.METRIC_COUNT_RANGE, JourneyTrafficDatacubeGenerator.METRIC_COUNT_FROM, null)));
+          aggregationStatus = aggregationStatus.subAggregation(AggregationBuilders
+              .range(journeyMetricDeclaration.getESFieldPost() + "_COUNT")
+              .field(journeyMetricDeclaration.getESFieldPost())
+              .addRange(new Range(JourneyTrafficDatacubeGenerator.METRIC_COUNT_RANGE, JourneyTrafficDatacubeGenerator.METRIC_COUNT_FROM, null)));
+        }
       }
 
       SearchSourceBuilder searchSourceRequest = new SearchSourceBuilder()
@@ -1071,9 +1090,21 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
         Aggregations subAgg = bucket.getAggregations();
         Map<String, Long> result2 = new LinkedHashMap<>();
         for (JourneyMetricDeclaration journeyMetricDeclaration : Deployment.getJourneyMetricConfiguration().getMetrics().values()) {
+          // @rl Hacky: this need to be extracted in the display order
           extractFieldFromSubAgg(journeyMetricDeclaration.getESFieldPrior(),  subAgg, result2);
+          if(journeyMetricDeclaration.isCustomerCount()) { // Extract the "count" metrics (same way it is done in JourneyTrafficDatacubeGenerator)
+            extractMetricCountFromSubAgg(journeyMetricDeclaration.getESFieldPrior() , subAgg, result2);
+          }
+          
           extractFieldFromSubAgg(journeyMetricDeclaration.getESFieldDuring(), subAgg, result2);
+          if(journeyMetricDeclaration.isCustomerCount()) { // Extract the "count" metrics (same way it is done in JourneyTrafficDatacubeGenerator)
+            extractMetricCountFromSubAgg(journeyMetricDeclaration.getESFieldDuring(), subAgg, result2);
+          }
+          
           extractFieldFromSubAgg(journeyMetricDeclaration.getESFieldPost(),   subAgg, result2);
+          if(journeyMetricDeclaration.isCustomerCount()) { // Extract the "count" metrics (same way it is done in JourneyTrafficDatacubeGenerator)
+            extractMetricCountFromSubAgg(journeyMetricDeclaration.getESFieldPost()  , subAgg, result2);
+          }
         }
         result.put(bucket.getKeyAsString(), result2);
       }
@@ -1107,6 +1138,22 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
       log.error("Sum aggregation missing in search response for " + field);
     } else {
       result2.put(field, (long) sum.getValue());
+    }
+  }
+  
+  private void extractMetricCountFromSubAgg(String field, Aggregations subAgg, Map<String, Long> result2)
+  {
+    ParsedRange count = subAgg.get(field + "_COUNT");
+    if (count != null ) {
+      // This list should only contain ONE bucket (the METRIC_COUNT_RANGE one)
+      for(org.elasticsearch.search.aggregations.ParsedMultiBucketAggregation.Bucket bucket: count.getBuckets()) {
+        if(bucket.getKeyAsString().equals(JourneyTrafficDatacubeGenerator.METRIC_COUNT_RANGE)) {
+          result2.put(JourneyImpactReportDriver.customersWithPrefix + field, bucket.getDocCount());
+          break;
+        }
+      }
+    } else {
+      log.error("CustomersWith aggregation missing in search response for " + field);
     }
   }
 

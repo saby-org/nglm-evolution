@@ -435,7 +435,7 @@ public class ReportUtils {
   }
 
   //
-  //
+  // @rl This seems so hacky and does not take into account any order but the unpredictable keySet() order ?
   //
   public static String formatResult(Map<String, Object> result)
   {
