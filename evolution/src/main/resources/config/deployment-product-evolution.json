@@ -280,6 +280,7 @@
   "productExternalEventRequestTopic"                     : "${topic.productexternalevent.request}",
   "productExternalEventResponseTopic"                    : "${topic.productexternalevent.response}",
   "loopbackTopic"                                        : "${topic.loopback}",
+  "evolutionJobTopic"                                    : "${topic.evolution.job}",
 
   "supportedDataTypes" :
     [

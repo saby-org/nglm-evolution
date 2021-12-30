@@ -58,6 +58,7 @@ import com.evolving.nglm.evolution.event.ExternalEvent;
 import com.evolving.nglm.evolution.event.ProductExternalEvent;
 import com.evolving.nglm.evolution.event.SubscriberUpdated;
 import com.evolving.nglm.evolution.event.UpdateOtherSubscriber;
+import com.evolving.nglm.evolution.job.WorkerEvolutionEngineJobs;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -1465,6 +1466,9 @@ public class EvolutionEngine
 
     timerService.start(subscriberStateStore, subscriberGroupEpochReader, targetService, journeyService, exclusionInclusionTargetService);
 
+    // start job workers
+    new WorkerEvolutionEngineJobs(this);
+
     /*****************************************
     *
     *  start restServers
@@ -1496,6 +1500,9 @@ public class EvolutionEngine
     Preprocessor.startPreprocessorStreams(evolutionEngineKey,supplierService,voucherService,voucherTypeService);
 
   }
+
+  public KafkaStreams getKafkaStreams(){return streams;}
+  public ReferenceDataReader<String, SubscriberGroupEpoch> getSubscriberGroupEpochReader() {return subscriberGroupEpochReader;}
 
   /*****************************************
   *

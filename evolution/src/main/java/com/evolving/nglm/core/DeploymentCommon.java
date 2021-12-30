@@ -380,6 +380,7 @@ public class DeploymentCommon
   private static String productExternalEventRequestTopic;
   private static String productExternalEventResponseTopic;
   private static String loopbackTopic;
+  private static String evolutionJobTopic;
     
   //
   // Others
@@ -729,6 +730,7 @@ public class DeploymentCommon
   public static String getProductExternalEventRequestTopic() { return productExternalEventRequestTopic; }
   public static String getProductExternalEventResponseTopic() { return productExternalEventResponseTopic; }
   public static String getLoopbackTopic() { return loopbackTopic; }
+  public static String getEvolutionJobTopic() { return evolutionJobTopic; }
 
   
   //
@@ -1070,6 +1072,7 @@ public class DeploymentCommon
     productExternalEventRequestTopic = jsonReader.decodeString("productExternalEventRequestTopic");
     productExternalEventResponseTopic = jsonReader.decodeString("productExternalEventResponseTopic");
     loopbackTopic = jsonReader.decodeString("loopbackTopic");
+    evolutionJobTopic = jsonReader.decodeString("evolutionJobTopic");
     
     alternateIDs = jsonReader.decodeMapFromArray(AlternateID.class, "alternateIDs");
     
