@@ -227,7 +227,7 @@ public class ODRDatacubeGenerator extends SimpleDatacubeGenerator
 
     String meanOfPayment = (String) filters.remove("meanOfPayment");
     filters.put("meanOfPayment", paymentMeansMap.getDisplay(meanOfPayment, "meanOfPayment"));
-    filters.put("meanOfPaymentProviderID", paymentMeansMap.getProviderID(meanOfPayment, "meanOfPayment"));
+    filters.put("meanOfPaymentProviderID", paymentMeansMap.getProviderID(meanOfPayment, "meanOfPayment", tenantID));
     
     // Offer objectives are directly put as a Set<String> (because there is a 1-1 linked with the offer)
     Set<String> offerObjectivesID = offersMap.getOfferObjectivesID(offerID, "offer");
