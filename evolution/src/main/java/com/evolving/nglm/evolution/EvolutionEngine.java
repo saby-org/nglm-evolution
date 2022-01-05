@@ -3648,7 +3648,7 @@ public class EvolutionEngine
                                     try
                                     {
                                       Method setter = subscriberProfile.getClass().getMethod(methodName, Long.class);
-                                      setter.invoke(subscriberProfile, value);
+                                      setter.invoke(subscriberProfile, new Long((int) value));
                                       subscriberProfileUpdated = true;
                                      }
                                      catch (NoSuchMethodException|SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e)
