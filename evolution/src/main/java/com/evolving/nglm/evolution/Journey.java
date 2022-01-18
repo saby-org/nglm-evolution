@@ -4085,6 +4085,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
                           internalTargets.addAll(journeyLink.getTransitionCriteria());
                           offerIDs.addAll(getSubcriteriaFieldArgumentValues(journeyLink.getTransitionCriteria(), "offer.id"));
                           voucherIDs.addAll(getSubcriteriaFieldArgumentValues(journeyLink.getTransitionCriteria(), "voucher.id"));
+                          badgeIDs.addAll(getSubcriteriaFieldArgumentValues(journeyLink.getTransitionCriteria(), "badge.id"));
                           
                           for (EvaluationCriterion crt : journeyLink.getTransitionCriteria())
                             {
@@ -4222,6 +4223,8 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
                           internalTargets1.addAll(journeyLink.getTransitionCriteria());
                           offerIDs.addAll(getSubcriteriaFieldArgumentValues(journeyLink.getTransitionCriteria(), "offer.id"));
                           voucherIDs.addAll(getSubcriteriaFieldArgumentValues(journeyLink.getTransitionCriteria(), "voucher.id"));
+                          badgeIDs.addAll(getSubcriteriaFieldArgumentValues(journeyLink.getTransitionCriteria(), "badge.id"));
+                          
                           for (EvaluationCriterion crt : journeyLink.getTransitionCriteria())
                             {
                               String loyaltyProgramPointsID = getGUIManagedObjectIDFromDynamicCriterion(crt, "loyaltyprogrampoints", guiServiceList);
@@ -4403,6 +4406,8 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
                             internalTargets.addAll(journeyLink.getTransitionCriteria());
                             offerIDs.addAll(getSubcriteriaFieldArgumentValues(journeyLink.getTransitionCriteria(), "offer.id"));
                             voucherIDs.addAll(getSubcriteriaFieldArgumentValues(journeyLink.getTransitionCriteria(), "voucher.id"));
+                            badgeIDs.addAll(getSubcriteriaFieldArgumentValues(journeyLink.getTransitionCriteria(), "badge.id"));
+                            
                             for (EvaluationCriterion crt : journeyLink.getTransitionCriteria())
                               {
                                 String loyaltyProgramPointsID = getGUIManagedObjectIDFromDynamicCriterion(crt, "loyaltyprogrampoints", guiServiceList);
