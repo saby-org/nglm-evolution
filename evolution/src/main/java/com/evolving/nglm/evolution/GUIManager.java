@@ -48,6 +48,8 @@ import java.util.stream.Stream;
 import com.evolving.nglm.evolution.commoditydelivery.CommodityDeliveryException;
 import com.evolving.nglm.evolution.commoditydelivery.CommodityDeliveryManagerRemovalUtils;
 
+import com.evolving.nglm.evolution.job.Reader;
+import com.evolving.nglm.evolution.job.Sender;
 import com.evolving.nglm.evolution.uniquekey.ZookeeperUniqueKeyServer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -627,6 +629,10 @@ public class GUIManager
     
     getRedisSubscriberIDAndAlternateIDs("getRedisSubscriberIDAndAlternateIDs"), // for PTT testing
 
+    // support jobs
+    executeJob("executeJob"),
+    getJobStatus("getJobStatus"),
+    getJobStatusList("getJobStatusList"),
     
     //
     //  structor
@@ -2499,6 +2505,10 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getCustomCriteria", new APISimpleHandler(API.getCustomCriteria));
         restServer.createContext("/nglm-guimanager/putCustomCriteria", new APISimpleHandler(API.putCustomCriteria));
         restServer.createContext("/nglm-guimanager/removeCustomCriteria", new APISimpleHandler(API.removeCustomCriteria));
+
+        restServer.createContext("/nglm-guimanager/executeJob", new APISimpleHandler(API.executeJob));
+        restServer.createContext("/nglm-guimanager/getJobStatus", new APISimpleHandler(API.getJobStatus));
+        restServer.createContext("/nglm-guimanager/getJobStatusList", new APISimpleHandler(API.getJobStatusList));
 
         
         restServer.setExecutor(Executors.newFixedThreadPool(10));
@@ -4564,7 +4574,19 @@ public class GUIManager
                 case removeCustomCriteria:
                   jsonResponse = processRemoveCustomCriteria(userID, jsonRoot, tenantID);
                   break;
-                  
+
+                case executeJob:
+                  jsonResponse = processExecuteJob(userID, jsonRoot, tenantID);
+                  break;
+
+                case getJobStatus:
+                  jsonResponse = processGetJobStatus(userID, jsonRoot, tenantID);
+                  break;
+
+                case getJobStatusList:
+                  jsonResponse = processGetJobStatusList(userID, jsonRoot, tenantID);
+                  break;
+
               }
           }
         else
@@ -32295,4 +32317,31 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
       }
     return JSONUtilities.encodeObject(response);
   }
+
+  public JSONObject processExecuteJob(String userID, JSONObject jsonRoot, int tenantID) throws GUIManagerException {
+    Map<String, Object> response = new LinkedHashMap<>();
+    String jobID = Sender.sendJob("guimanager",tenantID,jsonRoot);
+    response.put("id", jobID);
+    return JSONUtilities.encodeObject(response);
+  }
+
+  public JSONObject processGetJobStatus(String userID, JSONObject jsonRoot, int tenantID) throws GUIManagerException {
+    String jobID = JSONUtilities.decodeString(jsonRoot, "id", true);
+    JSONObject result = Reader.getJobStatusJSon(jobID,tenantID);
+    if(result==null){
+      JSONObject errorResponse = new JSONObject();
+      errorResponse.put("responseCode", "JobNotFound");
+      return errorResponse;
+    }
+    result.put("responseCode", "ok");
+    return result;
+  }
+
+  public JSONObject processGetJobStatusList(String userID, JSONObject jsonRoot, int tenantID) throws GUIManagerException {
+    JSONObject result = new JSONObject();
+    result.put("jobs", Reader.getAllJobsStatusJSon(tenantID));
+    result.put("responseCode", "ok");
+    return result;
+  }
+
 }

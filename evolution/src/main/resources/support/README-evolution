@@ -508,6 +508,14 @@ curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/r
 curl -X POST -H "Content-Type: application/json" -d "`cat $DEPLOY_ROOT/support/blk-rc-001.json`" http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/putBulkCampaign; echo
 
 --
+-- support jobs ( "tenantID":0 means all tenants ) ( pushAlternateIDsToRedis triggerMicroscope )
+--
+
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "name":"pushAlternateIDsToRedis" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/executeJob; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id":"1234" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getJobStatus; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getJobStatusList; echo
+
+--
 --  thirdpartymanager
 --
 

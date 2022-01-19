@@ -173,6 +173,7 @@
     <topic.productexternalevent.request>productexternalevent-request</topic.productexternalevent.request>
     <topic.productexternalevent.response>productexternalevent-response</topic.productexternalevent.response>
     <topic.loopback>loopback-event</topic.loopback>
+    <topic.evolution.job>evolution-job</topic.evolution.job>
     
     <topic.tenant>tenant</topic.tenant>
     <topic.edrdetails>edrdetails</topic.edrdetails>
