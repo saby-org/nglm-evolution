@@ -766,21 +766,18 @@ public class CommodityDeliveryManager
             {
               result.put("point", commodityidID.replace(POINT_PREFIX, ""));
             }
+          DeliverableService deliverableService = (DeliverableService) guiServiceList.stream().filter(srvc -> srvc.getClass() == DeliverableService.class).findFirst().orElse(null);
+          if (deliverableService != null)
+            {
+              GUIManagedObject uncheckedDeliverable = deliverableService.getStoredDeliverable(commodityidID);
+              if (uncheckedDeliverable != null && uncheckedDeliverable.getAccepted())
+                {
+                  result.put("deliverable", commodityidID);
+                }
+            }
           else
             {
-              DeliverableService deliverableService = (DeliverableService) guiServiceList.stream().filter(srvc -> srvc.getClass() == DeliverableService.class).findFirst().orElse(null);
-              if (deliverableService != null)
-                {
-                  GUIManagedObject uncheckedDeliverable = deliverableService.getStoredDeliverable(commodityidID);
-                  if (uncheckedDeliverable != null && uncheckedDeliverable.getAccepted())
-                    {
-                      result.put("deliverable", commodityidID);
-                    }
-                }
-              else
-                {
-                  throw new ServerRuntimeException("deliverableService not found in guiServiceList");
-                }
+              throw new ServerRuntimeException("deliverableService not found in guiServiceList");
             }
         }
       return result;
