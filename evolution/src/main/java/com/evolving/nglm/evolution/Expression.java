@@ -410,7 +410,7 @@ public abstract class Expression
         return constant;
 
       case BooleanExpression:
-        return ((Boolean) constant).toString();
+        return ((Boolean) constant);
 
       case DateExpression:
         DateFormat scriptDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
