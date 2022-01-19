@@ -218,11 +218,10 @@ public class JourneyCustomerStatisticsReportMultithread implements ReportCsvFact
     try {
       Collection<GUIManagedObject> allJourneys = journeyService.getStoredJourneys(tenantID);
       List<Journey> activeJourneys = new ArrayList<>();
-      Date yesterdayAtZeroHour = ReportUtils.delayAtZeroHour(reportGenerationDate, Deployment.getReportManagerJourneysReportActiveNHoursAgo());
-      Date yesterdayAtMidnight = ReportUtils.delayAtMidnight(reportGenerationDate, Deployment.getReportManagerJourneysReportActiveNHoursAgo());
+      Date yesterdayAtMidnight = ReportUtils.delayAtZeroHour(reportGenerationDate, 0); // EVPRO-1488
+      Date nDayAgoAtZeroHour = ReportUtils.delayAtMidnight(reportGenerationDate, Deployment.getReportManagerJourneysReportActiveNHoursAgo());
       for (GUIManagedObject gmo : allJourneys) {
-        if (gmo instanceof Journey &&
-            gmo.getEffectiveStartDate().before(yesterdayAtMidnight) && gmo.getEffectiveEndDate().after(yesterdayAtZeroHour)) {
+        if (gmo.getEffectiveStartDate().before(yesterdayAtMidnight) && gmo.getEffectiveEndDate().after(nDayAgoAtZeroHour)) {
           activeJourneys.add((Journey) gmo);
         }
       }

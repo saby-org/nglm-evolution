@@ -186,10 +186,10 @@ public class JourneyCustomerStatisticsReportMonoPhase implements ReportCsvFactor
 
       Collection<GUIManagedObject> allJourneys = journeyService.getStoredJourneys(0); // TODO EVPRO-99 check this....  
       List<Journey> activeJourneys = new ArrayList<>();
-      Date yesterdayAtZeroHour = ReportUtils.delayAtZeroHour(reportGenerationDate, Deployment.getReportManagerJourneysReportActiveNHoursAgo());
-      Date yesterdayAtMidnight = ReportUtils.delayAtMidnight(reportGenerationDate, Deployment.getReportManagerJourneysReportActiveNHoursAgo());
+      Date yesterdayAtMidnight = ReportUtils.delayAtZeroHour(reportGenerationDate, 0); // EVPRO-1488
+      Date nDayAgoAtZeroHour = ReportUtils.delayAtMidnight(reportGenerationDate, Deployment.getReportManagerJourneysReportActiveNHoursAgo());
       for (GUIManagedObject gmo : allJourneys) {
-        if (gmo.getEffectiveStartDate().before(yesterdayAtMidnight) && gmo.getEffectiveEndDate().after(yesterdayAtZeroHour)) {
+        if (gmo.getEffectiveStartDate().before(yesterdayAtMidnight) && gmo.getEffectiveEndDate().after(nDayAgoAtZeroHour)) {
           activeJourneys.add((Journey) gmo);
         }
       }
