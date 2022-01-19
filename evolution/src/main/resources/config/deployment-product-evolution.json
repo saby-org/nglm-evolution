@@ -1000,6 +1000,11 @@
       "permissions"  : ["API-GET-CUSTOMER-VOUCHERS"]
     },
     {
+      "id"           : "getCustomerVDRs",
+      "methodName"   : "getCustomerVDRs",
+      "permissions"  : ["API-GET-CUSTOMER-VDRS"]
+    },
+    {
       "id"           : "getOfferDetails",
       "methodName"   : "getOfferDetails",
       "permissions"  : ["API-GET-OFFER-DETAILS"]

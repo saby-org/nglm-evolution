@@ -103,6 +103,7 @@ import com.evolving.nglm.evolution.DeliveryRequest.Module;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
+import com.evolving.nglm.evolution.GUIManager.API;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
 import com.evolving.nglm.evolution.Journey.TargetingType;
@@ -640,6 +641,7 @@ public class ThirdPartyManager
       restServer.createContext("/nglm-thirdpartymanager/getVoucherList", new APIHandler(API.getVoucherList));
       restServer.createContext("/nglm-thirdpartymanager/deleteCustomer", new APIHandler(API.deleteCustomer));
       restServer.createContext("/nglm-thirdpartymanager/getCustomerVouchers", new APIHandler(API.getCustomerVouchers));
+      restServer.createContext("/nglm-thirdpartymanager/getCustomerVDRs", new APIHandler(API.getCustomerVDRs));
       restServer.createContext("/nglm-thirdpartymanager/getOfferDetails", new APIHandler(API.getOfferDetails));
       restServer.createContext("/nglm-thirdpartymanager/loyaltyAwardBadge", new APIHandler(API.loyaltyAwardBadge));
       restServer.createContext("/nglm-thirdpartymanager/loyaltyRemoveBadge", new APIHandler(API.loyaltyRemoveBadge));
@@ -1028,6 +1030,9 @@ public class ThirdPartyManager
             case getCustomerVouchers:
               jsonResponse = processGetCustomerVouchers(jsonRoot, tenantID);
               break;
+            case getCustomerVDRs:
+                jsonResponse = processGetCustomerVDRs(jsonRoot, tenantID);
+                break;
             case getOfferDetails:
                 jsonResponse = processGetOfferDetails(jsonRoot, tenantID);
                 break;
@@ -6581,6 +6586,113 @@ public class ThirdPartyManager
     }
 
     return JSONUtilities.encodeObject(response);
+  }
+  
+  private JSONObject processGetCustomerVDRs(JSONObject jsonRoot, int tenantID) throws ThirdPartyManagerException
+  {
+
+    HashMap<String,Object> response = new HashMap<>();
+
+    String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
+    String startDateReq = JSONUtilities.decodeString(jsonRoot, "startDate", false);
+
+    List<QueryBuilder> filters = new ArrayList<QueryBuilder>();
+    
+    if (subscriberID == null)
+      {
+        updateResponse(response, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND);
+        return JSONUtilities.encodeObject(response);
+      }
+    else
+      {
+        /*****************************************
+        *
+        *  getSubscriberProfile - include history
+        *
+        *****************************************/
+        try
+          {
+            SubscriberProfile baseSubscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
+            if (baseSubscriberProfile == null)
+              {
+                updateResponse(response, RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND);
+                return JSONUtilities.encodeObject(response);
+              }
+            else
+              {
+                List<JSONObject> VDRsJson = new ArrayList<JSONObject>();
+                ArrayList<JSONObject> VDRs = new ArrayList<JSONObject>();
+                                
+                SearchRequest searchRequest = this.elasticsearch.getSearchRequest(API.getCustomerVDRs, subscriberID, startDateReq == null ? null : RLMDateUtils.parseDateFromDay(startDateReq, Deployment.getDeployment(tenantID).getTimeZone()), filters, tenantID);
+                List<SearchHit> hits = this.elasticsearch.getESHits(searchRequest);
+                for (SearchHit hit : hits)
+                  {
+                	Map<String, Object> esMap = new HashMap<String, Object>();
+                	String fileID = (String) hit.getSourceAsMap().get("fileID");
+                	String voucherID = (String) hit.getSourceAsMap().get("voucherID");
+                	String voucherFormat = "";
+                	Date expiryDate = null;
+                	String offerID = "";
+                	Voucher voucher = (Voucher) voucherService.getStoredVoucher(voucherID);
+                	if(voucher instanceof VoucherShared){
+                  	  	voucherFormat = ((VoucherShared)voucher).getCodeFormatId();
+	                    List<JSONObject> vouchersJsonArray = new ArrayList<>();
+	                    for(VoucherProfileStored voucherProfileStored:baseSubscriberProfile.getVouchers())
+	                    {
+	                    	if(voucherProfileStored.getVoucherID().equals(voucherID)) {
+	                    		expiryDate = voucherProfileStored.getVoucherExpiryDate()!=null?voucherProfileStored.getVoucherExpiryDate():null;
+	                    		offerID = voucherProfileStored.getOfferID();
+	                    		break;
+	                    	}
+	                    }
+                   
+                	} else if (voucher instanceof VoucherPersonal){
+                      	for(VoucherProfileStored voucherProfileStored:baseSubscriberProfile.getVouchers())
+	                    {
+	                    	if(voucherProfileStored.getVoucherID().equals(voucherID)) {
+	                    		offerID = voucherProfileStored.getOfferID();
+	                    		if(fileID==null) {
+	                    			fileID = voucherProfileStored.getFileID();
+	                    		}
+	                    		break;
+	                    	}
+	                    }
+                      	for(VoucherFile voucherFile:((VoucherPersonal)voucher).getVoucherFiles()){
+                      		if(voucherFile.getFileId().equals(fileID)) {
+                      			voucherFormat = voucherFile.getCodeFormatId();
+                      			expiryDate = voucherFile.getExpiryDate()!=null?voucherFile.getExpiryDate():null;
+                      			break;
+                      		}
+                      	}
+                      }
+                	esMap.put("voucherCode", hit.getSourceAsMap().get("voucherCode"));
+                	esMap.put("voucherID", voucher.getVoucherID());
+                	esMap.put("voucherFormat", voucherFormat);
+                	esMap.put("voucherExpiryDate", hit.getSourceAsMap().get("action").equals(VoucherChange.VoucherChangeAction.Extend.name())?getDateString(RLMDateUtils.parseDateFromElasticsearch((String)hit.getSourceAsMap().get("expiryDate")),tenantID):getDateString(expiryDate,tenantID));
+                	esMap.put("operation", hit.getSourceAsMap().get("action"));
+                    esMap.put("offerDisplayName", offerID.equals("")? "": offerService.getStoredOffer(offerID).getJSONRepresentation().get("display"));
+                    esMap.put("offerID", offerID);
+                    
+                    
+                	VDRsJson.add(JSONUtilities.encodeObject(esMap));
+                  }
+                
+                //
+                // prepare response
+                //
+
+                response.put("VDRs", JSONUtilities.encodeArray(VDRsJson));
+                updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
+              }
+      }
+    catch (SubscriberProfileServiceException | java.text.ParseException | GUIManagerException e)
+    {
+      log.error("SubscriberProfileServiceException ", e.getMessage());
+      throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
+    }
+
+    return JSONUtilities.encodeObject(response);
+      }
   }
 
   /*****************************************
