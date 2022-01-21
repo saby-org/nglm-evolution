@@ -4443,7 +4443,7 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
               List<EvaluationCriterion> allCriterionsworkflow = new ArrayList<EvaluationCriterion>();
               allCriterionsworkflow.addAll(getEligibilityCriteria());
               allCriterionsworkflow.addAll(getTargetingCriteria());
-              allCriterionsworkflow.addAll(getTargetingEventCriteria());
+              allCriterionsworkflow.addAll(getTargetingEventCriteria()); 
               offerIDs.addAll(getSubcriteriaFieldArgumentValues(allCriterionsworkflow, "offer.id"));
               badgeIDs.addAll(getSubcriteriaFieldArgumentValues(allCriterionsworkflow, "badge.id"));
               for (EvaluationCriterion crt : allCriterionsworkflow)
