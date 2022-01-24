@@ -25,12 +25,14 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.BadgeCharacteristics.BadgeCharacteristicsLanguageProperty;
+import com.evolving.nglm.evolution.BadgeCharacteristics.BadgeCharacteristicsProperty;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
-@GUIDependencyDef(objectType = "badge", serviceClass = LoyaltyProgramService.class, dependencies = { "badgeobjective"})
+@GUIDependencyDef(objectType = "badge", serviceClass = LoyaltyProgramService.class, dependencies = { "badgeobjective", "workflow", "catalogcharacteristic"})
 public class Badge extends LoyaltyProgram implements GUIManagedObject.ElasticSearchMapping
 {
   
@@ -594,7 +596,25 @@ public class Badge extends LoyaltyProgram implements GUIManagedObject.ElasticSea
   {
     Map<String, List<String>> result = new HashMap<String, List<String>>();
     List<String> badgeObjectivesIDs = getBadgeObjectives().stream().map(badgeObjective -> badgeObjective.getBadgeObjectiveID()).collect(Collectors.toList());
+    List<String> workflowIDs = new ArrayList<String>();
+    List<String> badgeCharacteristicsLanguagePropertyIDs = new ArrayList<String>();
+    if (getAwardedWorkflowID() != null) workflowIDs.add(getAwardedWorkflowID());
+    if (getRemoveWorkflowID() != null) workflowIDs.add(getRemoveWorkflowID());
+    for (BadgeCharacteristicsLanguageProperty badgeCharacteristicsLanguageProperty : getBadgeCharacteristics().getBadgeCharacteristicProperties())
+      {
+        if (badgeCharacteristicsLanguageProperty.getProperties() != null && !badgeCharacteristicsLanguageProperty.getProperties().isEmpty())
+          {
+            for (BadgeCharacteristicsProperty characteristicsProperty : badgeCharacteristicsLanguageProperty.getProperties())
+              {
+                String catalogCharacteristicID = characteristicsProperty.getCatalogCharacteristicID();
+                badgeCharacteristicsLanguagePropertyIDs.add(catalogCharacteristicID);
+              }
+          }
+      }
+    
     result.put("badgeobjective", badgeObjectivesIDs);
+    result.put("workflow", workflowIDs);
+    result.put("catalogcharacteristic", badgeCharacteristicsLanguagePropertyIDs);
     return result;
   }
   

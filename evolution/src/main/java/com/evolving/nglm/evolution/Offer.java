@@ -45,7 +45,7 @@ import com.evolving.nglm.evolution.OfferCharacteristics.OfferCharacteristicsLang
 import com.evolving.nglm.evolution.OfferCharacteristics.OfferCharacteristicsProperty;
 import com.evolving.nglm.evolution.StockMonitor.StockableItem;
 
-@GUIDependencyDef(objectType = "offer", serviceClass = OfferService.class, dependencies = { "offer", "product" , "voucher", "saleschannel" , "callingchannel", "offerobjective", "target", "catalogcharacteristic", "loyaltyProgramPoints", "loyaltyprogramchallenge", "loyaltyprogrammission", "point" })
+@GUIDependencyDef(objectType = "offer", serviceClass = OfferService.class, dependencies = { "badge", "offer", "product" , "voucher", "saleschannel" , "callingchannel", "offerobjective", "target", "catalogcharacteristic", "loyaltyProgramPoints", "loyaltyprogramchallenge", "loyaltyprogrammission", "point" })
 public class Offer extends GUIManagedObject implements StockableItem
 {  
   //
@@ -1059,6 +1059,7 @@ public class Offer extends GUIManagedObject implements StockableItem
     List<String> loyaltyprogrammissionIDs = new ArrayList<String>();
     List<String> callingchannelIDs = new ArrayList<String>();
     List<String> pointIDs = new ArrayList<String>();
+    List<String> badgeIDs = new ArrayList<String>();
 
     for (OfferSalesChannelsAndPrice offerSalesChannelsAndPrice : getOfferSalesChannelsAndPrices())
       {
@@ -1070,6 +1071,7 @@ public class Offer extends GUIManagedObject implements StockableItem
     offerIDs = offerIDs.stream().filter(ofrID -> !ofrID.equals(getGUIManagedObjectID())).collect(Collectors.toList()); // cycle
     
     voucherIDs.addAll(getSubcriteriaFieldArgumentValues(profileCriterias, "voucher.id"));
+    badgeIDs.addAll(getSubcriteriaFieldArgumentValues(profileCriterias, "badge.id"));
     
     for (EvaluationCriterion profileCrt : profileCriterias)
       {
@@ -1122,6 +1124,8 @@ public class Offer extends GUIManagedObject implements StockableItem
               }
           }
       }
+    
+    result.put("badge", badgeIDs);
     result.put("offer", offerIDs);
     result.put("target", targetIDs);
     result.put("product", productIDs);
