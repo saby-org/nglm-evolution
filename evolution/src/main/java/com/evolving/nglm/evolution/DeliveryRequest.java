@@ -159,6 +159,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
     Messages(3),
     LoyaltyProgram(4),
     Journey(5),
+    BGDR(6),
     Unknown(-1);
     private Integer externalRepresentation;
     private ActivityType(Integer externalRepresentation) { this.externalRepresentation = externalRepresentation; }

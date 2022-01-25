@@ -258,17 +258,23 @@ public class BadgeChange extends SubscriberStreamOutput implements EvolutionEngi
   public Map<String, Object> getGUIPresentationMap(JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService)
   {
     Map<String, Object> result = new HashMap<String, Object>();
+    result.put("customerId", getSubscriberID());
     result.put("eventID", getEventID());
     result.put("eventDate", getDateString(getEventDate()));
+    result.put("creationDate", getDateString(getEventDate()));
+    result.put("deliveryDate", getDateString(getEventDate()));
     result.put("action", action.getExternalRepresentation());
     result.put("badgeID", badgeID);
     result.put("moduleID", moduleID);
     result.put("moduleName", getModule().toString());
     result.put("featureID", featureID);
     result.put("featureName", DeliveryRequest.getFeatureName(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
+    result.put("featureDisplay", DeliveryRequest.getFeatureDisplay(getModule(), getFeatureID(), journeyService, offerService, loyaltyProgramService));
     result.put("tenantID", tenantID);
     result.put("returnCode", returnStatus.getGenericResponseCode());
     result.put("returnCodeDetails", returnStatus.getGenericResponseMessage());
+    result.put("activityType", ActivityType.BGDR.toString());
+    result.put("deliveryRequestID", getDeliveryRequestID());
     GUIManagedObject badgeUnchecked = loyaltyProgramService.getStoredLoyaltyProgram(badgeID);
     if (badgeUnchecked != null && badgeUnchecked.getAccepted())
       {
@@ -287,8 +293,11 @@ public class BadgeChange extends SubscriberStreamOutput implements EvolutionEngi
   public Map<String, Object> getThirdPartyPresentationMap(JourneyService journeyService, OfferService offerService, LoyaltyProgramService loyaltyProgramService)
   {
     Map<String, Object> result = new HashMap<String, Object>();
+    result.put("customerId", getSubscriberID());
     result.put("eventID", getEventID());
     result.put("eventDate", getDateString(getEventDate()));
+    result.put("creationDate", getDateString(getEventDate()));
+    result.put("deliveryDate", getDateString(getEventDate()));
     result.put("action", action.getExternalRepresentation());
     result.put("badgeID", badgeID);
     result.put("moduleID", moduleID);
@@ -299,6 +308,8 @@ public class BadgeChange extends SubscriberStreamOutput implements EvolutionEngi
     result.put("tenantID", tenantID);
     result.put("returnCode", returnStatus.getGenericResponseCode());
     result.put("returnCodeDetails", returnStatus.getGenericResponseMessage());
+    result.put("activityType", ActivityType.BGDR.toString());
+    result.put("deliveryRequestID", getDeliveryRequestID());
     GUIManagedObject badgeUnchecked = loyaltyProgramService.getStoredLoyaltyProgram(badgeID);
     if (badgeUnchecked != null && badgeUnchecked.getAccepted())
       {
