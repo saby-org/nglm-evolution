@@ -21,6 +21,7 @@ import com.evolving.nglm.core.SubscriberStreamOutput;
 import com.evolving.nglm.evolution.ActionManager.Action;
 import com.evolving.nglm.evolution.ActionManager.ActionType;
 import com.evolving.nglm.evolution.Badge.BadgeAction;
+import com.evolving.nglm.evolution.DeliveryRequest.ActivityType;
 import com.evolving.nglm.evolution.DeliveryRequest.Module;
 
 public class BadgeChange extends SubscriberStreamOutput implements EvolutionEngineEvent, Action
