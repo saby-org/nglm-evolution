@@ -20330,9 +20330,10 @@ public class GUIManager
                     boolean campaignComplete = subsLatestStatistic.getStatusHistory().stream().filter(campaignStat -> campaignStat.getJourneyComplete()).count() > 0L; // ??
                     SubscriberJourneyStatus customerStatusInJourney = Journey.getSubscriberJourneyStatus(statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup);
                     SubscriberJourneyStatus profilejourneyStatus = baseSubscriberProfile.getSubscriberJourneys().get(storeCampaign.getJourneyID() + "");
-                    if (profilejourneyStatus.isSpecialExit()) {
-                      customerStatusInJourney = profilejourneyStatus;
-                    }
+                    if (profilejourneyStatus != null && profilejourneyStatus.isSpecialExit())
+                      {
+                        customerStatusInJourney = profilejourneyStatus;
+                      }
                     
                     if (customerStatus != null)
                       {
