@@ -25057,6 +25057,9 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
   String startDateString = JSONUtilities.decodeString(jsonRoot, "startDate", false);
   String endDateString = JSONUtilities.decodeString(jsonRoot, "endDate", false);
   String offerObjective = JSONUtilities.decodeString(jsonRoot, "objective", false);
+  
+  //EVPRO-1509: modify eligible offer in csr
+  boolean limitsReached = JSONUtilities.decodeBoolean(jsonRoot, "limitsReached", Boolean.FALSE);
       
   try
   {
@@ -25105,6 +25108,18 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
             SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, SystemTime.getCurrentTime(), tenantID);
             offers = offers.stream().filter(offer -> offer.evaluateProfileCriteria(evaluationRequest)).collect(Collectors.toList());
           }
+        
+        //
+        //  filter on limitsReached -- EVPRO-1509
+        //
+        
+        if(subscriberProfile != null) 
+        {
+        	Map<String,List<Date>> oldFullPurchaseHistory = subscriberProfile.getOfferPurchaseHistory();
+        	Map<String, List<Pair<String, Date>>> newFullPurchaseHistory = subscriberProfile.getOfferPurchaseSalesChannelHistory();
+          
+        	offers = offers.stream().filter(offer -> offer.evaluateLimitsReachedWithReason(oldFullPurchaseHistory,newFullPurchaseHistory,tenantID,limitsReached)).collect(Collectors.toList());
+        }
 
         //
         // filter using startDate
