@@ -6953,7 +6953,7 @@ public class EvolutionEngine
               mustCheckGraceDelay = true;
             } else {
               Date callerEndDate = caller.getRawEffectiveEndDate();
-              if (callerEndDate != null && context.event.getEventDate().after(callerEndDate)) {
+              if (callerEndDate != null && context.event.getEventDate() != null && context.event.getEventDate().after(callerEndDate)) {
                 // caller has finished
                 if(log.isTraceEnabled()) log.trace(caller.getGUIManagedObjectDisplay()+" ended on "+caller.getRawEffectiveEndDate());
                 mustCheckGraceDelay = true;
