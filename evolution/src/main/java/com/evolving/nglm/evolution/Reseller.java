@@ -6,33 +6,33 @@
 
 package com.evolving.nglm.evolution;
 
-import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
-import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
-import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.Deployment;
-import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.SchemaUtilities;
-
-import org.json.simple.JSONObject;
-import org.json.simple.JSONArray;
-
-import org.apache.kafka.connect.data.Field;
-import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.SchemaAndValue;
-import org.apache.kafka.connect.data.SchemaBuilder;
-import org.apache.kafka.connect.data.Struct;
-
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
+
+import org.apache.kafka.connect.data.Field;
+import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.SchemaAndValue;
+import org.apache.kafka.connect.data.SchemaBuilder;
+import org.apache.kafka.connect.data.Struct;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+
+import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.Deployment;
+import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.RLMDateUtils;
+import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 
 @GUIDependencyDef(objectType = "reseller", serviceClass = ResellerService.class, dependencies = {"reseller"})
-public class Reseller extends GUIManagedObject
+public class Reseller extends GUIManagedObject implements GUIManagedObject.ElasticSearchMapping
 {
   /*****************************************
   *
@@ -404,5 +404,32 @@ public class Reseller extends GUIManagedObject
     resellerIDs.add(parentResellerID);   
     result.put("reseller", resellerIDs);    
     return result;
+  }
+  
+  @Override public String getESDocumentID()
+  {
+    return "_" + "Reseller".concat("-").concat(getGUIManagedObjectID()).hashCode();
+  }
+
+  @Override public Map<String, Object> getESDocumentMap(boolean autoUpdate, ElasticsearchClientAPI elasticsearch, JourneyService journeyService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, ContactPolicyService contactPolicyService)
+  {
+    Map<String, Object> documentMap = new HashMap<String, Object>();
+    Date now = SystemTime.getCurrentTime();
+    documentMap.put("createdDate", RLMDateUtils.formatDateForElasticsearchDefault(getCreatedDate()));
+    documentMap.put("display", getGUIManagedObjectDisplay());
+    documentMap.put("active", getActive());
+    documentMap.put("partnerType", "Reseller");
+    documentMap.put("id", getGUIManagedObjectID());
+    documentMap.put("email", getEmail());
+    documentMap.put("parentId", getParentResellerID());
+    documentMap.put("timestamp", RLMDateUtils.formatDateForElasticsearchDefault(now));
+    documentMap.put("provider", "");
+    documentMap.put("address", JSONUtilities.decodeString(getJSONRepresentation(), "address", ""));
+    return documentMap;
+  }
+
+  @Override public String getESIndexName()
+  {
+    return "mapping_badges";
   }
 }
