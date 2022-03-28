@@ -357,7 +357,7 @@ public class Supplier extends GUIManagedObject implements GUIManagedObject.Elast
 
   @Override public String getESIndexName()
   {
-    return "mapping_badges";
+    return "mapping_partners";
   }
   
 }
