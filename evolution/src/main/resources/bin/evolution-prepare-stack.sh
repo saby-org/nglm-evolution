@@ -788,7 +788,7 @@ do
    export GUI_CSR_WEB_SERVER_PORT=$PORT
    if [[ "$GUI_HTTP_PROCOTOL" == "https" ]]; then
       if [ ${#GUI_CSR_API_SERVER_HOST_EXTERNAL} -ge 2 ]; then
-         export GUI_CSR_API_FULL_PATH=$GUI_CSR_API_SERVER_HOST_EXTERNAL"/csrapi"
+         export GUI_CSR_API_FULL_PATH=$GUI_CSR_API_SERVER_HOST_EXTERNAL":"$GUI_HTTPS_PORT"/csrapi"
          export CSRSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL"/csr"
       else
          export GUI_CSR_API_FULL_PATH=$GUI_CSR_API_SERVER_HOST_EXTERNAL_IP"/csrapi"
@@ -840,7 +840,7 @@ do
    export GUI_ITM_WEB_SERVER_PORT=$PORT
    if [[ "$GUI_HTTP_PROCOTOL" == "https" ]]; then
       if [ ${#GUI_ITM_API_SERVER_HOST_EXTERNAL} -ge 2 ]; then
-         export GUI_ITM_API_FULL_PATH=$GUI_ITM_API_SERVER_HOST_EXTERNAL"/itmapi"
+         export GUI_ITM_API_FULL_PATH=$GUI_ITM_API_SERVER_HOST_EXTERNAL":"$GUI_HTTPS_PORT"/itmapi"
          export ITMSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL"/itm"
       else
          export GUI_ITM_API_FULL_PATH=$GUI_ITM_API_SERVER_HOST_EXTERNAL_IP"/itmapi"
@@ -891,7 +891,7 @@ do
    export GUI_JMR_WEB_SERVER_PORT=$PORT
    if [[ "$GUI_HTTP_PROCOTOL" == "https" ]]; then
       if [ ${#GUI_JMR_API_SERVER_HOST_EXTERNAL} -ge 2 ]; then
-         export GUI_JMR_API_FULL_PATH=$GUI_JMR_API_SERVER_HOST_EXTERNAL"/jmrapi"
+         export GUI_JMR_API_FULL_PATH=$GUI_JMR_API_SERVER_HOST_EXTERNAL":"$GUI_HTTPS_PORT"/jmrapi"
          export JMRSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL"/jmr"
       else
          export GUI_JMR_API_FULL_PATH=$GUI_JMR_API_SERVER_HOST_EXTERNAL_IP"/jmrapi"
@@ -942,7 +942,7 @@ do
    export GUI_OPC_WEB_SERVER_PORT=$PORT   
    if [[ "$GUI_HTTP_PROCOTOL" == "https" ]]; then
       if [ ${#GUI_OPC_API_SERVER_HOST_EXTERNAL} -ge 2 ]; then
-         export GUI_OPC_API_FULL_PATH=$GUI_OPC_API_SERVER_HOST_EXTERNAL"/opcapi"
+         export GUI_OPC_API_FULL_PATH=$GUI_OPC_API_SERVER_HOST_EXTERNAL":"$GUI_HTTPS_PORT"/opcapi"
          export OPCSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL"/opc"
       else
          export GUI_OPC_API_FULL_PATH=$GUI_OPC_API_SERVER_HOST_EXTERNAL_IP"/opcapi"
@@ -993,7 +993,7 @@ do
    export GUI_IAR_WEB_SERVER_PORT=$PORT
    if [[ "$GUI_HTTP_PROCOTOL" == "https" ]]; then
       if [ ${#GUI_IAR_API_SERVER_HOST_EXTERNAL} -ge 2 ]; then
-         export GUI_IAR_API_FULL_PATH=$GUI_IAR_API_SERVER_HOST_EXTERNAL"/iarapi"
+         export GUI_IAR_API_FULL_PATH=$GUI_IAR_API_SERVER_HOST_EXTERNAL":"$GUI_HTTPS_PORT"/iarapi"
          export IARSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL"/iar"
       else
          export GUI_IAR_API_FULL_PATH=$GUI_IAR_API_SERVER_HOST_EXTERNAL_IP"/iarapi"
@@ -1044,7 +1044,7 @@ do
    export GUI_OPR_WEB_SERVER_PORT=$PORT
    if [[ "$GUI_HTTP_PROCOTOL" == "https" ]]; then
       if [ ${#GUI_OPR_API_SERVER_HOST_EXTERNAL} -ge 2 ]; then
-         export GUI_OPR_API_FULL_PATH=$GUI_OPR_API_SERVER_HOST_EXTERNAL"/oprapi"
+         export GUI_OPR_API_FULL_PATH=$GUI_OPR_API_SERVER_HOST_EXTERNAL":"$GUI_HTTPS_PORT"/oprapi"
          export OPRSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL"/opr"
       else
          export GUI_OPR_API_FULL_PATH=$GUI_OPR_API_SERVER_HOST_EXTERNAL_IP"/oprapi"
@@ -1095,7 +1095,7 @@ do
    export GUI_STG_WEB_SERVER_PORT=$PORT
    if [[ "$GUI_HTTP_PROCOTOL" == "https" ]]; then
       if [ ${#GUI_STG_API_SERVER_HOST_EXTERNAL} -ge 2 ]; then
-         export GUI_STG_API_FULL_PATH=$GUI_STG_API_SERVER_HOST_EXTERNAL"/stgapi"
+         export GUI_STG_API_FULL_PATH=$GUI_STG_API_SERVER_HOST_EXTERNAL":"$GUI_HTTPS_PORT"/stgapi"
          export STGSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL"/stg"
       else
          export GUI_STG_API_FULL_PATH=$GUI_STG_API_SERVER_HOST_EXTERNAL_IP"/stgapi"
@@ -1146,7 +1146,7 @@ do
    export GUI_SBM_WEB_SERVER_PORT=$PORT
    if [[ "$GUI_HTTP_PROCOTOL" == "https" ]]; then
       if [ ${#GUI_SBM_API_SERVER_HOST_EXTERNAL} -ge 2 ]; then
-         export GUI_SBM_API_FULL_PATH=$GUI_SBM_API_SERVER_HOST_EXTERNAL"/ucgapi"
+         export GUI_SBM_API_FULL_PATH=$GUI_SBM_API_SERVER_HOST_EXTERNAL":"$GUI_HTTPS_PORT"/ucgapi"
          export SBMSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL"/ucg"
       else
          export GUI_SBM_API_FULL_PATH=$GUI_SBM_API_SERVER_HOST_EXTERNAL_IP"/ucgapi"
@@ -1198,7 +1198,7 @@ do
    export GUI_LPM_WEB_SERVER_PORT=$PORT
    if [[ "$GUI_HTTP_PROCOTOL" == "https" ]]; then
       if [ ${#GUI_LPM_API_SERVER_HOST_EXTERNAL} -ge 2 ]; then
-         export GUI_LPM_API_FULL_PATH=$GUI_LPM_API_SERVER_HOST_EXTERNAL"/lpmapi"
+         export GUI_LPM_API_FULL_PATH=$GUI_LPM_API_SERVER_HOST_EXTERNAL":"$GUI_HTTPS_PORT"/lpmapi"
          export LPMSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL"/lpm"
       else
          export GUI_LPM_API_FULL_PATH=$GUI_LPM_API_SERVER_HOST_EXTERNAL_IP"/lpmapi"
