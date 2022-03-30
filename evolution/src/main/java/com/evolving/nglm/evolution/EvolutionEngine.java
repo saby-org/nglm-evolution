@@ -6951,7 +6951,7 @@ public class EvolutionEngine
             if (mustCheckGraceDelay) {
               // EVPRO-1447 grace delay when caller has finished
               Date waitUntil = new Date(((caller == null || caller.getEffectiveEndDate() == null) ? context.processingDate().getTime() : caller.getEffectiveEndDate().getTime())+Deployment.getGracePeriodWorkflowsMs());
-              if (context.event.getEventDate().before(waitUntil)){
+              if (context.event.getEventDate() != null && context.event.getEventDate().before(waitUntil)){
                 if(log.isTraceEnabled() && caller != null) log.trace(caller.getGUIManagedObjectDisplay()+" ended on "+caller.getEffectiveEndDate()," but need to wait till "+waitUntil+" before stopping workflow");
                 continue;
               } else {
