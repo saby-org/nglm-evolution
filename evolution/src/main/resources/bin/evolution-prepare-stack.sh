@@ -722,7 +722,7 @@ do
    export GUI_FWK_WEB_SERVER_PORT=$PORT
    if [[ "$GUI_HTTP_PROCOTOL" == "https" ]]; then
       if [ ${#GUI_FWK_API_SERVER_HOST_EXTERNAL} -ge 2 ]; then
-         export GUI_FWK_API_FULL_PATH=$GUI_FWK_API_SERVER_HOST_EXTERNAL"/fwkapi"
+         export GUI_FWK_API_FULL_PATH=$GUI_FWK_API_SERVER_HOST_EXTERNAL":"$GUI_HTTPS_PORT"/fwkapi"
          export FWKSETTINGS_WEBCALLBACKURL=$GUI_HTTP_PROCOTOL"://"$HOST_EXTERNAL"/fwk"
       else
          export GUI_FWK_API_FULL_PATH=$GUI_FWK_API_SERVER_HOST_EXTERNAL_IP"/fwkapi"
