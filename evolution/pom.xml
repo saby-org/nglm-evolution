@@ -55,7 +55,7 @@
     <gui-tls.version>1.4.17</gui-tls.version>
     <gui-audit.version>2.1.1</gui-audit.version>
     <gui-links.version>2.1.1</gui-links.version>
-    <gui-onssl.version>2.1.1</gui-onssl.version>
+    <gui-onssl.version>2.1.1_1</gui-onssl.version>
     <gui-doc.version>1.0.1</gui-doc.version>
 
     <!-- dependencies - mysql -->
