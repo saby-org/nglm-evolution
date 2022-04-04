@@ -4,7 +4,7 @@
   <artifactId>nglm-evolution-common-build</artifactId>
   <packaging>pom</packaging>
   <version>2.1.1_2-SNAPSHOT</version>
-  <name>evolution-common-build</name>
+  <name>evolution-common-build</name> 
 
   <repositories> 
 
