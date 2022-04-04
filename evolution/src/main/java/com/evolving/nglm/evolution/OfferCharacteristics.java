@@ -635,6 +635,7 @@ public class OfferCharacteristics
       this.catalogCharacteristicName = JSONUtilities.decodeString(jsonRoot, "catalogCharacteristicName", false);
       CatalogCharacteristic catalogCharacteristic = catalogCharacteristicService.getActiveCatalogCharacteristic(catalogCharacteristicID, SystemTime.getCurrentTime());
       CriterionDataType dataType = (catalogCharacteristic != null) ? catalogCharacteristic.getDataType() : CriterionDataType.Unknown;
+      boolean allowMultipleValues = JSONUtilities.decodeBoolean(catalogCharacteristic.getJSONRepresentation(), "allowMultipleValues", Boolean.FALSE);
 
       //
       //  parse value
@@ -656,9 +657,23 @@ public class OfferCharacteristics
             break;
 
           case DateCriterion:
-            value = GUIManagedObject.parseDateField(JSONUtilities.decodeString(jsonRoot, "value", false));
+            if (allowMultipleValues) //EVPRO-1527
+             {	
+               JSONArray jsonArrayDateString = JSONUtilities.decodeJSONArray(jsonRoot, "value", false);
+               Set<Object> dateSetValue = new HashSet<Object>();
+               for (int i=0; i<jsonArrayDateString.size(); i++)
+              	 {
+            	   dateSetValue.add(GUIManagedObject.parseDateField((String) jsonArrayDateString.get(i)));
+              	 }
+               value = dateSetValue;
+             }
+            else
+             {
+               value = GUIManagedObject.parseDateField(JSONUtilities.decodeString(jsonRoot, "value", false));
+             }
+            
             break;
-
+            
           case BooleanCriterion:
             value = JSONUtilities.decodeBoolean(jsonRoot, "value", false);
             break;
@@ -682,7 +697,17 @@ public class OfferCharacteristics
               }
             value = integerSetValue;
             break;
-
+            
+          case DoubleSetCriterion: //EVPRO-1527
+        	  JSONArray jsonArrayDouble = JSONUtilities.decodeJSONArray(jsonRoot, "value", false);
+        	  Set<Object> doubleSetValue = new HashSet<Object>();
+        	  for (int i=0; i<jsonArrayDouble.size(); i++)
+              	{
+        		  doubleSetValue.add(new Double(((Number) jsonArrayDouble.get(i)).doubleValue()));
+              	}
+        	  value = doubleSetValue;
+        	  break;
+        	  
           case AniversaryCriterion:
           case TimeCriterion:
           default:
