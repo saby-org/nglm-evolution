@@ -1582,6 +1582,7 @@ public class EvaluationCriterion
     // Handle criterion "loyaltyprograms.name"
     //
 
+    log.info("RAJ K esField {}, criterionOperator {}", esField, criterionOperator);
     if ("loyaltyprograms.name".equals(esField))
     {
       QueryBuilder query = null;
@@ -2744,7 +2745,9 @@ public class EvaluationCriterion
 
   private QueryBuilder buildCompareQuery(String field, ExpressionDataType expectedType) throws CriterionException
   {
+    log.info("RAJ K field {}, ExpressionDataType {}", field, expectedType);
     Object value = evaluateArgumentIfNecessary(expectedType);
+    log.info("RAJ K value {}", value);
     return buildCompareQueryWithValue(field, expectedType, value);
   }
 
@@ -2756,6 +2759,7 @@ public class EvaluationCriterion
 
   private QueryBuilder buildCompareQueryWithValue(String field, ExpressionDataType expectedType, Object value) throws CriterionException
   {
+    log.info("RAJ K buildCompareQueryWithValue field {}, expectedType {}, value {}, criterionOperator {}", field, expectedType, value, criterionOperator);
     QueryBuilder queryCompare = null;
     switch (criterionOperator)
     {
@@ -2770,6 +2774,7 @@ public class EvaluationCriterion
           throw new CriterionException("Operation "+criterionOperator.getExternalRepresentation()+" not allowed for empty argument");
         }
         queryCompare = QueryBuilders.regexpQuery(field,"@"+argument.evaluateExpression(null,null)+"@");
+        log.info("RAJ K queryCompare queryCompare {}", queryCompare);
         if(criterionOperator == CriterionOperator.DoesNotContainsKeywordOperator)
         {
           queryCompare =  QueryBuilders.boolQuery().mustNot(queryCompare);
@@ -2856,6 +2861,7 @@ public class EvaluationCriterion
       default:
         throw new CriterionException("not yet implemented : " + criterionOperator);
     }
+    log.info("RAJ K return queryCompare {}", queryCompare);
     return queryCompare;
   }
 
