@@ -1559,8 +1559,12 @@ public class EvaluationCriterion
     //if criterion field have subscriterias will be considered as complex criteria
     if(criterionField.hasSubcriterias())
     {
+      log.info("RAJ K criterionField {}", criterionField);
       //here I assumed that complex object name is coming in second position. Other solution was to pass this name to criterion when criterion is created but I don't want to add another property to this object
       String[] criterionIDSplit = criterionField.getID().split("\\.", 3);
+      log.info("RAJ K criterionIDSplit[0] {}", criterionIDSplit[0]);
+      log.info("RAJ K criterionIDSplit[1] {}", criterionIDSplit[1]);
+      log.info("RAJ K criterionIDSplit[2] {}", criterionIDSplit[2]);
       BoolQueryBuilder query = QueryBuilders.boolQuery();
       query = query.must(QueryBuilders.matchQuery("complexFields.complexObjectName", criterionIDSplit[1]));
       for(Expression exp:getSubcriteriaExpressions().values())
@@ -1568,6 +1572,7 @@ public class EvaluationCriterion
         query = query.filter(noPainlessEsQuery("complexFields.elements."+exp.evaluateConstant()+"."+esField,criterionOperator,argument));
       }
       QueryBuilder queryBuilder = QueryBuilders.nestedQuery("complexFields", query, ScoreMode.Total);
+      log.info("RAJ K queryBuilder {}", queryBuilder);
       if (log.isDebugEnabled()) log.debug("a dummy query will be executed for criterion {}, which will return true - will impact the count", criterionField.getDisplay());
       return queryBuilder;
 
