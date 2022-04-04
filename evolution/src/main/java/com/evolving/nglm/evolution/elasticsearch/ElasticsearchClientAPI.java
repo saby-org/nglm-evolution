@@ -1414,6 +1414,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
     //
     
     searchRequest = new SearchRequest(index).source(new SearchSourceBuilder().query(query));
+    if (log.isDebugEnabled()) log.debug("ES searchRequest {}", searchRequest.toString());
     
     //
     //  return

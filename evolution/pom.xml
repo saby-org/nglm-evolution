@@ -27,7 +27,7 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>2.1.1_0-SNAPSHOT</version>
+    <version>EVPRO-1518-v211_0-SNAPSHOT</version>
   </parent>
 
   <scm>
@@ -55,7 +55,7 @@
     <gui-tls.version>1.4.17</gui-tls.version>
     <gui-audit.version>2.1.1_1</gui-audit.version>
     <gui-links.version>2.1.1</gui-links.version>
-    <gui-onssl.version>2.1.1</gui-onssl.version>
+    <gui-onssl.version>2.1.1_1</gui-onssl.version>
     <gui-doc.version>1.0.1</gui-doc.version>
 
     <!-- dependencies - mysql -->
