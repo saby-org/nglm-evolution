@@ -583,7 +583,6 @@ public class DynamicCriterionFieldService extends GUIService
         criterionFieldJSONMAP.put("includedComparableFields", null); 
         criterionFieldJSONMAP.put("excludedComparableFields", null);
         criterionFieldJSONMAP.put("esField",subfield.getValue().getSubfieldName());
-        log.info("RAJ K criterionFieldJSONMAP {}", criterionFieldJSONMAP);
         
         //
         //  criterionFieldJSON

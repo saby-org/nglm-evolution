@@ -1559,12 +1559,8 @@ public class EvaluationCriterion
     //if criterion field have subscriterias will be considered as complex criteria
     if(criterionField.hasSubcriterias())
     {
-      log.info("RAJ K criterionField {}", criterionField);
       //here I assumed that complex object name is coming in second position. Other solution was to pass this name to criterion when criterion is created but I don't want to add another property to this object
       String[] criterionIDSplit = criterionField.getID().split("\\.", 3);
-      log.info("RAJ K criterionIDSplit[0] {}", criterionIDSplit[0]);
-      log.info("RAJ K criterionIDSplit[1] {}", criterionIDSplit[1]);
-      log.info("RAJ K criterionIDSplit[2] {}", criterionIDSplit[2]);
       BoolQueryBuilder query = QueryBuilders.boolQuery();
       query = query.must(QueryBuilders.matchQuery("complexFields.complexObjectName", criterionIDSplit[1]));
       for(Expression exp:getSubcriteriaExpressions().values())
@@ -1572,7 +1568,6 @@ public class EvaluationCriterion
         query = query.filter(noPainlessEsQuery("complexFields.elements."+exp.evaluateConstant()+"."+esField,criterionOperator,argument));
       }
       QueryBuilder queryBuilder = QueryBuilders.nestedQuery("complexFields", query, ScoreMode.Total);
-      log.info("RAJ K queryBuilder {}", queryBuilder);
       if (log.isDebugEnabled()) log.debug("a dummy query will be executed for criterion {}, which will return true - will impact the count", criterionField.getDisplay());
       return queryBuilder;
 
@@ -1582,7 +1577,6 @@ public class EvaluationCriterion
     // Handle criterion "loyaltyprograms.name"
     //
 
-    log.info("RAJ K esField {}, criterionOperator {}", esField, criterionOperator);
     if ("loyaltyprogram.name".equals(esField))
     {
       QueryBuilder query = null;
@@ -1597,12 +1591,10 @@ public class EvaluationCriterion
 
       case IsNotNullOperator:
       default:
-        
         QueryBuilder loyaltyProgramNameNotNull =  buildCompareQuery("loyaltyPrograms.loyaltyProgramName", ExpressionDataType.StringExpression);
         QueryBuilder loyaltyProgramExitDateMustNull =  QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("loyaltyPrograms.loyaltyProgramExitDate"));
         QueryBuilder actualQuery = QueryBuilders.boolQuery().must(loyaltyProgramNameNotNull).must(loyaltyProgramExitDateMustNull);
         query = QueryBuilders.boolQuery().filter(QueryBuilders.nestedQuery("loyaltyPrograms", actualQuery, ScoreMode.Total));
-        log.info("RAJ K query executing {}", query);
         break;
       }
       return query;
@@ -2748,9 +2740,7 @@ public class EvaluationCriterion
 
   private QueryBuilder buildCompareQuery(String field, ExpressionDataType expectedType) throws CriterionException
   {
-    log.info("RAJ K field {}, ExpressionDataType {}", field, expectedType);
     Object value = evaluateArgumentIfNecessary(expectedType);
-    log.info("RAJ K value {}", value);
     return buildCompareQueryWithValue(field, expectedType, value);
   }
 
@@ -2762,7 +2752,6 @@ public class EvaluationCriterion
 
   private QueryBuilder buildCompareQueryWithValue(String field, ExpressionDataType expectedType, Object value) throws CriterionException
   {
-    log.info("RAJ K buildCompareQueryWithValue field {}, expectedType {}, value {}, criterionOperator {}", field, expectedType, value, criterionOperator);
     QueryBuilder queryCompare = null;
     switch (criterionOperator)
     {
@@ -2777,7 +2766,6 @@ public class EvaluationCriterion
           throw new CriterionException("Operation "+criterionOperator.getExternalRepresentation()+" not allowed for empty argument");
         }
         queryCompare = QueryBuilders.regexpQuery(field,"@"+argument.evaluateExpression(null,null)+"@");
-        log.info("RAJ K queryCompare queryCompare {}", queryCompare);
         if(criterionOperator == CriterionOperator.DoesNotContainsKeywordOperator)
         {
           queryCompare =  QueryBuilders.boolQuery().mustNot(queryCompare);
@@ -2864,7 +2852,6 @@ public class EvaluationCriterion
       default:
         throw new CriterionException("not yet implemented : " + criterionOperator);
     }
-    log.info("RAJ K return queryCompare {}", queryCompare);
     return queryCompare;
   }
 
