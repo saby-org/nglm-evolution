@@ -1597,9 +1597,12 @@ public class EvaluationCriterion
 
       case IsNotNullOperator:
       default:
-        query = QueryBuilders.boolQuery().filter(
-            QueryBuilders.nestedQuery("loyaltyPrograms",
-                buildCompareQuery("loyaltyPrograms.loyaltyProgramName", ExpressionDataType.StringExpression) , ScoreMode.Total));
+        
+        QueryBuilder loyaltyProgramNameNotNull =  buildCompareQuery("loyaltyPrograms.loyaltyProgramName", ExpressionDataType.StringExpression);
+        QueryBuilder loyaltyProgramExitDateMustNull =  QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("loyaltyPrograms.loyaltyProgramExitDate"));
+        QueryBuilder actualQuery = QueryBuilders.boolQuery().must(loyaltyProgramNameNotNull).must(loyaltyProgramExitDateMustNull);
+        query = QueryBuilders.boolQuery().filter(QueryBuilders.nestedQuery("loyaltyPrograms", actualQuery, ScoreMode.Total));
+        log.info("RAJ K query executing {}", query);
         break;
       }
       return query;
