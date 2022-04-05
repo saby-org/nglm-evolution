@@ -636,7 +636,9 @@ public class OfferCharacteristics
       CatalogCharacteristic catalogCharacteristic = catalogCharacteristicService.getActiveCatalogCharacteristic(catalogCharacteristicID, SystemTime.getCurrentTime());
       CriterionDataType dataType = (catalogCharacteristic != null) ? catalogCharacteristic.getDataType() : CriterionDataType.Unknown;
       boolean allowMultipleValues = JSONUtilities.decodeBoolean(catalogCharacteristic.getJSONRepresentation(), "allowMultipleValues", Boolean.FALSE);
-
+      log.info("[EVPRO-1527] dataType : {}", dataType);
+      log.info("[EVPRO-1527] allowMultipleValues : {}", allowMultipleValues);
+      
       //
       //  parse value
       //
