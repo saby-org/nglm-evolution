@@ -796,7 +796,9 @@ public class GUIManagerGeneral extends GUIManager
         //
 
         SearchRequest searchRequest = new SearchRequest("subscriberprofile").source(searchSourceBuilder);
+        log.info("RAJ K searchRequest {}", searchRequest);
         SearchResponse searchResponse = elasticsearch.search(searchRequest, RequestOptions.DEFAULT);
+        log.info("RAJ K searchResponse {}", searchResponse);
         Filters aggResultFilters = searchResponse.getAggregations().get("SegmentEligibility");
         for (Filters.Bucket entry : aggResultFilters.getBuckets())
           {
