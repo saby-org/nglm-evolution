@@ -42,7 +42,7 @@ public class ParameterMap extends HashMap<String,Object>
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("parameter_map");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(5));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(6));
     schemaBuilder.field("nullParameters", SchemaBuilder.array(Schema.STRING_SCHEMA).schema());
     schemaBuilder.field("emptySetParameters", SchemaBuilder.array(Schema.STRING_SCHEMA).schema());
     schemaBuilder.field("emptyListParameters", SchemaBuilder.array(Schema.STRING_SCHEMA).schema());
@@ -392,11 +392,11 @@ public class ParameterMap extends HashMap<String,Object>
     Map<String,Integer> integerParameters = (Map<String,Integer>) valueStruct.get("integerParameters");
     Map<String,Long> longParameters = (schemaVersion >= 2) ? (Map<String,Long>) valueStruct.get("longParameters") : new HashMap<String,Long>();
     Map<String,Double> doubleParameters = (Map<String,Double>) valueStruct.get("doubleParameters");
-    Map<String,List<Double>> doubleSetParameters = (Map<String,List<Double>>) valueStruct.get("doubleSetParameters");
+    Map<String,List<Double>> doubleSetParameters = (schemaVersion >= 6) ? (Map<String,List<Double>>) valueStruct.get("doubleSetParameters") : new HashMap<String,List<Double>>();
     Map<String,String> stringParameters = (Map<String,String>) valueStruct.get("stringParameters");
     Map<String,Boolean> booleanParameters = (Map<String,Boolean>) valueStruct.get("booleanParameters");
     Map<String,Date> dateParameters = (Map<String,Date>) valueStruct.get("dateParameters");
-    Map<String,List<Date>> dateSetParameters = (Map<String,List<Date>>) valueStruct.get("dateSetParameters");
+    Map<String,List<Date>> dateSetParameters = (schemaVersion >= 6) ? (Map<String,List<Date>>) valueStruct.get("dateSetParameters") : new HashMap<String,List<Date>>();
     Map<String,List<String>> stringSetParameters = (Map<String,List<String>>) valueStruct.get("stringSetParameters");
     Map<String,List<Integer>> integerSetParameters = (Map<String,List<Integer>>) valueStruct.get("integerSetParameters");
     Map<String,List<EvaluationCriterion>> evaluationCriteriaParameters = unpackEvaluationCriteriaParameters(schema.field("evaluationCriteriaParameters").schema(), (Map<String,List<Object>>) valueStruct.get("evaluationCriteriaParameters"));
