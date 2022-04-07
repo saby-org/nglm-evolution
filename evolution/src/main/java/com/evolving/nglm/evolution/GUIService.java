@@ -1462,7 +1462,6 @@ public class GUIService {
             request.doc(((ElasticSearchMapping) guiManagedObject).getESDocumentMap(autoUpdate, elasticsearch, journeyService, targetService, journeyObjectiveService, contactPolicyService));
             request.docAsUpsert(true);
             request.retryOnConflict(4);
-            log.info("RAJ K autoUpdate {}, UpdateRequest {}", autoUpdate, request.toString());
             try
               {
                 elasticsearch.update(request, RequestOptions.DEFAULT);
