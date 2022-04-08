@@ -168,7 +168,7 @@ public abstract class SubscriberProfileESSinkConnector extends SimpleESSinkConne
       documentMap.put("previousEvolutionSubscriberStatus", (subscriberProfile.getPreviousEvolutionSubscriberStatus() != null) ? subscriberProfile.getPreviousEvolutionSubscriberStatus().getExternalRepresentation() : null);
       documentMap.put("evolutionSubscriberStatusChangeDate", RLMDateUtils.formatDateForElasticsearchDefault(subscriberProfile.getEvolutionSubscriberStatusChangeDate()));
       documentMap.put("universalControlGroup", subscriberProfile.getUniversalControlGroup());
-      documentMap.put("language", subscriberProfile.getLanguage());
+      documentMap.put("language", subscriberProfile.getLanguageID());
       documentMap.put("segments", subscriberProfile.getSegments(subscriberGroupEpochReader));
       documentMap.put("stratum", subscriberProfile.getSegmentsMap(subscriberGroupEpochReader));
       documentMap.put("targets", subscriberProfile.getTargets(subscriberGroupEpochReader));
