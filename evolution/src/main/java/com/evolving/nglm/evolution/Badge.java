@@ -638,14 +638,10 @@ public class Badge extends LoyaltyProgram implements GUIManagedObject.ElasticSea
       {
         documentMap.put("createdDate", RLMDateUtils.formatDateForElasticsearchDefault(RLMDateUtils.parseDateFromREST(JSONUtilities.decodeString(json, "createdDate"))));
       } 
-    catch (JSONUtilitiesException e)
+    catch (JSONUtilitiesException | ParseException e)
       {
         e.printStackTrace();
       } 
-    catch (ParseException e)
-      {
-        e.printStackTrace();
-      }
     documentMap.put("timestamp", RLMDateUtils.formatDateForElasticsearchDefault(now));
     documentMap.put("tenantID", getTenantID());
     return documentMap;
