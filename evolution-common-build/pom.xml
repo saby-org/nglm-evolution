@@ -4,8 +4,7 @@
   <artifactId>nglm-evolution-common-build</artifactId>
   <packaging>pom</packaging>
   <version>EVPRO-1085-SNAPSHOT</version>
-  <name>evolution-common-build</name> 
-
+  <name>evolution-common-build</name>
   <repositories> 
 
     <repository>
