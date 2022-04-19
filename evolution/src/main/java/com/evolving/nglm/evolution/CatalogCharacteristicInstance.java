@@ -105,6 +105,9 @@ public class CatalogCharacteristicInstance
     CatalogCharacteristic catalogCharacteristic = catalogCharacteristicService.getActiveCatalogCharacteristic(catalogCharacteristicID, SystemTime.getCurrentTime());
     CriterionDataType dataType = (catalogCharacteristic != null) ? catalogCharacteristic.getDataType() : CriterionDataType.Unknown;
 
+    //EVPRO-1527
+    boolean allowMultipleValues = JSONUtilities.decodeBoolean(catalogCharacteristic.getJSONRepresentation(), "allowMultipleValues", Boolean.FALSE);
+    
     //
     //  parse value
     //
@@ -125,7 +128,23 @@ public class CatalogCharacteristicInstance
           break;
 
         case DateCriterion:
-          value = GUIManagedObject.parseDateField(JSONUtilities.decodeString(jsonRoot, "value", false));
+          //value = GUIManagedObject.parseDateField(JSONUtilities.decodeString(jsonRoot, "value", false));
+          
+          //EVPRO-1527
+          if (allowMultipleValues)
+            {  
+              JSONArray jsonArrayDateString = JSONUtilities.decodeJSONArray(jsonRoot, "value", false);
+              Set<Object> dateSetValue = new HashSet<Object>();
+              for (int i=0; i<jsonArrayDateString.size(); i++)
+                {
+                  dateSetValue.add(GUIManagedObject.parseDateField((String) jsonArrayDateString.get(i)));
+                }
+              value = dateSetValue;
+            }
+           else
+            {
+              value = GUIManagedObject.parseDateField(JSONUtilities.decodeString(jsonRoot, "value", false));
+            }
           break;
 
         case BooleanCriterion:
