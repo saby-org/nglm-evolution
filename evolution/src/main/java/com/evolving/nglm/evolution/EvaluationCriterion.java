@@ -1563,7 +1563,7 @@ public class EvaluationCriterion
     // Handle criterion "loyaltyprograms.name"
     //
 
-    if ("loyaltyprograms.name".equals(esField))
+    if ("loyaltyprogram.name".equals(esField))
     {
       QueryBuilder query = null;
       // ES special case for isNull : (must_not -> exists) does not work when inside a nested query : must_not must be on the toplevel query !
