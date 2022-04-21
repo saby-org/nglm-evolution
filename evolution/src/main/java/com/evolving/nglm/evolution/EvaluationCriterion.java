@@ -1540,6 +1540,7 @@ public class EvaluationCriterion
 
   QueryBuilder esQuery() throws CriterionException
   {
+    log.info("RAJ K esQuery");
 
     /*****************************************
      *
@@ -1548,30 +1549,31 @@ public class EvaluationCriterion
      *****************************************/
 
     String esField = criterionField.getESField();
-
+    log.info("RAJ K esField {}", esField);
     if (esField == null)
     {
       if (log.isDebugEnabled()) log.debug("a dummy query will be executed for criterion {}, which will return true - will impact the count", criterionField.getDisplay());
       return alwaysTrueESQuery();
-      //throw new CriterionException("invalid criterionField " + criterionField);
     }
 
-    //if criterion field have subscriterias will be considered as complex criteria
+    //
+    // complex criteria
+    //
+    
     if(criterionField.hasSubcriterias())
-    {
-      //here I assumed that complex object name is coming in second position. Other solution was to pass this name to criterion when criterion is created but I don't want to add another property to this object
-      String[] criterionIDSplit = criterionField.getID().split("\\.", 3);
-      BoolQueryBuilder query = QueryBuilders.boolQuery();
-      query = query.must(QueryBuilders.matchQuery("complexFields.complexObjectName", criterionIDSplit[1]));
-      for(Expression exp:getSubcriteriaExpressions().values())
       {
-        query = query.filter(noPainlessEsQuery("complexFields.elements."+exp.evaluateConstant()+"."+esField,criterionOperator,argument));
+        String[] criterionIDSplit = criterionField.getID().split("\\.", 3);
+        log.info("RAJ K criterionField.getID() {}, criterionIDSplit[0] {}, criterionIDSplit[1] {}", criterionField.getID(), criterionIDSplit[0], criterionIDSplit[1]);
+        BoolQueryBuilder query = QueryBuilders.boolQuery();
+        query = query.must(QueryBuilders.matchQuery("complexFields.complexObjectName", criterionIDSplit[1]));
+        for (Expression exp : getSubcriteriaExpressions().values())
+          {
+            query = query.filter(noPainlessEsQuery("complexFields.elements." + exp.evaluateConstant() + "." + esField, criterionOperator, argument));
+          }
+        QueryBuilder queryBuilder = QueryBuilders.nestedQuery("complexFields", query, ScoreMode.Total);
+        log.info("RAJ K queryBuilder {}", queryBuilder);
+        return queryBuilder;
       }
-      QueryBuilder queryBuilder = QueryBuilders.nestedQuery("complexFields", query, ScoreMode.Total);
-      if (log.isDebugEnabled()) log.debug("a dummy query will be executed for criterion {}, which will return true - will impact the count", criterionField.getDisplay());
-      return queryBuilder;
-
-    }
 
     //
     // Handle criterion "loyaltyprograms.name"
