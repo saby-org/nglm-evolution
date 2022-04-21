@@ -1540,8 +1540,6 @@ public class EvaluationCriterion
 
   QueryBuilder esQuery() throws CriterionException
   {
-    log.info("RAJ K esQuery");
-
     /*****************************************
      *
      *  esField
@@ -1549,7 +1547,6 @@ public class EvaluationCriterion
      *****************************************/
 
     String esField = criterionField.getESField();
-    log.info("RAJ K esField {}", esField);
     if (esField == null)
     {
       if (log.isDebugEnabled()) log.debug("a dummy query will be executed for criterion {}, which will return true - will impact the count", criterionField.getDisplay());
@@ -1563,7 +1560,6 @@ public class EvaluationCriterion
     if(criterionField.hasSubcriterias())
       {
         String[] criterionIDSplit = criterionField.getID().split("\\.", 3);
-        log.info("RAJ K criterionField.getID() {}, criterionIDSplit[0] {}, criterionIDSplit[1] {}", criterionField.getID(), criterionIDSplit[0], criterionIDSplit[1]);
         String complexObjectName = criterionIDSplit[1];
         BoolQueryBuilder actualQuery = QueryBuilders.boolQuery().must(QueryBuilders.termQuery("complexFields.complexObjectName", complexObjectName)); //.must(loyaltyProgramExitDateMustNull);
         for (Expression exp : getSubcriteriaExpressions().values())
@@ -1571,7 +1567,6 @@ public class EvaluationCriterion
             actualQuery = actualQuery.must(noPainlessEsQuery("complexFields.elements." + exp.evaluateConstant() + "." + esField, criterionOperator, argument, false));
           }
         QueryBuilder query = QueryBuilders.boolQuery().filter(QueryBuilders.nestedQuery("complexFields", actualQuery, ScoreMode.Total));
-        log.info("RAJ K queryBuilder {}", query);
         return query;
       }
 
