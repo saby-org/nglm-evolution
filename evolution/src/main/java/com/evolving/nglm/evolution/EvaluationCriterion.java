@@ -1564,11 +1564,11 @@ public class EvaluationCriterion
       {
         String[] criterionIDSplit = criterionField.getID().split("\\.", 3);
         log.info("RAJ K criterionField.getID() {}, criterionIDSplit[0] {}, criterionIDSplit[1] {}", criterionField.getID(), criterionIDSplit[0], criterionIDSplit[1]);
-        QueryBuilder complexObjectNameQuery = QueryBuilders.boolQuery().must(QueryBuilders.termQuery("complexFields.complexObjectName", criterionIDSplit[1]));
-        BoolQueryBuilder actualQuery = QueryBuilders.boolQuery().must(complexObjectNameQuery); //.must(loyaltyProgramExitDateMustNull);
+        String complexObjectName = criterionIDSplit[1];
+        BoolQueryBuilder actualQuery = QueryBuilders.boolQuery().must(QueryBuilders.termQuery("complexFields.complexObjectName", complexObjectName)); //.must(loyaltyProgramExitDateMustNull);
         for (Expression exp : getSubcriteriaExpressions().values())
           {
-            actualQuery = actualQuery.must(noPainlessEsQuery("complexFields.elements." + exp.evaluateConstant() + "." + esField, criterionOperator, argument));
+            actualQuery = actualQuery.must(noPainlessEsQuery("complexFields.elements." + exp.evaluateConstant() + "." + esField, criterionOperator, argument, false));
           }
         QueryBuilder query = QueryBuilders.boolQuery().filter(QueryBuilders.nestedQuery("complexFields", actualQuery, ScoreMode.Total));
         log.info("RAJ K queryBuilder {}", query);
@@ -1671,7 +1671,7 @@ public class EvaluationCriterion
     }
     if(evaluateNoQuery)
     {
-      return noPainlessEsQuery(esField,criterionOperator,argument);
+      return noPainlessEsQuery(esField,criterionOperator,argument, true);
     }
     else
     {
@@ -2073,7 +2073,7 @@ public class EvaluationCriterion
    *
    *****************************************/
 
-  private QueryBuilder noPainlessEsQuery(String esField,CriterionOperator criterionOperator,Expression argument) throws CriterionException
+  private QueryBuilder noPainlessEsQuery(String esField,CriterionOperator criterionOperator,Expression argument, boolean filterTenantID) throws CriterionException
   {
 
     /*****************************************
@@ -2339,7 +2339,15 @@ public class EvaluationCriterion
      *
      *****************************************/
 
-    QueryBuilder returnQuery = QueryBuilders.boolQuery().must(queryBuilder).filter(QueryBuilders.termQuery("tenantID",tenantID));
+    QueryBuilder returnQuery;
+    if (filterTenantID)
+      {
+        returnQuery = QueryBuilders.boolQuery().must(queryBuilder).filter(QueryBuilders.termQuery("tenantID", tenantID));
+      }
+    else
+      {
+        returnQuery = QueryBuilders.boolQuery().must(queryBuilder);
+      }
 
     return returnQuery;
   }
