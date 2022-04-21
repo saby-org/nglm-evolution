@@ -1564,15 +1564,36 @@ public class EvaluationCriterion
       {
         String[] criterionIDSplit = criterionField.getID().split("\\.", 3);
         log.info("RAJ K criterionField.getID() {}, criterionIDSplit[0] {}, criterionIDSplit[1] {}", criterionField.getID(), criterionIDSplit[0], criterionIDSplit[1]);
-        BoolQueryBuilder query = QueryBuilders.boolQuery();
-        query = query.must(QueryBuilders.matchQuery("complexFields.complexObjectName", criterionIDSplit[1]));
-        for (Expression exp : getSubcriteriaExpressions().values())
-          {
-            query = query.filter(noPainlessEsQuery("complexFields.elements." + exp.evaluateConstant() + "." + esField, criterionOperator, argument));
-          }
-        QueryBuilder queryBuilder = QueryBuilders.nestedQuery("complexFields", query, ScoreMode.Total);
-        log.info("RAJ K queryBuilder {}", queryBuilder);
-        return queryBuilder;
+        QueryBuilder complexObjectNameQuery = QueryBuilders.boolQuery().must(QueryBuilders.termQuery("complexFields.complexObjectName", criterionIDSplit[1]));
+        
+        QueryBuilder actualQuery = QueryBuilders.boolQuery().must(complexObjectNameQuery); //.must(loyaltyProgramExitDateMustNull);
+        QueryBuilder query = QueryBuilders.boolQuery().filter(QueryBuilders.nestedQuery("complexFields", actualQuery, ScoreMode.Total));
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        /*
+         * BoolQueryBuilder query = QueryBuilders.boolQuery(); query =
+         * query.must(QueryBuilders.nestedQuery(esField, query, null)
+         * matchQuery("complexFields.complexObjectName", criterionIDSplit[1])); for
+         * (Expression exp : getSubcriteriaExpressions().values()) { query =
+         * query.filter(noPainlessEsQuery("complexFields.elements." +
+         * exp.evaluateConstant() + "." + esField, criterionOperator, argument)); }
+         * QueryBuilder queryBuilder = QueryBuilders.nestedQuery("complexFields", query,
+         * ScoreMode.Total);
+         */
+        log.info("RAJ K queryBuilder {}", query);
+        return query;
       }
 
     //
