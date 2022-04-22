@@ -241,8 +241,12 @@ public class PointBalance
     //  validate
     //
     
-    Date expirationDateFrom = pointFulfillmentResponse.getExpirationDateFrom();
-    Date expirationDateTo = pointFulfillmentResponse.getExpirationDateTo();
+    //
+    //  pointFulfillmentResponse null from credit
+    //
+    
+    Date expirationDateFrom = pointFulfillmentResponse != null ? pointFulfillmentResponse.getExpirationDateFrom() : null;
+    Date expirationDateTo = pointFulfillmentResponse != null ? pointFulfillmentResponse.getExpirationDateTo() : null;
     
     switch (operation)
       {
