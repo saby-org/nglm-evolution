@@ -483,7 +483,7 @@ public class PointBalance
     int result = 0;
     if (evaluationDate != null)
       {
-        for (Date expirationDate : balances.subMap(expirationDateTo, evaluationDate).keySet())
+        for (Date expirationDate : balances.subMap(expirationDateFrom, expirationDateTo).keySet())
           {
             if (evaluationDate.compareTo(expirationDate) <= 0)
               {
