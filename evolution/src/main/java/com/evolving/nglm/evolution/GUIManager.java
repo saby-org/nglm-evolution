@@ -109,6 +109,8 @@ import com.evolving.nglm.evolution.EvaluationCriterion.CriterionOperator;
 import com.evolving.nglm.evolution.Expression.ConstantExpression;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerContext;
+import com.evolving.nglm.evolution.GUIManager.RenamedProfileCriterionField;
 import com.evolving.nglm.evolution.GUIService.GUIManagedObjectListener;
 import com.evolving.nglm.evolution.Journey.GUINode;
 import com.evolving.nglm.evolution.Journey.JourneyStatus;
@@ -634,6 +636,10 @@ public class GUIManager
     getJobStatus("getJobStatus"),
     getJobStatusList("getJobStatusList"),
     
+    // TEST -- for project GUIManagerExtension
+    getFromGuiManagerExtensoin("getFromGuiManagerExtensoin"),
+    
+    
     //
     //  structor
     //
@@ -677,6 +683,7 @@ public class GUIManager
 
   private static final int RESTAPIVersion = 1;
   private static Method guiManagerExtensionEvaluateEnumeratedValuesMethod;
+  private static Method guiManagerExtensionEvaluateTestMethod;
 
   //
   //  instance
@@ -879,6 +886,19 @@ public class GUIManager
     try
       {
         guiManagerExtensionEvaluateEnumeratedValuesMethod = (Deployment.getGUIManagerExtensionClass() != null) ? Deployment.getGUIManagerExtensionClass().getMethod("evaluateEnumeratedValues",GUIManagerContext.class,String.class,Date.class,boolean.class, int.class) : null;
+      }
+    catch (NoSuchMethodException e)
+      {
+        throw new RuntimeException(e);
+      }
+    
+    //
+    //  guiManagerExtensionEvaluateTestMethod
+    //
+
+    try
+      {
+        guiManagerExtensionEvaluateTestMethod = (Deployment.getGUIManagerExtensionClass() != null) ? Deployment.getGUIManagerExtensionClass().getMethod("evaluateTestMethod",GUIManagerContext.class,String.class,Date.class,boolean.class, int.class) : null;
       }
     catch (NoSuchMethodException e)
       {
@@ -2510,6 +2530,8 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getJobStatus", new APISimpleHandler(API.getJobStatus));
         restServer.createContext("/nglm-guimanager/getJobStatusList", new APISimpleHandler(API.getJobStatusList));
 
+        // TEST
+        restServer.createContext("/nglm-guimanager/getFromGuiManagerExtensoin", new APISimpleHandler(API.getFromGuiManagerExtensoin));
         
         restServer.setExecutor(Executors.newFixedThreadPool(10));
         restServer.start();
@@ -4585,6 +4607,10 @@ public class GUIManager
 
                 case getJobStatusList:
                   jsonResponse = processGetJobStatusList(userID, jsonRoot, tenantID);
+                  break;
+                  
+                case getFromGuiManagerExtensoin:
+                  jsonResponse = processGetFromGuiManagerExtensoin(userID, jsonRoot, tenantID);
                   break;
 
               }
@@ -28214,6 +28240,13 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
       }
     return result;
   }
+  
+  protected List<JSONObject> evaluateTestMethod(JSONObject jsonRoot, Date now, int tenantID)
+  {
+    List<JSONObject> result = new ArrayList<JSONObject>();
+    result.add(jsonRoot);
+    return result; 
+  }
 
   @Deprecated
   private void filterPushTemplates(String communicationChannelID, List<JSONObject> result, Date now, int tenantID){
@@ -32356,6 +32389,24 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
   public JSONObject processGetJobStatusList(String userID, JSONObject jsonRoot, int tenantID) throws GUIManagerException {
     JSONObject result = new JSONObject();
     result.put("jobs", Reader.getAllJobsStatusJSon(tenantID));
+    result.put("responseCode", "ok");
+    return result;
+  }
+  
+  public JSONObject processGetFromGuiManagerExtensoin(String userID, JSONObject jsonRoot, int tenantID) throws GUIManagerException {
+    JSONObject result = new JSONObject();
+    String msisdn = null;
+    String jobID = null;
+    List<JSONObject> evaluateTestValues = evaluateTestMethod(jsonRoot, SystemTime.getCurrentTime(), tenantID);
+    for (JSONObject evaluateTestValue : evaluateTestValues)
+      {
+        msisdn = JSONUtilities.decodeString(evaluateTestValue, "msisdn", true);
+        jobID = JSONUtilities.decodeString(evaluateTestValue, "id", true);
+      }
+    
+    result.put("msisdn", msisdn);
+    result.put("jobID", jobID);
+    result.put("response", "SUCCESS respose from evolution.Guimanager");
     result.put("responseCode", "ok");
     return result;
   }
