@@ -400,6 +400,7 @@ public class PointBalance
         case Debit:
           {
             int remainingAmount = amount;
+            log.info("RAJ K expirationDateFrom {}, expirationDateTo {}, balances {}", expirationDateFrom, expirationDateTo, balances);
             while (remainingAmount > 0)
               {
                 //
@@ -407,7 +408,7 @@ public class PointBalance
                 //
 
                 SortedMap<Date, Integer> balances = getPortionBalances(expirationDateFrom, expirationDateTo);
-                log.info("RAJ K remainingAmount {}, balances {}", remainingAmount, balances);
+                log.info("RAJ K remainingAmount {}, getPortionBalances {}", remainingAmount, balances);
                 Date expirationDate = balances.firstKey();
                 int bucket = balances.get(expirationDate);
 
@@ -629,7 +630,7 @@ public class PointBalance
     commodityDeliveryRequest.setDeliveryDate(context.processingDate());
 
     try{
-      DeliveryRequest deliveryRequest = CommodityDeliveryManagerRemovalUtils.createDeliveryRequest(commodityDeliveryRequest,context.getPaymentMeanService(),context.getDeliverableService());
+      DeliveryRequest deliveryRequest = CommodityDeliveryManagerRemovalUtils.createDeliveryRequest(commodityDeliveryRequest,context.getPaymentMeanService(),context.getDeliverableService(), null, null);
       deliveryRequest.setDeliveryStatus(DeliveryStatus.Delivered);
       deliveryRequest.setDeliveryDate(context.processingDate());
       context.getSubscriberState().getDeliveryRequests().add(deliveryRequest);
