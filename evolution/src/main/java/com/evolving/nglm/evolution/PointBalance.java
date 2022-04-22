@@ -240,6 +240,10 @@ public class PointBalance
     //
     //  validate
     //
+    
+    Date expirationDateFrom = pointFulfillmentResponse.getExpirationDateFrom();
+    Date expirationDateTo = pointFulfillmentResponse.getExpirationDateTo();
+    
     switch (operation)
       {
         case Credit:
@@ -248,7 +252,14 @@ public class PointBalance
 
         case Debit:
           if (! point.getDebitable()) return false;
-          if (amount > getBalance(evaluationDate)) return false;
+          if (expirationDateFrom != null && expirationDateTo != null)
+            {
+              if (amount > getPortionBalance(expirationDateFrom, expirationDateTo, evaluationDate)) return false;
+            }
+          else
+            {
+              if (amount > getBalance(evaluationDate)) return false;
+            }
           break;
       }
 
@@ -392,9 +403,11 @@ public class PointBalance
             while (remainingAmount > 0)
               {
                 //
-                //  get earliest bucket
+                //  get earliest/Portion bucket
                 //
 
+                SortedMap<Date, Integer> balances = getPortionBalances(expirationDateFrom, expirationDateTo);
+                log.info("RAJ K remainingAmount {}, balances {}", remainingAmount, balances);
                 Date expirationDate = balances.firstKey();
                 int bucket = balances.get(expirationDate);
 
@@ -458,6 +471,47 @@ public class PointBalance
     return true;
   }
 
+  /*****************************************
+  *
+  *  getPortionBalance
+  *
+  *****************************************/
+  
+  private int getPortionBalance(Date expirationDateFrom, Date expirationDateTo, Date evaluationDate)
+  {
+    int result = 0;
+    if (evaluationDate != null)
+      {
+        for (Date expirationDate : balances.subMap(expirationDateTo, evaluationDate).keySet())
+          {
+            if (evaluationDate.compareTo(expirationDate) <= 0)
+              {
+                result += balances.get(expirationDate);
+              }
+          }
+      }
+    return result;
+  
+  }
+  
+  /*****************************************
+  *
+  *  getPortionBalances
+  *
+  *****************************************/
+  
+  private SortedMap<Date, Integer> getPortionBalances(Date expirationDateFrom, Date expirationDateTo)
+  {
+    if (expirationDateFrom != null && expirationDateTo != null)
+      {
+        return balances.subMap(expirationDateFrom, expirationDateTo);
+      }
+    else
+      {
+        return balances;
+      }
+  }
+  
   /*****************************************
   *
   *  pack

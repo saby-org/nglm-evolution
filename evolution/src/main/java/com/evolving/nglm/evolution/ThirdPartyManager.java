@@ -1958,8 +1958,26 @@ public class ThirdPartyManager
     String bonusName = JSONUtilities.decodeString(jsonRoot, "bonusName", true);
     Integer quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
     String origin = JSONUtilities.decodeString(jsonRoot, "origin", true);
-    
     String featureID = JSONUtilities.decodeString(jsonRoot, "loginName", DEFAULT_FEATURE_ID);
+    
+    //
+    //  related to points
+    //
+    
+    String expirationDateFromStr = readString(jsonRoot, "expirationDateFrom", false);
+    String expirationDateToStr = readString(jsonRoot, "expirationDateTo", false);
+    Date expirationDateFrom = null;
+    Date expirationDateTo = null;
+    try
+      {
+        expirationDateFrom = expirationDateFromStr == null ? null : RLMDateUtils.parseDateFromREST(expirationDateFromStr);
+        expirationDateTo = expirationDateToStr == null ? null : RLMDateUtils.parseDateFromREST(expirationDateToStr);
+      } 
+    catch (java.text.ParseException e)
+      {
+        log.error("SubscriberProfileServiceException ", e.getMessage());
+        throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
+      }
 
     /*****************************************
     *
@@ -1997,7 +2015,7 @@ public class ThirdPartyManager
     String eventID = deliveryRequestID;
     try {
       SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
-      Future<BonusDelivery> futureResponse = CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(sync,paymentMeanService,deliverableService,subscriberProfile, subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, eventID, Module.REST_API.getExternalRepresentation(), featureID, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getPaymentMeanID(), CommodityDeliveryOperation.Debit, quantity, null, null, DELIVERY_REQUEST_PRIORITY, origin, tenantID);
+      Future<BonusDelivery> futureResponse = CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(sync,paymentMeanService,deliverableService,subscriberProfile, subscriberGroupEpochReader,null, null, deliveryRequestID, null, true, eventID, Module.REST_API.getExternalRepresentation(), featureID, subscriberID, searchedBonus.getFulfillmentProviderID(), searchedBonus.getPaymentMeanID(), CommodityDeliveryOperation.Debit, quantity, null, null, DELIVERY_REQUEST_PRIORITY, origin, tenantID, expirationDateFrom, expirationDateTo);
       BonusDelivery deliveryResponse = null;
       if(sync){
         deliveryResponse = handleWaitingResponse(futureResponse);

@@ -2,6 +2,9 @@ package com.evolving.nglm.evolution.commoditydelivery;
 
 import com.evolving.nglm.core.*;
 import com.evolving.nglm.evolution.*;
+import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
+import com.evolving.nglm.evolution.DeliveryRequest.Module;
+
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.json.simple.JSONObject;
@@ -9,6 +12,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -63,7 +68,7 @@ public class CommodityDeliveryManagerRemovalUtils {
 		return perSerdeResponseListener;
 	}
 
-	public static DeliveryRequest createDeliveryRequest(/*String applicationID, */CommodityDeliveryManager.CommodityDeliveryRequest commodityDeliveryRequest, PaymentMeanService paymentMeanService, DeliverableService deliverableService) throws CommodityDeliveryException {
+	public static DeliveryRequest createDeliveryRequest(/*String applicationID, */CommodityDeliveryManager.CommodityDeliveryRequest commodityDeliveryRequest, PaymentMeanService paymentMeanService, DeliverableService deliverableService, Date expirationDateFrom, Date expirationDateTo) throws CommodityDeliveryException {
 
 		if(log.isDebugEnabled()) log.debug("CommodityDeliveryManagerRemovalUtils.createCommodityDeliveryRequest : processing "+commodityDeliveryRequest);
 
@@ -117,11 +122,11 @@ public class CommodityDeliveryManagerRemovalUtils {
 		commodityType = provider.getProviderType();
 		deliveryType = provider.getDeliveryType();
 
-		return constructSubDeliveryRequest(/*applicationID, */commodityDeliveryRequest, commodityType, deliveryType, externalAccountID, deliverable);
+		return constructSubDeliveryRequest(/*applicationID, */commodityDeliveryRequest, commodityType, deliveryType, externalAccountID, deliverable, expirationDateFrom, expirationDateTo);
 
 	}
 
-	private static DeliveryRequest constructSubDeliveryRequest(/*String applicationID, */CommodityDeliveryManager.CommodityDeliveryRequest commodityDeliveryRequest, CommodityDeliveryManager.CommodityType commodityType, String deliveryType, String externalAccountID, Deliverable deliverable){
+	private static DeliveryRequest constructSubDeliveryRequest(CommodityDeliveryManager.CommodityDeliveryRequest commodityDeliveryRequest, CommodityDeliveryManager.CommodityType commodityType, String deliveryType, String externalAccountID, Deliverable deliverable, Date expirationDateFrom, Date expirationDateTo){
 
 		if(log.isDebugEnabled()) log.debug("CommodityDeliveryManagerRemovalUtils.constructSubDeliveryRequest("+commodityType+", "+deliveryType+") : method called ...");
 
@@ -189,6 +194,8 @@ public class CommodityDeliveryManagerRemovalUtils {
 				pointRequestData.put("amount", commodityDeliveryRequest.getAmount());
 				pointRequestData.put("validityPeriodType", validityPeriodType);
 				pointRequestData.put("validityPeriodQuantity", validityPeriodQuantity);
+				pointRequestData.put("expirationDateFrom", expirationDateFrom);
+				pointRequestData.put("expirationDateTo", expirationDateTo);
 				if(commodityDeliveryRequest.getDiplomaticBriefcase()!=null) pointRequestData.put("diplomaticBriefcase", commodityDeliveryRequest.getDiplomaticBriefcase());
 
 				PointFulfillmentRequest pointRequest = new PointFulfillmentRequest(commodityDeliveryRequest, JSONUtilities.encodeObject(pointRequestData), Deployment.getDeliveryManagers().get(deliveryType), commodityDeliveryRequest.getTenantID());
@@ -263,17 +270,23 @@ public class CommodityDeliveryManagerRemovalUtils {
 	public static void sendCommodityDeliveryRequest(PaymentMeanService paymentMeanService, DeliverableService deliverableService, DeliveryRequest originatingDeliveryRequest, JSONObject briefcase, String applicationID, String deliveryRequestID, String originatingDeliveryRequestID, boolean originatingRequest, String eventID, String moduleID, String featureID, String subscriberID, String providerID, String commodityID, CommodityDeliveryManager.CommodityDeliveryOperation operation, long amount, EvolutionUtilities.TimeUnit validityPeriodType, Integer validityPeriodQuantity, String origin) throws CommodityDeliveryException {
 		HashMap<String,Object> requestData = createCommodityDeliveryRequest(briefcase,applicationID,deliveryRequestID,originatingDeliveryRequestID,originatingRequest,eventID,moduleID,featureID,subscriberID,providerID,commodityID,operation,amount,validityPeriodType,validityPeriodQuantity,origin);
 		CommodityDeliveryManager.CommodityDeliveryRequest commodityDeliveryRequest = new CommodityDeliveryManager.CommodityDeliveryRequest(originatingDeliveryRequest,JSONUtilities.encodeObject(requestData), Deployment.getDeliveryManagers().get(CommodityDeliveryManager.COMMODITY_DELIVERY_TYPE), originatingDeliveryRequest.getTenantID());
-		DeliveryRequest deliveryRequest = createDeliveryRequest(/*applicationID, */commodityDeliveryRequest,paymentMeanService,deliverableService);
+		DeliveryRequest deliveryRequest = createDeliveryRequest(/*applicationID, */commodityDeliveryRequest,paymentMeanService,deliverableService, null, null);
 		send(deliveryRequest,false);
 	}
 
-	public static @Nullable Future<BonusDelivery> sendCommodityDeliveryRequest(boolean returnResponse/*return null if false*/, PaymentMeanService paymentMeanService, DeliverableService deliverableService, SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, JSONObject briefcase, String applicationID, String deliveryRequestID, String originatingDeliveryRequestID, boolean originatingRequest, String eventID, String moduleID, String featureID, String subscriberID, String providerID, String commodityID, CommodityDeliveryManager.CommodityDeliveryOperation operation, long amount, EvolutionUtilities.TimeUnit validityPeriodType, Integer validityPeriodQuantity, DeliveryRequest.DeliveryPriority priority, String origin, int tenantID) throws CommodityDeliveryException {
-		HashMap<String,Object> requestData = createCommodityDeliveryRequest(briefcase,applicationID,deliveryRequestID,originatingDeliveryRequestID,originatingRequest,eventID,moduleID,featureID,subscriberID,providerID,commodityID,operation,amount,validityPeriodType,validityPeriodQuantity,origin);
-		CommodityDeliveryManager.CommodityDeliveryRequest commodityDeliveryRequest = new CommodityDeliveryManager.CommodityDeliveryRequest(subscriberProfile, subscriberGroupEpochReader, JSONUtilities.encodeObject(requestData), Deployment.getDeliveryManagers().get(CommodityDeliveryManager.COMMODITY_DELIVERY_TYPE), tenantID);
-		commodityDeliveryRequest.forceDeliveryPriority(priority);
-		DeliveryRequest deliveryRequest = createDeliveryRequest(/*applicationID, */commodityDeliveryRequest,paymentMeanService,deliverableService);
-		return send(deliveryRequest,returnResponse);
-	}
+    public static @Nullable Future<BonusDelivery> sendCommodityDeliveryRequest(boolean returnResponse, PaymentMeanService paymentMeanService, DeliverableService deliverableService, SubscriberProfile subscriberProfile, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader, JSONObject briefcase, String applicationID, String deliveryRequestID, String originatingDeliveryRequestID, boolean originatingRequest, String eventID, String moduleID, String featureID, String subscriberID, String providerID, String commodityID, CommodityDeliveryManager.CommodityDeliveryOperation operation, long amount, EvolutionUtilities.TimeUnit validityPeriodType, Integer validityPeriodQuantity, DeliveryRequest.DeliveryPriority priority, String origin, int tenantID, Date expirationDateFrom, Date expirationDateTo) throws CommodityDeliveryException
+    {
+      HashMap<String, Object> requestData = createCommodityDeliveryRequest(briefcase, applicationID, deliveryRequestID, originatingDeliveryRequestID, originatingRequest, eventID, moduleID, featureID, subscriberID, providerID, commodityID, operation, amount, validityPeriodType, validityPeriodQuantity, origin);
+      CommodityDeliveryManager.CommodityDeliveryRequest commodityDeliveryRequest = new CommodityDeliveryManager.CommodityDeliveryRequest(subscriberProfile, subscriberGroupEpochReader, JSONUtilities.encodeObject(requestData), Deployment.getDeliveryManagers().get(CommodityDeliveryManager.COMMODITY_DELIVERY_TYPE), tenantID);
+      commodityDeliveryRequest.forceDeliveryPriority(priority);
+      DeliveryRequest deliveryRequest = createDeliveryRequest(commodityDeliveryRequest, paymentMeanService, deliverableService, expirationDateFrom, expirationDateTo);
+      return send(deliveryRequest, returnResponse);
+    }
+
+    public static @Nullable Future<BonusDelivery> sendCommodityDeliveryRequest(boolean returnResponse, PaymentMeanService paymentMeanService, DeliverableService deliverableService, SubscriberProfile subscriberProfile, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader, JSONObject briefcase, String applicationID, String deliveryRequestID, String originatingDeliveryRequestID, boolean originatingRequest, String eventID, String moduleID, String featureID, String subscriberID, String providerID, String commodityID, CommodityDeliveryManager.CommodityDeliveryOperation operation, long amount, EvolutionUtilities.TimeUnit validityPeriodType, Integer validityPeriodQuantity, DeliveryRequest.DeliveryPriority priority, String origin, int tenantID) throws CommodityDeliveryException
+    {
+      return sendCommodityDeliveryRequest(returnResponse, paymentMeanService, deliverableService, subscriberProfile, subscriberGroupEpochReader, briefcase, applicationID, deliveryRequestID, originatingDeliveryRequestID, originatingRequest, eventID, moduleID, featureID, subscriberID, providerID, commodityID, operation, amount, validityPeriodType, validityPeriodQuantity, priority, origin, tenantID, null, null);
+    }
 
 	private static HashMap<String,Object> createCommodityDeliveryRequest(JSONObject briefcase, String applicationID, String deliveryRequestID, String originatingDeliveryRequestID, boolean originatingRequest, String eventID, String moduleID, String featureID, String subscriberID, String providerID, String commodityID, CommodityDeliveryManager.CommodityDeliveryOperation operation, long amount, EvolutionUtilities.TimeUnit validityPeriodType, Integer validityPeriodQuantity, String origin){
 		HashMap<String,Object> requestData = new HashMap<String,Object>();

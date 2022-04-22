@@ -736,7 +736,7 @@ public class CommodityDeliveryManager
       commodityDeliveryRequest.setModuleID(newModuleID);
       commodityDeliveryRequest.setFeatureID(deliveryRequestSource);
       try {
-        return Collections.singletonList(CommodityDeliveryManagerRemovalUtils.createDeliveryRequest(commodityDeliveryRequest,evolutionEventContext.getPaymentMeanService(),evolutionEventContext.getDeliverableService()));
+        return Collections.singletonList(CommodityDeliveryManagerRemovalUtils.createDeliveryRequest(commodityDeliveryRequest,evolutionEventContext.getPaymentMeanService(),evolutionEventContext.getDeliverableService(), null, null));
       } catch (CommodityDeliveryException e) {
         log.info("could not create delivery request "+e.getError().getGenericResponseMessage());
         return Collections.emptyList();
