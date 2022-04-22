@@ -898,7 +898,7 @@ public class GUIManager
 
     try
       {
-        guiManagerExtensionEvaluateTestMethod = (Deployment.getGUIManagerExtensionClass() != null) ? Deployment.getGUIManagerExtensionClass().getMethod("evaluateTestMethodValues",GUIManagerContext.class,String.class,Date.class,boolean.class, int.class) : null;
+        guiManagerExtensionEvaluateTestMethod = (Deployment.getGUIManagerExtensionClass() != null) ? Deployment.getGUIManagerExtensionClass().getMethod("evaluateTestMethodValues",GUIManagerContext.class,JSONObject.class,Date.class,boolean.class, int.class) : null;
       }
     catch (NoSuchMethodException e)
       {
@@ -28250,7 +28250,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
       {
         try
         {
-          result.addAll((List<JSONObject>) guiManagerExtensionEvaluateTestMethod.invoke(null, guiManagerContext, jsonRoot, now, tenantID));
+          result.addAll((List<JSONObject>) guiManagerExtensionEvaluateTestMethod.invoke(null, guiManagerContext, jsonRoot, now, false, tenantID));
         }
         catch (IllegalAccessException|InvocationTargetException|RuntimeException e)
         {
