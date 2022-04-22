@@ -898,7 +898,7 @@ public class GUIManager
 
     try
       {
-        guiManagerExtensionEvaluateTestMethod = (Deployment.getGUIManagerExtensionClass() != null) ? Deployment.getGUIManagerExtensionClass().getMethod("evaluateTestMethod",GUIManagerContext.class,String.class,Date.class,boolean.class, int.class) : null;
+        guiManagerExtensionEvaluateTestMethod = (Deployment.getGUIManagerExtensionClass() != null) ? Deployment.getGUIManagerExtensionClass().getMethod("evaluateTestMethodValues",GUIManagerContext.class,String.class,Date.class,boolean.class, int.class) : null;
       }
     catch (NoSuchMethodException e)
       {
@@ -28241,10 +28241,26 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     return result;
   }
   
-  protected List<JSONObject> evaluateTestMethod(JSONObject jsonRoot, Date now, int tenantID)
+  protected List<JSONObject> evaluateTestMethodValues(JSONObject jsonRoot, Date now, int tenantID)
   {
+    log.info("[PRJT] from evolution.evaluateTestMethodValues");
     List<JSONObject> result = new ArrayList<JSONObject>();
-    result.add(jsonRoot);
+    
+    if (guiManagerExtensionEvaluateTestMethod != null)
+      {
+        try
+        {
+          result.addAll((List<JSONObject>) guiManagerExtensionEvaluateTestMethod.invoke(null, guiManagerContext, jsonRoot, now, tenantID));
+        }
+        catch (IllegalAccessException|InvocationTargetException|RuntimeException e)
+        {
+          log.info("failed deployment evaluate evaluateTestMethod for: {}", jsonRoot);
+          StringWriter stackTraceWriter = new StringWriter();
+          e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+          log.error(stackTraceWriter.toString());
+        }
+      }
+    log.info("[PRJT] evaluateTestMethodValues: {}", result.toString());
     return result; 
   }
 
@@ -32393,20 +32409,15 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     return result;
   }
   
-  public JSONObject processGetFromGuiManagerExtensoin(String userID, JSONObject jsonRoot, int tenantID) throws GUIManagerException {
+  public JSONObject processGetFromGuiManagerExtensoin(String userID, JSONObject jsonRoot, int tenantID) throws GUIManagerException 
+  {
+    log.info("[PRJT] from GUIManager.processGetFromGuiManagerExtensoin");
     JSONObject result = new JSONObject();
     String msisdn = null;
     String jobID = null;
-    List<JSONObject> evaluateTestValues = evaluateTestMethod(jsonRoot, SystemTime.getCurrentTime(), tenantID);
-    for (JSONObject evaluateTestValue : evaluateTestValues)
-      {
-        msisdn = JSONUtilities.decodeString(evaluateTestValue, "msisdn", true);
-        jobID = JSONUtilities.decodeString(evaluateTestValue, "id", true);
-      }
-    
-    result.put("msisdn", msisdn);
-    result.put("jobID", jobID);
-    result.put("response", "SUCCESS respose from evolution.Guimanager");
+    List<JSONObject> evaluateTestValues = evaluateTestMethodValues(jsonRoot, SystemTime.getCurrentTime(), tenantID);
+    result.put("result", JSONUtilities.encodeArray(evaluateTestValues));
+    result.put("responseMessage", "SUCCESS respose from evolution.Guimanager");
     result.put("responseCode", "ok");
     return result;
   }
