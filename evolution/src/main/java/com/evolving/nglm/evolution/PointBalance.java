@@ -407,13 +407,13 @@ public class PointBalance
           {
             int remainingAmount = amount;
             log.info("RAJ K expirationDateFrom {}, expirationDateTo {}, balances {}", expirationDateFrom, expirationDateTo, balances);
+            SortedMap<Date, Integer> balances = getPortionBalances(expirationDateFrom, expirationDateTo);
             while (remainingAmount > 0)
               {
                 //
                 //  get earliest/Portion bucket
                 //
 
-                SortedMap<Date, Integer> balances = getPortionBalances(expirationDateFrom, expirationDateTo);
                 log.info("RAJ K remainingAmount {}, getPortionBalances {}", remainingAmount, balances);
                 Date expirationDate = balances.firstKey();
                 int bucket = balances.get(expirationDate);
