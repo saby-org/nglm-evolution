@@ -412,7 +412,7 @@ public class PointBalance
                 //  get earliest/Portion bucket
                 //
 
-                log.info("RAJ K remainingAmount {}, getPortionBalances {}", remainingAmount, balances);
+                log.info("RAJ K remainingAmountToDeduct {}, getPortionBalances {}", remainingAmount, balances);
                 Date expirationDate = balances.firstKey();
                 int bucket = balances.get(expirationDate);
 
