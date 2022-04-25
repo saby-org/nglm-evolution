@@ -237,6 +237,7 @@ public class PointBalance
 
   public boolean update(EvolutionEventContext context, PointFulfillmentRequest pointFulfillmentResponse, String eventID, String moduleID, String featureID, String subscriberID, CommodityDeliveryOperation operation, int amount, Point point, Date evaluationDate, boolean generateBDR, String tier, int tenantID)
   {
+    
     //
     //  validate
     //
@@ -247,6 +248,7 @@ public class PointBalance
     
     Date expirationDateFrom = pointFulfillmentResponse != null ? pointFulfillmentResponse.getExpirationDateFrom() : null;
     Date expirationDateTo = pointFulfillmentResponse != null ? pointFulfillmentResponse.getExpirationDateTo() : null;
+    log.info("RAJ K update expirationDateFrom {}, expirationDateTo {}", expirationDateFrom, expirationDateTo);
     
     switch (operation)
       {
@@ -495,6 +497,7 @@ public class PointBalance
               }
           }
       }
+    log.info("RAJ K getPortionBalance result {}", result);
     return result;
   
   }

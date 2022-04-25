@@ -2026,6 +2026,7 @@ public class ThirdPartyManager
       return JSONUtilities.encodeObject(response);
     } catch (SubscriberProfileServiceException|CommodityDeliveryException e) {
       log.error("SubscriberProfileServiceException ", e.getMessage());
+      e.printStackTrace();
       throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
     }
 
