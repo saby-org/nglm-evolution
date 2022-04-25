@@ -248,7 +248,7 @@ public class PointBalance
     
     Date expirationDateFrom = pointFulfillmentResponse != null ? pointFulfillmentResponse.getExpirationDateFrom() : null;
     Date expirationDateTo = pointFulfillmentResponse != null ? pointFulfillmentResponse.getExpirationDateTo() : null;
-    log.info("RAJ K update expirationDateFrom {}, expirationDateTo {}", expirationDateFrom, expirationDateTo);
+    log.info("RAJ K update expirationDateFrom {}, expirationDateTo {}, balances {}", expirationDateFrom, expirationDateTo, balances);
     
     switch (operation)
       {
