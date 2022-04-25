@@ -248,7 +248,6 @@ public class PointBalance
     
     Date expirationDateFrom = pointFulfillmentResponse != null ? pointFulfillmentResponse.getExpirationDateFrom() : null;
     Date expirationDateTo = pointFulfillmentResponse != null ? pointFulfillmentResponse.getExpirationDateTo() : null;
-    log.info("RAJ K update expirationDateFrom {}, expirationDateTo {}, balances {}", expirationDateFrom, expirationDateTo, balances);
     
     switch (operation)
       {
@@ -406,7 +405,6 @@ public class PointBalance
         case Debit:
           {
             int remainingAmount = amount;
-            log.info("RAJ K expirationDateFrom {}, expirationDateTo {}, balances {}", expirationDateFrom, expirationDateTo, balances);
             SortedMap<Date, Integer> balances = getPortionBalances(expirationDateFrom, expirationDateTo);
             while (remainingAmount > 0)
               {
@@ -489,7 +487,8 @@ public class PointBalance
     int result = 0;
     if (evaluationDate != null)
       {
-        for (Date expirationDate : balances.subMap(expirationDateFrom, expirationDateTo).keySet())
+        SortedMap<Date, Integer> portionMap = balances.subMap(expirationDateFrom, expirationDateTo);
+        for (Date expirationDate : portionMap.keySet())
           {
             if (evaluationDate.compareTo(expirationDate) <= 0)
               {
@@ -500,7 +499,7 @@ public class PointBalance
     log.info("RAJ K actual balance");
     for (Date exD : balances.keySet())
       {
-        log.info(ReportService.printDate(exD) + " ---- amount {}", balances.get(exD));
+        log.info("RAJ K " + ReportService.printDate(exD) + " ---- amount {}", balances.get(exD));
       }
     log.info("RAJ K getPortionBalance from {}, expirationDateTo {}, result {}", ReportService.printDate(expirationDateFrom), ReportService.printDate(expirationDateTo), result);
     return result;

@@ -4742,7 +4742,6 @@ public class EvolutionEngine
     //  update
     //
 
-    log.info("RAJ K updatePointBalance operation {}, amount {}, point {}", operation, amount, point);
     boolean success = pointBalance.update(context, pointFulfillmentResponse, eventID, moduleID, featureID, subscriberProfile.getSubscriberID(), operation, amount, point, now, generateBDR, tier, tenantID);
 
     //
