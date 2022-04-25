@@ -849,7 +849,7 @@ public class ReportService extends GUIService
     return reportDirectoryFile;
   }
   
-  public String printDate(Date date)
+  public static String printDate(Date date)
   {
     return TIMESTAMP_PRINT_FORMAT.format(date);
   }

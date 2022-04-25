@@ -497,7 +497,12 @@ public class PointBalance
               }
           }
       }
-    log.info("RAJ K getPortionBalance result {}", result);
+    log.info("RAJ K actual balance");
+    for (Date exD : balances.keySet())
+      {
+        log.info(ReportService.printDate(exD) + " ---- amount {}", balances.get(exD));
+      }
+    log.info("RAJ K getPortionBalance from {}, expirationDateTo {}, result {}", ReportService.printDate(expirationDateFrom), ReportService.printDate(expirationDateTo), result);
     return result;
   
   }
