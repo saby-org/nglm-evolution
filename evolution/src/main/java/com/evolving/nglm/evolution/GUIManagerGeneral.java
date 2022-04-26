@@ -852,7 +852,7 @@ public class GUIManagerGeneral extends GUIManager
     String stratumESFieldName = "stratum";
     try
     {
-      SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder().sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC).query(QueryBuilders.matchAllQuery()).size(0);
+      SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder().sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC).query(QueryBuilders.termQuery("tenantID", tenantID)).size(0);
       List<FiltersAggregator.KeyedFilter> aggFilters = new ArrayList<>();
       for(SegmentEligibility segmentEligibility :segmentationDimensionEligibility.getSegments())
       {
@@ -872,6 +872,7 @@ public class GUIManagerGeneral extends GUIManager
       //
 
       SearchRequest searchRequest = new SearchRequest("subscriberprofile").source(searchSourceBuilder);
+      log.info("RAJ K processGetCountBySegmentationEligibilityBySegmentId searchRequest {}", searchRequest);
       SearchResponse searchResponse = elasticsearch.search(searchRequest, RequestOptions.DEFAULT);
       Filters aggResultFilters = searchResponse.getAggregations().get("SegmentEligibility");
       for (Filters.Bucket entry : aggResultFilters.getBuckets())
