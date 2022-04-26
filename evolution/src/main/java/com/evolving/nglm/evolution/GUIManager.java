@@ -636,7 +636,7 @@ public class GUIManager
     getJobStatus("getJobStatus"),
     getJobStatusList("getJobStatusList"),
     
-    // TEST -- for project GUIManagerExtension
+    // for GUIManagerExtension
     getFromGuiManagerExtensoin("getFromGuiManagerExtensoin"),
     
     
@@ -683,7 +683,7 @@ public class GUIManager
 
   private static final int RESTAPIVersion = 1;
   private static Method guiManagerExtensionEvaluateEnumeratedValuesMethod;
-  private static Method guiManagerExtensionEvaluateTestMethod;
+  private static Method guiManagerExtensionEvaluateCustomMethod;
 
   //
   //  instance
@@ -898,7 +898,7 @@ public class GUIManager
 
     try
       {
-        guiManagerExtensionEvaluateTestMethod = (Deployment.getGUIManagerExtensionClass() != null) ? Deployment.getGUIManagerExtensionClass().getMethod("evaluateTestMethodValues",GUIManagerContext.class,JSONObject.class,Date.class,boolean.class, int.class) : null;
+        guiManagerExtensionEvaluateCustomMethod = (Deployment.getGUIManagerExtensionClass() != null) ? Deployment.getGUIManagerExtensionClass().getMethod("evaluateCustomMethodValues",GUIManagerContext.class,JSONObject.class,Date.class,int.class) : null;
       }
     catch (NoSuchMethodException e)
       {
@@ -28241,16 +28241,15 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     return result;
   }
   
-  protected List<JSONObject> evaluateTestMethodValues(JSONObject jsonRoot, Date now, int tenantID)
+  protected List<JSONObject> evaluateCustomMethodValues(JSONObject jsonRoot, Date now, int tenantID)
   {
-    log.info("[PRJT] from evolution.evaluateTestMethodValues");
     List<JSONObject> result = new ArrayList<JSONObject>();
     
-    if (guiManagerExtensionEvaluateTestMethod != null)
+    if (guiManagerExtensionEvaluateCustomMethod != null)
       {
         try
         {
-          result.addAll((List<JSONObject>) guiManagerExtensionEvaluateTestMethod.invoke(null, guiManagerContext, jsonRoot, now, false, tenantID));
+          result.addAll((List<JSONObject>) guiManagerExtensionEvaluateCustomMethod.invoke(null, guiManagerContext, jsonRoot, now, tenantID));
         }
         catch (IllegalAccessException|InvocationTargetException|RuntimeException e)
         {
@@ -28260,7 +28259,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           log.error(stackTraceWriter.toString());
         }
       }
-    log.info("[PRJT] evaluateTestMethodValues: {}", result.toString());
+    log.info("[PRJT] evaluateCustomMethodValues: {}", result.toString());
     return result; 
   }
 
@@ -32411,13 +32410,11 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
   
   public JSONObject processGetFromGuiManagerExtensoin(String userID, JSONObject jsonRoot, int tenantID) throws GUIManagerException 
   {
-    log.info("[PRJT] from GUIManager.processGetFromGuiManagerExtensoin");
     JSONObject result = new JSONObject();
     String msisdn = null;
     String jobID = null;
-    List<JSONObject> evaluateTestValues = evaluateTestMethodValues(jsonRoot, SystemTime.getCurrentTime(), tenantID);
-    result.put("result", JSONUtilities.encodeArray(evaluateTestValues));
-    result.put("responseMessage", "SUCCESS respose from evolution.Guimanager");
+    List<JSONObject> evaluateCustomMethodValues = evaluateCustomMethodValues(jsonRoot, SystemTime.getCurrentTime(), tenantID);
+    result.put("result", JSONUtilities.encodeArray(evaluateCustomMethodValues));
     result.put("responseCode", "ok");
     return result;
   }
