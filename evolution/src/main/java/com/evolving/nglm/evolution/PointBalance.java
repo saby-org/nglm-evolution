@@ -412,7 +412,6 @@ public class PointBalance
                 //  get earliest/Portion bucket
                 //
 
-                log.info("RAJ K remainingAmountToDeduct {}, getPortionBalances {}", remainingAmount, balances);
                 Date expirationDate = balances.firstKey();
                 int bucket = balances.get(expirationDate);
 
@@ -496,14 +495,7 @@ public class PointBalance
               }
           }
       }
-    log.info("RAJ K actual balance");
-    for (Date exD : balances.keySet())
-      {
-        log.info("RAJ K " + ReportService.printDate(exD) + " ---- amount {}", balances.get(exD));
-      }
-    log.info("RAJ K getPortionBalance from {}, expirationDateTo {}, result {}", ReportService.printDate(expirationDateFrom), ReportService.printDate(expirationDateTo), result);
     return result;
-  
   }
   
   /*****************************************
