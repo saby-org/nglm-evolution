@@ -656,8 +656,10 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
       *****************************************/
 
       SMSNotificationManagerRequest request = null;
+      log.info("RAJ K language {} ", language);
       if (template != null && msisdn != null)
         {
+          log.info("RAJ K language -- {} ", language);
           request = new SMSNotificationManagerRequest(evolutionEventContext, deliveryType, deliveryRequestSource, msisdn, source, language, template.getSMSTemplateID(), messageTags, contactType.getExternalRepresentation(), origin, subscriberEvaluationRequest.getTenantID());
           
           request.setModuleID(newModuleID);
