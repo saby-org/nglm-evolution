@@ -251,7 +251,9 @@ public class SMSNotificationManager extends DeliveryManagerForNotifications impl
     public String getText(SubscriberMessageTemplateService subscriberMessageTemplateService)
     {
       SMSTemplate smsTemplate = (SMSTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime());
+      log.info("RAJ K smsTemplate {}", smsTemplate.getJSONRepresentation());
       DialogMessage dialogMessage = (smsTemplate != null) ? smsTemplate.getMessageText() : null;
+      log.info("RAJ K dialogMessage {}, language {}, messageTags {}", dialogMessage, language, messageTags);
       String text = (dialogMessage != null) ? dialogMessage.resolve(language, messageTags, getTenantID()) : null;
       return text;
     }
