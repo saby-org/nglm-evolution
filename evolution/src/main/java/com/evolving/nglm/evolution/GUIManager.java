@@ -637,7 +637,7 @@ public class GUIManager
     getJobStatusList("getJobStatusList"),
     
     // for GUIManagerExtension
-    getFromGuiManagerExtensoin("getFromGuiManagerExtensoin"),
+    getAuthDetailsSOS("getAuthDetailsSOS"),
     
     
     //
@@ -683,7 +683,7 @@ public class GUIManager
 
   private static final int RESTAPIVersion = 1;
   private static Method guiManagerExtensionEvaluateEnumeratedValuesMethod;
-  private static Method guiManagerExtensionEvaluateCustomMethod;
+  private static Method guiManagerExtensionAuthDetailsSOSMethod;
 
   //
   //  instance
@@ -893,12 +893,12 @@ public class GUIManager
       }
     
     //
-    //  guiManagerExtensionEvaluateTestMethod
+    //  guiManagerExtensionAuthDetailsSOSMethod
     //
 
     try
       {
-        guiManagerExtensionEvaluateCustomMethod = (Deployment.getGUIManagerExtensionClass() != null) ? Deployment.getGUIManagerExtensionClass().getMethod("evaluateCustomMethodValues",GUIManagerContext.class,JSONObject.class,Date.class,int.class) : null;
+        guiManagerExtensionAuthDetailsSOSMethod = (Deployment.getGUIManagerExtensionClass() != null) ? Deployment.getGUIManagerExtensionClass().getMethod("evaluateAuthDetailsSOSValues",GUIManagerContext.class,String.class,JSONObject.class,Date.class,int.class) : null;
       }
     catch (NoSuchMethodException e)
       {
@@ -2530,8 +2530,8 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getJobStatus", new APISimpleHandler(API.getJobStatus));
         restServer.createContext("/nglm-guimanager/getJobStatusList", new APISimpleHandler(API.getJobStatusList));
 
-        // TEST
-        restServer.createContext("/nglm-guimanager/getFromGuiManagerExtensoin", new APISimpleHandler(API.getFromGuiManagerExtensoin));
+        // for GUIManagerExtension
+        restServer.createContext("/nglm-guimanager/getAuthDetailsSOS", new APISimpleHandler(API.getAuthDetailsSOS));
         
         restServer.setExecutor(Executors.newFixedThreadPool(10));
         restServer.start();
@@ -4609,8 +4609,8 @@ public class GUIManager
                   jsonResponse = processGetJobStatusList(userID, jsonRoot, tenantID);
                   break;
                   
-                case getFromGuiManagerExtensoin:
-                  jsonResponse = processGetFromGuiManagerExtensoin(userID, jsonRoot, tenantID);
+                case getAuthDetailsSOS:
+                  jsonResponse = processGetAuthDetailsSOS(userID, jsonRoot, tenantID);
                   break;
 
               }
@@ -28241,15 +28241,15 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     return result;
   }
   
-  protected List<JSONObject> evaluateCustomMethodValues(JSONObject jsonRoot, Date now, int tenantID)
+  protected List<JSONObject> evaluateAuthDetailsSOSValues(String token, JSONObject jsonRoot, Date now, int tenantID)
   {
     List<JSONObject> result = new ArrayList<JSONObject>();
     
-    if (guiManagerExtensionEvaluateCustomMethod != null)
+    if (guiManagerExtensionAuthDetailsSOSMethod != null)
       {
         try
         {
-          result.addAll((List<JSONObject>) guiManagerExtensionEvaluateCustomMethod.invoke(null, guiManagerContext, jsonRoot, now, tenantID));
+          result.addAll((List<JSONObject>) guiManagerExtensionAuthDetailsSOSMethod.invoke(null, guiManagerContext, token, jsonRoot, now, tenantID));
         }
         catch (IllegalAccessException|InvocationTargetException|RuntimeException e)
         {
@@ -28259,7 +28259,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           log.error(stackTraceWriter.toString());
         }
       }
-    log.info("[PRJT] evaluateCustomMethodValues: {}", result.toString());
+    log.info("[PRJT] evaluateAuthDetailsSOSValues: {}", result.toString());
     return result; 
   }
 
@@ -32408,13 +32408,12 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     return result;
   }
   
-  public JSONObject processGetFromGuiManagerExtensoin(String userID, JSONObject jsonRoot, int tenantID) throws GUIManagerException 
+  public JSONObject processGetAuthDetailsSOS(String userID, JSONObject jsonRoot, int tenantID) throws GUIManagerException 
   {
     JSONObject result = new JSONObject();
-    String msisdn = null;
-    String jobID = null;
-    List<JSONObject> evaluateCustomMethodValues = evaluateCustomMethodValues(jsonRoot, SystemTime.getCurrentTime(), tenantID);
-    result.put("result", JSONUtilities.encodeArray(evaluateCustomMethodValues));
+    String token = JSONUtilities.decodeString(jsonRoot, "token", true);
+    List<JSONObject> evaluateAuthDetailsSOSValues = evaluateAuthDetailsSOSValues(token, jsonRoot, SystemTime.getCurrentTime(), tenantID);
+    result.put("result", JSONUtilities.encodeArray(evaluateAuthDetailsSOSValues));
     result.put("responseCode", "ok");
     return result;
   }
