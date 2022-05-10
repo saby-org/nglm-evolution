@@ -32413,8 +32413,9 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     JSONObject result = new JSONObject();
     String token = JSONUtilities.decodeString(jsonRoot, "token", true);
     List<JSONObject> evaluateAuthDetailsSOSValues = evaluateAuthDetailsSOSValues(token, jsonRoot, SystemTime.getCurrentTime(), tenantID);
-    result.put("result", JSONUtilities.encodeArray(evaluateAuthDetailsSOSValues));
+    result.put("authDetailsSOS", JSONUtilities.encodeArray(evaluateAuthDetailsSOSValues));
     result.put("responseCode", "ok");
+    result.remove("licenseCheck");  
     return result;
   }
 
