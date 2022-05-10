@@ -304,8 +304,6 @@ public class NotificationManager extends DeliveryManagerForNotifications impleme
     {
       Map<String, String> result = new HashMap<String, String>();
       DialogTemplate template = (DialogTemplate) subscriberMessageTemplateService.getActiveSubscriberMessageTemplate(templateID, SystemTime.getCurrentTime());
-      log.info("RAJ K template {}", template.getJSONRepresentation());
-      log.info("RAJ K language {}, tags {}", language, tags);
       if(template.getDialogMessages() != null)
         {
           for(Map.Entry<String, DialogMessage> dialogMessageEntry : template.getDialogMessages().entrySet())
