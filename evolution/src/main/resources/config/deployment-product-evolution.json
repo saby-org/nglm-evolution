@@ -701,11 +701,6 @@
     "sunday"    : [ { "id":"1", "from":"09:00", "until":"20:59" }]
   },
 
-  "supportedLanguages" :
-  [
-    { "id" : "1", "name" : "en",    "display" : "English",    "mandatory" : true,  "defaultLanguage" : true }
-  ],
-
   "customerMetaData" :
   {
     "generalDetailsMetaData" :

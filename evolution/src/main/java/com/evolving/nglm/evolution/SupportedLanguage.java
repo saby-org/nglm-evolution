@@ -43,4 +43,9 @@ public class SupportedLanguage extends DeploymentManagedObject
     super(jsonRoot);
     this.defaultLanguage = JSONUtilities.decodeBoolean(jsonRoot, "defaultLanguage", Boolean.FALSE);
   }
+  
+  @Override public String toString()
+  {
+    return getJSONRepresentation().toJSONString();
+  }
 }

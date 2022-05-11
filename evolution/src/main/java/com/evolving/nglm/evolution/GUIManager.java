@@ -1830,6 +1830,25 @@ public class GUIManager
               }
           }
       }
+    
+    //
+    //  language
+    //
+    
+    for(Tenant tenant : Deployment.getRealTenants())
+      {
+        int tenantID = tenant.getTenantID();
+        //
+        //  language
+        //
+        
+        Map<String,SupportedLanguage> supportedLanguages = Deployment.getDeployment(tenantID).getSupportedLanguages();
+        if (supportedLanguages == null || supportedLanguages.size() == 0 || supportedLanguages.entrySet().stream().filter(lan -> lan.getValue().getDefaultLanguage()).count() < 1)
+          {
+            log.error("configured supportedLanguages {}", supportedLanguages);
+            throw new ServerRuntimeException("bad supportedLanguages configuration");
+          }
+      }
 
     /*****************************************
     *
