@@ -678,7 +678,6 @@ public class DialogMessage
   public String resolve(String language, List<String> messageTags, int tenantID)
   {
     String text = null;
-    if (log.isErrorEnabled()) log.error("RAJ K temp log(not an real error - this should not be printed) messageTextByLanguage {}, language {}", messageTextByLanguage, language);
     if (messageTextByLanguage.get(language) != null)
       {
         Locale messageLocale = new Locale(language, Deployment.getDeployment(tenantID).getCountry());
