@@ -1076,7 +1076,7 @@ public abstract class SubscriberProfile
             int epoch = targets.get(targetID);
             if (epoch == (subscriberGroupEpochReader.get(targetID) != null ? subscriberGroupEpochReader.get(targetID).getEpoch() : 0))
               {
-                result.add(target.getTargetName());
+                result.add(target.getGUIManagedObjectDisplay());
               }
           }
       }
