@@ -703,7 +703,7 @@
 
   "supportedLanguages" :
   [
-    { "id" : "1", "name" : "en",    "display" : "English",    "mandatory" : true,  "defaultLanguage" : true }
+    
   ],
 
   "customerMetaData" :
