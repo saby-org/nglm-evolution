@@ -27840,7 +27840,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           for (SupportedLanguage supportedLanguage : Deployment.getDeployment(tenantID).getSupportedLanguages().values())
             {
               HashMap<String,Object> availableValue = new HashMap<String,Object>();
-              availableValue.put("id", supportedLanguage.getID());
+              availableValue.put("id", supportedLanguage.getName());
               availableValue.put("display", supportedLanguage.getDisplay());
               result.add(JSONUtilities.encodeObject(availableValue));
             }

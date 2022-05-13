@@ -701,6 +701,7 @@ public class GUIManagerGeneral extends GUIManager
 
   JSONObject processGetCountBySegmentationEligibility(String userID,JSONObject jsonRoot, int tenantID)
   {
+    log.info("RAJ K processGetCountBySegmentationEligibility {}", jsonRoot);
     /*****************************************
     *
     *  response
@@ -796,7 +797,9 @@ public class GUIManagerGeneral extends GUIManager
         //
 
         SearchRequest searchRequest = new SearchRequest("subscriberprofile").source(searchSourceBuilder);
+        log.info("SegmentEligibility es searchRequest {}", searchRequest);
         SearchResponse searchResponse = elasticsearch.search(searchRequest, RequestOptions.DEFAULT);
+        log.info("SegmentEligibility es searchResponse {}", searchResponse);
         Filters aggResultFilters = searchResponse.getAggregations().get("SegmentEligibility");
         for (Filters.Bucket entry : aggResultFilters.getBuckets())
           {
@@ -829,6 +832,7 @@ public class GUIManagerGeneral extends GUIManager
       }
     response.put("responseCode", "ok");
     response.put("result",aggregationResult);
+    log.info("RAJ K processGetCountBySegmentationEligibility result {}", response);
     return JSONUtilities.encodeObject(response);
   }
 
@@ -848,7 +852,7 @@ public class GUIManagerGeneral extends GUIManager
     String stratumESFieldName = "stratum";
     try
     {
-      SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder().sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC).query(QueryBuilders.matchAllQuery()).size(0);
+      SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder().sort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC).query(QueryBuilders.termQuery("tenantID", tenantID)).size(0);
       List<FiltersAggregator.KeyedFilter> aggFilters = new ArrayList<>();
       for(SegmentEligibility segmentEligibility :segmentationDimensionEligibility.getSegments())
       {
@@ -868,6 +872,7 @@ public class GUIManagerGeneral extends GUIManager
       //
 
       SearchRequest searchRequest = new SearchRequest("subscriberprofile").source(searchSourceBuilder);
+      log.info("RAJ K processGetCountBySegmentationEligibilityBySegmentId searchRequest {}", searchRequest);
       SearchResponse searchResponse = elasticsearch.search(searchRequest, RequestOptions.DEFAULT);
       Filters aggResultFilters = searchResponse.getAggregations().get("SegmentEligibility");
       for (Filters.Bucket entry : aggResultFilters.getBuckets())
@@ -2251,6 +2256,8 @@ public class GUIManagerGeneral extends GUIManager
 
   JSONObject processGetCountBySegmentationRanges(String userID, JSONObject jsonRoot, int tenantID)
   {
+    log.info("RAJ K processGetCountBySegmentationRanges jsonRoot {}", jsonRoot);
+    
     /****************************************
     *
     *  response
@@ -2664,6 +2671,7 @@ public class GUIManagerGeneral extends GUIManager
 
     response.put("result", responseJSON);
     response.put("responseCode", "ok");
+    log.info("RAJ K processGetCountBySegmentationRanges response {}", response);
     return JSONUtilities.encodeObject(response);
   }
 
@@ -2675,6 +2683,7 @@ public class GUIManagerGeneral extends GUIManager
 
   JSONObject processGetCountBySegmentationRangesBySegmentId(String userID, JSONObject jsonRoot, int tenantID)
   {
+    log.info("RAJ K processGetCountBySegmentationRangesBySegmentId {}", jsonRoot);
     /****************************************
      *
      *  response
@@ -2842,6 +2851,7 @@ public class GUIManagerGeneral extends GUIManager
 
     response.put("responseCode", "ok");
     response.put("result",responseJSON);
+    log.info("RAJ K processGetCountBySegmentationRangesBySegmentId response {}", response);
     return JSONUtilities.encodeObject(response);
   }
 
