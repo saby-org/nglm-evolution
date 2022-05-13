@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -24,6 +25,7 @@ import org.json.simple.JSONObject;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
@@ -414,8 +416,16 @@ public class Reseller extends GUIManagedObject implements GUIManagedObject.Elast
   @Override public Map<String, Object> getESDocumentMap(boolean autoUpdate, ElasticsearchClientAPI elasticsearch, JourneyService journeyService, TargetService targetService, JourneyObjectiveService journeyObjectiveService, ContactPolicyService contactPolicyService)
   {
     Map<String, Object> documentMap = new HashMap<String, Object>();
+    JSONObject json = this.getJSONRepresentation();
     Date now = SystemTime.getCurrentTime();
-    documentMap.put("createdDate", RLMDateUtils.formatDateForElasticsearchDefault(getCreatedDate()));
+    try
+    {
+      documentMap.put("createdDate", RLMDateUtils.formatDateForElasticsearchDefault(RLMDateUtils.parseDateFromREST(JSONUtilities.decodeString(json, "createdDate"))));
+    } 
+  catch (JSONUtilitiesException | ParseException e)
+    {
+      e.printStackTrace();
+    } 
     documentMap.put("display", getGUIManagedObjectDisplay());
     documentMap.put("active", getActive());
     documentMap.put("partnerType", "Reseller");

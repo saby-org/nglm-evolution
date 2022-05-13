@@ -7,6 +7,7 @@
 package com.evolving.nglm.evolution;
 
 
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -27,6 +28,7 @@ import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
@@ -342,7 +344,15 @@ public class Supplier extends GUIManagedObject implements GUIManagedObject.Elast
   {
     Map<String, Object> documentMap = new HashMap<String, Object>();
     Date now = SystemTime.getCurrentTime();
-    documentMap.put("createdDate", RLMDateUtils.formatDateForElasticsearchDefault(getCreatedDate()));
+    JSONObject json = this.getJSONRepresentation();
+    try
+    {
+      documentMap.put("createdDate", RLMDateUtils.formatDateForElasticsearchDefault(RLMDateUtils.parseDateFromREST(JSONUtilities.decodeString(json, "createdDate"))));
+    } 
+  catch (JSONUtilitiesException | ParseException e)
+    {
+      e.printStackTrace();
+    } 
     documentMap.put("display", getGUIManagedObjectDisplay());
     documentMap.put("active", getActive());
     documentMap.put("partnerType", "Supplier");

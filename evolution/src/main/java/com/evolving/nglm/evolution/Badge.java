@@ -1,5 +1,6 @@
 package com.evolving.nglm.evolution;
 
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -22,6 +23,7 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
@@ -627,11 +629,19 @@ public class Badge extends LoyaltyProgram implements GUIManagedObject.ElasticSea
   {
     Map<String, Object> documentMap = new HashMap<String, Object>();
     Date now = SystemTime.getCurrentTime();
+    JSONObject json = this.getJSONRepresentation();
     documentMap.put("id", getGUIManagedObjectID());
     documentMap.put("display", getGUIManagedObjectDisplay());
     documentMap.put("active", getActive());
     documentMap.put("badgeType", getBadgeType().getExternalRepresentation());
-    documentMap.put("createdDate", RLMDateUtils.formatDateForElasticsearchDefault(getCreatedDate()));
+    try
+      {
+        documentMap.put("createdDate", RLMDateUtils.formatDateForElasticsearchDefault(RLMDateUtils.parseDateFromREST(JSONUtilities.decodeString(json, "createdDate"))));
+      } 
+    catch (JSONUtilitiesException | ParseException e)
+      {
+        e.printStackTrace();
+      } 
     documentMap.put("timestamp", RLMDateUtils.formatDateForElasticsearchDefault(now));
     documentMap.put("tenantID", getTenantID());
     return documentMap;
