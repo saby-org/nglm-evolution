@@ -1540,7 +1540,6 @@ public class EvaluationCriterion
 
   QueryBuilder esQuery() throws CriterionException
   {
-
     /*****************************************
      *
      *  esField
@@ -1548,16 +1547,28 @@ public class EvaluationCriterion
      *****************************************/
 
     String esField = criterionField.getESField();
-
     if (esField == null)
     {
-      if (criterionField.hasSubcriterias())
-        {
-          if (log.isDebugEnabled()) log.debug("a dummy query will be executed for criterion {}, which will return true - will impact the count", criterionField.getDisplay());
-          return alwaysTrueESQuery();
-        }
-      throw new CriterionException("invalid criterionField " + criterionField);
+      if (log.isDebugEnabled()) log.debug("a dummy query will be executed for criterion {}, which will return true - will impact the count", criterionField.getDisplay());
+      return alwaysTrueESQuery();
     }
+
+    //
+    // complex criteria
+    //
+    
+    if(criterionField.hasSubcriterias())
+      {
+        String[] criterionIDSplit = criterionField.getID().split("\\.", 3);
+        String complexObjectName = criterionIDSplit[1];
+        BoolQueryBuilder actualQuery = QueryBuilders.boolQuery().must(QueryBuilders.termQuery("complexFields.complexObjectName", complexObjectName)); //.must(loyaltyProgramExitDateMustNull);
+        for (Expression exp : getSubcriteriaExpressions().values())
+          {
+            actualQuery = actualQuery.must(noPainlessEsQuery("complexFields.elements." + exp.evaluateConstant() + "." + esField, criterionOperator, argument, false));
+          }
+        QueryBuilder query = QueryBuilders.boolQuery().filter(QueryBuilders.nestedQuery("complexFields", actualQuery, ScoreMode.Total));
+        return query;
+      }
 
     //
     // Handle criterion "loyaltyprograms.name"
@@ -1655,7 +1666,7 @@ public class EvaluationCriterion
     }
     if(evaluateNoQuery)
     {
-      return noPainlessEsQuery(esField);
+      return noPainlessEsQuery(esField,criterionOperator,argument, true);
     }
     else
     {
@@ -2057,7 +2068,7 @@ public class EvaluationCriterion
    *
    *****************************************/
 
-  private QueryBuilder noPainlessEsQuery(String esField) throws CriterionException
+  private QueryBuilder noPainlessEsQuery(String esField,CriterionOperator criterionOperator,Expression argument, boolean filterTenantID) throws CriterionException
   {
 
     /*****************************************
@@ -2323,7 +2334,15 @@ public class EvaluationCriterion
      *
      *****************************************/
 
-    QueryBuilder returnQuery = QueryBuilders.boolQuery().must(queryBuilder).filter(QueryBuilders.termQuery("tenantID",tenantID));
+    QueryBuilder returnQuery;
+    if (filterTenantID)
+      {
+        returnQuery = QueryBuilders.boolQuery().must(queryBuilder).filter(QueryBuilders.termQuery("tenantID", tenantID));
+      }
+    else
+      {
+        returnQuery = QueryBuilders.boolQuery().must(queryBuilder);
+      }
 
     return returnQuery;
   }
