@@ -552,7 +552,6 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
      *
      *****************************************/
 
-    // EVPRO-1562
     super(subscriberProfile,subscriberGroupEpochReader,DeliveryPriority.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "deliveryPriority", DeliveryPriority.Standard.getExternalRepresentation())), JSONUtilities.decodeString(jsonRoot, "eventID"));
     this.deliveryRequestID = JSONUtilities.decodeString(jsonRoot, "deliveryRequestID", true);
     this.deliveryRequestSource = "external";
