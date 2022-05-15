@@ -95,10 +95,11 @@ public abstract class SubscriberStreamOutput implements SubscriberStreamPriority
 		this.eventID = eventID;
 	}
 	// with subscriberprofile context constructor
-	public SubscriberStreamOutput(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, DeliveryPriority deliveryPriority){
+	public SubscriberStreamOutput(SubscriberProfile subscriberProfile, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, DeliveryPriority deliveryPriority, String eventID){
 		this.alternateIDs = buildAlternateIDs(subscriberProfile,subscriberGroupEpochReader);
 		this.deliveryPriority = deliveryPriority;
 		this.eventDate = SystemTime.getCurrentTime();
+		this.eventID = eventID; // EVPRO-1562
 	}
 	// from ES
 	public SubscriberStreamOutput(Map<String, Object> esFields){
