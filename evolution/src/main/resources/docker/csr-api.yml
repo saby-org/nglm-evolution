@@ -12,6 +12,9 @@ csr-api-<_KEY_>:
     DNBOSettings__DNBOEngineSettings__ChannelId: <_OPC_WEB_CALLING_CHANNEL_ID_>
     TZ: <_DEPLOYMENT_TIMEZONE_>
     CSR_API_PORT: <_PORT_>
+    FWK_SSO_ENABLED: '<_FWK_SSO_ENABLED_>'
+    FWK_SSO_AUTHENTICATE: '<_FWK_SSO_AUTHENTICATE_>'
+    FWK_SSO_DEFAULT_USER: <_FWK_SSO_DEFAULT_USER_>
   volumes:
     - type: bind
       source: <_NGLM_GUI_RUNTIME_>/csr-api-<_KEY_>/mnt
