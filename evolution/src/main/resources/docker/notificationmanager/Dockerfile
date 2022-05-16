@@ -31,7 +31,7 @@ VOLUME ["/app/runtime"]
 #
 
 COPY ${project.artifactId}-${project.version}.jar /app/jars
-ENV CLASSPATH=/app/jars/log4j-1.2.17.jar:/app/jars/${project.artifactId}-${project.version}.jar
+ENV CLASSPATH=/app/jars/log4j-core-2.16.0.jar:/app/jars/${project.artifactId}-${project.version}.jar
 
 #
 #  run.sh
