@@ -5153,6 +5153,24 @@ public class ThirdPartyManager
           return JSONUtilities.encodeObject(response);          
         }
 
+      // validate subscriber loyalty program when opt-out
+      Map<String, LoyaltyProgramState> subsLoyaltyPrograms = subscriberProfile.getLoyaltyPrograms();
+      log.info("[PRJT] subsLoyaltyPrograms: {}", subsLoyaltyPrograms);
+
+      if (!optIn)
+        {
+          if (null == subsLoyaltyPrograms.get(loyaltyProgramID) || subsLoyaltyPrograms.get(loyaltyProgramID).getLoyaltyProgramExitDate() != null)
+            {
+              updateResponse(response, RESTAPIGenericReturnCodes.CUSTOMER_NOT_IN_PROJECT, " "+loyaltyProgramName);
+              return JSONUtilities.encodeObject(response);
+            }
+        }
+      else if (subsLoyaltyPrograms.get(loyaltyProgramID) != null && subsLoyaltyPrograms.get(loyaltyProgramID).getLoyaltyProgramExitDate() == null)
+        {
+          updateResponse(response, RESTAPIGenericReturnCodes.CUSTOMER_ALREADY_EXISTS, " in loyalty program "+loyaltyProgramName);
+          return JSONUtilities.encodeObject(response);
+        }
+      
       Serializer<StringKey> keySerializer = StringKey.serde().serializer();
       Serializer<LoyaltyProgramRequest> valueSerializer = LoyaltyProgramRequest.serde().serializer();
       
@@ -5746,6 +5764,18 @@ public class ThirdPartyManager
 
     if(journey != null)
       {
+        if (baseSubscriberProfile.getSubscriberJourneys().keySet().contains(journey.getJourneyID()))
+          {
+            updateResponse(response, RESTAPIGenericReturnCodes.CUSTOMER_ALREADY_IN_CAMPAIGN);
+            return JSONUtilities.encodeObject(response);
+          }
+        SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(baseSubscriberProfile, subscriberGroupEpochReader, SystemTime.getCurrentTime(), tenantID);
+        if (!journey.evaluateEligibilityCriteria(evaluationRequest))
+          {
+            updateResponse(response, RESTAPIGenericReturnCodes.CUSTOMER_NOT_ELIGIBLE);
+            return JSONUtilities.encodeObject(response);
+          }
+        
         String uniqueKey = UUID.randomUUID().toString();
         JourneyRequest journeyRequest = new JourneyRequest(baseSubscriberProfile, subscriberGroupEpochReader, uniqueKey, subscriberID, journey.getJourneyID(), baseSubscriberProfile.getUniversalControlGroup(), tenantID);
         journeyRequest.forceDeliveryPriority(DELIVERY_REQUEST_PRIORITY);
@@ -5768,6 +5798,10 @@ public class ThirdPartyManager
           {
             responseCode = "ok";
           }
+      }
+    else
+      {
+        responseCode = "invalid Campaign";
       }
     
     /*****************************************
