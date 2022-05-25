@@ -635,7 +635,7 @@ public class OfferCharacteristics
       this.catalogCharacteristicName = JSONUtilities.decodeString(jsonRoot, "catalogCharacteristicName", false);
       CatalogCharacteristic catalogCharacteristic = catalogCharacteristicService.getActiveCatalogCharacteristic(catalogCharacteristicID, SystemTime.getCurrentTime());
       CriterionDataType dataType = (catalogCharacteristic != null) ? catalogCharacteristic.getDataType() : CriterionDataType.Unknown;
-      boolean allowMultipleValues = JSONUtilities.decodeBoolean(catalogCharacteristic.getJSONRepresentation(), "allowMultipleValues", Boolean.FALSE);
+      boolean allowMultipleValues = (catalogCharacteristic != null) ? JSONUtilities.decodeBoolean(catalogCharacteristic.getJSONRepresentation(), "allowMultipleValues", Boolean.FALSE) : Boolean.FALSE;
       
       //
       //  parse value
