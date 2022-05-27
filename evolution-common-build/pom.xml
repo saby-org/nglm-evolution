@@ -3,7 +3,7 @@
   <groupId>com.evolving.nglm</groupId>
   <artifactId>nglm-evolution-common-build</artifactId>
   <packaging>pom</packaging>
-  <version>EVPRO-1542-v211_3-SNAPSHOT</version>
+  <version>bld220527a-2.1.1_3-SNAPSHOT</version>
   <name>evolution-common-build</name> 
 
 
