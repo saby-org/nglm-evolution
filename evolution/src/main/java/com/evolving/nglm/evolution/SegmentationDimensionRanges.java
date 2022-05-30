@@ -368,6 +368,7 @@ public class SegmentationDimensionRanges extends SegmentationDimension
 	    result.put("loyaltyprogrampoints", loyaltyProgramPointsIDs);
 	    result.put("loyaltyprogramchallenge", loyaltyprogramchallengeIDs);
 		result.put("loyaltyprogrammission", loyaltyprogrammissionIDs);
+		if(this.getTargetingType()==SegmentationDimensionTargetingType.RANGES) {
 		for (BaseSplit split : this.getBaseSplit()) {
 			for (EvaluationCriterion criterion : split.getProfileCriteria()) {
 				String loyaltyProgramPointsID = getGUIManagedObjectIDFromDynamicCriterion(criterion,
@@ -386,6 +387,7 @@ public class SegmentationDimensionRanges extends SegmentationDimension
 	       
 	      }
 	    }
+		}
 	  return result;
   }
   
