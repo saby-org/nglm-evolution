@@ -3,7 +3,7 @@
   <groupId>com.evolving.nglm</groupId>
   <artifactId>nglm-evolution-root</artifactId>
   <packaging>pom</packaging>
-  <version>bld220531a-2.1.1_3-SNAPSHOT</version>
+  <version>bld220601-2.1.1_3-SNAPSHOT</version>
 
   <name>evolution-root</name>
   <url>http://10.100.0.6:8090/artifactory/repo</url>
