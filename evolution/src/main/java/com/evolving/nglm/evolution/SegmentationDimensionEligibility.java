@@ -31,7 +31,7 @@ import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 
-@GUIDependencyDef(objectType = "segmentationDimensionRules", serviceClass = SegmentationDimensionService.class, dependencies = {"loyaltyProgramPoints", "loyaltyprogramchallenge", "loyaltyprogrammission" })
+@GUIDependencyDef(objectType = "segmentationDimensionRules", serviceClass = SegmentationDimensionService.class, dependencies = {})
 public class SegmentationDimensionEligibility extends SegmentationDimension
 {
   
