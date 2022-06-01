@@ -31,7 +31,7 @@ import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
 
-@GUIDependencyDef(objectType = "segmentationDimension", serviceClass = SegmentationDimensionService.class, dependencies = {"loyaltyProgramPoints", "loyaltyprogramchallenge", "loyaltyprogrammission"})
+@GUIDependencyDef(objectType = "segmentationDimensionRules", serviceClass = SegmentationDimensionService.class, dependencies = {})
 public class SegmentationDimensionEligibility extends SegmentationDimension
 {
   
@@ -343,7 +343,6 @@ public class SegmentationDimensionEligibility extends SegmentationDimension
 	    result.put("loyaltyprogrampoints", loyaltyProgramPointsIDs);
 	    result.put("loyaltyprogramchallenge", loyaltyprogramchallengeIDs);
 		result.put("loyaltyprogrammission", loyaltyprogrammissionIDs);
-		if(this.getTargetingType()==SegmentationDimensionTargetingType.ELIGIBILITY) {
 		for (SegmentEligibility split : this.getSegments()) {
 			for (EvaluationCriterion criterion : split.getProfileCriteria()) {
 				String loyaltyProgramPointsID = getGUIManagedObjectIDFromDynamicCriterion(criterion,
@@ -362,7 +361,7 @@ public class SegmentationDimensionEligibility extends SegmentationDimension
 	       
 	      }
 	    }
-		}
+		
 	  return result;
   }
   
