@@ -313,8 +313,32 @@ public abstract class GUIManagedObject
   *****************************************/
 
   protected void setEpoch(long epoch) { this.epoch = epoch; }
-  protected void setCreatedDate(Date createdDate) { this.createdDate = createdDate; jsonRepresentation.put("createdDate", RLMDateUtils.formatDateForREST(createdDate, Deployment.getDeployment(tenantID).getTimeZone())); }
-  protected void setUpdatedDate(Date updatedDate) { this.updatedDate = updatedDate; jsonRepresentation.put("updatedDate", RLMDateUtils.formatDateForREST(updatedDate, Deployment.getDeployment(tenantID).getTimeZone())); }
+  protected void setCreatedDate(Date createdDate) 
+  {
+    this.createdDate = createdDate;
+    String createDateStr = RLMDateUtils.formatDateForREST(createdDate, getTimezone(tenantID));
+    jsonRepresentation.put("createdDate", createDateStr);
+  }
+  
+  public String getTimezone(int tenantID)
+  {
+    if (Deployment.getDeployment(tenantID) == null)
+      {
+        log.warn("BAD tenantID {}", tenantID);
+        return Deployment.getDefault().getTimeZone();
+      }
+    else
+      {
+        return Deployment.getDeployment(tenantID).getTimeZone();
+      }
+  }
+  
+  protected void setUpdatedDate(Date updatedDate) 
+  {
+    this.updatedDate = updatedDate;
+    String updatedDateStr = RLMDateUtils.formatDateForREST(updatedDate, getTimezone(tenantID));
+    jsonRepresentation.put("updatedDate", updatedDateStr);
+  }
   protected void markDeleted(boolean deleted) { this.deleted = deleted; jsonRepresentation.put("deleted", deleted); }
   
   /*****************************************
