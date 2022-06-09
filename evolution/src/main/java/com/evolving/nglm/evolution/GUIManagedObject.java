@@ -324,7 +324,7 @@ public abstract class GUIManagedObject
   {
     if (Deployment.getDeployment(tenantID) == null)
       {
-        log.warn("BAD tenantID {}", tenantID);
+        log.error("INVALID tenantID:{} found for [{}, guiManagedObjectType={}], TODO- manually remove the guiManagedObjectID[{}] for tenant[{}] using api, check README", tenantID, toString(), guiManagedObjectType, guiManagedObjectID, tenantID);
         return Deployment.getDefault().getTimeZone();
       }
     else
