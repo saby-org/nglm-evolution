@@ -1176,6 +1176,7 @@ public abstract class SubscriberProfile
             HashMap<String, Object> pointPresentation = new HashMap<String,Object>();
             PointBalance pointBalance = pointBalances.get(pointID);
             pointPresentation.put("point", point.getDisplay());
+            pointPresentation.put("visualizingDecimalFactor", point.getVisualizingDecimalFactor()); //RAJ K
             pointPresentation.put("balance", PointBalance.getFormattedVisiblePoint(pointBalance.getBalance(now), point.getVisualizingDecimalFactor()));
             pointPresentation.put("firstExpiration", pointBalance.getFirstExpirationDate(now));
             pointsPresentation.add(JSONUtilities.encodeObject(pointPresentation));

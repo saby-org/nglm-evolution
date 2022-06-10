@@ -20575,6 +20575,7 @@ public class GUIManager
                   PointBalance pointBalance = pointBalances.get(pointID);
                   pointPresentation.put("pointID", pointID);
                   pointPresentation.put("pointDisplay", point.getDisplay());
+                  pointPresentation.put("visualizingDecimalFactor", point.getVisualizingDecimalFactor()); //RAJ K
                   pointPresentation.put("balance", PointBalance.getFormattedVisiblePoint(pointBalance.getBalance(now), point.getVisualizingDecimalFactor()));
                   pointPresentation.put("earned", PointBalance.getFormattedVisiblePoint(pointBalance.getEarnedHistory().getAllTimeBucket(), point.getVisualizingDecimalFactor()));
                   pointPresentation.put("expired", PointBalance.getFormattedVisiblePoint(pointBalance.getExpiredHistory().getAllTimeBucket(), point.getVisualizingDecimalFactor()));
