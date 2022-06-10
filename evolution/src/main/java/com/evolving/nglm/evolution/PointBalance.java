@@ -646,7 +646,7 @@ public class PointBalance
   public static Object getFormattedVisiblePoint(long point, int visualizingDecimalFactor)
   {
 	  Object result = null;
-	  if (point == 0 || visualizingDecimalFactor == 1 || visualizingDecimalFactor == 0)
+	  if (visualizingDecimalFactor <= 1)
 	  {
 		  result = point;
 	  }
