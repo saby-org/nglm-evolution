@@ -20575,15 +20575,15 @@ public class GUIManager
                   PointBalance pointBalance = pointBalances.get(pointID);
                   pointPresentation.put("pointID", pointID);
                   pointPresentation.put("pointDisplay", point.getDisplay());
-                  pointPresentation.put("balance", PointBalance.getFormattedVisiblePoint(pointBalance.getBalance(now), point.getVisualizingDivisibleFactor()));
-                  pointPresentation.put("earned", PointBalance.getFormattedVisiblePoint(pointBalance.getEarnedHistory().getAllTimeBucket(), point.getVisualizingDivisibleFactor()));
-                  pointPresentation.put("expired", PointBalance.getFormattedVisiblePoint(pointBalance.getExpiredHistory().getAllTimeBucket(), point.getVisualizingDivisibleFactor()));
-                  pointPresentation.put("consumed", PointBalance.getFormattedVisiblePoint(pointBalance.getConsumedHistory().getAllTimeBucket(), point.getVisualizingDivisibleFactor()));
+                  pointPresentation.put("balance", PointBalance.getFormattedVisiblePoint(pointBalance.getBalance(now), point.getVisualizingDecimalFactor()));
+                  pointPresentation.put("earned", PointBalance.getFormattedVisiblePoint(pointBalance.getEarnedHistory().getAllTimeBucket(), point.getVisualizingDecimalFactor()));
+                  pointPresentation.put("expired", PointBalance.getFormattedVisiblePoint(pointBalance.getExpiredHistory().getAllTimeBucket(), point.getVisualizingDecimalFactor()));
+                  pointPresentation.put("consumed", PointBalance.getFormattedVisiblePoint(pointBalance.getConsumedHistory().getAllTimeBucket(), point.getVisualizingDecimalFactor()));
                   Set<Object> pointExpirations = new HashSet<Object>();
                   for(Date expirationDate : pointBalance.getBalances().keySet()){
                     HashMap<String, Object> expirationPresentation = new HashMap<String, Object>();
                     expirationPresentation.put("expirationDate", getDateString(expirationDate, tenantID));
-                    expirationPresentation.put("quantity", PointBalance.getFormattedVisiblePoint(pointBalance.getBalances().get(expirationDate), point.getVisualizingDivisibleFactor()));
+                    expirationPresentation.put("quantity", PointBalance.getFormattedVisiblePoint(pointBalance.getBalances().get(expirationDate), point.getVisualizingDecimalFactor()));
                     pointExpirations.add(JSONUtilities.encodeObject(expirationPresentation));
                   }
                   pointPresentation.put("expirations", pointExpirations);

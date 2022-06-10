@@ -643,16 +643,16 @@ public class PointBalance
 
   }
   
-  public static Object getFormattedVisiblePoint(long point, int visualizingDivisibleFactor)
+  public static Object getFormattedVisiblePoint(long point, int visualizingDecimalFactor)
   {
 	  Object result = null;
-	  if (point == 0 || visualizingDivisibleFactor == 1 || visualizingDivisibleFactor == 0)
+	  if (point == 0 || visualizingDecimalFactor == 1 || visualizingDecimalFactor == 0)
 	  {
 		  result = point;
 	  }
 	  else
 	  {
-		  result = (double)  point / visualizingDivisibleFactor;
+		  result = (double)  point / visualizingDecimalFactor;
 	  }
 	  return result;
   }

@@ -47,7 +47,7 @@ public class Point extends GUIManagedObject
     schemaBuilder.field("setable", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("validity", PointValidity.schema());
     schemaBuilder.field("label", Schema.OPTIONAL_STRING_SCHEMA);
-    schemaBuilder.field("visualizingDivisibleFactor", SchemaBuilder.array(Schema.INT32_SCHEMA));
+    schemaBuilder.field("visualizingDecimalFactor", SchemaBuilder.array(Schema.INT32_SCHEMA));
     schema = schemaBuilder.build();
   };
 
@@ -75,7 +75,7 @@ public class Point extends GUIManagedObject
   private boolean setable;
   private PointValidity validity;
   private String label;
-  private int visualizingDivisibleFactor;
+  private int visualizingDecimalFactor;
 
   /****************************************
   *
@@ -95,7 +95,7 @@ public class Point extends GUIManagedObject
   public boolean getSetable() { return setable; }
   public PointValidity getValidity(){ return validity; }
   public String getLabel() { return label; }
-  public int getVisualizingDivisibleFactor() { return visualizingDivisibleFactor; }
+  public int getVisualizingDecimalFactor() { return visualizingDecimalFactor; }
   
   /*****************************************
   *
@@ -103,7 +103,7 @@ public class Point extends GUIManagedObject
   *
   *****************************************/
 
-  public Point(SchemaAndValue schemaAndValue, boolean debitable, boolean creditable, boolean setable, PointValidity validity, String label, int visualizingDivisibleFactor)
+  public Point(SchemaAndValue schemaAndValue, boolean debitable, boolean creditable, boolean setable, PointValidity validity, String label, int visualizingDecimalFactor)
   {
     super(schemaAndValue);
     this.debitable = debitable;
@@ -111,7 +111,7 @@ public class Point extends GUIManagedObject
     this.setable = setable;
     this.validity = validity;
     this.label = label;
-    this.visualizingDivisibleFactor = visualizingDivisibleFactor;
+    this.visualizingDecimalFactor = visualizingDecimalFactor;
   }
 
   /*****************************************
@@ -128,7 +128,7 @@ public class Point extends GUIManagedObject
     this.setable = point.getSetable();
     this.validity = point.getValidity().copy();
     this.label = point.getLabel();
-    this.visualizingDivisibleFactor = point.getVisualizingDivisibleFactor();
+    this.visualizingDecimalFactor = point.getVisualizingDecimalFactor();
   }
 
   /*****************************************
@@ -158,7 +158,7 @@ public class Point extends GUIManagedObject
     struct.put("setable", point.getSetable());
     struct.put("validity", PointValidity.pack(point.getValidity()));
     struct.put("label", point.getLabel());
-    struct.put("visualizingDivisibleFactor", point.getVisualizingDivisibleFactor());
+    struct.put("visualizingDecimalFactor", point.getVisualizingDecimalFactor());
     return struct;
   }
   
@@ -188,13 +188,13 @@ public class Point extends GUIManagedObject
     boolean setable = valueStruct.getBoolean("setable");
     PointValidity validity = PointValidity.unpack(new SchemaAndValue(schema.field("validity").schema(), valueStruct.get("validity")));
     String label = (schemaVersion >= 2) ? valueStruct.getString("label") : "";
-    int visualizingDivisibleFactor = (schemaVersion >= 3) ? valueStruct.getInt32("visualizingDivisibleFactor") : 1;
+    int visualizingDecimalFactor = (schemaVersion >= 3) ? valueStruct.getInt32("visualizingDecimalFactor") : 1;
 
     //
     //  return
     //
 
-    return new Point(schemaAndValue, debitable, creditable, setable, validity, label, visualizingDivisibleFactor);
+    return new Point(schemaAndValue, debitable, creditable, setable, validity, label, visualizingDecimalFactor);
   }
   
   /*****************************************
@@ -232,7 +232,8 @@ public class Point extends GUIManagedObject
     this.setable = JSONUtilities.decodeBoolean(jsonRoot, "setable", Boolean.FALSE);
     this.validity = new PointValidity(JSONUtilities.decodeJSONObject(jsonRoot, "validity", true));
     this.label = JSONUtilities.decodeString(jsonRoot, "label", false);
-    this.visualizingDivisibleFactor = JSONUtilities.decodeInteger(jsonRoot, "visualizingDivisibleFactor", 1);
+    this.visualizingDecimalFactor = JSONUtilities.decodeInteger(jsonRoot, "visualizingDecimalFactor", 1);
+    if (visualizingDecimalFactor <= 0) throw new GUIManagerException("unsupported visualizingDecimalFactor ", String.valueOf(this.visualizingDecimalFactor));
     
     /*****************************************
     *
