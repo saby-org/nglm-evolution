@@ -642,4 +642,18 @@ public class PointBalance
     }
 
   }
+  
+  public static Object getFormattedVisiblePoint(long point, int visualizingDivisibleFactor)
+  {
+	  Object result = null;
+	  if (point == 0 || visualizingDivisibleFactor == 1 || visualizingDivisibleFactor == 0)
+	  {
+		  result = point;
+	  }
+	  else
+	  {
+		  result = (double)  point / visualizingDivisibleFactor;
+	  }
+	  return result;
+  }
 }
