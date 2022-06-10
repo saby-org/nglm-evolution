@@ -47,7 +47,7 @@ public class Point extends GUIManagedObject
     schemaBuilder.field("setable", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("validity", PointValidity.schema());
     schemaBuilder.field("label", Schema.OPTIONAL_STRING_SCHEMA);
-    schemaBuilder.field("visualizingDecimalFactor", SchemaBuilder.array(Schema.INT32_SCHEMA));
+    schemaBuilder.field("visualizingDecimalFactor", Schema.INT32_SCHEMA);
     schema = schemaBuilder.build();
   };
 
