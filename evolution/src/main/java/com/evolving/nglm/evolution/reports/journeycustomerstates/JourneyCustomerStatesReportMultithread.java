@@ -399,6 +399,8 @@ public class JourneyCustomerStatesReportMultithread implements ReportCsvFactory
       for (GUIManagedObject gmo : allJourneys) {
         if (gmo.getEffectiveStartDate().before(yesterdayAtMidnight) && gmo.getEffectiveEndDate().after(nDayAgoAtZeroHour)) {
           //activeJourneys.add((Journey) gmo);
+          log.info("[PRJT] GUIManagedObject: type={}, id={}, display={}", gmo.getGUIManagedObjectType().getExternalRepresentation(), gmo.getGUIManagedObjectID(), gmo.getGUIManagedObjectDisplay());
+          log.info("[PRJT] full GUIManagedObject:{}", gmo.toString());
           if (gmo instanceof Journey) { activeJourneys.add((Journey) gmo); }
         }
       }
