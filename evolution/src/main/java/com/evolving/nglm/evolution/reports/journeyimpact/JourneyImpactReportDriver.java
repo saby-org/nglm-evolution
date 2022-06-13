@@ -137,7 +137,9 @@ public class JourneyImpactReportDriver extends ReportDriver
           if (gmo instanceof Journey) { activeJourneys.add(gmo); }
           log.info("[PRJT] campaign[{}] was active {} hour ago", gmo.getGUIManagedObjectDisplay(), Deployment.getReportManagerJourneysReportActiveNHoursAgo());
         }
+        else {
         log.info("[PRJT] campaign[{}] was not active {} hour ago", gmo.getGUIManagedObjectDisplay(), Deployment.getReportManagerJourneysReportActiveNHoursAgo());
+        }
       }
       
       int nbJourneys = activeJourneys.size();
