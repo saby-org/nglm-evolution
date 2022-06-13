@@ -135,7 +135,9 @@ public class JourneyImpactReportDriver extends ReportDriver
       for (GUIManagedObject gmo : allJourneys) {
         if (gmo.getEffectiveStartDate().before(yesterdayAtMidnight) && gmo.getEffectiveEndDate().after(nDayAgoAtZeroHour)) {
           if (gmo instanceof Journey) { activeJourneys.add(gmo); }
+          log.info("[PRJT] campaign[{}] was active {} hour ago", gmo.getGUIManagedObjectDisplay(), Deployment.getReportManagerJourneysReportActiveNHoursAgo());
         }
+        log.info("[PRJT] campaign[{}] was not active {} hour ago", gmo.getGUIManagedObjectDisplay(), Deployment.getReportManagerJourneysReportActiveNHoursAgo());
       }
       
       int nbJourneys = activeJourneys.size();
