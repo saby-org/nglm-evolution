@@ -1085,7 +1085,9 @@ public class GUIManagerGeneral extends GUIManager
           
     for (GUIManagedObject point : pointObjects)
       {
-        points.add(pointService.generateResponseJSON(point, fullDetails, now));
+    	JSONObject pointJson = pointService.generateResponseJSON(point, fullDetails, now);
+    	if (!pointJson.containsKey("visualizingDecimalFactor")) pointJson.put("visualizingDecimalFactor", 1);
+        points.add(pointJson);
       }
 
     /*****************************************
