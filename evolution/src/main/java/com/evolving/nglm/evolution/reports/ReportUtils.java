@@ -954,8 +954,8 @@ public class ReportUtils {
   {
     Calendar c = Calendar.getInstance();
     c.setTime(currentDate);
-    c.add(Calendar.HOUR_OF_DAY, (-1)*delay); // go back delay hours
     c.set(Calendar.HOUR_OF_DAY, 23); // now set to one second before midnight
+    c.add(Calendar.HOUR_OF_DAY, (-1)*delay); // go back delay hours
     c.set(Calendar.MINUTE, 59);
     c.set(Calendar.SECOND, 59);
     Date yesterdayAtMidnight = c.getTime();
@@ -966,8 +966,8 @@ public class ReportUtils {
   {
     Calendar c = Calendar.getInstance();
     c.setTime(currentDate);
-    c.add(Calendar.HOUR_OF_DAY, (-1)*delay); // go back delay hours
     c.set(Calendar.HOUR_OF_DAY, 0); // now set to one second after 0h
+    c.add(Calendar.HOUR_OF_DAY, (-1)*delay); // go back delay hours
     c.set(Calendar.MINUTE, 0);
     c.set(Calendar.SECOND, 1);
     Date yesterdayAtZeroHour = c.getTime();
@@ -1078,4 +1078,10 @@ public class ReportUtils {
 
     }
 }
+  
+  public static void main(String[] args)
+  {
+    System.out.println("delayAtMidnight: "+delayAtMidnight(new Date(), 24));
+    System.out.println("delayAtZeroHour: "+delayAtZeroHour(new Date(), 0));
+  }
 }

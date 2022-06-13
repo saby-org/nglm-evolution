@@ -130,17 +130,11 @@ public class JourneyImpactReportDriver extends ReportDriver
     {
       Collection<GUIManagedObject> allJourneys = journeyService.getStoredJourneys(tenantID);
       List<GUIManagedObject> activeJourneys = new ArrayList<>();
-      Date yesterdayAtMidnight = ReportUtils.delayAtZeroHour(reportGenerationDate, 0); // EVPRO-1488
-      log.info("[PRJT] yesterdayAtMidnight:{}", yesterdayAtMidnight);
-      Date nDayAgoAtZeroHour = ReportUtils.delayAtZeroHour(reportGenerationDate, Deployment.getReportManagerJourneysReportActiveNHoursAgo()); // EVPRO-1488-v2113
-      log.info("[PRJT] nDayAgoAtZeroHour:{}", nDayAgoAtZeroHour);
+      Date yesterdayAtMidnight = ReportUtils.delayAtZeroHour(reportGenerationDate, 0); // EVPRO-1488-v2113
+      Date nDayAgoAtZeroHour = ReportUtils.delayAtMidnight(reportGenerationDate, Deployment.getReportManagerJourneysReportActiveNHoursAgo()); // EVPRO-1488-v2113
       for (GUIManagedObject gmo : allJourneys) {
         if (gmo.getEffectiveStartDate().before(yesterdayAtMidnight) && gmo.getEffectiveEndDate().after(nDayAgoAtZeroHour)) {
-          if (gmo instanceof Journey) { activeJourneys.add(gmo); }
-          log.info("[PRJT] campaign[{}] was active {} hour ago", gmo.getGUIManagedObjectDisplay(), Deployment.getReportManagerJourneysReportActiveNHoursAgo());
-        }
-        else {
-        log.info("[PRJT] campaign[{}] was not active {} hour ago", gmo.getGUIManagedObjectDisplay(), Deployment.getReportManagerJourneysReportActiveNHoursAgo());
+          if (gmo instanceof Journey) { activeJourneys.add((Journey) gmo); }
         }
       }
       
