@@ -49,7 +49,7 @@
     <gui-iar.version>2.1.2_1</gui-iar.version>
     <gui-opc.version>2.1.2_1</gui-opc.version>
     <gui-opr.version>2.1.2_1</gui-opr.version>
-    <gui-stg.version>2.1.2_2</gui-stg.version>
+    <gui-stg.version>2.1.2_4</gui-stg.version>
     <gui-sbm.version>2.1.2_2</gui-sbm.version>
     <gui-lpm.version>2.1.2_1</gui-lpm.version>
     <gui-tls.version>1.4.17</gui-tls.version>
