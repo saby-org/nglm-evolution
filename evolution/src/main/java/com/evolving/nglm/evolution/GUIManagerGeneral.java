@@ -1134,6 +1134,7 @@ public class GUIManagerGeneral extends GUIManager
 
     GUIManagedObject point = pointService.getStoredPoint(pointID, includeArchived);
     JSONObject pointJSON = pointService.generateResponseJSON(point, true, SystemTime.getCurrentTime());
+    if (!pointJSON.containsKey("visualizingDecimalFactor")) pointJSON.put("visualizingDecimalFactor", 1);
 
     /*****************************************
     *
