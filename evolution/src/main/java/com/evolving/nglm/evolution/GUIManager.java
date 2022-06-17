@@ -18,6 +18,7 @@ import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
@@ -21053,12 +21054,33 @@ public class GUIManager
                             result.put("id", journeyObjective.getGUIManagedObjectID());
                             
                             for (CatalogCharacteristicInstance catalogCharacteristicInstance : journeyObjectiveInstance.getCatalogCharacteristics())
-                              {
-                                JSONObject characteristics = new JSONObject();
-                                characteristics.put("catalogCharacteristicID", catalogCharacteristicInstance.getCatalogCharacteristicID());
-                                characteristics.put("value", catalogCharacteristicInstance.getValue());
-                                resultCharacteristics.add(characteristics);
+                            {
+                              JSONObject characteristics = new JSONObject();
+                              characteristics.put("catalogCharacteristicID", catalogCharacteristicInstance.getCatalogCharacteristicID());
+                              //characteristic data json conversion fixed
+                              if(catalogCharacteristicInstance.getValue() instanceof HashSet) {
+	                                JSONArray arr = new JSONArray();
+	                                Object[] hSet = ((HashSet<Object>) catalogCharacteristicInstance.getValue()).toArray();
+	                         		if(hSet.length>0 && hSet[0] instanceof Date) {
+	                         			for (int i = 0; i < hSet.length; i++) {
+											arr.add(getDateString((Date)hSet[i],tenantID));
+										}
+	                         		}else {
+	                         			arr.addAll(Arrays.asList(hSet));
+	                         		}
+	                                log.info("catalogCharacteristics val {} ", arr.toString());
+	                                log.info("catalogCharacteristics val {}", JSONUtilities.encodeArray(arr));
+	                                
+	                                characteristics.put("value",JSONUtilities.encodeArray(arr));
+                              }else {
+                              	if(catalogCharacteristicInstance.getValue() instanceof Date) {
+                              		characteristics.put("value", getDateString((Date)catalogCharacteristicInstance.getValue(),tenantID));
+                              	}else
+                              		characteristics.put("value", catalogCharacteristicInstance.getValue());
                               }
+                              
+                              resultCharacteristics.add(JSONUtilities.encodeObject(characteristics));
+                            }
                             
                             result.put("catalogCharacteristics", JSONUtilities.encodeArray(resultCharacteristics));
                             resultObjectives.add(result);
