@@ -982,7 +982,7 @@ public class MetricHistory
     else if (startDay.after(baseDay))
       startDayCase = DateCase.D;
     else
-      throw new IllegalArgumentException("unavailable startDay: "+startDay);
+      throw new IllegalArgumentException("unavailable startDay: ["+startDay+"], monthlyStartDays:"+ monthlyStartDays +", beginningOfDailyValues:["+beginningOfDailyValues+"], baseDay:["+baseDay+"]");
 
     //
     //  endDay is a legal value
