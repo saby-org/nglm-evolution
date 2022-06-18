@@ -1617,7 +1617,6 @@ public abstract class SubscriberProfile
     Date startOfMonth = RLMDateUtils.truncate(day, Calendar.MONTH, Deployment.getDeployment(tenantID).getTimeZone());
     Date startDay = RLMDateUtils.addMonths(startOfMonth, -1, Deployment.getDeployment(tenantID).getTimeZone());
     Date endDay = RLMDateUtils.addDays(startOfMonth, -1, Deployment.getDeployment(tenantID).getTimeZone());
-    log.info("SubscriberProfile.getPreviousMonth -- mhTenantID:{}, tenantID:{}[{}]",metricHistory.getTenantID(),tenantID,Deployment.getDeployment(tenantID).getTimeZone());
     return metricHistory.getValue(startDay, endDay);
   }
 

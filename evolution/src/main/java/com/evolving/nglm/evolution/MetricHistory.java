@@ -951,8 +951,8 @@ public class MetricHistory
     *
     ****************************************/
 
-    Set<Date> monthlyStartDays = getMonthlyStartDays(beginningOfMonthlyValues, beginningOfBaseMonth);
-    Set<Date> monthlyEndDays = getMonthlyEndDays(beginningOfMonthlyValues, beginningOfBaseMonth);
+    Set<Date> monthlyStartDays = getMonthlyStartDays(beginningOfMonthlyValues, beginningOfBaseMonth, tenantID);
+    Set<Date> monthlyEndDays = getMonthlyEndDays(beginningOfMonthlyValues, beginningOfBaseMonth, tenantID);
 
     /*****************************************
     *
@@ -1266,14 +1266,14 @@ public class MetricHistory
   ****************************************/
 
   private static ThreadLocal<Map<Pair<Date,Date>,Set<Date>>> monthlyStartDaysCache = ThreadLocal.withInitial(()->new LinkedHashMap<Pair<Date,Date>,Set<Date>>() { @Override protected boolean removeEldestEntry(Map.Entry eldest) { return size() > 100; } });
-  private static Set<Date> getMonthlyStartDays(Date firstMonth, Date baseMonth)
+  private static Set<Date> getMonthlyStartDays(Date firstMonth, Date baseMonth, int tenantID)
   {
     Pair<Date,Date> key = new Pair<Date,Date>(firstMonth, baseMonth);
     Set<Date> result = monthlyStartDaysCache.get().get(key);
     if (result == null)
       {
         result = new HashSet<Date>();
-        for (Date month = firstMonth; month.before(baseMonth); month = RLMDateUtils.addMonths(month, 1, Deployment.getDefault().getTimeZone()))  // TODO EVPRO-99 i used systemTimeZone instead of BaseTimeZone pet tenant, check if correct
+        for (Date month = firstMonth; month.before(baseMonth); month = RLMDateUtils.addMonths(month, 1, Deployment.getDeployment(tenantID).getTimeZone()))  // TODO EVPRO-99 i used systemTimeZone instead of BaseTimeZone pet tenant, check if correct
           {
             result.add(month);
           }
@@ -1289,16 +1289,16 @@ public class MetricHistory
   ****************************************/
 
   private static ThreadLocal<Map<Pair<Date,Date>,Set<Date>>> monthlyEndDaysCache = ThreadLocal.withInitial(()->new LinkedHashMap<Pair<Date,Date>,Set<Date>>() { @Override protected boolean removeEldestEntry(Map.Entry eldest) { return size() > 100; } });
-  private static Set<Date> getMonthlyEndDays(Date firstMonth, Date baseMonth)
+  private static Set<Date> getMonthlyEndDays(Date firstMonth, Date baseMonth, int tenantID)
   {
     Pair<Date,Date> key = new Pair<Date,Date>(firstMonth, baseMonth);
     Set<Date> result = monthlyEndDaysCache.get().get(key);
     if (result == null)
       {
         result = new HashSet<Date>();
-        for (Date month = firstMonth; month.before(baseMonth); month = RLMDateUtils.addMonths(month, 1, Deployment.getDefault().getTimeZone())) // TODO EVPRO-99 i used systemTimeZone instead of BaseTimeZone pet tenant, check if correct
+        for (Date month = firstMonth; month.before(baseMonth); month = RLMDateUtils.addMonths(month, 1, Deployment.getDeployment(tenantID).getTimeZone())) // TODO EVPRO-99 i used systemTimeZone instead of BaseTimeZone pet tenant, check if correct
           {
-            result.add(RLMDateUtils.addDays(RLMDateUtils.addMonths(month, 1, Deployment.getDefault().getTimeZone()), -1, Deployment.getDefault().getTimeZone())); // TODO EVPRO-99 i used systemTimeZone instead of BaseTimeZone pet tenant, check if correct
+            result.add(RLMDateUtils.addDays(RLMDateUtils.addMonths(month, 1, Deployment.getDefault().getTimeZone()), -1, Deployment.getDeployment(tenantID).getTimeZone())); // TODO EVPRO-99 i used systemTimeZone instead of BaseTimeZone pet tenant, check if correct
           }
         monthlyEndDaysCache.get().put(key,result);
       }
