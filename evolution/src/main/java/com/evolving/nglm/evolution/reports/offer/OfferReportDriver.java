@@ -475,7 +475,8 @@ public class OfferReportDriver extends ReportDriver
     }
     catch (Exception ex)
     {
-      log.info("Exception while processing a line : " + ex.getLocalizedMessage());
+      ex.printStackTrace();
+      log.error("Exception while processing a line : {}, for offerID {}", ex.getMessage(), offer.getGUIManagedObjectID());
     }
     
 
