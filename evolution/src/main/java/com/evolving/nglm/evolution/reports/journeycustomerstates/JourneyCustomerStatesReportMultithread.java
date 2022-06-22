@@ -398,7 +398,7 @@ public class JourneyCustomerStatesReportMultithread implements ReportCsvFactory
       Date nDayAgoAtZeroHour = ReportUtils.delayAtMidnight(reportGenerationDate, Deployment.getReportManagerJourneysReportActiveNHoursAgo());
       for (GUIManagedObject gmo : allJourneys) {
         if (gmo.getEffectiveStartDate().before(yesterdayAtMidnight) && gmo.getEffectiveEndDate().after(nDayAgoAtZeroHour)) {
-          activeJourneys.add((Journey) gmo);
+          if (gmo instanceof Journey) { activeJourneys.add((Journey) gmo); }
         }
       }
       StringBuilder activeJourneyEsIndex = new StringBuilder();
