@@ -3,12 +3,7 @@
   <groupId>com.evolving.nglm</groupId>
   <artifactId>nglm-evolution-root</artifactId>
   <packaging>pom</packaging>
-<<<<<<< HEAD
   <version>EVPRO-1566-v211_3-SNAPSHOT</version>
-=======
-  <version>EVPRO-1541-2.1.1_3-SNAPSHOT</version>
-
->>>>>>> origin/EVPRO-1541-v211_3
   <name>evolution-root</name>
   <url>http://10.100.0.6:8090/artifactory/repo</url>
   <description>NGLM evolution</description>

@@ -130,11 +130,11 @@ public class JourneyImpactReportDriver extends ReportDriver
     {
       Collection<GUIManagedObject> allJourneys = journeyService.getStoredJourneys(tenantID);
       List<GUIManagedObject> activeJourneys = new ArrayList<>();
-      Date yesterdayAtMidnight = ReportUtils.delayAtZeroHour(reportGenerationDate, 0); // EVPRO-1488
-      Date nDayAgoAtZeroHour = ReportUtils.delayAtMidnight(reportGenerationDate, Deployment.getReportManagerJourneysReportActiveNHoursAgo());
+      Date yesterdayAtMidnight = ReportUtils.delayAtZeroHour(reportGenerationDate, 0); // EVPRO-1488-v2113
+      Date nDayAgoAtZeroHour = ReportUtils.delayAtMidnight(reportGenerationDate, Deployment.getReportManagerJourneysReportActiveNHoursAgo()); // EVPRO-1488-v2113
       for (GUIManagedObject gmo : allJourneys) {
         if (gmo.getEffectiveStartDate().before(yesterdayAtMidnight) && gmo.getEffectiveEndDate().after(nDayAgoAtZeroHour)) {
-          activeJourneys.add(gmo);
+          if (gmo instanceof Journey) { activeJourneys.add((Journey) gmo); }
         }
       }
       
