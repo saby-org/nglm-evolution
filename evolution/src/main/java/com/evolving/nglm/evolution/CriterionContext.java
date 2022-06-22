@@ -125,6 +125,7 @@ public class CriterionContext
         evaluationDateJSON.put("retriever", "getEvaluationDate");
         evaluationDateJSON.put("esField", "evaluationDate");
         evaluationDateJSON.put("internalOnly", false);
+        evaluationDateJSON.put("useESQueryNoPainless", false);
         evaluationDate  = new CriterionField(JSONUtilities.encodeObject(evaluationDateJSON));
       }
     catch (GUIManagerException e)
