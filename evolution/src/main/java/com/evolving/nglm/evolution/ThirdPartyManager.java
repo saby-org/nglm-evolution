@@ -7701,8 +7701,7 @@ public class ThirdPartyManager
    *
    *****************************************/
   
-  public PurchaseFulfillmentRequest purchaseOffer(SubscriberProfile subscriberProfile, boolean sync, String subscriberID, String offerID, String salesChannelID, int quantity,
-      String moduleID, String featureID, String origin, String resellerID, KafkaProducer<byte[],byte[]> kafkaProducer, int tenantID) throws ThirdPartyManagerException
+  public PurchaseFulfillmentRequest purchaseOffer(SubscriberProfile subscriberProfile, boolean sync, String subscriberID, String offerID, String salesChannelID, int quantity, String moduleID, String featureID, String origin, String resellerID, KafkaProducer<byte[], byte[]> kafkaProducer, int tenantID) throws ThirdPartyManagerException
   {
     DeliveryManagerDeclaration deliveryManagerDeclaration = Deployment.getDeliveryManagers().get(PURCHASE_FULFILLMENT_MANAGER_TYPE);
     if (deliveryManagerDeclaration == null)
@@ -7713,14 +7712,14 @@ public class ThirdPartyManager
 
     Serializer<StringKey> keySerializer = StringKey.serde().serializer();
     Serializer<PurchaseFulfillmentRequest> valueSerializer = ((ConnectSerde<PurchaseFulfillmentRequest>) deliveryManagerDeclaration.getRequestSerde()).serializer();
-    
+
     String deliveryRequestID = zuks.getStringKey();
     // Build a json doc to create the PurchaseFulfillmentRequest
-    HashMap<String,Object> request = new HashMap<String,Object>();
+    HashMap<String, Object> request = new HashMap<String, Object>();
     request.put("subscriberID", subscriberID);
     request.put("offerID", offerID);
     request.put("quantity", quantity);
-    request.put("salesChannelID", salesChannelID); 
+    request.put("salesChannelID", salesChannelID);
     request.put("deliveryRequestID", deliveryRequestID);
     request.put("eventID", deliveryRequestID);
     request.put("moduleID", moduleID);
@@ -7729,30 +7728,30 @@ public class ThirdPartyManager
     request.put("resellerID", resellerID);
     request.put("deliveryType", deliveryManagerDeclaration.getDeliveryType());
     JSONObject valueRes = JSONUtilities.encodeObject(request);
-    
-    PurchaseFulfillmentRequest purchaseRequest = new PurchaseFulfillmentRequest(subscriberProfile,subscriberGroupEpochReader,valueRes, deliveryManagerDeclaration, offerService, paymentMeanService, resellerService, productService, supplierService, voucherService, SystemTime.getCurrentTime(), tenantID);
+
+    PurchaseFulfillmentRequest purchaseRequest = new PurchaseFulfillmentRequest(subscriberProfile, subscriberGroupEpochReader, valueRes, deliveryManagerDeclaration, offerService, paymentMeanService, resellerService, productService, supplierService, voucherService, SystemTime.getCurrentTime(), tenantID);
     purchaseRequest.forceDeliveryPriority(DELIVERY_REQUEST_PRIORITY);
     String topic = deliveryManagerDeclaration.getRequestTopic(purchaseRequest.getDeliveryPriority());
 
-    Future<PurchaseFulfillmentRequest> waitingResponse=null;
-    if(sync){
-      waitingResponse = purchaseResponseListenerService.addWithOnValueFilter(purchaseResponse->!purchaseResponse.isPending()&&purchaseResponse.getDeliveryRequestID().equals(deliveryRequestID));
-    }
+    Future<PurchaseFulfillmentRequest> waitingResponse = null;
+    if (sync)
+      {
+        waitingResponse = purchaseResponseListenerService.addWithOnValueFilter(purchaseResponse -> !purchaseResponse.isPending() && purchaseResponse.getDeliveryRequestID().equals(deliveryRequestID));
+      }
 
-    kafkaProducer.send(new ProducerRecord<byte[],byte[]>(
-        topic,
-        keySerializer.serialize(topic, new StringKey(deliveryRequestID)),
-        valueSerializer.serialize(topic, purchaseRequest)
-        ));
-    keySerializer.close(); valueSerializer.close(); // to make Eclipse happy
-    if (sync) {
-      PurchaseFulfillmentRequest result =  handleWaitingResponse(waitingResponse);
+    kafkaProducer.send(new ProducerRecord<byte[], byte[]>(topic, keySerializer.serialize(topic, new StringKey(deliveryRequestID)), valueSerializer.serialize(topic, purchaseRequest)));
+    log.info("RAJ K purchaseRequest {}, writing to topic {}", purchaseRequest, topic);
+    keySerializer.close();
+    valueSerializer.close(); // to make Eclipse happy
+    if (sync)
+      {
+        PurchaseFulfillmentRequest result = handleWaitingResponse(waitingResponse);
         if (result != null)
           {
             if (result.getStatus().getReturnCode() == ((PurchaseFulfillmentStatus.PURCHASED).getReturnCode()))
               {
                 return handleWaitingResponse(waitingResponse);
-              }
+              } 
             else
               {
                 int returnCode = result.getStatus().getReturnCode();
@@ -7762,7 +7761,7 @@ public class ThirdPartyManager
                 throw new ThirdPartyManagerException(returnMessage, returnCode, additionalInformation);
               }
           }
-    }
+      }
     return purchaseRequest;
   }
   
