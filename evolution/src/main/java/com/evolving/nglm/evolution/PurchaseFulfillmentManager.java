@@ -61,6 +61,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   public enum PurchaseFulfillmentStatus
   {
     PURCHASED(0),
+    PURCHASED_AND_CANCELLED(1),
     MISSING_PARAMETERS(4),
     BAD_FIELD_VALUE(5),
     PENDING(708),
@@ -101,6 +102,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         case PENDING:
           return DeliveryStatus.Pending;
         case PURCHASED:
+        case PURCHASED_AND_CANCELLED:
           return DeliveryStatus.Delivered;
         case MISSING_PARAMETERS:
         case BAD_FIELD_VALUE:
@@ -398,7 +400,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     {
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name(SCHEMA_NAME);
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),9));
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(), 10));
       for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
       schemaBuilder.field("offerID", Schema.STRING_SCHEMA);
       schemaBuilder.field("offerDisplay", Schema.OPTIONAL_STRING_SCHEMA);
@@ -413,6 +415,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       schemaBuilder.field("resellerDisplay", Schema.OPTIONAL_STRING_SCHEMA);
       schemaBuilder.field("supplierDisplay", Schema.OPTIONAL_STRING_SCHEMA);
       schemaBuilder.field("voucherDeliveries", SchemaBuilder.array(VoucherDelivery.schema()).optional());
+      schemaBuilder.field("cancelPurchase", Schema.BOOLEAN_SCHEMA);
       schema = schemaBuilder.build();
     }
 
@@ -451,6 +454,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     private String resellerDisplay;
     private String supplierDisplay;
     private List<VoucherDelivery> voucherDeliveries;
+    private boolean cancelPurchase;
     
     //
     //  accessors
@@ -470,6 +474,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public List<VoucherDelivery> getVoucherDeliveries() { return voucherDeliveries; }
     public String getResellerDisplay() { return resellerDisplay; }
     public String getSupplierDisplay() { return supplierDisplay; }
+    public boolean getCancelPurchase() {return cancelPurchase; }
     //
     //  setters
     //
@@ -484,6 +489,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public void addVoucherDelivery(VoucherDelivery voucherDelivery) {if(getVoucherDeliveries()==null){ this.voucherDeliveries = new ArrayList<>();} this.voucherDeliveries.add(voucherDelivery); }
     public void setResellerDisplay(String resellerDisplay) { this.resellerDisplay = resellerDisplay; }
     public void setSupplierDisplay(String supplierDisplay) { this.supplierDisplay = supplierDisplay; }
+    public void setCancelPurchase(boolean cancelPurchase) { this.cancelPurchase = cancelPurchase;}
     
     //
     //  offer delivery accessors
@@ -707,6 +713,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       this.resellerID = JSONUtilities.decodeString(jsonRoot, "resellerID", false);
       this.resellerDisplay = JSONUtilities.decodeString(jsonRoot, "resellerDisplay", false);
       this.supplierDisplay = JSONUtilities.decodeString(jsonRoot, "supplierDisplay", false);
+      this.cancelPurchase = JSONUtilities.decodeBoolean(jsonRoot, "cancelPurchase", false);
       updatePurchaseFulfillmentRequest(offerService, paymentMeanService, resellerService, productService, supplierService, voucherService, now, tenantID);
     }
 
@@ -719,7 +726,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     *
     *****************************************/
 
-    private PurchaseFulfillmentRequest(SchemaAndValue schemaAndValue, String offerID, String offerDisplay, int quantity, String salesChannelID, PurchaseFulfillmentStatus status, String offerContent, String meanOfPayment, long offerPrice, String origin, String resellerID, String resellerDisplay, String supplierDisplay, List<VoucherDelivery> voucherDeliveries)
+    private PurchaseFulfillmentRequest(SchemaAndValue schemaAndValue, String offerID, String offerDisplay, int quantity, String salesChannelID, PurchaseFulfillmentStatus status, String offerContent, String meanOfPayment, long offerPrice, String origin, String resellerID, String resellerDisplay, String supplierDisplay, List<VoucherDelivery> voucherDeliveries, boolean cancelPurchase)
     {
       super(schemaAndValue);
       this.offerID = offerID;
@@ -736,6 +743,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       this.voucherDeliveries = voucherDeliveries;
       this.resellerDisplay = resellerDisplay;
       this.supplierDisplay = supplierDisplay;
+      this.cancelPurchase = cancelPurchase;
     }
 
     /*****************************************
@@ -981,13 +989,14 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       String resellerDisplay = (schemaVersion >= 9) ? valueStruct.getString("resellerDisplay") : "";
       String supplierDisplay = (schemaVersion >= 9) ? valueStruct.getString("supplierDisplay") : "";
       List<VoucherDelivery> voucherDeliveries = (schemaVersion >= 5) ? unpackVoucherDeliveries(schema.field("voucherDeliveries").schema(), valueStruct.get("voucherDeliveries")) : null;
+      boolean cancelPurchase = (schemaVersion >= 10) ? valueStruct.getBoolean("cancelPurchase") : false;
 
 
       //
       //  return
       //
 
-      return new PurchaseFulfillmentRequest(schemaAndValue, offerID, offerDisplay, quantity, salesChannelID, status, offerContent, meanOfPayment, offerPrice, origin, resellerID, resellerDisplay, supplierDisplay, voucherDeliveries);
+      return new PurchaseFulfillmentRequest(schemaAndValue, offerID, offerDisplay, quantity, salesChannelID, status, offerContent, meanOfPayment, offerPrice, origin, resellerID, resellerDisplay, supplierDisplay, voucherDeliveries, cancelPurchase);
     }
 
     private static List<VoucherDelivery> unpackVoucherDeliveries(Schema schema, Object value){
@@ -1266,8 +1275,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         DeliveryRequest deliveryRequest = nextRequest();
         if(log.isDebugEnabled()) log.debug("run() : NEW REQUEST "+deliveryRequest.getDeliveryRequestID());
         PurchaseFulfillmentRequest purchaseRequest = ((PurchaseFulfillmentRequest)deliveryRequest);
-        log.info("RAJ K got a purchaseRequest {}", purchaseRequest);
-
+        
         /*****************************************
         *
         *  respond with correlator
@@ -1292,260 +1300,270 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         int quantity = purchaseRequest.getQuantity();
         String subscriberID = purchaseRequest.getSubscriberID();
         String salesChannelID = purchaseRequest.getSalesChannelID();
-        PurchaseRequestStatus purchaseStatus = new PurchaseRequestStatus(correlator, purchaseRequest.getEventID(), purchaseRequest.getModuleID(), purchaseRequest.getFeatureID(), offerID, subscriberID, quantity, salesChannelID);
         
-        //
-        // Get quantity
-        //
-
-        if (quantity < 1)
+        if (purchaseRequest.getCancelPurchase())
           {
-            log.info("run() : (offer " + offerID + ", subscriberID " + subscriberID + ") : bad field value for quantity");
-            submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.BAD_FIELD_VALUE, "bad field value for quantity");
-            continue mainLoop;
+            log.info("RAJ K got a CancelpurchaseRequest {}", purchaseRequest);
+            PurchaseRequestStatus purchaseStatus = new PurchaseRequestStatus(correlator, purchaseRequest.getEventID(), purchaseRequest.getModuleID(), purchaseRequest.getFeatureID(), offerID, subscriberID, quantity, salesChannelID);
+            submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.PURCHASED_AND_CANCELLED, "RAJ K TEST");
           }
-        
-        //
-        // Get customer
-        //
+        else
+          {
+            PurchaseRequestStatus purchaseStatus = new PurchaseRequestStatus(correlator, purchaseRequest.getEventID(), purchaseRequest.getModuleID(), purchaseRequest.getFeatureID(), offerID, subscriberID, quantity, salesChannelID);
+            log.info("RAJ K got a purchaseRequest {}", purchaseRequest);
+            
+            //
+            // Get quantity
+            //
 
-        if (subscriberID == null)
-          {
-            log.info("run() : (offer " + offerID + ", subscriberID " + subscriberID + ") : bad field value for subscriberID");
-            submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.MISSING_PARAMETERS, "missing mandatory field (subscriberID)");
-            continue mainLoop;
-          }
-        
-        //
-        //  subscriberProfile
-        //
-        
-        SubscriberProfile subscriberProfile = null;
-        try
-          {
-            subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID);
-            if (subscriberProfile == null)
+            if (quantity < 1)
               {
-                log.info("run() : (offer " + offerID + ", subscriberID " + subscriberID + ") : subscriber " + subscriberID + " not found");
-                submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.CUSTOMER_NOT_FOUND, "customer " + subscriberID + " not found");
+                log.info("run() : (offer " + offerID + ", subscriberID " + subscriberID + ") : bad field value for quantity");
+                submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.BAD_FIELD_VALUE, "bad field value for quantity");
+                continue mainLoop;
+              }
+            
+            //
+            // Get customer
+            //
+
+            if (subscriberID == null)
+              {
+                log.info("run() : (offer " + offerID + ", subscriberID " + subscriberID + ") : bad field value for subscriberID");
+                submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.MISSING_PARAMETERS, "missing mandatory field (subscriberID)");
+                continue mainLoop;
+              }
+            
+            //
+            //  subscriberProfile
+            //
+            
+            SubscriberProfile subscriberProfile = null;
+            try
+              {
+                subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID);
+                if (subscriberProfile == null)
+                  {
+                    log.info("run() : (offer " + offerID + ", subscriberID " + subscriberID + ") : subscriber " + subscriberID + " not found");
+                    submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.CUSTOMER_NOT_FOUND, "customer " + subscriberID + " not found");
+                    continue mainLoop;
+                  } 
+                else
+                  {
+                    if (log.isDebugEnabled()) log.debug("run() : (offer " + offerID + ", subscriberID " + subscriberID + ") : subscriber " + subscriberID + " found (" + subscriberProfile + ")");
+                  }
+              } 
+            catch (SubscriberProfileServiceException e)
+              {
+                log.info("run() : (offer " + offerID + ", subscriberID " + subscriberID + ") : subscriberService not available");
+                submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.SYSTEM_ERROR, "subscriberService not available");
+                continue mainLoop;
+              }
+
+            //
+            // Get offer
+            //
+            
+            if (offerID == null)
+              {
+                log.info("run() : (offer " + offerID + ", subscriberID " + subscriberID + ") : bad field value for offerID");
+                submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.MISSING_PARAMETERS, "missing mandatory field (offerID)");
+                continue mainLoop;
+              }
+            
+            //
+            //  valid offer
+            //
+            
+            Offer offer = offerService.getActiveOffer(offerID, eventDate);
+            if (offer == null)
+              {
+                log.info("run() : (offer " + offerID + ", subscriberID " + subscriberID + ") : offer " + offerID + " not found");
+                submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.OFFER_NOT_FOUND, "offer " + offerID + " not found or not active (date = " + eventDate + ")");
                 continue mainLoop;
               } 
             else
               {
-                if (log.isDebugEnabled()) log.debug("run() : (offer " + offerID + ", subscriberID " + subscriberID + ") : subscriber " + subscriberID + " found (" + subscriberProfile + ")");
+                if (log.isDebugEnabled()) log.debug("run() : (offer " + offerID + ", subscriberID " + subscriberID + ") : offer " + offerID + " found (" + offer + ")");
               }
-          } 
-        catch (SubscriberProfileServiceException e)
-          {
-            log.info("run() : (offer " + offerID + ", subscriberID " + subscriberID + ") : subscriberService not available");
-            submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.SYSTEM_ERROR, "subscriberService not available");
-            continue mainLoop;
-          }
 
-        //
-        // Get offer
-        //
-        
-        if (offerID == null)
-          {
-            log.info("run() : (offer " + offerID + ", subscriberID " + subscriberID + ") : bad field value for offerID");
-            submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.MISSING_PARAMETERS, "missing mandatory field (offerID)");
-            continue mainLoop;
-          }
-        
-        //
-        //  valid offer
-        //
-        
-        Offer offer = offerService.getActiveOffer(offerID, eventDate);
-        if (offer == null)
-          {
-            log.info("run() : (offer " + offerID + ", subscriberID " + subscriberID + ") : offer " + offerID + " not found");
-            submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.OFFER_NOT_FOUND, "offer " + offerID + " not found or not active (date = " + eventDate + ")");
-            continue mainLoop;
-          } 
-        else
-          {
-            if (log.isDebugEnabled()) log.debug("run() : (offer " + offerID + ", subscriberID " + subscriberID + ") : offer " + offerID + " found (" + offer + ")");
-          }
+            //
+            // Get sales channel
+            //
 
-        //
-        // Get sales channel
-        //
-
-        SalesChannel salesChannel = salesChannelService.getActiveSalesChannel(salesChannelID, eventDate);
-        if (salesChannel == null)
-          {
-            log.info("run() : (offer " + offerID + ", subscriberID " + subscriberID + ") : salesChannel " + salesChannelID + " not found");
-            submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.CHANNEL_DEACTIVATED, "salesChannel " + salesChannelID + " not activated");
-            continue mainLoop;
-          } 
-        else
-          {
-            if (log.isDebugEnabled())
-              log.debug("run() : (offer " + offerID + ", subscriberID " + subscriberID + ") : salesChannel " + salesChannelID + " found (" + salesChannel + ")");
-          }
-
-        //
-        // Get offer price
-        //
-        
-        OfferPrice offerPrice = null;
-        Boolean priceFound = false;
-        for (OfferSalesChannelsAndPrice offerSalesChannelsAndPrice : offer.getOfferSalesChannelsAndPrices())
-          {
-            if (offerSalesChannelsAndPrice.getSalesChannelIDs() != null && offerSalesChannelsAndPrice.getSalesChannelIDs().contains(salesChannel.getSalesChannelID()))
+            SalesChannel salesChannel = salesChannelService.getActiveSalesChannel(salesChannelID, eventDate);
+            if (salesChannel == null)
               {
-                offerPrice = offerSalesChannelsAndPrice.getPrice();
-                priceFound = true;
+                log.info("run() : (offer " + offerID + ", subscriberID " + subscriberID + ") : salesChannel " + salesChannelID + " not found");
+                submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.CHANNEL_DEACTIVATED, "salesChannel " + salesChannelID + " not activated");
+                continue mainLoop;
+              } 
+            else
+              {
                 if (log.isDebugEnabled())
-                  {
-                    String offerPriceStr = (offerPrice == null) ? "free" : offerPrice.getAmount() + " " + offerPrice.getPaymentMeanID();
-                    log.debug("run() : (offer, subscriberProfile) : offer price for sales channel " + salesChannel.getSalesChannelID() + " found (" + offerPriceStr + ")");
-                  }
-                break;
+                  log.debug("run() : (offer " + offerID + ", subscriberID " + subscriberID + ") : salesChannel " + salesChannelID + " found (" + salesChannel + ")");
               }
-          }
-        if (!priceFound)
-          { // need this boolean since price can be null (if offer is free)
-            log.info("run() : (offer " + offerID + ", subscriberID " + subscriberID + ") : offer price for sales channel " + salesChannelID + " not found");
-            submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.PRICE_NOT_APPLICABLE, "offer price for sales channel " + salesChannelID + " not found");
-            continue mainLoop;
-          }
-        purchaseStatus.addPaymentToBeDebited(offerPrice);
 
-        /*****************************************
-        *
-        *  Check offer, subscriber, ...
-        *
-        *****************************************/
-        
-        //
-        // check offer is active (should be since we used 'getActiveOffer' ...)
-        //
-
-        if (!offerService.isActiveOffer(offer, eventDate))
-          {
-            log.info("run() : (offer, subscriberProfile) : offer " + offer.getOfferID() + " not active (date = " + eventDate + ")");
-            submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.BAD_OFFER_STATUS, "offer " + offer.getOfferID() + " not active (date = " + eventDate + ")");
-            continue mainLoop;
-          }
-        purchaseStatus.addOfferStockToBeDebited(offer.getOfferID());
-
-        //
-        // check offer content
-        //
-
-        if(offer.getOfferProducts()!=null){
-          for(OfferProduct offerProduct : offer.getOfferProducts()){
-            Product product = productService.getActiveProduct(offerProduct.getProductID(), eventDate);
-            if(product == null){
-              log.info("run() : (offer, subscriberProfile) : product with ID " + offerProduct.getProductID() + " not found or not active (date = "+eventDate+")");
-              submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.PRODUCT_NOT_FOUND, "product with ID " + offerProduct.getProductID() + " not found or not active (date = "+eventDate+")");
-              continue mainLoop;
-            }else{
-              purchaseStatus.addProductStockToBeDebited(offerProduct);
-              purchaseStatus.addProductToBeCredited(offerProduct);
-            }
-          }
-        }
-
-        if(offer.getOfferVouchers()!=null){
-          for(OfferVoucher offerVoucher : offer.getOfferVouchers()){
-            Voucher voucher = voucherService.getActiveVoucher(offerVoucher.getVoucherID(), eventDate);
-            if(voucher==null){
-              log.info("run() : (offer, subscriberProfile) : voucher with ID " + offerVoucher.getVoucherID() + "not found or not active (date = "+eventDate+")");
-              submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.PRODUCT_NOT_FOUND, "voucher with ID " + offerVoucher.getVoucherID() + " not found or not active (date = "+eventDate+")");
-              continue mainLoop;
-            }else{
-              // more than 1 will ever be allowed ? trying to code like yes, but sure not really tested! (biggest problem I see, how do we "send" all codes)
-              int voucherQuantity = offerVoucher.getQuantity() * purchaseStatus.getQuantity();
-              offerVoucher.setQuantity(voucherQuantity);
-              if(voucher instanceof VoucherShared){
-                purchaseStatus.addVoucherSharedToBeAllocated(offerVoucher);
-              }else if (voucher instanceof VoucherPersonal){
-                purchaseStatus.addVoucherPersonalToBeAllocated(offerVoucher);
-              }else{
-                log.info("run() : (offer, subscriberProfile) : voucher with ID " + offerVoucher.getVoucherID() + " voucher type not recognized (date = "+eventDate+")");
-                submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.SYSTEM_ERROR, "voucher with ID " + offerVoucher.getVoucherID() + " voucher type not recognized (date = "+eventDate+")");
+            //
+            // Get offer price
+            //
+            
+            OfferPrice offerPrice = null;
+            Boolean priceFound = false;
+            for (OfferSalesChannelsAndPrice offerSalesChannelsAndPrice : offer.getOfferSalesChannelsAndPrices())
+              {
+                if (offerSalesChannelsAndPrice.getSalesChannelIDs() != null && offerSalesChannelsAndPrice.getSalesChannelIDs().contains(salesChannel.getSalesChannelID()))
+                  {
+                    offerPrice = offerSalesChannelsAndPrice.getPrice();
+                    priceFound = true;
+                    if (log.isDebugEnabled())
+                      {
+                        String offerPriceStr = (offerPrice == null) ? "free" : offerPrice.getAmount() + " " + offerPrice.getPaymentMeanID();
+                        log.debug("run() : (offer, subscriberProfile) : offer price for sales channel " + salesChannel.getSalesChannelID() + " found (" + offerPriceStr + ")");
+                      }
+                    break;
+                  }
+              }
+            if (!priceFound)
+              { // need this boolean since price can be null (if offer is free)
+                log.info("run() : (offer " + offerID + ", subscriberID " + subscriberID + ") : offer price for sales channel " + salesChannelID + " not found");
+                submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.PRICE_NOT_APPLICABLE, "offer price for sales channel " + salesChannelID + " not found");
                 continue mainLoop;
               }
-            }
-          }
-        }
+            purchaseStatus.addPaymentToBeDebited(offerPrice);
 
-      //
-      // check offer criteria (for the specific subscriber)
-      //
+            /*****************************************
+            *
+            *  Check offer, subscriber, ...
+            *
+            *****************************************/
+            
+            //
+            // check offer is active (should be since we used 'getActiveOffer' ...)
+            //
 
-      SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, eventDate, offer.getTenantID());
-      if (!offer.evaluateProfileCriteria(evaluationRequest))
-        {
-          log.info("run() : (offer, subscriberProfile) : criteria of offer " + offer.getOfferID() + " not valid for subscriber " + subscriberProfile.getSubscriberID() + " (date = " + eventDate + ")");
-          submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.OFFER_NOT_APPLICABLE, "criteria of offer " + offer.getOfferID() + " not valid for subscriber " + subscriberProfile.getSubscriberID() + " (date = " + eventDate + ")");
-          continue mainLoop;
-        }
-        
-
-        //
-        // check offer purchase limit for this subscriber
-        //
-        
-        Date earliestDateToKeep = EvolutionEngine.computeEarliestDateToKeep(processingDate, offer, deliveryRequest.getTenantID());
-        List<Date> purchaseHistory = new ArrayList<Date>();
-        
-      //TODO: before EVPRO-1066 all the purchase were kept like Map<String,List<Date>, now it is Map<String, List<Pair<String, Date>>> <saleschnl, Date>
-        // so it is important to migrate data, but once all customer run over this version, this should be removed
-        // ------ START DATA MIGRATION COULD BE REMOVED
-        Map<String, List<Date>> offerPurchaseHistory = subscriberProfile.getOfferPurchaseHistory();
-        if (offerPurchaseHistory.get(offerID) != null)
-          {
-            purchaseHistory = offerPurchaseHistory.get(offerID).stream().filter(date -> date.after(earliestDateToKeep)).collect(Collectors.toList());
-          }
-        
-        // ------ END DATA MIGRATION COULD BE REMOVED
-        
-        //
-        // new version
-        //
-        
-        if (subscriberProfile.getOfferPurchaseSalesChannelHistory().get(offerID) != null)
-          {
-            purchaseHistory.addAll(subscriberProfile.getOfferPurchaseSalesChannelHistory().get(offerID).stream().filter(datepair -> datepair.getSecondElement().after(earliestDateToKeep)).map(datepair -> datepair.getSecondElement()).collect(Collectors.toList()));
-          }
-        
-        int totalPurchased = (purchaseHistory != null) ? purchaseHistory.size() : 0;
-
-        if (offerPurchaseHistory.get("TBR_" + purchaseRequest.getDeliveryRequestID()) == null && subscriberProfile.getOfferPurchaseSalesChannelHistory().get("TBR_" + purchaseRequest.getDeliveryRequestID()) == null)
-          { // EvolEngine has not processed this one yet
-            if (purchaseHistory != null)
+            if (!offerService.isActiveOffer(offer, eventDate))
               {
-                // only keep recent purchase dates (discard dates that are too old)
-                totalPurchased = purchaseRequest.getQuantity();
-                for (Date purchaseDate : purchaseHistory)
+                log.info("run() : (offer, subscriberProfile) : offer " + offer.getOfferID() + " not active (date = " + eventDate + ")");
+                submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.BAD_OFFER_STATUS, "offer " + offer.getOfferID() + " not active (date = " + eventDate + ")");
+                continue mainLoop;
+              }
+            purchaseStatus.addOfferStockToBeDebited(offer.getOfferID());
+
+            //
+            // check offer content
+            //
+
+            if(offer.getOfferProducts()!=null){
+              for(OfferProduct offerProduct : offer.getOfferProducts()){
+                Product product = productService.getActiveProduct(offerProduct.getProductID(), eventDate);
+                if(product == null){
+                  log.info("run() : (offer, subscriberProfile) : product with ID " + offerProduct.getProductID() + " not found or not active (date = "+eventDate+")");
+                  submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.PRODUCT_NOT_FOUND, "product with ID " + offerProduct.getProductID() + " not found or not active (date = "+eventDate+")");
+                  continue mainLoop;
+                }else{
+                  purchaseStatus.addProductStockToBeDebited(offerProduct);
+                  purchaseStatus.addProductToBeCredited(offerProduct);
+                }
+              }
+            }
+
+            if(offer.getOfferVouchers()!=null){
+              for(OfferVoucher offerVoucher : offer.getOfferVouchers()){
+                Voucher voucher = voucherService.getActiveVoucher(offerVoucher.getVoucherID(), eventDate);
+                if(voucher==null){
+                  log.info("run() : (offer, subscriberProfile) : voucher with ID " + offerVoucher.getVoucherID() + "not found or not active (date = "+eventDate+")");
+                  submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.PRODUCT_NOT_FOUND, "voucher with ID " + offerVoucher.getVoucherID() + " not found or not active (date = "+eventDate+")");
+                  continue mainLoop;
+                }else{
+                  // more than 1 will ever be allowed ? trying to code like yes, but sure not really tested! (biggest problem I see, how do we "send" all codes)
+                  int voucherQuantity = offerVoucher.getQuantity() * purchaseStatus.getQuantity();
+                  offerVoucher.setQuantity(voucherQuantity);
+                  if(voucher instanceof VoucherShared){
+                    purchaseStatus.addVoucherSharedToBeAllocated(offerVoucher);
+                  }else if (voucher instanceof VoucherPersonal){
+                    purchaseStatus.addVoucherPersonalToBeAllocated(offerVoucher);
+                  }else{
+                    log.info("run() : (offer, subscriberProfile) : voucher with ID " + offerVoucher.getVoucherID() + " voucher type not recognized (date = "+eventDate+")");
+                    submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.SYSTEM_ERROR, "voucher with ID " + offerVoucher.getVoucherID() + " voucher type not recognized (date = "+eventDate+")");
+                    continue mainLoop;
+                  }
+                }
+              }
+            }
+
+          //
+          // check offer criteria (for the specific subscriber)
+          //
+
+          SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, eventDate, offer.getTenantID());
+          if (!offer.evaluateProfileCriteria(evaluationRequest))
+            {
+              log.info("run() : (offer, subscriberProfile) : criteria of offer " + offer.getOfferID() + " not valid for subscriber " + subscriberProfile.getSubscriberID() + " (date = " + eventDate + ")");
+              submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.OFFER_NOT_APPLICABLE, "criteria of offer " + offer.getOfferID() + " not valid for subscriber " + subscriberProfile.getSubscriberID() + " (date = " + eventDate + ")");
+              continue mainLoop;
+            }
+            
+
+            //
+            // check offer purchase limit for this subscriber
+            //
+            
+            Date earliestDateToKeep = EvolutionEngine.computeEarliestDateToKeep(processingDate, offer, deliveryRequest.getTenantID());
+            List<Date> purchaseHistory = new ArrayList<Date>();
+            
+          //TODO: before EVPRO-1066 all the purchase were kept like Map<String,List<Date>, now it is Map<String, List<Pair<String, Date>>> <saleschnl, Date>
+            // so it is important to migrate data, but once all customer run over this version, this should be removed
+            // ------ START DATA MIGRATION COULD BE REMOVED
+            Map<String, List<Date>> offerPurchaseHistory = subscriberProfile.getOfferPurchaseHistory();
+            if (offerPurchaseHistory.get(offerID) != null)
+              {
+                purchaseHistory = offerPurchaseHistory.get(offerID).stream().filter(date -> date.after(earliestDateToKeep)).collect(Collectors.toList());
+              }
+            
+            // ------ END DATA MIGRATION COULD BE REMOVED
+            
+            //
+            // new version
+            //
+            
+            if (subscriberProfile.getOfferPurchaseSalesChannelHistory().get(offerID) != null)
+              {
+                purchaseHistory.addAll(subscriberProfile.getOfferPurchaseSalesChannelHistory().get(offerID).stream().filter(datepair -> datepair.getSecondElement().after(earliestDateToKeep)).map(datepair -> datepair.getSecondElement()).collect(Collectors.toList()));
+              }
+            
+            int totalPurchased = (purchaseHistory != null) ? purchaseHistory.size() : 0;
+
+            if (offerPurchaseHistory.get("TBR_" + purchaseRequest.getDeliveryRequestID()) == null && subscriberProfile.getOfferPurchaseSalesChannelHistory().get("TBR_" + purchaseRequest.getDeliveryRequestID()) == null)
+              { // EvolEngine has not processed this one yet
+                if (purchaseHistory != null)
                   {
-                    if (purchaseDate.after(earliestDateToKeep))
+                    // only keep recent purchase dates (discard dates that are too old)
+                    totalPurchased = purchaseRequest.getQuantity();
+                    for (Date purchaseDate : purchaseHistory)
                       {
-                        totalPurchased++;
+                        if (purchaseDate.after(earliestDateToKeep))
+                          {
+                            totalPurchased++;
+                          }
                       }
                   }
               }
-          }
-        if (EvolutionEngine.isPurchaseLimitReached(offer, totalPurchased)) {
-          log.info("run() : maximumAcceptances : " + offer.getMaximumAcceptances() + " of offer "+offer.getOfferID()+" exceeded for subscriber "+subscriberProfile.getSubscriberID()+" as totalPurchased = " + totalPurchased+" (date = "+processingDate+")");
-          submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.CUSTOMER_OFFER_LIMIT_REACHED, "maximumAcceptances : " + offer.getMaximumAcceptances() + " of offer "+offer.getOfferID()+" exceeded for subscriber "+subscriberProfile.getSubscriberID()+" (date = "+processingDate+")");
-          continue mainLoop;
-        }
-        
-        /*****************************************
-        *
-        *  Proceed with the purchase
-        *
-        *****************************************/
+            if (EvolutionEngine.isPurchaseLimitReached(offer, totalPurchased)) {
+              log.info("run() : maximumAcceptances : " + offer.getMaximumAcceptances() + " of offer "+offer.getOfferID()+" exceeded for subscriber "+subscriberProfile.getSubscriberID()+" as totalPurchased = " + totalPurchased+" (date = "+processingDate+")");
+              submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.CUSTOMER_OFFER_LIMIT_REACHED, "maximumAcceptances : " + offer.getMaximumAcceptances() + " of offer "+offer.getOfferID()+" exceeded for subscriber "+subscriberProfile.getSubscriberID()+" (date = "+processingDate+")");
+              continue mainLoop;
+            }
+            
+            /*****************************************
+            *
+            *  Proceed with the purchase
+            *
+            *****************************************/
 
-        log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager ("+deliveryRequest.getDeliveryRequestID()+") : proceedPurchase(...)");
-        proceedPurchase(purchaseRequest,purchaseStatus, deliveryRequest.getTenantID(), subscriberID);
-        
+            log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager ("+deliveryRequest.getDeliveryRequestID()+") : proceedPurchase(...)");
+            proceedPurchase(purchaseRequest,purchaseStatus, deliveryRequest.getTenantID(), subscriberID);
+          }
       }
   }
   

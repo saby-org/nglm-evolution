@@ -907,22 +907,31 @@ public abstract class DeliveryManager
   
   private void processSubmitCorrelatorUpdate(String correlator, JSONObject correlatorUpdate)
   {
-    // construct a fake delivery request containing only correlatorUpdate to forward to the right instance
-    if(hackyDeliveryRequestInstance==null){
-      try {
-        log.warn("processSubmitCorrelatorUpdate : need to wait to deserialize at least one object for a hack ...");
-        hackyDeliveryRequestInstanceReady.await();// need to wait we got the hacky instance....
-        log.info("processSubmitCorrelatorUpdate : hacky object instance ready");
-      } catch (InterruptedException e) {}
-    }
+    // construct a fake delivery request containing only correlatorUpdate to forward
+    // to the right instance
+    if (hackyDeliveryRequestInstance == null)
+      {
+        try
+          {
+            log.warn("processSubmitCorrelatorUpdate : need to wait to deserialize at least one object for a hack ...");
+            hackyDeliveryRequestInstanceReady.await();// need to wait we got the hacky instance....
+            log.info("processSubmitCorrelatorUpdate : hacky object instance ready");
+          } 
+        catch (InterruptedException e)
+          {
+          }
+      }
     DeliveryRequest deliveryRequestForCorrelatorUpdate = hackyDeliveryRequestInstance.copy();
-    deliveryRequestForCorrelatorUpdate.getDiplomaticBriefcase().put(CORRELATOR_UPDATE_KEY,correlatorUpdate.toJSONString());
-    if(deliveryManagerDeclaration.getRoutingTopic()!=null){
-      String routingTopic = deliveryManagerDeclaration.getRoutingTopic().getName();
-      kafkaProducer.send(new ProducerRecord<byte[], byte[]>(routingTopic, stringKeySerde.serializer().serialize(routingTopic, new StringKey(correlator)), requestSerde.serializer().serialize(routingTopic, deliveryRequestForCorrelatorUpdate)));
-    }else{
-      log.error("processSubmitCorrelatorUpdate : on declaration without routing topic!");
-    }
+    deliveryRequestForCorrelatorUpdate.getDiplomaticBriefcase().put(CORRELATOR_UPDATE_KEY, correlatorUpdate.toJSONString());
+    if (deliveryManagerDeclaration.getRoutingTopic() != null)
+      {
+        String routingTopic = deliveryManagerDeclaration.getRoutingTopic().getName();
+        kafkaProducer.send(new ProducerRecord<byte[], byte[]>(routingTopic, stringKeySerde.serializer().serialize(routingTopic, new StringKey(correlator)), requestSerde.serializer().serialize(routingTopic, deliveryRequestForCorrelatorUpdate)));
+      } 
+    else
+      {
+        log.error("processSubmitCorrelatorUpdate : on declaration without routing topic!");
+      }
 
   }
 
