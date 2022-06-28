@@ -5153,7 +5153,7 @@ public class ThirdPartyManager
     String offerID = JSONUtilities.decodeString(jsonRoot, "offerID", true);
     String salesChannelID = JSONUtilities.decodeString(jsonRoot, "salesChannelID", true);
     Integer quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
-    String resellerID = JSONUtilities.decodeString(jsonRoot, "resellerID", true);
+    String resellerID = null;
     String moduleID = DeliveryRequest.Module.REST_API.getExternalRepresentation();
     String featureID = JSONUtilities.decodeString(jsonRoot, "loginName", DEFAULT_FEATURE_ID);
     String origin = JSONUtilities.decodeString(jsonRoot, "origin", false);
@@ -7819,6 +7819,7 @@ public class ThirdPartyManager
     request.put("deliveryType", deliveryManagerDeclaration.getDeliveryType());
     request.put("cancelPurchase", cancelPurchase);
     JSONObject valueRes = JSONUtilities.encodeObject(request);
+    log.info("RAJ K valueRes {}", valueRes);
 
     PurchaseFulfillmentRequest purchaseRequest = new PurchaseFulfillmentRequest(subscriberProfile, subscriberGroupEpochReader, valueRes, deliveryManagerDeclaration, offerService, paymentMeanService, resellerService, productService, supplierService, voucherService, SystemTime.getCurrentTime(), tenantID);
     purchaseRequest.forceDeliveryPriority(DELIVERY_REQUEST_PRIORITY);

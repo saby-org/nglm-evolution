@@ -714,7 +714,9 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       this.resellerDisplay = JSONUtilities.decodeString(jsonRoot, "resellerDisplay", false);
       this.supplierDisplay = JSONUtilities.decodeString(jsonRoot, "supplierDisplay", false);
       this.cancelPurchase = JSONUtilities.decodeBoolean(jsonRoot, "cancelPurchase", Boolean.FALSE);
+      log.info("RAJ K this.cancelPurchase {}, jsonRoot {}", this.cancelPurchase, jsonRoot);
       updatePurchaseFulfillmentRequest(offerService, paymentMeanService, resellerService, productService, supplierService, voucherService, now, tenantID);
+      log.info("RAJ K this.cancelPurchase {}", this.cancelPurchase);
     }
 
     /*****************************************
@@ -769,6 +771,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       this.resellerDisplay = purchaseFulfillmentRequest.getResellerDisplay();
       this.supplierDisplay = purchaseFulfillmentRequest.getSupplierDisplay();
       this.voucherDeliveries = purchaseFulfillmentRequest.getVoucherDeliveries();
+      this.cancelPurchase = purchaseFulfillmentRequest.getCancelPurchase();
     }
 
     /*****************************************
