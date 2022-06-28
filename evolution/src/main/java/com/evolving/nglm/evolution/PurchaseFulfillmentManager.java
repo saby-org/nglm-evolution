@@ -713,7 +713,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       this.resellerID = JSONUtilities.decodeString(jsonRoot, "resellerID", false);
       this.resellerDisplay = JSONUtilities.decodeString(jsonRoot, "resellerDisplay", false);
       this.supplierDisplay = JSONUtilities.decodeString(jsonRoot, "supplierDisplay", false);
-      this.cancelPurchase = JSONUtilities.decodeBoolean(jsonRoot, "cancelPurchase", false);
+      this.cancelPurchase = JSONUtilities.decodeBoolean(jsonRoot, "cancelPurchase", Boolean.FALSE);
       updatePurchaseFulfillmentRequest(offerService, paymentMeanService, resellerService, productService, supplierService, voucherService, now, tenantID);
     }
 
