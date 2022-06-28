@@ -1029,6 +1029,13 @@
       "id"           : "createCustomer",
       "methodName"   : "createCustomer",
       "permissions"  : ["API-CREATE-CUSTOMER"]
+    },
+    {
+      "id"           : "cancelPurchaseOffer",
+      "methodName"   : "cancelPurchaseOffer",
+      "permissions"  : ["API-CANCEL-PURCHASE-OFFER"],
+      "byPassAuth"   : true,
+      "comment" : "RAJ K"
     }
   ],
 

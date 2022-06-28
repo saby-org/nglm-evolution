@@ -1304,14 +1304,14 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         
         if (purchaseRequest.getCancelPurchase())
           {
-            log.info("RAJ K got a CancelpurchaseRequest {}", purchaseRequest);
+            log.info("RAJ K got a CancelpurchaseRequest {} with deliveryRequestID {}", purchaseRequest, purchaseRequest.getDeliveryRequestID());
             PurchaseRequestStatus purchaseStatus = new PurchaseRequestStatus(correlator, purchaseRequest.getEventID(), purchaseRequest.getModuleID(), purchaseRequest.getFeatureID(), offerID, subscriberID, quantity, salesChannelID);
             submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.PURCHASED_AND_CANCELLED, "RAJ K TEST");
           }
         else
           {
             PurchaseRequestStatus purchaseStatus = new PurchaseRequestStatus(correlator, purchaseRequest.getEventID(), purchaseRequest.getModuleID(), purchaseRequest.getFeatureID(), offerID, subscriberID, quantity, salesChannelID);
-            log.info("RAJ K got a purchaseRequest {}", purchaseRequest);
+            log.info("RAJ K got a purchaseRequest {} with deliveryRequestID {}", purchaseRequest, purchaseRequest.getDeliveryRequestID());
             
             //
             // Get quantity
