@@ -1309,7 +1309,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           {
             log.info("RAJ K got a CancelpurchaseRequest {} with deliveryRequestID {}", purchaseRequest, purchaseRequest.getDeliveryRequestID());
             PurchaseRequestStatus purchaseStatus = new PurchaseRequestStatus(correlator, purchaseRequest.getEventID(), purchaseRequest.getModuleID(), purchaseRequest.getFeatureID(), offerID, subscriberID, quantity, salesChannelID);
-            submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.PURCHASED_AND_CANCELLED, "RAJ K TEST");
+            proceedRollback(purchaseRequest, purchaseStatus, PurchaseFulfillmentStatus.PURCHASED_AND_CANCELLED, "got a purchase cancel request for deliverrequestID {}" + purchaseRequest.getDeliveryRequestID());
           }
         else
           {
@@ -2042,6 +2042,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
     if (purchaseStatus.getProductStockDebited() != null && !purchaseStatus.getProductStockDebited().isEmpty())
       {
+        log.info("RAJ K proceedRollback - cancel all product stocks");
         while (purchaseStatus.getProductStockDebited() != null && !purchaseStatus.getProductStockDebited().isEmpty())
           {
             OfferProduct offerProduct = purchaseStatus.getProductStockDebited().remove(0);
@@ -2067,6 +2068,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
     if (purchaseStatus.getVoucherSharedAllocated() != null && !purchaseStatus.getVoucherSharedAllocated().isEmpty())
       {
+        log.info("RAJ K proceedRollback - cancel all shared voucher stocks");
         while (purchaseStatus.getVoucherSharedAllocated() != null && !purchaseStatus.getVoucherSharedAllocated().isEmpty())
           {
             OfferVoucher offerVoucher = purchaseStatus.getVoucherSharedAllocated().remove(0);
@@ -2100,6 +2102,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
     if (purchaseStatus.getVoucherPersonalAllocated() != null && !purchaseStatus.getVoucherPersonalAllocated().isEmpty())
       {
+        log.info("RAJ K proceedRollback - cancel all personal vouchers allocated");
         while (purchaseStatus.getVoucherPersonalAllocated() != null && !purchaseStatus.getVoucherPersonalAllocated().isEmpty())
           {
             OfferVoucher offerVoucher = purchaseStatus.getVoucherPersonalAllocated().remove(0);
@@ -2139,6 +2142,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
     if (purchaseStatus.getOfferStockDebited() != null && !purchaseStatus.getOfferStockDebited().isEmpty())
       {
+        log.info("RAJ K proceedRollback - cancel all offer stocks");
         while (purchaseStatus.getOfferStockDebited() != null && !purchaseStatus.getOfferStockDebited().isEmpty())
           {
             String offerID = purchaseStatus.getOfferStockDebited().remove(0);
@@ -2164,6 +2168,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
     if (purchaseStatus.getPaymentDebited() != null && !purchaseStatus.getPaymentDebited().isEmpty())
       {
+        log.info("RAJ K cancel all payments - cancel all offer stocks");
         OfferPrice offerPrice = purchaseStatus.getPaymentDebited().remove(0);
         if (offerPrice == null || offerPrice.getAmount() <= 0)
           {// => offer is free
@@ -2185,6 +2190,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
     if (purchaseStatus.getProductCredited() != null && !purchaseStatus.getProductCredited().isEmpty())
       {
+        log.info("RAJ K cancel all payments - cancel all product deliveries");
         OfferProduct offerProduct = purchaseStatus.getProductCredited().remove(0);
         if (offerProduct != null)
           {
@@ -2204,7 +2210,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     //
 
     submitCorrelatorUpdate(purchaseStatus);
-
+    log.info("RAJ K proceedRollback done");
   }
 
   /*****************************************
