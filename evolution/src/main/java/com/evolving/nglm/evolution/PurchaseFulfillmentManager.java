@@ -937,6 +937,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       struct.put("resellerID", purchaseFulfillmentRequest.getResellerID());
       struct.put("resellerDisplay", purchaseFulfillmentRequest.getResellerDisplay());
       struct.put("supplierDisplay", purchaseFulfillmentRequest.getSupplierDisplay());
+      struct.put("cancelPurchase", purchaseFulfillmentRequest.getCancelPurchase());
       if(purchaseFulfillmentRequest.getVoucherDeliveries()!=null) struct.put("voucherDeliveries", packVoucherDeliveries(purchaseFulfillmentRequest.getVoucherDeliveries()));
       return struct;
     }
