@@ -511,6 +511,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public String getOfferDeliveryResellerID() { return getResellerID(); }
     public String getResellerName_OfferDelivery() { return getResellerDisplay(); }
     public String getSupplierName_OfferDelivery() { return getSupplierDisplay(); }
+    public boolean getOfferDeliveryCancelled() { return getCancelPurchase(); }
     
     /*****************************************
     *
