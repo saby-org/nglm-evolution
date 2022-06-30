@@ -1318,7 +1318,51 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         if (purchaseRequest.getCancelPurchase())
           {
             log.info("RAJ K got a CancelpurchaseRequest {} with deliveryRequestID {}", purchaseRequest, purchaseRequest.getDeliveryRequestID());
+            
+            //
+            //  purchaseStatus
+            //
+            
             PurchaseRequestStatus purchaseStatus = new PurchaseRequestStatus(correlator, purchaseRequest.getEventID(), purchaseRequest.getModuleID(), purchaseRequest.getFeatureID(), offerID, subscriberID, quantity, salesChannelID);
+            
+            Offer offer = offerService.getActiveOffer(offerID, purchaseRequest.getPreviousPurchaseDate());
+            if (offer != null)
+              {
+
+                //
+                //  addPaymentDebited
+                //
+                
+                if (offer.getOfferSalesChannelsAndPrices() != null)
+                  {
+                    OfferSalesChannelsAndPrice offerPrice = offer.getOfferSalesChannelsAndPrices().stream().filter(ofrPric -> ofrPric.getSalesChannelIDs().contains(salesChannelID)).findFirst().orElse(null);
+                    if (offerPrice != null && offerPrice.getPrice() != null)
+                      {
+                        purchaseStatus.addPaymentDebited(offerPrice.getPrice());
+                      }
+                  }
+                
+                //
+                //  addProductCredited
+                //
+                
+                if (offer.getOfferProducts() != null && !offer.getOfferProducts().isEmpty())
+                  {
+                    for (OfferProduct offerProduct : offer.getOfferProducts())
+                      {
+                        Product product = productService.getActiveProduct(offerProduct.getProductID(), purchaseRequest.getPreviousPurchaseDate());
+                        if (product != null)
+                          {
+                            purchaseStatus.addProductCredited(offerProduct);
+                          }
+                      }
+                  }
+              }
+            
+            //
+            //  proceedRollback
+            //
+            
             proceedRollback(purchaseRequest, purchaseStatus, PurchaseFulfillmentStatus.PURCHASED_AND_CANCELLED, "got a purchase cancel request for deliverrequestID {}" + purchaseRequest.getDeliveryRequestID());
           }
         else
@@ -2178,7 +2222,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
     if (purchaseStatus.getPaymentDebited() != null && !purchaseStatus.getPaymentDebited().isEmpty())
       {
-        log.info("RAJ K cancel all payments - cancel all offer stocks");
+        log.info("RAJ K cancel all payments");
         OfferPrice offerPrice = purchaseStatus.getPaymentDebited().remove(0);
         if (offerPrice == null || offerPrice.getAmount() <= 0)
           {// => offer is free
@@ -2200,7 +2244,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
     if (purchaseStatus.getProductCredited() != null && !purchaseStatus.getProductCredited().isEmpty())
       {
-        log.info("RAJ K cancel all payments - cancel all product deliveries");
+        log.info("RAJ K cancel all product deliveries");
         OfferProduct offerProduct = purchaseStatus.getProductCredited().remove(0);
         if (offerProduct != null)
           {
