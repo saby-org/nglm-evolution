@@ -2410,6 +2410,11 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
                 String deliveryRequestID = zookeeperUniqueKeyServer.getStringKey();
                 try
                   {
+                    log.info("RAJ K purchaseStatus {}", purchaseStatus);
+                    log.info("RAJ K deliverable {}", deliverable);
+                    log.info("RAJ K offerProduct.getQuantity() {}", offerProduct.getQuantity());
+                    log.info("RAJ K purchaseStatus.getQuantity() {}", purchaseStatus.getQuantity());
+                    
                     CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(paymentMeanService, deliverableService, originatingRequest, purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), deliverable.getFulfillmentProviderID(), deliverable.getDeliverableID(), CommodityDeliveryOperation.Debit, deliverableQuantity * offerProduct.getQuantity() * purchaseStatus.getQuantity(), deliverableValidityType, deliverableValidityPeriod, "");
                     if (log.isDebugEnabled()) log.debug("requestCommodityDelivery() : (deliveryReqID " + deliveryRequestID + ", originatingDeliveryRequestID " + purchaseStatus.getCorrelator() + ", offer " + purchaseStatus.getOfferID() + ", subscriberID " + purchaseStatus.getSubscriberID() + ") rollbacking product delivery (" + offerProductRollback.getProductID() + ") DONE");
                   } 
