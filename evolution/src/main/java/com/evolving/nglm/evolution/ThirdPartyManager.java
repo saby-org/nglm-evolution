@@ -5189,7 +5189,7 @@ public class ThirdPartyManager
     if (purchaseFulfillmentRequests.isEmpty())
       {
         response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
-        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage());
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage().concat("- no purchase found for deliveryRequestID ").concat(deliveryRequestID));
         log.error("no purchase found for deliveryRequestID {}", deliveryRequestID);
         return JSONUtilities.encodeObject(response);
       }
@@ -5224,7 +5224,7 @@ public class ThirdPartyManager
     if (cancelledDeliveryRequest)
       {
         response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
-        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage());
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage().concat("- already cancelled for deliveryRequestID ").concat(deliveryRequestID));
         log.error("purchase already cancelled for deliveryRequestID {}", deliveryRequestID);
         return JSONUtilities.encodeObject(response);
       }
