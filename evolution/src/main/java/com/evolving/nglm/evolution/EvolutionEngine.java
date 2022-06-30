@@ -4012,19 +4012,15 @@ public class EvolutionEngine
           }
         else if (purchaseFulfillmentRequest.getCancelPurchase())
           {
+            log.info("RAJ K Got a PurchaseFulfillmentRequest for cancel {} -- need to clean purchasedate", purchaseFulfillmentRequest);
             List<Pair<String, Date>> purchases = subscriberProfile.getOfferPurchaseSalesChannelHistory().get(offerID);
             Pair<String, Date> purchaseToRemove = purchases.stream().filter(purchase -> purchase.getFirstElement().equals(salesChannelID) && RLMDateUtils.truncatedCompareTo(purchase.getSecondElement(), purchaseFulfillmentRequest.getPreviousPurchaseDate(), Calendar.DATE, salesChannelID) == 0).findFirst().orElse(null);            
             if (purchaseToRemove != null)
               {
+                log.info("RAJ K cleaning purchaseToRemove {}", purchaseToRemove);
                 subscriberProfile.getOfferPurchaseSalesChannelHistory().get(offerID).remove(purchaseToRemove);
                 subscriberProfileUpdated = true;
               }
-            
-            //
-            //  RAJ K TO DO - remove old purchase date from history - purchases
-            //
-            
-            log.info("Got a PurchaseFulfillmentRequest for cancel {}", purchaseFulfillmentRequest);
           }
         else
           {
