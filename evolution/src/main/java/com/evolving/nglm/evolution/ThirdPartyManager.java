@@ -7884,14 +7884,13 @@ public class ThirdPartyManager
     Serializer<PurchaseFulfillmentRequest> valueSerializer = ((ConnectSerde<PurchaseFulfillmentRequest>) deliveryManagerDeclaration.getRequestSerde()).serializer();
 
     String deliveryRequestID = purchaseDeliveryRequestID;
-    String eventID = cancelPurchase ? deliveryRequestID.concat("_cancel_purchase") : deliveryRequestID;
     HashMap<String, Object> request = new HashMap<String, Object>();
     request.put("subscriberID", subscriberID);
     request.put("offerID", offerID);
     request.put("quantity", quantity);
     request.put("salesChannelID", salesChannelID);
     request.put("deliveryRequestID", deliveryRequestID);
-    request.put("eventID", eventID);
+    request.put("eventID", deliveryRequestID);
     request.put("moduleID", moduleID);
     request.put("featureID", featureID);
     request.put("origin", origin);
