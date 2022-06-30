@@ -74,6 +74,7 @@ public class CommodityDeliveryManagerRemovalUtils {
 
 		String subscriberID = commodityDeliveryRequest.getSubscriberID();
 		String commodityID = commodityDeliveryRequest.getCommodityID();
+		String commodityAccountName = deliverableService.getActiveDeliverable(commodityID, commodityDeliveryRequest.getCreationDate()).getDeliverableName();
 		CommodityDeliveryManager.CommodityDeliveryOperation operation = commodityDeliveryRequest.getOperation();
 		int amount = commodityDeliveryRequest.getAmount();
 
@@ -95,16 +96,24 @@ public class CommodityDeliveryManagerRemovalUtils {
 		Deliverable deliverable = null;
 
 		// debit case, provider is in paymentMean
-		if(operation.equals(CommodityDeliveryManager.CommodityDeliveryOperation.Debit)){
-			paymentMean = paymentMeanService.getActivePaymentMean(commodityID, commodityDeliveryRequest.getEventDate());
-			if(paymentMean == null){
-				log.info("CommodityDeliveryManagerRemovalUtils.createCommodityDeliveryRequest (commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : paymentMean not found ");
-				throw new CommodityDeliveryException(RESTAPIGenericReturnCodes.BONUS_NOT_FOUND, "unknown payment mean");
-			}
-			externalAccountID = paymentMean.getExternalAccountID();
-			provider = Deployment.getFulfillmentProviders().get(paymentMean.getFulfillmentProviderID());
-		// all other are in deliverable
-		}else{
+        if (operation.equals(CommodityDeliveryManager.CommodityDeliveryOperation.Debit))
+          {
+            paymentMean = paymentMeanService.getActivePaymentMean(commodityID, commodityDeliveryRequest.getEventDate());
+            
+            //
+            //  serach by name
+            //
+            
+            if (paymentMean == null && commodityAccountName != null) paymentMean = paymentMeanService.getStoredPaymentMeanByName(commodityAccountName, commodityDeliveryRequest.getTenantID()).getAccepted() ? (PaymentMean) paymentMeanService.getStoredPaymentMeanByName(commodityAccountName, commodityDeliveryRequest.getTenantID()) : null;
+            if (paymentMean == null)
+              {
+                log.info("CommodityDeliveryManagerRemovalUtils.createCommodityDeliveryRequest (commodity " + commodityID + ", operation " + operation.getExternalRepresentation() + ", amount " + amount + ") : paymentMean not found ");
+                throw new CommodityDeliveryException(RESTAPIGenericReturnCodes.BONUS_NOT_FOUND, "unknown payment mean");
+              }
+            externalAccountID = paymentMean.getExternalAccountID();
+            provider = Deployment.getFulfillmentProviders().get(paymentMean.getFulfillmentProviderID());
+            // all other are in deliverable
+          }else{
 			deliverable = deliverableService.getActiveDeliverable(commodityID, commodityDeliveryRequest.getEventDate());
 			if(deliverable == null){
 				log.info("CommodityDeliveryManagerRemovalUtils.createCommodityDeliveryRequest (commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : commodity not found ");
