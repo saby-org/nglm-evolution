@@ -5196,6 +5196,19 @@ public class ThirdPartyManager
       }
     
     //
+    // cancelled
+    //
+    
+    if (purchaseFulfillmentRequests.stream().anyMatch(request -> request.getReturnCode() == PurchaseFulfillmentStatus.PURCHASED_AND_CANCELLED.getReturnCode()))
+      {
+        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage());
+        log.error("purchase already cancelled for deliveryRequestID {}", deliveryRequestID);
+        return JSONUtilities.encodeObject(response);
+      }
+    
+    
+    //
     //  actual purchaseFulfillmentRequest
     //
     
@@ -5209,6 +5222,8 @@ public class ThirdPartyManager
     if (!sync)
       {
         purchaseResponse = purchaseOffer(subscriberProfile, false, subscriberID, purchaseFulfillmentRequest.getOfferID(), purchaseFulfillmentRequest.getSalesChannelID(), purchaseFulfillmentRequest.getQuantity(), moduleID, featureID, origin, purchaseFulfillmentRequest.getResellerID(), kafkaProducer, tenantID, purchaseFulfillmentRequest.getDeliveryRequestID(), true, purchaseFulfillmentRequest.getCreationDate());
+        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
       } 
     else
       {
