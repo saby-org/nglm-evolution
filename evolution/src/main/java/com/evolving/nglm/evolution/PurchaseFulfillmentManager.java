@@ -23,6 +23,7 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
+import org.apache.kafka.connect.data.Timestamp;
 import org.elasticsearch.ElasticsearchException;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -416,6 +417,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       schemaBuilder.field("supplierDisplay", Schema.OPTIONAL_STRING_SCHEMA);
       schemaBuilder.field("voucherDeliveries", SchemaBuilder.array(VoucherDelivery.schema()).optional());
       schemaBuilder.field("cancelPurchase", Schema.BOOLEAN_SCHEMA);
+      schemaBuilder.field("previousPurchaseDate", Timestamp.builder().optional().schema());
       schema = schemaBuilder.build();
     }
 
@@ -455,6 +457,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     private String supplierDisplay;
     private List<VoucherDelivery> voucherDeliveries;
     private boolean cancelPurchase;
+    private Date previousPurchaseDate;
     
     //
     //  accessors
@@ -475,6 +478,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public String getResellerDisplay() { return resellerDisplay; }
     public String getSupplierDisplay() { return supplierDisplay; }
     public boolean getCancelPurchase() {return cancelPurchase; }
+    public Date getPreviousPurchaseDate() { return previousPurchaseDate; }
     //
     //  setters
     //
@@ -490,6 +494,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public void setResellerDisplay(String resellerDisplay) { this.resellerDisplay = resellerDisplay; }
     public void setSupplierDisplay(String supplierDisplay) { this.supplierDisplay = supplierDisplay; }
     public void setCancelPurchase(boolean cancelPurchase) { this.cancelPurchase = cancelPurchase;}
+    public void setPreviousPurchaseDate(Date previousPurchaseDate) { this.previousPurchaseDate = previousPurchaseDate; } 
     
     //
     //  offer delivery accessors
@@ -729,7 +734,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     *
     *****************************************/
 
-    private PurchaseFulfillmentRequest(SchemaAndValue schemaAndValue, String offerID, String offerDisplay, int quantity, String salesChannelID, PurchaseFulfillmentStatus status, String offerContent, String meanOfPayment, long offerPrice, String origin, String resellerID, String resellerDisplay, String supplierDisplay, List<VoucherDelivery> voucherDeliveries, boolean cancelPurchase)
+    private PurchaseFulfillmentRequest(SchemaAndValue schemaAndValue, String offerID, String offerDisplay, int quantity, String salesChannelID, PurchaseFulfillmentStatus status, String offerContent, String meanOfPayment, long offerPrice, String origin, String resellerID, String resellerDisplay, String supplierDisplay, List<VoucherDelivery> voucherDeliveries, boolean cancelPurchase, Date previousPurchaseDate)
     {
       super(schemaAndValue);
       this.offerID = offerID;
@@ -747,6 +752,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       this.resellerDisplay = resellerDisplay;
       this.supplierDisplay = supplierDisplay;
       this.cancelPurchase = cancelPurchase;
+      this.previousPurchaseDate = previousPurchaseDate;
     }
 
     /*****************************************
@@ -773,6 +779,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       this.supplierDisplay = purchaseFulfillmentRequest.getSupplierDisplay();
       this.voucherDeliveries = purchaseFulfillmentRequest.getVoucherDeliveries();
       this.cancelPurchase = purchaseFulfillmentRequest.getCancelPurchase();
+      this.previousPurchaseDate = purchaseFulfillmentRequest.getPreviousPurchaseDate();
     }
 
     /*****************************************
@@ -942,6 +949,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       struct.put("resellerDisplay", purchaseFulfillmentRequest.getResellerDisplay());
       struct.put("supplierDisplay", purchaseFulfillmentRequest.getSupplierDisplay());
       struct.put("cancelPurchase", purchaseFulfillmentRequest.getCancelPurchase());
+      struct.put("previousPurchaseDate", purchaseFulfillmentRequest.getPreviousPurchaseDate());
       if(purchaseFulfillmentRequest.getVoucherDeliveries()!=null) struct.put("voucherDeliveries", packVoucherDeliveries(purchaseFulfillmentRequest.getVoucherDeliveries()));
       return struct;
     }
@@ -995,13 +1003,14 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       String supplierDisplay = (schemaVersion >= 9) ? valueStruct.getString("supplierDisplay") : "";
       List<VoucherDelivery> voucherDeliveries = (schemaVersion >= 5) ? unpackVoucherDeliveries(schema.field("voucherDeliveries").schema(), valueStruct.get("voucherDeliveries")) : null;
       boolean cancelPurchase = (schemaVersion >= 10) ? valueStruct.getBoolean("cancelPurchase") : false;
+      Date previousPurchaseDate = (schemaVersion >= 10) ? (Date) valueStruct.get("previousPurchaseDate") : null;
 
 
       //
       //  return
       //
 
-      return new PurchaseFulfillmentRequest(schemaAndValue, offerID, offerDisplay, quantity, salesChannelID, status, offerContent, meanOfPayment, offerPrice, origin, resellerID, resellerDisplay, supplierDisplay, voucherDeliveries, cancelPurchase);
+      return new PurchaseFulfillmentRequest(schemaAndValue, offerID, offerDisplay, quantity, salesChannelID, status, offerContent, meanOfPayment, offerPrice, origin, resellerID, resellerDisplay, supplierDisplay, voucherDeliveries, cancelPurchase, previousPurchaseDate);
     }
 
     private static List<VoucherDelivery> unpackVoucherDeliveries(Schema schema, Object value){

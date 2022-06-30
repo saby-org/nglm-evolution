@@ -5030,11 +5030,11 @@ public class ThirdPartyManager
             {
               if(!sync)
                 {
-                  purchaseResponse = purchaseOffer(subscriberProfile, false, subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, origin, resellerID, kafkaProducer, tenantID, zuks.getStringKey(), false);
+                  purchaseResponse = purchaseOffer(subscriberProfile, false, subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, origin, resellerID, kafkaProducer, tenantID, zuks.getStringKey(), false, null);
                 }
               else
                 {
-                  purchaseResponse = purchaseOffer(subscriberProfile, true, subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, origin, resellerID, kafkaProducer, tenantID, zuks.getStringKey(), false);
+                  purchaseResponse = purchaseOffer(subscriberProfile, true, subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, origin, resellerID, kafkaProducer, tenantID, zuks.getStringKey(), false, null);
                   response.put("offer",purchaseResponse.getThirdPartyPresentationMap(subscriberMessageTemplateService,salesChannelService,journeyService,offerService,loyaltyProgramService,productService,voucherService,deliverableService,paymentMeanService, resellerService, tenantID));
                 }
             }
@@ -5049,11 +5049,11 @@ public class ThirdPartyManager
 
             if(!sync)
             {
-              purchaseResponse = purchaseOffer(subscriberProfile, false, subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, origin, resellerID, kafkaProducer, tenantID, zuks.getStringKey(), false);
+              purchaseResponse = purchaseOffer(subscriberProfile, false, subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, origin, resellerID, kafkaProducer, tenantID, zuks.getStringKey(), false, null);
             }
             else
             {
-              purchaseResponse = purchaseOffer(subscriberProfile, true, subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, origin, resellerID, kafkaProducer, tenantID, zuks.getStringKey(), false);
+              purchaseResponse = purchaseOffer(subscriberProfile, true, subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, origin, resellerID, kafkaProducer, tenantID, zuks.getStringKey(), false, null);
               response.put("offer",purchaseResponse.getThirdPartyPresentationMap(subscriberMessageTemplateService,salesChannelService,journeyService,offerService,loyaltyProgramService,productService,voucherService,deliverableService,paymentMeanService, resellerService, tenantID));
             }
           }
@@ -5147,17 +5147,59 @@ public class ThirdPartyManager
       }
     
     //
-    //  offerID
+    //  request
     //
     
-    String offerID = JSONUtilities.decodeString(jsonRoot, "offerID", true);
-    String salesChannelID = JSONUtilities.decodeString(jsonRoot, "salesChannelID", true);
-    Integer quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
-    String resellerID = null;
     String moduleID = DeliveryRequest.Module.REST_API.getExternalRepresentation();
     String featureID = JSONUtilities.decodeString(jsonRoot, "loginName", DEFAULT_FEATURE_ID);
     String origin = JSONUtilities.decodeString(jsonRoot, "origin", false);
     String deliveryRequestID = JSONUtilities.decodeString(jsonRoot, "deliveryRequestID", true);
+    
+    //
+    //  filters
+    //
+    
+    List<QueryBuilder> filters = new ArrayList<QueryBuilder>();
+    filters.add(QueryBuilders.matchQuery("deliveryRequestID", deliveryRequestID));
+    
+    //
+    //  get from elasticsearch
+    //
+    
+    List<PurchaseFulfillmentRequest> purchaseFulfillmentRequests = new ArrayList<PurchaseFulfillmentRequest>();
+    SearchRequest searchRequest = this.elasticsearch.getSearchRequest(API.getCustomerODRs, subscriberID,  null, filters, tenantID);
+    List<SearchHit> hits;
+    try
+      {
+        hits = this.elasticsearch.getESHits(searchRequest);
+        for (SearchHit hit : hits)
+          {
+            PurchaseFulfillmentRequest purchaseFulfillmentRequestES = new PurchaseFulfillmentRequest(hit.getSourceAsMap(), supplierService, offerService, productService, voucherService, resellerService);
+            purchaseFulfillmentRequests.add(purchaseFulfillmentRequestES);
+          }
+      } 
+    catch (GUIManagerException e)
+      {
+        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage());
+        log.error("no purchase found for deliveryRequestID {}, error is {}", deliveryRequestID, e.getMessage());
+        return JSONUtilities.encodeObject(response);
+      }
+    
+    
+    if (purchaseFulfillmentRequests.isEmpty())
+      {
+        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage());
+        log.error("no purchase found for deliveryRequestID {}", deliveryRequestID);
+        return JSONUtilities.encodeObject(response);
+      }
+    
+    //
+    //  actual purchaseFulfillmentRequest
+    //
+    
+    PurchaseFulfillmentRequest purchaseFulfillmentRequest = purchaseFulfillmentRequests.get(0);
     
     //
     // cancelPurchaseOffer
@@ -5166,11 +5208,11 @@ public class ThirdPartyManager
     PurchaseFulfillmentRequest purchaseResponse = null;
     if (!sync)
       {
-        purchaseResponse = purchaseOffer(subscriberProfile, false, subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, origin, resellerID, kafkaProducer, tenantID, deliveryRequestID, true);
+        purchaseResponse = purchaseOffer(subscriberProfile, false, subscriberID, purchaseFulfillmentRequest.getOfferID(), purchaseFulfillmentRequest.getSalesChannelID(), purchaseFulfillmentRequest.getQuantity(), moduleID, featureID, origin, purchaseFulfillmentRequest.getResellerID(), kafkaProducer, tenantID, purchaseFulfillmentRequest.getDeliveryRequestID(), true, purchaseFulfillmentRequest.getCreationDate());
       } 
     else
       {
-        purchaseResponse = purchaseOffer(subscriberProfile, true, subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, origin, resellerID, kafkaProducer, tenantID, deliveryRequestID, true);
+        purchaseResponse = purchaseOffer(subscriberProfile, false, subscriberID, purchaseFulfillmentRequest.getOfferID(), purchaseFulfillmentRequest.getSalesChannelID(), purchaseFulfillmentRequest.getQuantity(), moduleID, featureID, origin, purchaseFulfillmentRequest.getResellerID(), kafkaProducer, tenantID, purchaseFulfillmentRequest.getDeliveryRequestID(), true, purchaseFulfillmentRequest.getCreationDate());
         response.put("offer", purchaseResponse.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, tenantID));
       }
 
@@ -7792,7 +7834,7 @@ public class ThirdPartyManager
    *
    *****************************************/
   
-  public PurchaseFulfillmentRequest purchaseOffer(SubscriberProfile subscriberProfile, boolean sync, String subscriberID, String offerID, String salesChannelID, int quantity, String moduleID, String featureID, String origin, String resellerID, KafkaProducer<byte[], byte[]> kafkaProducer, int tenantID, String purchaseDeliveryRequestID, boolean cancelPurchase) throws ThirdPartyManagerException
+  public PurchaseFulfillmentRequest purchaseOffer(SubscriberProfile subscriberProfile, boolean sync, String subscriberID, String offerID, String salesChannelID, int quantity, String moduleID, String featureID, String origin, String resellerID, KafkaProducer<byte[], byte[]> kafkaProducer, int tenantID, String purchaseDeliveryRequestID, boolean cancelPurchase, Date previousPurchaseDate) throws ThirdPartyManagerException
   {
     DeliveryManagerDeclaration deliveryManagerDeclaration = Deployment.getDeliveryManagers().get(PURCHASE_FULFILLMENT_MANAGER_TYPE);
     if (deliveryManagerDeclaration == null)
@@ -7822,6 +7864,7 @@ public class ThirdPartyManager
     log.info("RAJ K valueRes {}", valueRes);
 
     PurchaseFulfillmentRequest purchaseRequest = new PurchaseFulfillmentRequest(subscriberProfile, subscriberGroupEpochReader, valueRes, deliveryManagerDeclaration, offerService, paymentMeanService, resellerService, productService, supplierService, voucherService, SystemTime.getCurrentTime(), tenantID);
+    purchaseRequest.setPreviousPurchaseDate(previousPurchaseDate);
     purchaseRequest.forceDeliveryPriority(DELIVERY_REQUEST_PRIORITY);
     String topic = deliveryManagerDeclaration.getRequestTopic(purchaseRequest.getDeliveryPriority());
 

@@ -4010,6 +4010,22 @@ public class EvolutionEngine
           {
             log.info("Got a purchase for inexistent offer " + offerID);
           }
+        else if (purchaseFulfillmentRequest.getCancelPurchase())
+          {
+            List<Pair<String, Date>> purchases = subscriberProfile.getOfferPurchaseSalesChannelHistory().get(offerID);
+            Pair<String, Date> purchaseToRemove = purchases.stream().filter(purchase -> purchase.getFirstElement().equals(salesChannelID) && RLMDateUtils.truncatedCompareTo(purchase.getSecondElement(), purchaseFulfillmentRequest.getPreviousPurchaseDate(), Calendar.DATE, salesChannelID) == 0).findFirst().orElse(null);            
+            if (purchaseToRemove != null)
+              {
+                subscriberProfile.getOfferPurchaseSalesChannelHistory().get(offerID).remove(purchaseToRemove);
+                subscriberProfileUpdated = true;
+              }
+            
+            //
+            //  RAJ K TO DO - remove old purchase date from history - purchases
+            //
+            
+            log.info("Got a PurchaseFulfillmentRequest for cancel {}", purchaseFulfillmentRequest);
+          }
         else
           {
             Date earliestDateToKeepForCriteria = computeEarliestDateForAdvanceCriteria(context.processingDate(), tenantID);
