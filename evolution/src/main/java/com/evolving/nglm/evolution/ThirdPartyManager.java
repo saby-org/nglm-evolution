@@ -5207,6 +5207,7 @@ public class ThirdPartyManager
     
     filters = new ArrayList<QueryBuilder>();
     filters.add(QueryBuilders.matchQuery("deliveryRequestID", cancelledDeliveryRequestID));
+    searchRequest = this.elasticsearch.getSearchRequest(API.getCustomerODRs, subscriberID,  null, filters, tenantID);
     try
       {
         List<SearchHit> hits = this.elasticsearch.getESHits(searchRequest);
