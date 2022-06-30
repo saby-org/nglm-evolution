@@ -4107,6 +4107,10 @@ public class EvolutionEngine
             newFullPurchaseHistory.put("TBR_" + purchaseFulfillmentRequest.getDeliveryRequestID(), new ArrayList<>());
           }
       }
+    if (evolutionEvent instanceof OfferDelivery && ((OfferDelivery) evolutionEvent).getOfferDeliveryCancelled())
+      {
+        log.info("RAJ K OfferDelivery");
+      }
 
     /*****************************************
     *
