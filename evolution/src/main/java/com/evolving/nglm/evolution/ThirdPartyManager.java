@@ -5168,10 +5168,9 @@ public class ThirdPartyManager
     
     List<PurchaseFulfillmentRequest> purchaseFulfillmentRequests = new ArrayList<PurchaseFulfillmentRequest>();
     SearchRequest searchRequest = this.elasticsearch.getSearchRequest(API.getCustomerODRs, subscriberID,  null, filters, tenantID);
-    List<SearchHit> hits;
     try
       {
-        hits = this.elasticsearch.getESHits(searchRequest);
+        List<SearchHit> hits = this.elasticsearch.getESHits(searchRequest);
         for (SearchHit hit : hits)
           {
             PurchaseFulfillmentRequest purchaseFulfillmentRequestES = new PurchaseFulfillmentRequest(hit.getSourceAsMap(), supplierService, offerService, productService, voucherService, resellerService);
@@ -5196,10 +5195,32 @@ public class ThirdPartyManager
       }
     
     //
-    // cancelled
+    // cancelledDeliveryRequest
     //
     
-    if (purchaseFulfillmentRequests.stream().anyMatch(request -> request.getReturnCode() == PurchaseFulfillmentStatus.PURCHASED_AND_CANCELLED.getReturnCode()))
+    String cancelledDeliveryRequestID = deliveryRequestID.concat("_cancel_purchase");
+    boolean cancelledDeliveryRequest = false;
+    
+    //
+    //  filters
+    //
+    
+    filters = new ArrayList<QueryBuilder>();
+    filters.add(QueryBuilders.matchQuery("deliveryRequestID", cancelledDeliveryRequestID));
+    try
+      {
+        List<SearchHit> hits = this.elasticsearch.getESHits(searchRequest);
+        cancelledDeliveryRequest = !hits.isEmpty();
+      } 
+    catch (GUIManagerException e)
+      {
+        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage());
+        log.error("es error for deliveryRequestID {}, error is {}", deliveryRequestID, e.getMessage());
+        return JSONUtilities.encodeObject(response);
+      }
+    
+    if (cancelledDeliveryRequest)
       {
         response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
         response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage());
@@ -5221,13 +5242,13 @@ public class ThirdPartyManager
     PurchaseFulfillmentRequest purchaseResponse = null;
     if (!sync)
       {
-        purchaseResponse = purchaseOffer(subscriberProfile, false, subscriberID, purchaseFulfillmentRequest.getOfferID(), purchaseFulfillmentRequest.getSalesChannelID(), purchaseFulfillmentRequest.getQuantity(), moduleID, featureID, origin, purchaseFulfillmentRequest.getResellerID(), kafkaProducer, tenantID, purchaseFulfillmentRequest.getDeliveryRequestID(), true, purchaseFulfillmentRequest.getCreationDate());
+        purchaseResponse = purchaseOffer(subscriberProfile, sync, subscriberID, purchaseFulfillmentRequest.getOfferID(), purchaseFulfillmentRequest.getSalesChannelID(), purchaseFulfillmentRequest.getQuantity(), moduleID, featureID, origin, purchaseFulfillmentRequest.getResellerID(), kafkaProducer, tenantID, cancelledDeliveryRequestID, true, purchaseFulfillmentRequest.getCreationDate());
         response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
         response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
       } 
     else
       {
-        purchaseResponse = purchaseOffer(subscriberProfile, false, subscriberID, purchaseFulfillmentRequest.getOfferID(), purchaseFulfillmentRequest.getSalesChannelID(), purchaseFulfillmentRequest.getQuantity(), moduleID, featureID, origin, purchaseFulfillmentRequest.getResellerID(), kafkaProducer, tenantID, purchaseFulfillmentRequest.getDeliveryRequestID(), true, purchaseFulfillmentRequest.getCreationDate());
+        purchaseResponse = purchaseOffer(subscriberProfile, sync, subscriberID, purchaseFulfillmentRequest.getOfferID(), purchaseFulfillmentRequest.getSalesChannelID(), purchaseFulfillmentRequest.getQuantity(), moduleID, featureID, origin, purchaseFulfillmentRequest.getResellerID(), kafkaProducer, tenantID, cancelledDeliveryRequestID, true, purchaseFulfillmentRequest.getCreationDate());
         response.put("offer", purchaseResponse.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, tenantID));
       }
 
@@ -7862,13 +7883,14 @@ public class ThirdPartyManager
     Serializer<PurchaseFulfillmentRequest> valueSerializer = ((ConnectSerde<PurchaseFulfillmentRequest>) deliveryManagerDeclaration.getRequestSerde()).serializer();
 
     String deliveryRequestID = purchaseDeliveryRequestID;
+    String eventID = cancelPurchase ? deliveryRequestID.concat("_cancel_purchase") : deliveryRequestID;
     HashMap<String, Object> request = new HashMap<String, Object>();
     request.put("subscriberID", subscriberID);
     request.put("offerID", offerID);
     request.put("quantity", quantity);
     request.put("salesChannelID", salesChannelID);
     request.put("deliveryRequestID", deliveryRequestID);
-    request.put("eventID", deliveryRequestID);
+    request.put("eventID", eventID);
     request.put("moduleID", moduleID);
     request.put("featureID", featureID);
     request.put("origin", origin);
