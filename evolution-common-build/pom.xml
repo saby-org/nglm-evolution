@@ -3,7 +3,7 @@
   <groupId>com.evolving.nglm</groupId>
   <artifactId>nglm-evolution-common-build</artifactId>
   <packaging>pom</packaging>
-  <version>2.1.1_4-SNAPSHOT</version>
+  <version>TLS_OpenDisto-2.1.1_4-SNAPSHOT</version>
   <name>evolution-common-build</name>
 
   <repositories> 
@@ -22,13 +22,13 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>2.1.1_0-SNAPSHOT</version>
+    <version>TLS_OpenDisto-2.1.1_0-SNAPSHOT</version>
   </parent>
   
   <properties>
 
     <!-- nglm versions -->
-    <nglm.core.version>2.1.1_0-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>TLS_OpenDisto-2.1.1_0-SNAPSHOT</nglm.core.version>
     <nglm.evolution.version>${project.version}</nglm.evolution.version>
     <gui.framework.version>${gui-fwk.version}</gui.framework.version>
 
