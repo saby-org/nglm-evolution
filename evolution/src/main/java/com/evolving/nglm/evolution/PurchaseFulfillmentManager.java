@@ -1328,6 +1328,17 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
             Offer offer = offerService.getActiveOffer(offerID, purchaseRequest.getPreviousPurchaseDate());
             if (offer != null)
               {
+                if (offer.getOfferVouchers() != null && !offer.getOfferVouchers().isEmpty())
+                  {
+                    log.error("CancelpurchaseRequest not yet supported for vouchers");
+                    submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.SYSTEM_ERROR, "CancelpurchaseRequest not yet supported for vouchers");
+                    continue mainLoop;
+                  }
+                
+                //
+                //  RAJ K - check stocks
+                //
+                
 
                 //
                 //  addPaymentDebited
@@ -1357,6 +1368,12 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
                           }
                       }
                   }
+              }
+            else
+              {
+                log.error("CancelpurchaseRequest OFFER not found for offeID {}", offerID);
+                submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.BAD_OFFER_STATUS, "OFFER not found");
+                continue mainLoop;
               }
             
             //

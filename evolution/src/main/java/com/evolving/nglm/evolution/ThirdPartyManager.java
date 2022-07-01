@@ -7920,7 +7920,8 @@ public class ThirdPartyManager
         PurchaseFulfillmentRequest result = handleWaitingResponse(waitingResponse);
         if (result != null)
           {
-            if (result.getStatus().getReturnCode() == ((PurchaseFulfillmentStatus.PURCHASED).getReturnCode()))
+            Integer returnCodeExpected = cancelPurchase ? PurchaseFulfillmentStatus.PURCHASED_AND_CANCELLED.getReturnCode() : PurchaseFulfillmentStatus.PURCHASED.getReturnCode();
+            if (result.getStatus().getReturnCode() == returnCodeExpected)
               {
                 return handleWaitingResponse(waitingResponse);
               } 
