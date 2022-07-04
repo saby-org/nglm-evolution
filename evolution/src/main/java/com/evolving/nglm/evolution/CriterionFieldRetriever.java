@@ -1203,8 +1203,9 @@ public abstract class CriterionFieldRetriever
                       else
                         {
                           earliestExpiration = pointBalance.getFirstExpirationDate(evaluationDate);
-                          earliestExpiryQuantity = pointBalance.getBalance(earliestExpiration);
-                          log.info("[TEST] earliestExpiry => date: {}, quantity: {}", earliestExpiration, earliestExpiryQuantity);
+                          //earliestExpiryQuantity = pointBalance.getBalance(earliestExpiration);
+                          earliestExpiryQuantity = pointBalance.getFirstExpirationQuantity(earliestExpiration);
+                          log.info("[TEST] LoyaltyProgramCriterionField earliestExpiry => date: {}, quantity: {}", earliestExpiration, earliestExpiryQuantity);
                         }
                     }
 
@@ -1357,8 +1358,9 @@ public abstract class CriterionFieldRetriever
           {
             balance = new Integer(pointBalance.getBalance(evaluationDate));
             earliestExpiration = pointBalance.getFirstExpirationDate(evaluationDate);
-            earliestExpiryQuantity = pointBalance.getBalance(earliestExpiration);
-            log.info("[TEST] earliestExpiry => date: {}, quantity: {}", earliestExpiration, earliestExpiryQuantity);
+            //earliestExpiryQuantity = pointBalance.getBalance(earliestExpiration);
+            earliestExpiryQuantity = pointBalance.getFirstExpirationQuantity(earliestExpiration);
+            log.info("[TEST] PointCriterionField earliestExpiry => date: {}, quantity: {}", earliestExpiration, earliestExpiryQuantity);
           }
       }
       switch (criterionFieldBaseName)
