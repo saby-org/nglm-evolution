@@ -104,10 +104,14 @@ public class CommodityDeliveryManagerRemovalUtils {
             //  serach by name
             //
             
-            if (paymentMean == null && commodityAccountName != null) paymentMean = paymentMeanService.getStoredPaymentMeanByName(commodityAccountName, commodityDeliveryRequest.getTenantID()).getAccepted() ? (PaymentMean) paymentMeanService.getStoredPaymentMeanByName(commodityAccountName, commodityDeliveryRequest.getTenantID()) : null;
+            if (paymentMean == null && commodityAccountName != null)
+              {
+                GUIManagedObject paymentMeanUnchecked = paymentMeanService.getStoredPaymentMeanByName(commodityAccountName, commodityDeliveryRequest.getTenantID());
+                paymentMean = paymentMeanUnchecked != null &&  paymentMeanUnchecked.getAccepted() ? (PaymentMean) paymentMeanUnchecked : null;
+              }
             if (paymentMean == null)
               {
-                log.info("CommodityDeliveryManagerRemovalUtils.createCommodityDeliveryRequest (commodity " + commodityID + ", operation " + operation.getExternalRepresentation() + ", amount " + amount + ") : paymentMean not found ");
+                log.info("CommodityDeliveryManagerRemovalUtils.createCommodityDeliveryRequest (commodity " + commodityAccountName + ", operation " + operation.getExternalRepresentation() + ", amount " + amount + ") : paymentMean not found ");
                 throw new CommodityDeliveryException(RESTAPIGenericReturnCodes.BONUS_NOT_FOUND, "unknown payment mean");
               }
             externalAccountID = paymentMean.getExternalAccountID();
