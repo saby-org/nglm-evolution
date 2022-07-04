@@ -192,6 +192,7 @@ public class PointBalance
     return result;
   }
   
+  // EVPRO-1595 -- for "earliestexpiryquantity" criteria in Point and loyalty only
   public int getFirstExpirationQuantity(Date evaluationDate)
   {
     int result = 0;
