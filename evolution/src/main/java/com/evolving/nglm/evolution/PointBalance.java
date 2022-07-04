@@ -185,7 +185,8 @@ public class PointBalance
           {
             if (evaluationDate.compareTo(expirationDate) <= 0)
               {
-                result += balances.get(expirationDate);
+                result = balances.get(expirationDate);
+                break;
               }
           }
       }
