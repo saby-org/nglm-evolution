@@ -25220,7 +25220,7 @@ public class GUIManager
    else
      {
        purchaseResponse = purchaseOffer(subscriberProfile, sync, subscriberID, purchaseFulfillmentRequest.getOfferID(), purchaseFulfillmentRequest.getSalesChannelID(), purchaseFulfillmentRequest.getQuantity(), moduleID, featureID, origin, purchaseFulfillmentRequest.getResellerID(), kafkaProducer, cancelledDeliveryRequestID, true, purchaseFulfillmentRequest.getCreationDate());
-       response.put("offer", purchaseResponse.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, tenantID));
+       response.put("offer", purchaseResponse.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, tenantID));
        response.put("responseCode", "ok");
      }
    return JSONUtilities.encodeObject(response);
