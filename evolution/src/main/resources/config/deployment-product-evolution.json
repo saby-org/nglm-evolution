@@ -1033,9 +1033,7 @@
     {
       "id"           : "cancelPurchaseOffer",
       "methodName"   : "cancelPurchaseOffer",
-      "permissions"  : ["API-CANCEL-PURCHASE-OFFER"],
-      "byPassAuth"   : true,
-      "comment" : "RAJ K"
+      "permissions"  : ["API-CANCEL-PURCHASE-OFFER"]
     }
   ],
 

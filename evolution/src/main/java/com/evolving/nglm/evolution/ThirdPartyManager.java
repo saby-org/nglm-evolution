@@ -7898,7 +7898,6 @@ public class ThirdPartyManager
     request.put("deliveryType", deliveryManagerDeclaration.getDeliveryType());
     request.put("cancelPurchase", cancelPurchase);
     JSONObject valueRes = JSONUtilities.encodeObject(request);
-    log.info("RAJ K valueRes {}", valueRes);
 
     PurchaseFulfillmentRequest purchaseRequest = new PurchaseFulfillmentRequest(subscriberProfile, subscriberGroupEpochReader, valueRes, deliveryManagerDeclaration, offerService, paymentMeanService, resellerService, productService, supplierService, voucherService, SystemTime.getCurrentTime(), tenantID);
     purchaseRequest.setPreviousPurchaseDate(previousPurchaseDate);
@@ -7912,7 +7911,6 @@ public class ThirdPartyManager
       }
 
     kafkaProducer.send(new ProducerRecord<byte[], byte[]>(topic, keySerializer.serialize(topic, new StringKey(deliveryRequestID)), valueSerializer.serialize(topic, purchaseRequest)));
-    log.info("RAJ K purchaseRequest {}, writing to topic {}", purchaseRequest, topic);
     keySerializer.close();
     valueSerializer.close(); // to make Eclipse happy
     if (sync)

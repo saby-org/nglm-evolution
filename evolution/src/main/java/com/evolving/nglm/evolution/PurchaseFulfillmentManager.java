@@ -720,9 +720,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       this.resellerDisplay = JSONUtilities.decodeString(jsonRoot, "resellerDisplay", false);
       this.supplierDisplay = JSONUtilities.decodeString(jsonRoot, "supplierDisplay", false);
       this.cancelPurchase = JSONUtilities.decodeBoolean(jsonRoot, "cancelPurchase", Boolean.FALSE);
-      log.info("RAJ K this.cancelPurchase {}, jsonRoot {}", this.cancelPurchase, jsonRoot);
       updatePurchaseFulfillmentRequest(offerService, paymentMeanService, resellerService, productService, supplierService, voucherService, now, tenantID);
-      log.info("RAJ K this.cancelPurchase {}", this.cancelPurchase);
     }
 
     /*****************************************
@@ -1317,8 +1315,6 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         
         if (purchaseRequest.getCancelPurchase())
           {
-            log.info("RAJ K got a CancelpurchaseRequest {} with deliveryRequestID {}", purchaseRequest, purchaseRequest.getDeliveryRequestID());
-            
             //
             //  purchaseStatus
             //
@@ -1336,8 +1332,10 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
                   }
                 
                 //
-                //  RAJ K - check stocks
+                //  offerStock
                 //
+                
+                purchaseStatus.addOfferStockDebited(offerID);
                 
 
                 //
@@ -1365,6 +1363,12 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
                         if (product != null)
                           {
                             purchaseStatus.addProductCredited(offerProduct);
+                            
+                            //
+                            //  productStock
+                            //
+                            
+                            purchaseStatus.addProductStockDebited(offerProduct);
                           }
                       }
                   }
@@ -1385,7 +1389,6 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         else
           {
             PurchaseRequestStatus purchaseStatus = new PurchaseRequestStatus(correlator, purchaseRequest.getEventID(), purchaseRequest.getModuleID(), purchaseRequest.getFeatureID(), offerID, subscriberID, quantity, salesChannelID);
-            log.info("RAJ K got a purchaseRequest {} with deliveryRequestID {}", purchaseRequest, purchaseRequest.getDeliveryRequestID());
             
             //
             // Get quantity
@@ -2090,7 +2093,6 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
   private void proceedRollback(DeliveryRequest originatingDeliveryRequest, PurchaseRequestStatus purchaseStatus, PurchaseFulfillmentStatus deliveryStatus, String statusMessage)
   {
-    log.info("RAJ K proceedRollback");
 
     //
     // update purchaseStatus
@@ -2113,7 +2115,6 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
     if (purchaseStatus.getProductStockDebited() != null && !purchaseStatus.getProductStockDebited().isEmpty())
       {
-        log.info("RAJ K proceedRollback - cancel all product stocks");
         while (purchaseStatus.getProductStockDebited() != null && !purchaseStatus.getProductStockDebited().isEmpty())
           {
             OfferProduct offerProduct = purchaseStatus.getProductStockDebited().remove(0);
@@ -2139,7 +2140,6 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
     if (purchaseStatus.getVoucherSharedAllocated() != null && !purchaseStatus.getVoucherSharedAllocated().isEmpty())
       {
-        log.info("RAJ K proceedRollback - cancel all shared voucher stocks");
         while (purchaseStatus.getVoucherSharedAllocated() != null && !purchaseStatus.getVoucherSharedAllocated().isEmpty())
           {
             OfferVoucher offerVoucher = purchaseStatus.getVoucherSharedAllocated().remove(0);
@@ -2173,7 +2173,6 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
     if (purchaseStatus.getVoucherPersonalAllocated() != null && !purchaseStatus.getVoucherPersonalAllocated().isEmpty())
       {
-        log.info("RAJ K proceedRollback - cancel all personal vouchers allocated");
         while (purchaseStatus.getVoucherPersonalAllocated() != null && !purchaseStatus.getVoucherPersonalAllocated().isEmpty())
           {
             OfferVoucher offerVoucher = purchaseStatus.getVoucherPersonalAllocated().remove(0);
@@ -2213,7 +2212,6 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
     if (purchaseStatus.getOfferStockDebited() != null && !purchaseStatus.getOfferStockDebited().isEmpty())
       {
-        log.info("RAJ K proceedRollback - cancel all offer stocks");
         while (purchaseStatus.getOfferStockDebited() != null && !purchaseStatus.getOfferStockDebited().isEmpty())
           {
             String offerID = purchaseStatus.getOfferStockDebited().remove(0);
@@ -2239,7 +2237,6 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
     if (purchaseStatus.getPaymentDebited() != null && !purchaseStatus.getPaymentDebited().isEmpty())
       {
-        log.info("RAJ K cancel all payments");
         OfferPrice offerPrice = purchaseStatus.getPaymentDebited().remove(0);
         if (offerPrice == null || offerPrice.getAmount() <= 0)
           {// => offer is free
@@ -2261,7 +2258,6 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 
     if (purchaseStatus.getProductCredited() != null && !purchaseStatus.getProductCredited().isEmpty())
       {
-        log.info("RAJ K cancel all product deliveries");
         OfferProduct offerProduct = purchaseStatus.getProductCredited().remove(0);
         if (offerProduct != null)
           {
@@ -2281,7 +2277,6 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     //
 
     submitCorrelatorUpdate(purchaseStatus);
-    log.info("RAJ K proceedRollback done");
   }
 
   /*****************************************
@@ -2427,10 +2422,6 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
                 String deliveryRequestID = zookeeperUniqueKeyServer.getStringKey();
                 try
                   {
-                    log.info("RAJ K purchaseStatus {}", purchaseStatus);
-                    log.info("RAJ K deliverable {}", deliverable);
-                    log.info("RAJ K offerProduct.getQuantity() {}", offerProductRollback.getQuantity());
-                    log.info("RAJ K purchaseStatus.getQuantity() {}", purchaseStatus.getQuantity());
                     
                     CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(paymentMeanService, deliverableService, originatingRequest, purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), deliverable.getFulfillmentProviderID(), deliverable.getDeliverableID(), CommodityDeliveryOperation.Debit, deliverableQuantity * offerProductRollback.getQuantity() * purchaseStatus.getQuantity(), deliverableValidityType, deliverableValidityPeriod, "");
                     if (log.isDebugEnabled()) log.debug("requestCommodityDelivery() : (deliveryReqID " + deliveryRequestID + ", originatingDeliveryRequestID " + purchaseStatus.getCorrelator() + ", offer " + purchaseStatus.getOfferID() + ", subscriberID " + purchaseStatus.getSubscriberID() + ") rollbacking product delivery (" + offerProductRollback.getProductID() + ") DONE");
