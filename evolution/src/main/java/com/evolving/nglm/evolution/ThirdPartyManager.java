@@ -1258,7 +1258,7 @@ public class ThirdPartyManager
         log.warn("invalid url {} should be {}", path, exchange.getHttpContext().getPath());
         throw new ThirdPartyManagerException("invalid URL", -404);
       }
-      
+    
   }
 
   /*****************************************
