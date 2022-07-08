@@ -42,7 +42,7 @@
     <nglm.core.version>2.1.1_0-SNAPSHOT</nglm.core.version>
 
     <!-- dependencies - gui -->
-    <gui-fwk.version>2.1.2_1</gui-fwk.version>
+    <gui-fwk.version>2.1.2_7</gui-fwk.version>
     <gui-csr.version>2.1.2_4</gui-csr.version>
     <gui-itm.version>2.1.2_1</gui-itm.version>
     <gui-jmr.version>2.1.2_1</gui-jmr.version>
