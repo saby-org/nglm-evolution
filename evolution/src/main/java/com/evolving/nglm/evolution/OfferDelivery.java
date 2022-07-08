@@ -42,5 +42,6 @@ public interface OfferDelivery
   public String getOfferDeliveryVoucherPartnerId();
   public String getResellerName_OfferDelivery();
   public String getSupplierName_OfferDelivery();
+  public boolean getOfferDeliveryCancelled();
   
 }

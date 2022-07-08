@@ -23,6 +23,7 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
+import org.apache.kafka.connect.data.Timestamp;
 import org.elasticsearch.ElasticsearchException;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -61,6 +62,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   public enum PurchaseFulfillmentStatus
   {
     PURCHASED(0),
+    PURCHASED_AND_CANCELLED(1),
     MISSING_PARAMETERS(4),
     BAD_FIELD_VALUE(5),
     PENDING(708),
@@ -101,6 +103,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         case PENDING:
           return DeliveryStatus.Pending;
         case PURCHASED:
+        case PURCHASED_AND_CANCELLED:
           return DeliveryStatus.Delivered;
         case MISSING_PARAMETERS:
         case BAD_FIELD_VALUE:
@@ -398,7 +401,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     {
       SchemaBuilder schemaBuilder = SchemaBuilder.struct();
       schemaBuilder.name(SCHEMA_NAME);
-      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),9));
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(), 10));
       for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
       schemaBuilder.field("offerID", Schema.STRING_SCHEMA);
       schemaBuilder.field("offerDisplay", Schema.OPTIONAL_STRING_SCHEMA);
@@ -413,6 +416,8 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       schemaBuilder.field("resellerDisplay", Schema.OPTIONAL_STRING_SCHEMA);
       schemaBuilder.field("supplierDisplay", Schema.OPTIONAL_STRING_SCHEMA);
       schemaBuilder.field("voucherDeliveries", SchemaBuilder.array(VoucherDelivery.schema()).optional());
+      schemaBuilder.field("cancelPurchase", Schema.BOOLEAN_SCHEMA);
+      schemaBuilder.field("previousPurchaseDate", Timestamp.builder().optional().schema());
       schema = schemaBuilder.build();
     }
 
@@ -451,6 +456,8 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     private String resellerDisplay;
     private String supplierDisplay;
     private List<VoucherDelivery> voucherDeliveries;
+    private boolean cancelPurchase;
+    private Date previousPurchaseDate;
     
     //
     //  accessors
@@ -470,6 +477,8 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public List<VoucherDelivery> getVoucherDeliveries() { return voucherDeliveries; }
     public String getResellerDisplay() { return resellerDisplay; }
     public String getSupplierDisplay() { return supplierDisplay; }
+    public boolean getCancelPurchase() {return cancelPurchase; }
+    public Date getPreviousPurchaseDate() { return previousPurchaseDate; }
     //
     //  setters
     //
@@ -484,6 +493,8 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public void addVoucherDelivery(VoucherDelivery voucherDelivery) {if(getVoucherDeliveries()==null){ this.voucherDeliveries = new ArrayList<>();} this.voucherDeliveries.add(voucherDelivery); }
     public void setResellerDisplay(String resellerDisplay) { this.resellerDisplay = resellerDisplay; }
     public void setSupplierDisplay(String supplierDisplay) { this.supplierDisplay = supplierDisplay; }
+    public void setCancelPurchase(boolean cancelPurchase) { this.cancelPurchase = cancelPurchase;}
+    public void setPreviousPurchaseDate(Date previousPurchaseDate) { this.previousPurchaseDate = previousPurchaseDate; } 
     
     //
     //  offer delivery accessors
@@ -505,6 +516,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public String getOfferDeliveryResellerID() { return getResellerID(); }
     public String getResellerName_OfferDelivery() { return getResellerDisplay(); }
     public String getSupplierName_OfferDelivery() { return getSupplierDisplay(); }
+    public boolean getOfferDeliveryCancelled() { return getCancelPurchase(); }
     
     /*****************************************
     *
@@ -707,6 +719,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       this.resellerID = JSONUtilities.decodeString(jsonRoot, "resellerID", false);
       this.resellerDisplay = JSONUtilities.decodeString(jsonRoot, "resellerDisplay", false);
       this.supplierDisplay = JSONUtilities.decodeString(jsonRoot, "supplierDisplay", false);
+      this.cancelPurchase = JSONUtilities.decodeBoolean(jsonRoot, "cancelPurchase", Boolean.FALSE);
       updatePurchaseFulfillmentRequest(offerService, paymentMeanService, resellerService, productService, supplierService, voucherService, now, tenantID);
     }
 
@@ -719,7 +732,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     *
     *****************************************/
 
-    private PurchaseFulfillmentRequest(SchemaAndValue schemaAndValue, String offerID, String offerDisplay, int quantity, String salesChannelID, PurchaseFulfillmentStatus status, String offerContent, String meanOfPayment, long offerPrice, String origin, String resellerID, String resellerDisplay, String supplierDisplay, List<VoucherDelivery> voucherDeliveries)
+    private PurchaseFulfillmentRequest(SchemaAndValue schemaAndValue, String offerID, String offerDisplay, int quantity, String salesChannelID, PurchaseFulfillmentStatus status, String offerContent, String meanOfPayment, long offerPrice, String origin, String resellerID, String resellerDisplay, String supplierDisplay, List<VoucherDelivery> voucherDeliveries, boolean cancelPurchase, Date previousPurchaseDate)
     {
       super(schemaAndValue);
       this.offerID = offerID;
@@ -736,6 +749,8 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       this.voucherDeliveries = voucherDeliveries;
       this.resellerDisplay = resellerDisplay;
       this.supplierDisplay = supplierDisplay;
+      this.cancelPurchase = cancelPurchase;
+      this.previousPurchaseDate = previousPurchaseDate;
     }
 
     /*****************************************
@@ -761,6 +776,8 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       this.resellerDisplay = purchaseFulfillmentRequest.getResellerDisplay();
       this.supplierDisplay = purchaseFulfillmentRequest.getSupplierDisplay();
       this.voucherDeliveries = purchaseFulfillmentRequest.getVoucherDeliveries();
+      this.cancelPurchase = purchaseFulfillmentRequest.getCancelPurchase();
+      this.previousPurchaseDate = purchaseFulfillmentRequest.getPreviousPurchaseDate();
     }
 
     /*****************************************
@@ -932,6 +949,8 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       struct.put("resellerID", purchaseFulfillmentRequest.getResellerID());
       struct.put("resellerDisplay", purchaseFulfillmentRequest.getResellerDisplay());
       struct.put("supplierDisplay", purchaseFulfillmentRequest.getSupplierDisplay());
+      struct.put("cancelPurchase", purchaseFulfillmentRequest.getCancelPurchase());
+      struct.put("previousPurchaseDate", purchaseFulfillmentRequest.getPreviousPurchaseDate());
       if(purchaseFulfillmentRequest.getVoucherDeliveries()!=null) struct.put("voucherDeliveries", packVoucherDeliveries(purchaseFulfillmentRequest.getVoucherDeliveries()));
       return struct;
     }
@@ -984,13 +1003,15 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       String resellerDisplay = (schemaVersion >= 9) ? valueStruct.getString("resellerDisplay") : "";
       String supplierDisplay = (schemaVersion >= 9) ? valueStruct.getString("supplierDisplay") : "";
       List<VoucherDelivery> voucherDeliveries = (schemaVersion >= 5) ? unpackVoucherDeliveries(schema.field("voucherDeliveries").schema(), valueStruct.get("voucherDeliveries")) : null;
+      boolean cancelPurchase = (schemaVersion >= 10) ? valueStruct.getBoolean("cancelPurchase") : false;
+      Date previousPurchaseDate = (schemaVersion >= 10) ? (Date) valueStruct.get("previousPurchaseDate") : null;
 
 
       //
       //  return
       //
 
-      return new PurchaseFulfillmentRequest(schemaAndValue, offerID, offerDisplay, quantity, salesChannelID, status, offerContent, meanOfPayment, offerPrice, origin, resellerID, resellerDisplay, supplierDisplay, voucherDeliveries);
+      return new PurchaseFulfillmentRequest(schemaAndValue, offerID, offerDisplay, quantity, salesChannelID, status, offerContent, meanOfPayment, offerPrice, origin, resellerID, resellerDisplay, supplierDisplay, voucherDeliveries, cancelPurchase, previousPurchaseDate);
     }
 
     private static List<VoucherDelivery> unpackVoucherDeliveries(Schema schema, Object value){
@@ -1269,7 +1290,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         DeliveryRequest deliveryRequest = nextRequest();
         if(log.isDebugEnabled()) log.debug("run() : NEW REQUEST "+deliveryRequest.getDeliveryRequestID());
         PurchaseFulfillmentRequest purchaseRequest = ((PurchaseFulfillmentRequest)deliveryRequest);
-
+        
         /*****************************************
         *
         *  respond with correlator
@@ -1294,228 +1315,336 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         int quantity = purchaseRequest.getQuantity();
         String subscriberID = purchaseRequest.getSubscriberID();
         String salesChannelID = purchaseRequest.getSalesChannelID();
-        PurchaseRequestStatus purchaseStatus = new PurchaseRequestStatus(correlator, purchaseRequest.getEventID(), purchaseRequest.getModuleID(), purchaseRequest.getFeatureID(), offerID, subscriberID, quantity, salesChannelID);
         
-        //
-        // Get quantity
-        //
-        
-        if(quantity < 1){
-          log.info("run() : (offer "+offerID+", subscriberID "+subscriberID+") : bad field value for quantity");
-          submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.BAD_FIELD_VALUE, "bad field value for quantity");
-          continue mainLoop;
-        }
-        
-        //
-        // Get customer
-        //
-        
-        if(subscriberID == null){
-          log.info("run() : (offer "+offerID+", subscriberID "+subscriberID+") : bad field value for subscriberID");
-          submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.MISSING_PARAMETERS, "missing mandatory field (subscriberID)");
-          continue mainLoop;
-        }
-        SubscriberProfile subscriberProfile = null;
-        try{
-          subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID);
-          if(subscriberProfile == null){
-            log.info("run() : (offer "+offerID+", subscriberID "+subscriberID+") : subscriber " + subscriberID + " not found");
-            submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.CUSTOMER_NOT_FOUND, "customer " + subscriberID + " not found");
-            continue mainLoop;
-          }else{
-            if(log.isDebugEnabled()) log.debug("run() : (offer "+offerID+", subscriberID "+subscriberID+") : subscriber " + subscriberID + " found ("+subscriberProfile+")");
-          }
-        }catch (SubscriberProfileServiceException e) {
-          log.info("run() : (offer "+offerID+", subscriberID "+subscriberID+") : subscriberService not available");
-          submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.SYSTEM_ERROR, "subscriberService not available");
-          continue mainLoop;
-        }
-
-        //
-        // Get offer
-        //
-        
-        if(offerID == null){
-          log.info("run() : (offer "+offerID+", subscriberID "+subscriberID+") : bad field value for offerID");
-          submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.MISSING_PARAMETERS, "missing mandatory field (offerID)");
-          continue mainLoop;
-        }
-        Offer offer = offerService.getActiveOffer(offerID, eventDate);
-        if(offer == null){
-          log.info("run() : (offer "+offerID+", subscriberID "+subscriberID+") : offer " + offerID + " not found");
-          submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.OFFER_NOT_FOUND, "offer " + offerID + " not found or not active (date = "+eventDate+")");
-          continue mainLoop;
-        }else{
-          if(log.isDebugEnabled()) log.debug("run() : (offer "+offerID+", subscriberID "+subscriberID+") : offer " + offerID + " found ("+offer+")");
-        }
-
-        //
-        // Get sales channel
-        //
-
-        SalesChannel salesChannel = salesChannelService.getActiveSalesChannel(salesChannelID, eventDate);
-        if(salesChannel == null){
-          log.info("run() : (offer "+offerID+", subscriberID "+subscriberID+") : salesChannel " + salesChannelID + " not found");
-          submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.CHANNEL_DEACTIVATED, "salesChannel " + salesChannelID + " not activated");
-          continue mainLoop;
-        }else{
-          if(log.isDebugEnabled()) log.debug("run() : (offer "+offerID+", subscriberID "+subscriberID+") : salesChannel " + salesChannelID + " found ("+salesChannel+")");
-        }
-
-        //
-        // Get offer price
-        //
-        
-        OfferPrice offerPrice = null;
-        Boolean priceFound = false;
-        for(OfferSalesChannelsAndPrice offerSalesChannelsAndPrice : offer.getOfferSalesChannelsAndPrices()){
-          if(offerSalesChannelsAndPrice.getSalesChannelIDs() != null && offerSalesChannelsAndPrice.getSalesChannelIDs().contains(salesChannel.getSalesChannelID())){
-            offerPrice = offerSalesChannelsAndPrice.getPrice();
-            priceFound = true;
-            if (log.isDebugEnabled())
+        if (purchaseRequest.getCancelPurchase())
+          {
+            //
+            //  purchaseStatus
+            //
+            
+            PurchaseRequestStatus purchaseStatus = new PurchaseRequestStatus(correlator, purchaseRequest.getEventID(), purchaseRequest.getModuleID(), purchaseRequest.getFeatureID(), offerID, subscriberID, quantity, salesChannelID);
+            
+            Offer offer = offerService.getActiveOffer(offerID, purchaseRequest.getPreviousPurchaseDate());
+            if (offer != null)
               {
-                String offerPriceStr = (offerPrice == null) ? "free" : offerPrice.getAmount()+" "+offerPrice.getPaymentMeanID();
-                log.debug("run() : (offer, subscriberProfile) : offer price for sales channel "+salesChannel.getSalesChannelID()+" found ("+offerPriceStr+")");
+                if (offer.getOfferVouchers() != null && !offer.getOfferVouchers().isEmpty())
+                  {
+                    log.error("CancelpurchaseRequest not yet supported for vouchers");
+                    submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.SYSTEM_ERROR, "CancelpurchaseRequest not yet supported for vouchers");
+                    continue mainLoop;
+                  }
+                
+                //
+                //  offerStock
+                //
+                
+                purchaseStatus.addOfferStockDebited(offerID);
+                
+
+                //
+                //  addPaymentDebited
+                //
+                
+                if (offer.getOfferSalesChannelsAndPrices() != null)
+                  {
+                    OfferSalesChannelsAndPrice offerPrice = offer.getOfferSalesChannelsAndPrices().stream().filter(ofrPric -> ofrPric.getSalesChannelIDs().contains(salesChannelID)).findFirst().orElse(null);
+                    if (offerPrice != null && offerPrice.getPrice() != null)
+                      {
+                        purchaseStatus.addPaymentDebited(offerPrice.getPrice());
+                      }
+                  }
+                
+                //
+                //  addProductCredited
+                //
+                
+                if (offer.getOfferProducts() != null && !offer.getOfferProducts().isEmpty())
+                  {
+                    for (OfferProduct offerProduct : offer.getOfferProducts())
+                      {
+                        Product product = productService.getActiveProduct(offerProduct.getProductID(), purchaseRequest.getPreviousPurchaseDate());
+                        if (product != null)
+                          {
+                            purchaseStatus.addProductCredited(offerProduct);
+                            
+                            //
+                            //  productStock
+                            //
+                            
+                            purchaseStatus.addProductStockDebited(offerProduct);
+                          }
+                      }
+                  }
               }
-            break;
-          }
-        }
-        if(!priceFound){ //need this boolean since price can be null (if offer is free)
-          log.info("run() : (offer "+offerID+", subscriberID "+subscriberID+") : offer price for sales channel " + salesChannelID + " not found");
-          submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.PRICE_NOT_APPLICABLE, "offer price for sales channel " + salesChannelID + " not found");
-          continue mainLoop;
-        }
-        purchaseStatus.addPaymentToBeDebited(offerPrice);
-
-        /*****************************************
-        *
-        *  Check offer, subscriber, ...
-        *
-        *****************************************/
-        
-        //
-        // check offer is active (should be since we used 'getActiveOffer' ...)
-        //
-
-        if(!offerService.isActiveOffer(offer, eventDate)){
-          log.info("run() : (offer, subscriberProfile) : offer " + offer.getOfferID() + " not active (date = "+eventDate+")");
-          submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.BAD_OFFER_STATUS, "offer " + offer.getOfferID() + " not active (date = "+eventDate+")");
-          continue mainLoop;
-        }
-        purchaseStatus.addOfferStockToBeDebited(offer.getOfferID());
-
-        //
-        // check offer content
-        //
-
-        if(offer.getOfferProducts()!=null){
-          for(OfferProduct offerProduct : offer.getOfferProducts()){
-            Product product = productService.getActiveProduct(offerProduct.getProductID(), eventDate);
-            if(product == null){
-              log.info("run() : (offer, subscriberProfile) : product with ID " + offerProduct.getProductID() + " not found or not active (date = "+eventDate+")");
-              submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.PRODUCT_NOT_FOUND, "product with ID " + offerProduct.getProductID() + " not found or not active (date = "+eventDate+")");
-              continue mainLoop;
-            }else{
-              purchaseStatus.addProductStockToBeDebited(offerProduct);
-              purchaseStatus.addProductToBeCredited(offerProduct);
-            }
-          }
-        }
-
-        if(offer.getOfferVouchers()!=null){
-          for(OfferVoucher offerVoucher : offer.getOfferVouchers()){
-            Voucher voucher = voucherService.getActiveVoucher(offerVoucher.getVoucherID(), eventDate);
-            if(voucher==null){
-              log.info("run() : (offer, subscriberProfile) : voucher with ID " + offerVoucher.getVoucherID() + "not found or not active (date = "+eventDate+")");
-              submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.PRODUCT_NOT_FOUND, "voucher with ID " + offerVoucher.getVoucherID() + " not found or not active (date = "+eventDate+")");
-              continue mainLoop;
-            }else{
-              // more than 1 will ever be allowed ? trying to code like yes, but sure not really tested! (biggest problem I see, how do we "send" all codes)
-              int voucherQuantity = offerVoucher.getQuantity() * purchaseStatus.getQuantity();
-              offerVoucher.setQuantity(voucherQuantity);
-              if(voucher instanceof VoucherShared){
-                purchaseStatus.addVoucherSharedToBeAllocated(offerVoucher);
-              }else if (voucher instanceof VoucherPersonal){
-                purchaseStatus.addVoucherPersonalToBeAllocated(offerVoucher);
-              }else{
-                log.info("run() : (offer, subscriberProfile) : voucher with ID " + offerVoucher.getVoucherID() + " voucher type not recognized (date = "+eventDate+")");
-                submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.SYSTEM_ERROR, "voucher with ID " + offerVoucher.getVoucherID() + " voucher type not recognized (date = "+eventDate+")");
+            else
+              {
+                log.error("CancelpurchaseRequest OFFER not found for offeID {}", offerID);
+                submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.BAD_OFFER_STATUS, "OFFER not found");
                 continue mainLoop;
               }
-            }
+            
+            //
+            //  proceedRollback
+            //
+            
+            proceedRollback(purchaseRequest, purchaseStatus, PurchaseFulfillmentStatus.PURCHASED_AND_CANCELLED, "got a purchase cancel request for deliverrequestID {}" + purchaseRequest.getDeliveryRequestID());
           }
-        }
-
-        //
-        // check offer criteria (for the specific subscriber)
-        //
-
-        SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, eventDate, offer.getTenantID());
-        if(!offer.evaluateProfileCriteria(evaluationRequest)){
-          log.info("run() : (offer, subscriberProfile) : criteria of offer "+offer.getOfferID()+" not valid for subscriber "+subscriberProfile.getSubscriberID()+" (date = "+eventDate+")");
-          submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.OFFER_NOT_APPLICABLE, "criteria of offer "+offer.getOfferID()+" not valid for subscriber "+subscriberProfile.getSubscriberID()+" (date = "+eventDate+")");
-          continue mainLoop;
-        }
-        
-
-        //
-        // check offer purchase limit for this subscriber
-        //
-        
-        Date earliestDateToKeep = EvolutionEngine.computeEarliestDateToKeep(processingDate, offer, deliveryRequest.getTenantID());
-        List<Date> purchaseHistory = new ArrayList<Date>();
-        
-      //TODO: before EVPRO-1066 all the purchase were kept like Map<String,List<Date>, now it is Map<String, List<Pair<String, Date>>> <saleschnl, Date>
-        // so it is important to migrate data, but once all customer run over this version, this should be removed
-        // ------ START DATA MIGRATION COULD BE REMOVED
-        Map<String, List<Date>> offerPurchaseHistory = subscriberProfile.getOfferPurchaseHistory();
-        if (offerPurchaseHistory.get(offerID) != null)
+        else
           {
-            purchaseHistory = offerPurchaseHistory.get(offerID).stream().filter(date -> date.after(earliestDateToKeep)).collect(Collectors.toList());
-          }
-        
-        // ------ END DATA MIGRATION COULD BE REMOVED
-        
-        //
-        // new version
-        //
-        
-        if (subscriberProfile.getOfferPurchaseSalesChannelHistory().get(offerID) != null)
-          {
-            purchaseHistory.addAll(subscriberProfile.getOfferPurchaseSalesChannelHistory().get(offerID).stream().filter(datepair -> datepair.getSecondElement().after(earliestDateToKeep)).map(datepair -> datepair.getSecondElement()).collect(Collectors.toList()));
-          }
-        
-        int totalPurchased = (purchaseHistory != null) ? purchaseHistory.size() : 0;
+            PurchaseRequestStatus purchaseStatus = new PurchaseRequestStatus(correlator, purchaseRequest.getEventID(), purchaseRequest.getModuleID(), purchaseRequest.getFeatureID(), offerID, subscriberID, quantity, salesChannelID);
+            
+            //
+            // Get quantity
+            //
 
-        if (offerPurchaseHistory.get("TBR_"+purchaseRequest.getDeliveryRequestID()) == null && subscriberProfile.getOfferPurchaseSalesChannelHistory().get("TBR_"+purchaseRequest.getDeliveryRequestID()) == null) { // EvolEngine has not processed this one yet
-          if (purchaseHistory != null)
-            {
-              // only keep recent purchase dates (discard dates that are too old)
-              totalPurchased = purchaseRequest.getQuantity();
-              for (Date purchaseDate : purchaseHistory)
-                {
-                  if (purchaseDate.after(earliestDateToKeep))
-                    {
-                      totalPurchased++;
-                    }
+            if (quantity < 1)
+              {
+                log.info("run() : (offer " + offerID + ", subscriberID " + subscriberID + ") : bad field value for quantity");
+                submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.BAD_FIELD_VALUE, "bad field value for quantity");
+                continue mainLoop;
+              }
+            
+            //
+            // Get customer
+            //
+
+            if (subscriberID == null)
+              {
+                log.info("run() : (offer " + offerID + ", subscriberID " + subscriberID + ") : bad field value for subscriberID");
+                submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.MISSING_PARAMETERS, "missing mandatory field (subscriberID)");
+                continue mainLoop;
+              }
+            
+            //
+            //  subscriberProfile
+            //
+            
+            SubscriberProfile subscriberProfile = null;
+            try
+              {
+                subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID);
+                if (subscriberProfile == null)
+                  {
+                    log.info("run() : (offer " + offerID + ", subscriberID " + subscriberID + ") : subscriber " + subscriberID + " not found");
+                    submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.CUSTOMER_NOT_FOUND, "customer " + subscriberID + " not found");
+                    continue mainLoop;
+                  } 
+                else
+                  {
+                    if (log.isDebugEnabled()) log.debug("run() : (offer " + offerID + ", subscriberID " + subscriberID + ") : subscriber " + subscriberID + " found (" + subscriberProfile + ")");
+                  }
+              } 
+            catch (SubscriberProfileServiceException e)
+              {
+                log.info("run() : (offer " + offerID + ", subscriberID " + subscriberID + ") : subscriberService not available");
+                submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.SYSTEM_ERROR, "subscriberService not available");
+                continue mainLoop;
+              }
+
+            //
+            // Get offer
+            //
+            
+            if (offerID == null)
+              {
+                log.info("run() : (offer " + offerID + ", subscriberID " + subscriberID + ") : bad field value for offerID");
+                submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.MISSING_PARAMETERS, "missing mandatory field (offerID)");
+                continue mainLoop;
+              }
+            
+            //
+            //  valid offer
+            //
+            
+            Offer offer = offerService.getActiveOffer(offerID, eventDate);
+            if (offer == null)
+              {
+                log.info("run() : (offer " + offerID + ", subscriberID " + subscriberID + ") : offer " + offerID + " not found");
+                submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.OFFER_NOT_FOUND, "offer " + offerID + " not found or not active (date = " + eventDate + ")");
+                continue mainLoop;
+              } 
+            else
+              {
+                if (log.isDebugEnabled()) log.debug("run() : (offer " + offerID + ", subscriberID " + subscriberID + ") : offer " + offerID + " found (" + offer + ")");
+              }
+
+            //
+            // Get sales channel
+            //
+
+            SalesChannel salesChannel = salesChannelService.getActiveSalesChannel(salesChannelID, eventDate);
+            if (salesChannel == null)
+              {
+                log.info("run() : (offer " + offerID + ", subscriberID " + subscriberID + ") : salesChannel " + salesChannelID + " not found");
+                submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.CHANNEL_DEACTIVATED, "salesChannel " + salesChannelID + " not activated");
+                continue mainLoop;
+              } 
+            else
+              {
+                if (log.isDebugEnabled())
+                  log.debug("run() : (offer " + offerID + ", subscriberID " + subscriberID + ") : salesChannel " + salesChannelID + " found (" + salesChannel + ")");
+              }
+
+            //
+            // Get offer price
+            //
+            
+            OfferPrice offerPrice = null;
+            Boolean priceFound = false;
+            for (OfferSalesChannelsAndPrice offerSalesChannelsAndPrice : offer.getOfferSalesChannelsAndPrices())
+              {
+                if (offerSalesChannelsAndPrice.getSalesChannelIDs() != null && offerSalesChannelsAndPrice.getSalesChannelIDs().contains(salesChannel.getSalesChannelID()))
+                  {
+                    offerPrice = offerSalesChannelsAndPrice.getPrice();
+                    priceFound = true;
+                    if (log.isDebugEnabled())
+                      {
+                        String offerPriceStr = (offerPrice == null) ? "free" : offerPrice.getAmount() + " " + offerPrice.getPaymentMeanID();
+                        log.debug("run() : (offer, subscriberProfile) : offer price for sales channel " + salesChannel.getSalesChannelID() + " found (" + offerPriceStr + ")");
+                      }
+                    break;
+                  }
+              }
+            if (!priceFound)
+              { // need this boolean since price can be null (if offer is free)
+                log.info("run() : (offer " + offerID + ", subscriberID " + subscriberID + ") : offer price for sales channel " + salesChannelID + " not found");
+                submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.PRICE_NOT_APPLICABLE, "offer price for sales channel " + salesChannelID + " not found");
+                continue mainLoop;
+              }
+            purchaseStatus.addPaymentToBeDebited(offerPrice);
+
+            /*****************************************
+            *
+            *  Check offer, subscriber, ...
+            *
+            *****************************************/
+            
+            //
+            // check offer is active (should be since we used 'getActiveOffer' ...)
+            //
+
+            if (!offerService.isActiveOffer(offer, eventDate))
+              {
+                log.info("run() : (offer, subscriberProfile) : offer " + offer.getOfferID() + " not active (date = " + eventDate + ")");
+                submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.BAD_OFFER_STATUS, "offer " + offer.getOfferID() + " not active (date = " + eventDate + ")");
+                continue mainLoop;
+              }
+            purchaseStatus.addOfferStockToBeDebited(offer.getOfferID());
+
+            //
+            // check offer content
+            //
+
+            if(offer.getOfferProducts()!=null){
+              for(OfferProduct offerProduct : offer.getOfferProducts()){
+                Product product = productService.getActiveProduct(offerProduct.getProductID(), eventDate);
+                if(product == null){
+                  log.info("run() : (offer, subscriberProfile) : product with ID " + offerProduct.getProductID() + " not found or not active (date = "+eventDate+")");
+                  submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.PRODUCT_NOT_FOUND, "product with ID " + offerProduct.getProductID() + " not found or not active (date = "+eventDate+")");
+                  continue mainLoop;
+                }else{
+                  purchaseStatus.addProductStockToBeDebited(offerProduct);
+                  purchaseStatus.addProductToBeCredited(offerProduct);
                 }
+              }
             }
-        }
-        if (EvolutionEngine.isPurchaseLimitReached(offer, totalPurchased)) {
-          log.info("run() : maximumAcceptances : " + offer.getMaximumAcceptances() + " of offer "+offer.getOfferID()+" exceeded for subscriber "+subscriberProfile.getSubscriberID()+" as totalPurchased = " + totalPurchased+" (date = "+processingDate+")");
-          submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.CUSTOMER_OFFER_LIMIT_REACHED, "maximumAcceptances : " + offer.getMaximumAcceptances() + " of offer "+offer.getOfferID()+" exceeded for subscriber "+subscriberProfile.getSubscriberID()+" (date = "+processingDate+")");
-          continue mainLoop;
-        }
-        
-        /*****************************************
-        *
-        *  Proceed with the purchase
-        *
-        *****************************************/
 
-        log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager ("+deliveryRequest.getDeliveryRequestID()+") : proceedPurchase(...)");
-        proceedPurchase(purchaseRequest,purchaseStatus, deliveryRequest.getTenantID(), subscriberID);
-        
+            if(offer.getOfferVouchers()!=null){
+              for(OfferVoucher offerVoucher : offer.getOfferVouchers()){
+                Voucher voucher = voucherService.getActiveVoucher(offerVoucher.getVoucherID(), eventDate);
+                if(voucher==null){
+                  log.info("run() : (offer, subscriberProfile) : voucher with ID " + offerVoucher.getVoucherID() + "not found or not active (date = "+eventDate+")");
+                  submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.PRODUCT_NOT_FOUND, "voucher with ID " + offerVoucher.getVoucherID() + " not found or not active (date = "+eventDate+")");
+                  continue mainLoop;
+                }else{
+                  // more than 1 will ever be allowed ? trying to code like yes, but sure not really tested! (biggest problem I see, how do we "send" all codes)
+                  int voucherQuantity = offerVoucher.getQuantity() * purchaseStatus.getQuantity();
+                  offerVoucher.setQuantity(voucherQuantity);
+                  if(voucher instanceof VoucherShared){
+                    purchaseStatus.addVoucherSharedToBeAllocated(offerVoucher);
+                  }else if (voucher instanceof VoucherPersonal){
+                    purchaseStatus.addVoucherPersonalToBeAllocated(offerVoucher);
+                  }else{
+                    log.info("run() : (offer, subscriberProfile) : voucher with ID " + offerVoucher.getVoucherID() + " voucher type not recognized (date = "+eventDate+")");
+                    submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.SYSTEM_ERROR, "voucher with ID " + offerVoucher.getVoucherID() + " voucher type not recognized (date = "+eventDate+")");
+                    continue mainLoop;
+                  }
+                }
+              }
+            }
+
+          //
+          // check offer criteria (for the specific subscriber)
+          //
+
+          SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, eventDate, offer.getTenantID());
+          if (!offer.evaluateProfileCriteria(evaluationRequest))
+            {
+              log.info("run() : (offer, subscriberProfile) : criteria of offer " + offer.getOfferID() + " not valid for subscriber " + subscriberProfile.getSubscriberID() + " (date = " + eventDate + ")");
+              submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.OFFER_NOT_APPLICABLE, "criteria of offer " + offer.getOfferID() + " not valid for subscriber " + subscriberProfile.getSubscriberID() + " (date = " + eventDate + ")");
+              continue mainLoop;
+            }
+            
+
+            //
+            // check offer purchase limit for this subscriber
+            //
+            
+            Date earliestDateToKeep = EvolutionEngine.computeEarliestDateToKeep(processingDate, offer, deliveryRequest.getTenantID());
+            List<Date> purchaseHistory = new ArrayList<Date>();
+            
+          //TODO: before EVPRO-1066 all the purchase were kept like Map<String,List<Date>, now it is Map<String, List<Pair<String, Date>>> <saleschnl, Date>
+            // so it is important to migrate data, but once all customer run over this version, this should be removed
+            // ------ START DATA MIGRATION COULD BE REMOVED
+            Map<String, List<Date>> offerPurchaseHistory = subscriberProfile.getOfferPurchaseHistory();
+            if (offerPurchaseHistory.get(offerID) != null)
+              {
+                purchaseHistory = offerPurchaseHistory.get(offerID).stream().filter(date -> date.after(earliestDateToKeep)).collect(Collectors.toList());
+              }
+            
+            // ------ END DATA MIGRATION COULD BE REMOVED
+            
+            //
+            // new version
+            //
+            
+            if (subscriberProfile.getOfferPurchaseSalesChannelHistory().get(offerID) != null)
+              {
+                purchaseHistory.addAll(subscriberProfile.getOfferPurchaseSalesChannelHistory().get(offerID).stream().filter(datepair -> datepair.getSecondElement().after(earliestDateToKeep)).map(datepair -> datepair.getSecondElement()).collect(Collectors.toList()));
+              }
+            
+            int totalPurchased = (purchaseHistory != null) ? purchaseHistory.size() : 0;
+
+            if (offerPurchaseHistory.get("TBR_" + purchaseRequest.getDeliveryRequestID()) == null && subscriberProfile.getOfferPurchaseSalesChannelHistory().get("TBR_" + purchaseRequest.getDeliveryRequestID()) == null)
+              { // EvolEngine has not processed this one yet
+                if (purchaseHistory != null)
+                  {
+                    // only keep recent purchase dates (discard dates that are too old)
+                    totalPurchased = purchaseRequest.getQuantity();
+                    for (Date purchaseDate : purchaseHistory)
+                      {
+                        if (purchaseDate.after(earliestDateToKeep))
+                          {
+                            totalPurchased++;
+                          }
+                      }
+                  }
+              }
+            if (EvolutionEngine.isPurchaseLimitReached(offer, totalPurchased)) {
+              log.info("run() : maximumAcceptances : " + offer.getMaximumAcceptances() + " of offer "+offer.getOfferID()+" exceeded for subscriber "+subscriberProfile.getSubscriberID()+" as totalPurchased = " + totalPurchased+" (date = "+processingDate+")");
+              submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.CUSTOMER_OFFER_LIMIT_REACHED, "maximumAcceptances : " + offer.getMaximumAcceptances() + " of offer "+offer.getOfferID()+" exceeded for subscriber "+subscriberProfile.getSubscriberID()+" (date = "+processingDate+")");
+              continue mainLoop;
+            }
+            
+            /*****************************************
+            *
+            *  Proceed with the purchase
+            *
+            *****************************************/
+
+            log.info(Thread.currentThread().getId()+" - PurchaseFulfillmentManager ("+deliveryRequest.getDeliveryRequestID()+") : proceedPurchase(...)");
+            proceedPurchase(purchaseRequest,purchaseStatus, deliveryRequest.getTenantID(), subscriberID);
+          }
       }
   }
   
@@ -1786,7 +1915,6 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       }
     
     submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.PURCHASED, "Success");
-    
   }
   
   /*****************************************
@@ -1966,152 +2094,192 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   *
   *****************************************/
 
-  private void proceedRollback(DeliveryRequest originatingDeliveryRequest, PurchaseRequestStatus purchaseStatus, PurchaseFulfillmentStatus deliveryStatus, String statusMessage){
+  private void proceedRollback(DeliveryRequest originatingDeliveryRequest, PurchaseRequestStatus purchaseStatus, PurchaseFulfillmentStatus deliveryStatus, String statusMessage)
+  {
 
     //
     // update purchaseStatus
     //
-    
+
     purchaseStatus.setRollbackInProgress(true);
-    if(deliveryStatus != null){
-      purchaseStatus.setDeliveryStatus(getPurchaseFulfillmentStatus(deliveryStatus));
-      purchaseStatus.setDeliveryStatusCode(deliveryStatus.getReturnCode());
-    }
-    if(statusMessage != null){purchaseStatus.setDeliveryStatusMessage(statusMessage);}
+    if (deliveryStatus != null)
+      {
+        purchaseStatus.setDeliveryStatus(getPurchaseFulfillmentStatus(deliveryStatus));
+        purchaseStatus.setDeliveryStatusCode(deliveryStatus.getReturnCode());
+      }
+    if (statusMessage != null)
+      {
+        purchaseStatus.setDeliveryStatusMessage(statusMessage);
+      }
 
     //
     // cancel all product stocks
     //
-    
-    if(purchaseStatus.getProductStockDebited() != null && !purchaseStatus.getProductStockDebited().isEmpty()){
-      while(purchaseStatus.getProductStockDebited() != null && !purchaseStatus.getProductStockDebited().isEmpty()){
-        OfferProduct offerProduct = purchaseStatus.getProductStockDebited().remove(0);
-        Product product = productService.getActiveProduct(offerProduct.getProductID(), originatingDeliveryRequest.getEventDate());
-        if(product == null){
-          log.info("proceedRollback() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not cancel reservation of product "+offerProduct.getProductID());
-          purchaseStatus.addProductStockRollbackFailed(offerProduct);
-        }else{
-          int quantity = offerProduct.getQuantity() * purchaseStatus.getQuantity();
-          stockService.voidReservation(product, quantity);
-          purchaseStatus.addProductStockRollbacked(offerProduct);
-          if(log.isDebugEnabled()) log.debug("proceedRollback() : reservation product " + product.getProductID() + " canceled " + quantity);
-        }
+
+    if (purchaseStatus.getProductStockDebited() != null && !purchaseStatus.getProductStockDebited().isEmpty())
+      {
+        while (purchaseStatus.getProductStockDebited() != null && !purchaseStatus.getProductStockDebited().isEmpty())
+          {
+            OfferProduct offerProduct = purchaseStatus.getProductStockDebited().remove(0);
+            Product product = productService.getActiveProduct(offerProduct.getProductID(), originatingDeliveryRequest.getEventDate());
+            if (product == null)
+              {
+                log.info("proceedRollback() : (offer " + purchaseStatus.getOfferID() + ", subscriberID " + purchaseStatus.getSubscriberID() + ") : could not cancel reservation of product " + offerProduct.getProductID());
+                purchaseStatus.addProductStockRollbackFailed(offerProduct);
+              } 
+            else
+              {
+                int quantity = offerProduct.getQuantity() * purchaseStatus.getQuantity();
+                stockService.voidReservation(product, quantity);
+                purchaseStatus.addProductStockRollbacked(offerProduct);
+                if (log.isDebugEnabled()) log.debug("proceedRollback() : reservation product " + product.getProductID() + " canceled " + quantity);
+              }
+          }
       }
-    }
 
     //
     // cancel all shared voucher stocks
     //
 
-    if(purchaseStatus.getVoucherSharedAllocated() != null && !purchaseStatus.getVoucherSharedAllocated().isEmpty()){
-      while(purchaseStatus.getVoucherSharedAllocated() != null && !purchaseStatus.getVoucherSharedAllocated().isEmpty()){
-        OfferVoucher offerVoucher = purchaseStatus.getVoucherSharedAllocated().remove(0);
-        VoucherShared voucherShared = null;
-        try{
-          voucherShared = (VoucherShared) voucherService.getActiveVoucher(offerVoucher.getVoucherID(), originatingDeliveryRequest.getEventDate());
-        }catch(ClassCastException ex){
-          log.info("proceedRollback() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not cancel reservation of bad type shared voucher "+offerVoucher.getVoucherID());
-          purchaseStatus.addVoucherSharedRollBackFailed(offerVoucher);
-        }
-        if(voucherShared == null){
-          log.info("proceedRollback() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not cancel reservation of shared voucher "+offerVoucher.getVoucherID());
-          purchaseStatus.addVoucherSharedRollBackFailed(offerVoucher);
-        }else{
-          stockService.voidReservation(voucherShared, offerVoucher.getQuantity());
-          purchaseStatus.addVoucherSharedRollBacked(offerVoucher);
-          if(log.isDebugEnabled()) log.debug("proceedRollback() : reservation shared voucher " + voucherShared.getVoucherID() + " canceled " + offerVoucher.getQuantity());
-        }
+    if (purchaseStatus.getVoucherSharedAllocated() != null && !purchaseStatus.getVoucherSharedAllocated().isEmpty())
+      {
+        while (purchaseStatus.getVoucherSharedAllocated() != null && !purchaseStatus.getVoucherSharedAllocated().isEmpty())
+          {
+            OfferVoucher offerVoucher = purchaseStatus.getVoucherSharedAllocated().remove(0);
+            VoucherShared voucherShared = null;
+            try
+              {
+                voucherShared = (VoucherShared) voucherService.getActiveVoucher(offerVoucher.getVoucherID(), originatingDeliveryRequest.getEventDate());
+              } 
+            catch (ClassCastException ex)
+              {
+                log.info("proceedRollback() : (offer " + purchaseStatus.getOfferID() + ", subscriberID " + purchaseStatus.getSubscriberID() + ") : could not cancel reservation of bad type shared voucher " + offerVoucher.getVoucherID());
+                purchaseStatus.addVoucherSharedRollBackFailed(offerVoucher);
+              }
+            if (voucherShared == null)
+              {
+                log.info("proceedRollback() : (offer " + purchaseStatus.getOfferID() + ", subscriberID " + purchaseStatus.getSubscriberID() + ") : could not cancel reservation of shared voucher " + offerVoucher.getVoucherID());
+                purchaseStatus.addVoucherSharedRollBackFailed(offerVoucher);
+              } 
+            else
+              {
+                stockService.voidReservation(voucherShared, offerVoucher.getQuantity());
+                purchaseStatus.addVoucherSharedRollBacked(offerVoucher);
+                if (log.isDebugEnabled()) log.debug("proceedRollback() : reservation shared voucher " + voucherShared.getVoucherID() + " canceled " + offerVoucher.getQuantity());
+              }
+          }
       }
-    }
 
     //
     // cancel all personal vouchers allocated
     //
 
-    if(purchaseStatus.getVoucherPersonalAllocated() != null && !purchaseStatus.getVoucherPersonalAllocated().isEmpty()){
-      while(purchaseStatus.getVoucherPersonalAllocated() != null && !purchaseStatus.getVoucherPersonalAllocated().isEmpty()){
-        OfferVoucher offerVoucher = purchaseStatus.getVoucherPersonalAllocated().remove(0);
-        VoucherPersonal voucherPersonal = null;
-        try{
-          voucherPersonal = (VoucherPersonal) voucherService.getActiveVoucher(offerVoucher.getVoucherID(), originatingDeliveryRequest.getEventDate());
-        }catch(ClassCastException ex){
-          log.info("proceedRollback() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not cancel reservation of bad type Personal voucher "+offerVoucher.getVoucherID());
-          purchaseStatus.addVoucherPersonalRollBackFailed(offerVoucher);
-        }
-        if(voucherPersonal == null){
-          log.info("proceedRollback() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not cancel reservation of Personal voucher "+offerVoucher.getVoucherID());
-          purchaseStatus.addVoucherPersonalRollBackFailed(offerVoucher);
-        }else{
-          if(voucherService.getVoucherPersonalESService().voidReservation(voucherPersonal.getSupplierID(),offerVoucher.getVoucherCode())){
-            purchaseStatus.addVoucherPersonalRollBacked(offerVoucher);
-            if(log.isDebugEnabled()) log.debug("proceedRollback : reservation Personal voucher " + voucherPersonal.getVoucherID() + " canceled " + offerVoucher.getVoucherCode());
-          }else{
-            log.info("proceedRollback() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not cancel reservation in ES for Personal voucher "+offerVoucher.getVoucherID());
-            purchaseStatus.addVoucherPersonalRollBackFailed(offerVoucher);
+    if (purchaseStatus.getVoucherPersonalAllocated() != null && !purchaseStatus.getVoucherPersonalAllocated().isEmpty())
+      {
+        while (purchaseStatus.getVoucherPersonalAllocated() != null && !purchaseStatus.getVoucherPersonalAllocated().isEmpty())
+          {
+            OfferVoucher offerVoucher = purchaseStatus.getVoucherPersonalAllocated().remove(0);
+            VoucherPersonal voucherPersonal = null;
+            try
+              {
+                voucherPersonal = (VoucherPersonal) voucherService.getActiveVoucher(offerVoucher.getVoucherID(), originatingDeliveryRequest.getEventDate());
+              } catch (ClassCastException ex)
+              {
+                log.info("proceedRollback() : (offer " + purchaseStatus.getOfferID() + ", subscriberID " + purchaseStatus.getSubscriberID() + ") : could not cancel reservation of bad type Personal voucher " + offerVoucher.getVoucherID());
+                purchaseStatus.addVoucherPersonalRollBackFailed(offerVoucher);
+              }
+            if (voucherPersonal == null)
+              {
+                log.info("proceedRollback() : (offer " + purchaseStatus.getOfferID() + ", subscriberID " + purchaseStatus.getSubscriberID() + ") : could not cancel reservation of Personal voucher " + offerVoucher.getVoucherID());
+                purchaseStatus.addVoucherPersonalRollBackFailed(offerVoucher);
+              } 
+            else
+              {
+                if (voucherService.getVoucherPersonalESService().voidReservation(voucherPersonal.getSupplierID(), offerVoucher.getVoucherCode()))
+                  {
+                    purchaseStatus.addVoucherPersonalRollBacked(offerVoucher);
+                    if (log.isDebugEnabled()) log.debug("proceedRollback : reservation Personal voucher " + voucherPersonal.getVoucherID() + " canceled " + offerVoucher.getVoucherCode());
+                  } 
+                else
+                  {
+                    log.info("proceedRollback() : (offer " + purchaseStatus.getOfferID() + ", subscriberID " + purchaseStatus.getSubscriberID() + ") : could not cancel reservation in ES for Personal voucher " + offerVoucher.getVoucherID());
+                    purchaseStatus.addVoucherPersonalRollBackFailed(offerVoucher);
+                  }
+              }
           }
-        }
       }
-    }
 
     //
     // cancel all offer stocks
     //
-    
-    if(purchaseStatus.getOfferStockDebited() != null && !purchaseStatus.getOfferStockDebited().isEmpty()){
-      while(purchaseStatus.getOfferStockDebited() != null && !purchaseStatus.getOfferStockDebited().isEmpty()){
-        String offerID = purchaseStatus.getOfferStockDebited().remove(0);
-        Offer offer = offerService.getActiveOffer(offerID, originatingDeliveryRequest.getEventDate());
-        if(offer == null){
-          purchaseStatus.addOfferStockRollbackFailed(offerID);
-          log.info("proceedRollback() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not cancel reservation of offer "+offerID);
-        }else{
-          int quantity = purchaseStatus.getQuantity();
-          stockService.voidReservation(offer, quantity);
-          purchaseStatus.addOfferStockRollbacked(offerID);
-          if(log.isDebugEnabled()) log.debug("proceedRollback() : reservation offer " + offer.getOfferID() + " canceled");
-        }
+
+    if (purchaseStatus.getOfferStockDebited() != null && !purchaseStatus.getOfferStockDebited().isEmpty())
+      {
+        while (purchaseStatus.getOfferStockDebited() != null && !purchaseStatus.getOfferStockDebited().isEmpty())
+          {
+            String offerID = purchaseStatus.getOfferStockDebited().remove(0);
+            Offer offer = offerService.getActiveOffer(offerID, originatingDeliveryRequest.getEventDate());
+            if (offer == null)
+              {
+                purchaseStatus.addOfferStockRollbackFailed(offerID);
+                log.info("proceedRollback() : (offer " + purchaseStatus.getOfferID() + ", subscriberID " + purchaseStatus.getSubscriberID() + ") : could not cancel reservation of offer " + offerID);
+              } 
+            else
+              {
+                int quantity = purchaseStatus.getQuantity();
+                stockService.voidReservation(offer, quantity);
+                purchaseStatus.addOfferStockRollbacked(offerID);
+                if (log.isDebugEnabled()) log.debug("proceedRollback() : reservation offer " + offer.getOfferID() + " canceled");
+              }
+          }
       }
-    }
 
     //
     // cancel all payments
     //
-    
-    if(purchaseStatus.getPaymentDebited() != null && !purchaseStatus.getPaymentDebited().isEmpty()){
-      OfferPrice offerPrice = purchaseStatus.getPaymentDebited().remove(0);
-      if(offerPrice == null || offerPrice.getAmount() <= 0){// => offer is free
-        purchaseStatus.addPaymentRollbacked(offerPrice);
-      }else{
-        purchaseStatus.setPaymentBeingRollbacked(offerPrice);
-        requestCommodityDelivery(originatingDeliveryRequest,purchaseStatus);
+
+    if (purchaseStatus.getPaymentDebited() != null && !purchaseStatus.getPaymentDebited().isEmpty())
+      {
+        OfferPrice offerPrice = purchaseStatus.getPaymentDebited().remove(0);
+        if (offerPrice == null || offerPrice.getAmount() <= 0)
+          {// => offer is free
+            purchaseStatus.addPaymentRollbacked(offerPrice);
+          } 
+        else
+          {
+            purchaseStatus.setPaymentBeingRollbacked(offerPrice);
+            requestCommodityDelivery(originatingDeliveryRequest, purchaseStatus);
+            return;
+          }
+        proceedRollback(originatingDeliveryRequest, purchaseStatus, null, null);
         return;
       }
-      proceedRollback(originatingDeliveryRequest,purchaseStatus, null, null);
-      return;
-    }
 
     //
     // cancel all product deliveries
     //
 
-    if(purchaseStatus.getProductCredited() != null && !purchaseStatus.getProductCredited().isEmpty()){
-      OfferProduct offerProduct = purchaseStatus.getProductCredited().remove(0);
-      if(offerProduct != null){
-        purchaseStatus.setProductBeingRollbacked(offerProduct);
-        requestCommodityDelivery(originatingDeliveryRequest,purchaseStatus);
-        return;
-      }else{
-        proceedRollback(originatingDeliveryRequest,purchaseStatus, null, null);
-        return;
+    if (purchaseStatus.getProductCredited() != null && !purchaseStatus.getProductCredited().isEmpty())
+      {
+        OfferProduct offerProduct = purchaseStatus.getProductCredited().remove(0);
+        if (offerProduct != null)
+          {
+            purchaseStatus.setProductBeingRollbacked(offerProduct);
+            requestCommodityDelivery(originatingDeliveryRequest, purchaseStatus);
+            return;
+          } 
+        else
+          {
+            proceedRollback(originatingDeliveryRequest, purchaseStatus, null, null);
+            return;
+          }
       }
-    }
 
     //
     // rollback completed => update and return response (failed)
     //
-    
+
     submitCorrelatorUpdate(purchaseStatus);
-    
   }
 
   /*****************************************
@@ -2120,146 +2288,172 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
   *
   *****************************************/
   
-  private void requestCommodityDelivery(DeliveryRequest originatingRequest, PurchaseRequestStatus purchaseStatus){
-    if(log.isDebugEnabled()) log.debug("requestCommodityDelivery() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") called ...");
-    
+  private void requestCommodityDelivery(DeliveryRequest originatingRequest, PurchaseRequestStatus purchaseStatus)
+  {
+    if (log.isDebugEnabled()) log.debug("requestCommodityDelivery() : (offer " + purchaseStatus.getOfferID() + ", subscriberID " + purchaseStatus.getSubscriberID() + ") called ...");
+
     //
     // debit price
     //
-    
+
     OfferPrice offerPrice = purchaseStatus.getPaymentBeingDebited();
-    if(offerPrice != null){
-      if(log.isDebugEnabled()) log.debug("requestCommodityDelivery() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") debiting offer price ...");
-      purchaseStatus.incrementNewRequestCounter();
-      String deliveryRequestID = zookeeperUniqueKeyServer.getStringKey();
-		try {
-		  CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(paymentMeanService,deliverableService,originatingRequest,purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), offerPrice.getProviderID(), offerPrice.getPaymentMeanID(), CommodityDeliveryOperation.Debit, offerPrice.getAmount() * purchaseStatus.getQuantity(), null, 0, "");
-          if(log.isDebugEnabled()) log.debug("requestCommodityDelivery() : PurchaseFulfillmentManager.requestCommodityDelivery (deliveryReqID "+deliveryRequestID+", originatingDeliveryRequestID "+purchaseStatus.getCorrelator()+", offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") debiting offer price DONE");
-		} catch (CommodityDeliveryException e) {
-          log.info("requestCommodityDelivery() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") debiting paymentmean ("+offerPrice.getPaymentMeanID()+") FAILED => rollback");
-		  purchaseStatus.setPaymentDebitFailed(offerPrice);
-		  purchaseStatus.setPaymentBeingDebited(null);
-		  proceedRollback(originatingRequest,purchaseStatus, PurchaseFulfillmentStatus.PRICE_NOT_APPLICABLE, "could not debit paymentmean "+offerPrice.getPaymentMeanID()+" "+e.getError().getGenericResponseMessage());
-		}
-    }
-    
+    if (offerPrice != null)
+      {
+        if (log.isDebugEnabled()) log.debug("requestCommodityDelivery() : (offer " + purchaseStatus.getOfferID() + ", subscriberID " + purchaseStatus.getSubscriberID() + ") debiting offer price ...");
+        purchaseStatus.incrementNewRequestCounter();
+        String deliveryRequestID = zookeeperUniqueKeyServer.getStringKey();
+        try
+          {
+            CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(paymentMeanService, deliverableService, originatingRequest, purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), offerPrice.getProviderID(), offerPrice.getPaymentMeanID(), CommodityDeliveryOperation.Debit, offerPrice.getAmount() * purchaseStatus.getQuantity(), null, 0, "");
+            if (log.isDebugEnabled()) log.debug("requestCommodityDelivery() : PurchaseFulfillmentManager.requestCommodityDelivery (deliveryReqID " + deliveryRequestID + ", originatingDeliveryRequestID " + purchaseStatus.getCorrelator() + ", offer " + purchaseStatus.getOfferID() + ", subscriberID " + purchaseStatus.getSubscriberID() + ") debiting offer price DONE");
+          } 
+        catch (CommodityDeliveryException e)
+          {
+            log.info("requestCommodityDelivery() : (offer " + purchaseStatus.getOfferID() + ", subscriberID " + purchaseStatus.getSubscriberID() + ") debiting paymentmean (" + offerPrice.getPaymentMeanID() + ") FAILED => rollback");
+            purchaseStatus.setPaymentDebitFailed(offerPrice);
+            purchaseStatus.setPaymentBeingDebited(null);
+            proceedRollback(originatingRequest, purchaseStatus, PurchaseFulfillmentStatus.PRICE_NOT_APPLICABLE, "could not debit paymentmean " + offerPrice.getPaymentMeanID() + " " + e.getError().getGenericResponseMessage());
+          }
+      }
+
     //
     // deliver product
     //
-    
+
     OfferProduct offerProduct = purchaseStatus.getProductBeingCredited();
-    if(offerProduct != null){
-      Product product = productService.getActiveProduct(offerProduct.getProductID(), originatingRequest.getEventDate());
-      if(product != null){
-        Deliverable deliverable = deliverableService.getActiveDeliverable(product.getDeliverableID(), originatingRequest.getEventDate());
-        int deliverableQuantity = product.getDeliverableQuantity();
-        TimeUnit deliverableValidityType = null;
-        int deliverableValidityPeriod = 0;
-        if (product.getDeliverableValidity() != null  &&  product.getDeliverableValidity().getValidityPeriod() != null)
+    if (offerProduct != null)
+      {
+        Product product = productService.getActiveProduct(offerProduct.getProductID(), originatingRequest.getEventDate());
+        if (product != null)
           {
-            deliverableValidityPeriod = product.getDeliverableValidity().getValidityPeriod();
-          }
-        if (product.getDeliverableValidity() != null && product.getDeliverableValidity().getValidityType() != null)
+            Deliverable deliverable = deliverableService.getActiveDeliverable(product.getDeliverableID(), originatingRequest.getEventDate());
+            int deliverableQuantity = product.getDeliverableQuantity();
+            TimeUnit deliverableValidityType = null;
+            int deliverableValidityPeriod = 0;
+            if (product.getDeliverableValidity() != null && product.getDeliverableValidity().getValidityPeriod() != null)
+              {
+                deliverableValidityPeriod = product.getDeliverableValidity().getValidityPeriod();
+              }
+            if (product.getDeliverableValidity() != null && product.getDeliverableValidity().getValidityType() != null)
+              {
+                deliverableValidityType = product.getDeliverableValidity().getValidityType();
+              }
+
+            if (deliverable != null)
+              {
+                if (log.isDebugEnabled()) log.debug("requestCommodityDelivery() : (offer " + purchaseStatus.getOfferID() + ", subscriberID " + purchaseStatus.getSubscriberID() + ") delivering product (" + offerProduct.getProductID() + ") ...");
+                purchaseStatus.incrementNewRequestCounter();
+                String deliveryRequestID = zookeeperUniqueKeyServer.getStringKey();
+                try
+                  {
+                    CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(paymentMeanService, deliverableService, originatingRequest, purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), deliverable.getFulfillmentProviderID(), deliverable.getDeliverableID(), CommodityDeliveryOperation.Credit, deliverableQuantity * offerProduct.getQuantity() * purchaseStatus.getQuantity(), deliverableValidityType, deliverableValidityPeriod, "");
+                    if (log.isDebugEnabled()) log.debug("requestCommodityDelivery() : (deliveryReqID " + deliveryRequestID + ", originatingDeliveryRequestID " + purchaseStatus.getCorrelator() + ", offer " + purchaseStatus.getOfferID() + ", subscriberID " + purchaseStatus.getSubscriberID() + ") delivering product (" + offerProduct.getProductID() + ") DONE");
+                  } 
+                catch (CommodityDeliveryException e)
+                  {
+                    log.info("requestCommodityDelivery() : (offer " + purchaseStatus.getOfferID() + ", subscriberID " + purchaseStatus.getSubscriberID() + ") delivering deliverable (" + offerProduct.getProductID() + ") FAILED => rollback");
+                    purchaseStatus.setProductCreditFailed(offerProduct);
+                    purchaseStatus.setProductBeingCredited(null);
+                    proceedRollback(originatingRequest, purchaseStatus, PurchaseFulfillmentStatus.INVALID_PRODUCT, "could not credit deliverable " + product.getDeliverableID() + " " + e.getError().getGenericResponseMessage());
+                  }
+              } else
+              {
+                log.info("requestCommodityDelivery() : (offer " + purchaseStatus.getOfferID() + ", subscriberID " + purchaseStatus.getSubscriberID() + ") delivering deliverable (" + offerProduct.getProductID() + ") FAILED => rollback");
+                purchaseStatus.setProductCreditFailed(offerProduct);
+                purchaseStatus.setProductBeingCredited(null);
+                proceedRollback(originatingRequest, purchaseStatus, PurchaseFulfillmentStatus.INVALID_PRODUCT, "could not credit deliverable " + product.getDeliverableID());
+              }
+          } else
           {
-            deliverableValidityType = product.getDeliverableValidity().getValidityType();
+            log.info("requestCommodityDelivery() : (offer " + purchaseStatus.getOfferID() + ", subscriberID " + purchaseStatus.getSubscriberID() + ") delivering product (" + offerProduct.getProductID() + ") FAILED => rollback");
+            purchaseStatus.setProductCreditFailed(offerProduct);
+            purchaseStatus.setProductBeingCredited(null);
+            proceedRollback(originatingRequest, purchaseStatus, PurchaseFulfillmentStatus.PRODUCT_NOT_FOUND, "could not credit product " + offerProduct.getProductID());
           }
-        
-        if(deliverable != null){
-          if(log.isDebugEnabled()) log.debug("requestCommodityDelivery() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") delivering product ("+offerProduct.getProductID()+") ...");
-          purchaseStatus.incrementNewRequestCounter();
-          String deliveryRequestID = zookeeperUniqueKeyServer.getStringKey();
-			try {
-              CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(paymentMeanService,deliverableService,originatingRequest,purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), deliverable.getFulfillmentProviderID(), deliverable.getDeliverableID(), CommodityDeliveryOperation.Credit, deliverableQuantity * offerProduct.getQuantity() * purchaseStatus.getQuantity(), deliverableValidityType, deliverableValidityPeriod, "");
-              if(log.isDebugEnabled()) log.debug("requestCommodityDelivery() : (deliveryReqID "+deliveryRequestID+", originatingDeliveryRequestID "+purchaseStatus.getCorrelator()+", offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") delivering product ("+offerProduct.getProductID()+") DONE");
-			} catch (CommodityDeliveryException e) {
-              log.info("requestCommodityDelivery() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") delivering deliverable ("+offerProduct.getProductID()+") FAILED => rollback");
-              purchaseStatus.setProductCreditFailed(offerProduct);
-              purchaseStatus.setProductBeingCredited(null);
-              proceedRollback(originatingRequest,purchaseStatus, PurchaseFulfillmentStatus.INVALID_PRODUCT, "could not credit deliverable "+product.getDeliverableID()+" "+e.getError().getGenericResponseMessage());
-			}
-        }else{
-          log.info("requestCommodityDelivery() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") delivering deliverable ("+offerProduct.getProductID()+") FAILED => rollback");
-          purchaseStatus.setProductCreditFailed(offerProduct);
-          purchaseStatus.setProductBeingCredited(null);
-          proceedRollback(originatingRequest,purchaseStatus, PurchaseFulfillmentStatus.INVALID_PRODUCT, "could not credit deliverable "+product.getDeliverableID());
-        }
-      }else{
-        log.info("requestCommodityDelivery() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") delivering product ("+offerProduct.getProductID()+") FAILED => rollback");
-        purchaseStatus.setProductCreditFailed(offerProduct);
-        purchaseStatus.setProductBeingCredited(null);
-        proceedRollback(originatingRequest,purchaseStatus, PurchaseFulfillmentStatus.PRODUCT_NOT_FOUND, "could not credit product "+offerProduct.getProductID());
       }
-    }
-    
+
     //
     // rollback debited price
     //
-    
+
     OfferPrice offerPriceRollback = purchaseStatus.getPaymentBeingRollbacked();
-    if(offerPriceRollback != null){
-      if(log.isDebugEnabled()) log.debug("requestCommodityDelivery() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking offer price ...");
-      purchaseStatus.incrementNewRequestCounter();
-      String deliveryRequestID = zookeeperUniqueKeyServer.getStringKey();
-		try {
-          CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(paymentMeanService,deliverableService,originatingRequest,purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), offerPriceRollback.getProviderID(), offerPriceRollback.getPaymentMeanID(), CommodityDeliveryOperation.Credit, offerPriceRollback.getAmount() * purchaseStatus.getQuantity(), null, 0, "");
-          if(log.isDebugEnabled()) log.debug("requestCommodityDelivery() : (deliveryReqID "+deliveryRequestID+", originatingDeliveryRequestID "+purchaseStatus.getCorrelator()+", offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking offer price DONE");
-		} catch (CommodityDeliveryException e) {
-          log.info("requestCommodityDelivery() : (deliveryReqID "+deliveryRequestID+", originatingDeliveryRequestID "+purchaseStatus.getCorrelator()+", offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking offer price FAILED "+e.getError().getGenericResponseMessage());
-          purchaseStatus.addPaymentRollbackFailed(offerPrice);
-          purchaseStatus.setPaymentBeingRollbacked(null);
-          proceedRollback(originatingRequest,purchaseStatus, null, null);
-		}
-    }
-    
+    if (offerPriceRollback != null)
+      {
+        if (log.isDebugEnabled()) log.debug("requestCommodityDelivery() : (offer " + purchaseStatus.getOfferID() + ", subscriberID " + purchaseStatus.getSubscriberID() + ") rollbacking offer price ...");
+        purchaseStatus.incrementNewRequestCounter();
+        String deliveryRequestID = zookeeperUniqueKeyServer.getStringKey();
+        try
+          {
+            CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(paymentMeanService, deliverableService, originatingRequest, purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), offerPriceRollback.getProviderID(), offerPriceRollback.getPaymentMeanID(), CommodityDeliveryOperation.Credit, offerPriceRollback.getAmount() * purchaseStatus.getQuantity(), null, 0, "");
+            if (log.isDebugEnabled()) log.debug("requestCommodityDelivery() : (deliveryReqID " + deliveryRequestID + ", originatingDeliveryRequestID " + purchaseStatus.getCorrelator() + ", offer " + purchaseStatus.getOfferID() + ", subscriberID " + purchaseStatus.getSubscriberID() + ") rollbacking offer price DONE");
+          } 
+        catch (CommodityDeliveryException e)
+          {
+            log.info("requestCommodityDelivery() : (deliveryReqID " + deliveryRequestID + ", originatingDeliveryRequestID " + purchaseStatus.getCorrelator() + ", offer " + purchaseStatus.getOfferID() + ", subscriberID " + purchaseStatus.getSubscriberID() + ") rollbacking offer price FAILED " + e.getError().getGenericResponseMessage());
+            purchaseStatus.addPaymentRollbackFailed(offerPrice);
+            purchaseStatus.setPaymentBeingRollbacked(null);
+            proceedRollback(originatingRequest, purchaseStatus, null, null);
+          }
+      }
+
     //
     // rollback product delivery
     //
-    
-    OfferProduct offerProductRollback = purchaseStatus.getProductBeingRollbacked();
-    if(offerProductRollback != null){
-      Product product = productService.getActiveProduct(offerProductRollback.getProductID(), originatingRequest.getEventDate());
-      if(product != null){
-        Deliverable deliverable = deliverableService.getActiveDeliverable(product.getDeliverableID(), originatingRequest.getEventDate());
-        int deliverableQuantity = product.getDeliverableQuantity();
-        TimeUnit deliverableValidityType = null;
-        int deliverableValidityPeriod = 0;
-        if (product.getDeliverableValidity() != null && product.getDeliverableValidity().getValidityPeriod() != null)
-          {
-            deliverableValidityPeriod = product.getDeliverableValidity().getValidityPeriod();
-          }
-        if (product.getDeliverableValidity() != null && product.getDeliverableValidity().getValidityType() != null)
-          {
-            deliverableValidityType = product.getDeliverableValidity().getValidityType();
-          }
-        if(deliverable != null){
-          if(log.isDebugEnabled()) log.debug("requestCommodityDelivery() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking product delivery ("+offerProductRollback.getProductID()+") ...");
-          purchaseStatus.incrementNewRequestCounter();
-          String deliveryRequestID = zookeeperUniqueKeyServer.getStringKey();
-			try {
-              CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(paymentMeanService,deliverableService,originatingRequest,purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), deliverable.getFulfillmentProviderID(), deliverable.getDeliverableID(), CommodityDeliveryOperation.Debit, deliverableQuantity * offerProduct.getQuantity() * purchaseStatus.getQuantity() , deliverableValidityType, deliverableValidityPeriod, "");
-              if(log.isDebugEnabled()) log.debug("requestCommodityDelivery() : (deliveryReqID "+deliveryRequestID+", originatingDeliveryRequestID "+purchaseStatus.getCorrelator()+", offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking product delivery ("+offerProductRollback.getProductID()+") DONE");
-			} catch (CommodityDeliveryException e) {
-              log.info("requestCommodityDelivery() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking deliverable delivery failed (product id "+offerProductRollback.getProductID()+")");
-              purchaseStatus.addProductRollbackFailed(offerProductRollback);
-              purchaseStatus.setProductBeingRollbacked(null);
-              proceedRollback(originatingRequest,purchaseStatus, null, null);
-			}
-        }else{
-          log.info("requestCommodityDelivery() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking deliverable delivery failed (product id "+offerProductRollback.getProductID()+")");
-          purchaseStatus.addProductRollbackFailed(offerProductRollback);
-          purchaseStatus.setProductBeingRollbacked(null);
-          proceedRollback(originatingRequest,purchaseStatus, null, null);
-        }
-      }else{
-        log.info("requestCommodityDelivery() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") rollbacking product delivery failed (product id "+offerProductRollback.getProductID()+")");
-        purchaseStatus.addProductRollbackFailed(offerProductRollback);
-        purchaseStatus.setProductBeingRollbacked(null);
-        proceedRollback(originatingRequest,purchaseStatus, null, null);
-      }
-      
-    }
 
-    if(log.isDebugEnabled()) log.debug("requestCommodityDelivery() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") DONE");
+    OfferProduct offerProductRollback = purchaseStatus.getProductBeingRollbacked();
+    if (offerProductRollback != null)
+      {
+        Product product = productService.getActiveProduct(offerProductRollback.getProductID(), originatingRequest.getEventDate());
+        if (product != null)
+          {
+            Deliverable deliverable = deliverableService.getActiveDeliverable(product.getDeliverableID(), originatingRequest.getEventDate());
+            int deliverableQuantity = product.getDeliverableQuantity();
+            TimeUnit deliverableValidityType = null;
+            int deliverableValidityPeriod = 0;
+            if (product.getDeliverableValidity() != null && product.getDeliverableValidity().getValidityPeriod() != null)
+              {
+                deliverableValidityPeriod = product.getDeliverableValidity().getValidityPeriod();
+              }
+            if (product.getDeliverableValidity() != null && product.getDeliverableValidity().getValidityType() != null)
+              {
+                deliverableValidityType = product.getDeliverableValidity().getValidityType();
+              }
+            if (deliverable != null)
+              {
+                if (log.isDebugEnabled()) log.debug("requestCommodityDelivery() : (offer " + purchaseStatus.getOfferID() + ", subscriberID " + purchaseStatus.getSubscriberID() + ") rollbacking product delivery (" + offerProductRollback.getProductID() + ") ...");
+                purchaseStatus.incrementNewRequestCounter();
+                String deliveryRequestID = zookeeperUniqueKeyServer.getStringKey();
+                try
+                  {
+                    
+                    CommodityDeliveryManagerRemovalUtils.sendCommodityDeliveryRequest(paymentMeanService, deliverableService, originatingRequest, purchaseStatus.getJSONRepresentation(), application_ID, deliveryRequestID, purchaseStatus.getCorrelator(), false, purchaseStatus.getEventID(), purchaseStatus.getModuleID(), purchaseStatus.getFeatureID(), purchaseStatus.getSubscriberID(), deliverable.getFulfillmentProviderID(), deliverable.getDeliverableID(), CommodityDeliveryOperation.Debit, deliverableQuantity * offerProductRollback.getQuantity() * purchaseStatus.getQuantity(), deliverableValidityType, deliverableValidityPeriod, "");
+                    if (log.isDebugEnabled()) log.debug("requestCommodityDelivery() : (deliveryReqID " + deliveryRequestID + ", originatingDeliveryRequestID " + purchaseStatus.getCorrelator() + ", offer " + purchaseStatus.getOfferID() + ", subscriberID " + purchaseStatus.getSubscriberID() + ") rollbacking product delivery (" + offerProductRollback.getProductID() + ") DONE");
+                  } 
+                catch (CommodityDeliveryException e)
+                  {
+                    log.info("requestCommodityDelivery() : (offer " + purchaseStatus.getOfferID() + ", subscriberID " + purchaseStatus.getSubscriberID() + ") rollbacking deliverable delivery failed (product id " + offerProductRollback.getProductID() + ")");
+                    purchaseStatus.addProductRollbackFailed(offerProductRollback);
+                    purchaseStatus.setProductBeingRollbacked(null);
+                    proceedRollback(originatingRequest, purchaseStatus, null, null);
+                  }
+              } 
+            else
+              {
+                log.info("requestCommodityDelivery() : (offer " + purchaseStatus.getOfferID() + ", subscriberID " + purchaseStatus.getSubscriberID() + ") rollbacking deliverable delivery failed (product id " + offerProductRollback.getProductID() + ")");
+                purchaseStatus.addProductRollbackFailed(offerProductRollback);
+                purchaseStatus.setProductBeingRollbacked(null);
+                proceedRollback(originatingRequest, purchaseStatus, null, null);
+              }
+          } 
+        else
+          {
+            log.info("requestCommodityDelivery() : (offer " + purchaseStatus.getOfferID() + ", subscriberID " + purchaseStatus.getSubscriberID() + ") rollbacking product delivery failed (product id " + offerProductRollback.getProductID() + ")");
+            purchaseStatus.addProductRollbackFailed(offerProductRollback);
+            purchaseStatus.setProductBeingRollbacked(null);
+            proceedRollback(originatingRequest, purchaseStatus, null, null);
+          }
+      }
+    if (log.isDebugEnabled()) log.debug("requestCommodityDelivery() : (offer " + purchaseStatus.getOfferID() + ", subscriberID " + purchaseStatus.getSubscriberID() + ") DONE");
   }
     
   /*****************************************

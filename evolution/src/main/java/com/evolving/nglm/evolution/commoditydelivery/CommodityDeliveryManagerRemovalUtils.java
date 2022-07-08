@@ -74,6 +74,7 @@ public class CommodityDeliveryManagerRemovalUtils {
 
 		String subscriberID = commodityDeliveryRequest.getSubscriberID();
 		String commodityID = commodityDeliveryRequest.getCommodityID();
+		String commodityAccountName = deliverableService.getActiveDeliverable(commodityID, commodityDeliveryRequest.getCreationDate()).getDeliverableName();
 		CommodityDeliveryManager.CommodityDeliveryOperation operation = commodityDeliveryRequest.getOperation();
 		int amount = commodityDeliveryRequest.getAmount();
 
@@ -95,16 +96,28 @@ public class CommodityDeliveryManagerRemovalUtils {
 		Deliverable deliverable = null;
 
 		// debit case, provider is in paymentMean
-		if(operation.equals(CommodityDeliveryManager.CommodityDeliveryOperation.Debit)){
-			paymentMean = paymentMeanService.getActivePaymentMean(commodityID, commodityDeliveryRequest.getEventDate());
-			if(paymentMean == null){
-				log.info("CommodityDeliveryManagerRemovalUtils.createCommodityDeliveryRequest (commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : paymentMean not found ");
-				throw new CommodityDeliveryException(RESTAPIGenericReturnCodes.BONUS_NOT_FOUND, "unknown payment mean");
-			}
-			externalAccountID = paymentMean.getExternalAccountID();
-			provider = Deployment.getFulfillmentProviders().get(paymentMean.getFulfillmentProviderID());
-		// all other are in deliverable
-		}else{
+        if (operation.equals(CommodityDeliveryManager.CommodityDeliveryOperation.Debit))
+          {
+            paymentMean = paymentMeanService.getActivePaymentMean(commodityID, commodityDeliveryRequest.getEventDate());
+            
+            //
+            //  serach by name
+            //
+            
+            if (paymentMean == null && commodityAccountName != null)
+              {
+                GUIManagedObject paymentMeanUnchecked = paymentMeanService.getStoredPaymentMeanByName(commodityAccountName, commodityDeliveryRequest.getTenantID());
+                paymentMean = paymentMeanUnchecked != null &&  paymentMeanUnchecked.getAccepted() ? (PaymentMean) paymentMeanUnchecked : null;
+              }
+            if (paymentMean == null)
+              {
+                log.info("CommodityDeliveryManagerRemovalUtils.createCommodityDeliveryRequest (commodity " + commodityAccountName + ", operation " + operation.getExternalRepresentation() + ", amount " + amount + ") : paymentMean not found ");
+                throw new CommodityDeliveryException(RESTAPIGenericReturnCodes.BONUS_NOT_FOUND, "unknown payment mean");
+              }
+            externalAccountID = paymentMean.getExternalAccountID();
+            provider = Deployment.getFulfillmentProviders().get(paymentMean.getFulfillmentProviderID());
+            // all other are in deliverable
+          }else{
 			deliverable = deliverableService.getActiveDeliverable(commodityID, commodityDeliveryRequest.getEventDate());
 			if(deliverable == null){
 				log.info("CommodityDeliveryManagerRemovalUtils.createCommodityDeliveryRequest (commodity "+commodityID+", operation "+operation.getExternalRepresentation()+", amount "+amount+") : commodity not found ");
@@ -266,13 +279,14 @@ public class CommodityDeliveryManagerRemovalUtils {
 
 	}
 
-	// this one is used by PurchaseFulfillmentManager
-	public static void sendCommodityDeliveryRequest(PaymentMeanService paymentMeanService, DeliverableService deliverableService, DeliveryRequest originatingDeliveryRequest, JSONObject briefcase, String applicationID, String deliveryRequestID, String originatingDeliveryRequestID, boolean originatingRequest, String eventID, String moduleID, String featureID, String subscriberID, String providerID, String commodityID, CommodityDeliveryManager.CommodityDeliveryOperation operation, long amount, EvolutionUtilities.TimeUnit validityPeriodType, Integer validityPeriodQuantity, String origin) throws CommodityDeliveryException {
-		HashMap<String,Object> requestData = createCommodityDeliveryRequest(briefcase,applicationID,deliveryRequestID,originatingDeliveryRequestID,originatingRequest,eventID,moduleID,featureID,subscriberID,providerID,commodityID,operation,amount,validityPeriodType,validityPeriodQuantity,origin);
-		CommodityDeliveryManager.CommodityDeliveryRequest commodityDeliveryRequest = new CommodityDeliveryManager.CommodityDeliveryRequest(originatingDeliveryRequest,JSONUtilities.encodeObject(requestData), Deployment.getDeliveryManagers().get(CommodityDeliveryManager.COMMODITY_DELIVERY_TYPE), originatingDeliveryRequest.getTenantID());
-		DeliveryRequest deliveryRequest = createDeliveryRequest(/*applicationID, */commodityDeliveryRequest,paymentMeanService,deliverableService, null, null);
-		send(deliveryRequest,false);
-	}
+    // this one is used by PurchaseFulfillmentManager
+    public static void sendCommodityDeliveryRequest(PaymentMeanService paymentMeanService, DeliverableService deliverableService, DeliveryRequest originatingDeliveryRequest, JSONObject briefcase, String applicationID, String deliveryRequestID, String originatingDeliveryRequestID, boolean originatingRequest, String eventID, String moduleID, String featureID, String subscriberID, String providerID, String commodityID, CommodityDeliveryManager.CommodityDeliveryOperation operation, long amount, EvolutionUtilities.TimeUnit validityPeriodType, Integer validityPeriodQuantity, String origin) throws CommodityDeliveryException
+    {
+      HashMap<String, Object> requestData = createCommodityDeliveryRequest(briefcase, applicationID, deliveryRequestID, originatingDeliveryRequestID, originatingRequest, eventID, moduleID, featureID, subscriberID, providerID, commodityID, operation, amount, validityPeriodType, validityPeriodQuantity, origin);
+      CommodityDeliveryManager.CommodityDeliveryRequest commodityDeliveryRequest = new CommodityDeliveryManager.CommodityDeliveryRequest(originatingDeliveryRequest, JSONUtilities.encodeObject(requestData), Deployment.getDeliveryManagers().get(CommodityDeliveryManager.COMMODITY_DELIVERY_TYPE), originatingDeliveryRequest.getTenantID());
+      DeliveryRequest deliveryRequest = createDeliveryRequest(/* applicationID, */commodityDeliveryRequest, paymentMeanService, deliverableService, null, null);
+      send(deliveryRequest, false);
+    }
 
     public static @Nullable Future<BonusDelivery> sendCommodityDeliveryRequest(boolean returnResponse, PaymentMeanService paymentMeanService, DeliverableService deliverableService, SubscriberProfile subscriberProfile, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader, JSONObject briefcase, String applicationID, String deliveryRequestID, String originatingDeliveryRequestID, boolean originatingRequest, String eventID, String moduleID, String featureID, String subscriberID, String providerID, String commodityID, CommodityDeliveryManager.CommodityDeliveryOperation operation, long amount, EvolutionUtilities.TimeUnit validityPeriodType, Integer validityPeriodQuantity, DeliveryRequest.DeliveryPriority priority, String origin, int tenantID, Date expirationDateFrom, Date expirationDateTo) throws CommodityDeliveryException
     {
