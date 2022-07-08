@@ -454,12 +454,13 @@ public class TokenUtils
     Set<String> offerObjectiveIds = selectedScoringSegment.getAlwaysAppendOfferObjectiveIDs();
     for(Offer offer : offerService.getActiveOffers(eventDate, tenantID))
       {
-        boolean inList = true;
+    	//EVPRO-1590: OfferObjectives in scoringsegment should allow if any of the offer's offerObjectives matches. It is not required that all of the offer's offer-objective should be present in the "ALways append objectives"
+    	boolean inList = false;
         for (OfferObjectiveInstance offerObjective : offer.getOfferObjectives()) 
           {
-            if (!offerObjectiveIds.contains(offerObjective.getOfferObjectiveID())) 
+            if (offerObjectiveIds.contains(offerObjective.getOfferObjectiveID())) 
               {
-                inList = false;
+                inList = true;
                 break;
               }
           }
