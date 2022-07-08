@@ -1,26 +1,34 @@
 package com.evolving.nglm.evolution.elasticsearch;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.Date;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import javax.net.ssl.SSLContext;
 
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
+import org.apache.http.ssl.SSLContextBuilder;
+import org.apache.http.ssl.SSLContexts;
 import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchStatusException;
@@ -29,10 +37,10 @@ import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.search.ClearScrollRequest;
 import org.elasticsearch.action.search.MultiSearchRequest;
 import org.elasticsearch.action.search.MultiSearchResponse;
+import org.elasticsearch.action.search.MultiSearchResponse.Item;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchScrollRequest;
-import org.elasticsearch.action.search.MultiSearchResponse.Item;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
@@ -46,7 +54,6 @@ import org.elasticsearch.client.indices.GetMappingsRequest;
 import org.elasticsearch.client.indices.GetMappingsResponse;
 import org.elasticsearch.client.sniff.Sniffer;
 import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -75,9 +82,7 @@ import com.evolving.nglm.evolution.GUIManager;
 import com.evolving.nglm.evolution.GUIManager.API;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
-import com.evolving.nglm.evolution.JourneyESSinkConnector;
 import com.evolving.nglm.evolution.JourneyMetricDeclaration;
-import com.evolving.nglm.evolution.JourneyStatistic;
 import com.evolving.nglm.evolution.JourneyStatisticESSinkConnector;
 import com.evolving.nglm.evolution.MailNotificationManager.MailNotificationManagerRequest;
 import com.evolving.nglm.evolution.NotificationManager.NotificationManagerRequest;
@@ -98,7 +103,6 @@ import com.evolving.nglm.evolution.reports.notification.NotificationReportMonoPh
 import com.evolving.nglm.evolution.reports.odr.ODRReportDriver;
 import com.evolving.nglm.evolution.reports.odr.ODRReportMonoPhase;
 import com.evolving.nglm.evolution.reports.vdr.VDRReportDriver;
-import com.evolving.nglm.evolution.reports.vdr.VDRReportMonoPhase;
 
 public class ElasticsearchClientAPI extends RestHighLevelClient
 {
@@ -182,14 +186,28 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
       @Override
       public HttpAsyncClientBuilder customizeHttpClient(HttpAsyncClientBuilder httpAsyncClientBuilder)
       {
-    	  SSLContextBuilder sslBuilder = SSLContexts.custom()
-                  .loadTrustMaterial(null, (x509Certificates, s) -> true);
+    	  SSLContextBuilder sslBuilder;
+		try {
+			sslBuilder = SSLContexts.custom()
+			          .loadTrustMaterial(null, (x509Certificates, s) -> true);
+		
                   final SSLContext sslContext = sslBuilder.build();
         CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
         credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(elasticsearchConnectionSettings.getUser(), elasticsearchConnectionSettings.getPassword()));
         return httpAsyncClientBuilder.setDefaultCredentialsProvider(credentialsProvider)
         		.setSSLContext(sslContext)
                 .setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE);
+		} catch (NoSuchAlgorithmException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (KeyStoreException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (KeyManagementException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
       }
     });
     
