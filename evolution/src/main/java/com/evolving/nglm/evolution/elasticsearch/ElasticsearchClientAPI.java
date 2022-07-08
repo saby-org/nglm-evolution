@@ -230,7 +230,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
     for(String serverString:servers.trim().split(",")) {
       String[] server = serverString.split(":");
       if(server.length!=2) throw new IllegalArgumentException("bad server conf for "+server);
-      try { toRet.add(new HttpHost(server[0],Integer.valueOf(server[1]),"http")); }
+      try { toRet.add(new HttpHost(server[0],Integer.valueOf(server[1]),"https")); }
       catch (NumberFormatException e) { throw new IllegalArgumentException("bad server port conf for "+server); }
     }
 
