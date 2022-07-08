@@ -182,9 +182,14 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
       @Override
       public HttpAsyncClientBuilder customizeHttpClient(HttpAsyncClientBuilder httpAsyncClientBuilder)
       {
+    	  SSLContextBuilder sslBuilder = SSLContexts.custom()
+                  .loadTrustMaterial(null, (x509Certificates, s) -> true);
+                  final SSLContext sslContext = sslBuilder.build();
         CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
         credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(elasticsearchConnectionSettings.getUser(), elasticsearchConnectionSettings.getPassword()));
-        return httpAsyncClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
+        return httpAsyncClientBuilder.setDefaultCredentialsProvider(credentialsProvider)
+        		.setSSLContext(sslContext)
+                .setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE);
       }
     });
     
