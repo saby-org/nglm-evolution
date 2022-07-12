@@ -4013,12 +4013,16 @@ public class EvolutionEngine
         else if (purchaseFulfillmentRequest.getCancelPurchase())
           {
             List<Pair<String, Date>> purchases = subscriberProfile.getOfferPurchaseSalesChannelHistory().get(offerID);
-            Pair<String, Date> purchaseToRemove = purchases.stream().filter(purchase -> purchase.getFirstElement().equals(salesChannelID) && RLMDateUtils.truncatedCompareTo(purchase.getSecondElement(), purchaseFulfillmentRequest.getPreviousPurchaseDate(), Calendar.DATE, salesChannelID) == 0).findFirst().orElse(null);            
-            if (purchaseToRemove != null)
+            if (purchases != null)
               {
-                subscriberProfile.getOfferPurchaseSalesChannelHistory().get(offerID).remove(purchaseToRemove);
-                subscriberProfileUpdated = true;
+                Pair<String, Date> purchaseToRemove = purchases.stream().filter(purchase -> purchase.getFirstElement().equals(salesChannelID) && RLMDateUtils.truncatedCompareTo(purchase.getSecondElement(), purchaseFulfillmentRequest.getPreviousPurchaseDate(), Calendar.DATE, salesChannelID) == 0).findFirst().orElse(null);            
+                if (purchaseToRemove != null)
+                  {
+                    subscriberProfile.getOfferPurchaseSalesChannelHistory().get(offerID).remove(purchaseToRemove);
+                    subscriberProfileUpdated = true;
+                  }
               }
+            
           }
         else
           {
