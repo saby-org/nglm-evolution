@@ -54,6 +54,8 @@ import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsParameters;
 import com.sun.net.httpserver.HttpsServer;
+
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
@@ -125,8 +127,6 @@ public class ThirdPartyManager
   private static final String CUSTOMER_ID_VALUE = "customerIDValue";
   private static final DeliveryRequest.DeliveryPriority DELIVERY_REQUEST_PRIORITY = DeliveryRequest.DeliveryPriority.High;
   
-  private static final String TEMPORARY_KEY_PASSWORD = "changeit2";
-
   /*****************************************
    *
    *  ProductID
@@ -346,7 +346,8 @@ public class ThirdPartyManager
     String guimanagerHost = args[4];
     int guimanagerPort = Integer.parseInt(args[5]);
     
-    String apiProtocol = args[6];
+    String apiProtocol = ObjectUtils.defaultIfNull(args[6], "http");
+    String tempKeyPass = ObjectUtils.defaultIfNull(args[7], "changeit2");
     log.info("[HTTPS] THIRDPARTY_API_PROTOCOL: {}", apiProtocol);
     
     String nodeID = System.getProperty("nglm.license.nodeid");
@@ -597,10 +598,10 @@ public class ThirdPartyManager
           restServer = HttpsServer.create(addr, 0);
           try
             {
-              String pemFilePath = System.getProperty("pem.location");
-              log.info("[HTTPS] pemFilePath: {}", pemFilePath);
+              String pemLocation = System.getProperty("pem.location");
+              log.info("[HTTPS] pemLocation: {}", pemLocation);
 
-              SSLContext sslContext = getSSLContext(pemFilePath);
+              SSLContext sslContext = getSSLContext(pemLocation, tempKeyPass);
               
               ((HttpsServer) restServer).setHttpsConfigurator(new HttpsConfigurator(sslContext) {
                 public void configure(HttpsParameters params) {
@@ -615,8 +616,9 @@ public class ThirdPartyManager
                         // Get the default parameters
                         SSLParameters defaultSSLParameters = c.getDefaultSSLParameters();
                         params.setSSLParameters(defaultSSLParameters);
-                    } catch (Exception ex) {
-                        System.out.println("Failed to create HTTPS port");
+                    } 
+                    catch (Exception ex) {
+                      throw new ServerRuntimeException("Failed to create HttpsConfigurator", ex);
                     }
                 }
             });
@@ -705,13 +707,19 @@ public class ThirdPartyManager
     log.info("methodPermissionsMapper : {} ", methodPermissionsMapper);
   }
 
-  private SSLContext getSSLContext(String pemFilePath) throws NoSuchAlgorithmException, UnrecoverableKeyException, KeyStoreException, KeyManagementException
+  /*****************************************
+  *
+  *  SSLContext for https
+  *
+  *****************************************/
+  
+  private SSLContext getSSLContext(String pemLocation, String tempKeyPass) throws NoSuchAlgorithmException, UnrecoverableKeyException, KeyStoreException, KeyManagementException
   {
     SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
-    KeyStore ks = null;
+    KeyStore keyStore = null;
     try
       {
-        ks = getKeyStoreFromPEM(pemFilePath);
+        keyStore = getKeyStoreFromPem(pemLocation, tempKeyPass);
       } 
     catch (Exception e)
       {
@@ -720,11 +728,11 @@ public class ThirdPartyManager
  
     // Set up the key manager factory
     KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-    kmf.init(ks, TEMPORARY_KEY_PASSWORD.toCharArray());
+    kmf.init(keyStore, tempKeyPass.toCharArray());
     
     // Set up the trust manager factory
     TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-    tmf.init(ks);
+    tmf.init(keyStore);
     
     // Set up the HTTPS context and parameters
     sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
@@ -732,37 +740,37 @@ public class ThirdPartyManager
     return sslContext;
   }
   
-  protected static KeyStore getKeyStoreFromPEM(String pemFilePath) throws Exception 
+  protected static KeyStore getKeyStoreFromPem(String pemLocation, String tempKeyPass) throws Exception 
   {
-    byte[] certAndKey = Files.readAllBytes(new File(pemFilePath).toPath());
-    byte[] certBytes = parseDERFromPEM(certAndKey, "-----BEGIN CERTIFICATE-----", "-----END CERTIFICATE-----");
-    byte[] keyBytes = parseDERFromPEM(certAndKey, "-----BEGIN PRIVATE KEY-----", "-----END PRIVATE KEY-----");
+    byte[] certAndKey = Files.readAllBytes(new File(pemLocation).toPath());
+    byte[] certBytes = parsePemFile(certAndKey, "-----BEGIN CERTIFICATE-----", "-----END CERTIFICATE-----");
+    byte[] keyBytes = parsePemFile(certAndKey, "-----BEGIN PRIVATE KEY-----", "-----END PRIVATE KEY-----");
 
-    X509Certificate cert = generateCertificateFromDER(certBytes);
-    PrivateKey key = generatePrivateKeyFromDER(keyBytes);
+    X509Certificate cert = generateCertificate(certBytes);
+    PrivateKey key = generatePrivateKey(keyBytes);
 
-    KeyStore keystore = KeyStore.getInstance("PKCS12");
+    KeyStore keystore = KeyStore.getInstance(KeyStore.getDefaultType()); // PKCS12
     keystore.load(null);
     keystore.setCertificateEntry("cert-alias", cert);
-    keystore.setKeyEntry("key-alias", key, TEMPORARY_KEY_PASSWORD.toCharArray(), new Certificate[] { cert });
+    keystore.setKeyEntry("key-alias", key, tempKeyPass.toCharArray(), new Certificate[] { cert });
 
     return keystore;
   }
   
-  protected static X509Certificate generateCertificateFromDER(byte[] certBytes) throws CertificateException 
+  protected static X509Certificate generateCertificate(byte[] certBytes) throws CertificateException 
   {
-    CertificateFactory factory = CertificateFactory.getInstance("X.509");
+    CertificateFactory factory = CertificateFactory.getInstance("X.509"); // "X.509"
     return (X509Certificate) factory.generateCertificate(new ByteArrayInputStream(certBytes));
   }
   
-  protected static PrivateKey generatePrivateKeyFromDER(byte[] keyBytes) throws InvalidKeySpecException, NoSuchAlgorithmException 
+  protected static PrivateKey generatePrivateKey(byte[] keyBytes) throws InvalidKeySpecException, NoSuchAlgorithmException 
   {
     PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(keyBytes);
-    KeyFactory factory = KeyFactory.getInstance("RSA");
+    KeyFactory factory = KeyFactory.getInstance("RSA"); // RSA algo
     return factory.generatePrivate(spec);
   }
   
-  protected static byte[] parseDERFromPEM(byte[] pem, String beginDelimiter, String endDelimiter) 
+  protected static byte[] parsePemFile(byte[] pem, String beginDelimiter, String endDelimiter) 
   {
     String data = new String(pem);
     String[] tokens = data.split(beginDelimiter);

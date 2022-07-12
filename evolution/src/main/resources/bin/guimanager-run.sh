@@ -55,7 +55,7 @@ case "${ENTRYPOINT}" in
     exec kafka-run-class -name reportscheduler -loggc com.evolving.nglm.evolution.reports.ReportScheduler
     ;;
   "thirdpartymanager")
-    exec kafka-run-class -name thirdPartyManager -loggc com.evolving.nglm.evolution.ThirdPartyManager $KEY $API_PORT $GUI_FWK_API_SERVER $THREADPOOL_SIZE $GUIMANAGER_HOST $GUIMANAGER_PORT $THIRDPARTY_API_PROTOCOL
+    exec kafka-run-class -name thirdPartyManager -loggc com.evolving.nglm.evolution.ThirdPartyManager $KEY $API_PORT $GUI_FWK_API_SERVER $THREADPOOL_SIZE $GUIMANAGER_HOST $GUIMANAGER_PORT $THIRDPARTY_API_PROTOCOL $THIRDPARTY_API_TEMP_KEYPASS
     ;;
   "dnboproxy")
     exec kafka-run-class -name dnboproxy -loggc com.evolving.nglm.evolution.DNBOProxy $KEY $API_PORT $DNBOPROXY_THREADS $GUI_FWK_API_SERVER
