@@ -347,7 +347,8 @@ public class ThirdPartyManager
     int guimanagerPort = Integer.parseInt(args[5]);
     
     String apiProtocol = args[6];
-
+    log.info("[HTTPS] THIRDPARTY_API_PROTOCOL: {}", apiProtocol);
+    
     String nodeID = System.getProperty("nglm.license.nodeid");
     String bootstrapServers = Deployment.getBrokerServers();
     String offerTopic = Deployment.getOfferTopic();
