@@ -6,47 +6,54 @@
 
 package com.evolving.nglm.evolution;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.net.InetSocketAddress;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.UUID;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import com.evolving.nglm.evolution.event.ExternalEvent;
+import com.evolving.nglm.core.*;
+import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
+import com.evolving.nglm.core.LicenseChecker.LicenseState;
+import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
+import com.evolving.nglm.core.SubscriberStreamEvent.SubscriberAction;
+import com.evolving.nglm.evolution.Badge.BadgeAction;
+import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
+import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
+import com.evolving.nglm.evolution.DeliveryRequest.Module;
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
+import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
+import com.evolving.nglm.evolution.Journey.TargetingType;
+import com.evolving.nglm.evolution.JourneyHistory.NodeHistory;
+import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
+import com.evolving.nglm.evolution.LoyaltyProgramChallengeHistory.LevelHistory;
+import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
+import com.evolving.nglm.evolution.LoyaltyProgramMissionHistory.StepHistory;
+import com.evolving.nglm.evolution.OfferCharacteristics.OfferCharacteristicsLanguageProperty;
+import com.evolving.nglm.evolution.OfferCharacteristics.OfferCharacteristicsProperty;
+import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
+import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentStatus;
+import com.evolving.nglm.evolution.SubscriberProfile.ValidateUpdateProfileRequestException;
+import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
+import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
+import com.evolving.nglm.evolution.Token.TokenStatus;
+import com.evolving.nglm.evolution.commoditydelivery.CommodityDeliveryException;
+import com.evolving.nglm.evolution.commoditydelivery.CommodityDeliveryManagerRemovalUtils;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 import com.evolving.nglm.evolution.event.MapperUtils;
 import com.evolving.nglm.evolution.event.ProductExternalEvent;
 import com.evolving.nglm.evolution.event.SubscriberUpdated;
+import com.evolving.nglm.evolution.offeroptimizer.DNBOMatrixAlgorithmParameters;
+import com.evolving.nglm.evolution.offeroptimizer.GetOfferException;
+import com.evolving.nglm.evolution.offeroptimizer.ProposedOfferDetails;
+import com.evolving.nglm.evolution.otp.OTPInstanceChangeEvent;
+import com.evolving.nglm.evolution.statistics.DurationStat;
+import com.evolving.nglm.evolution.statistics.StatBuilder;
+import com.evolving.nglm.evolution.statistics.StatsBuilders;
 import com.evolving.nglm.evolution.uniquekey.ZookeeperUniqueKeyServer;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.HttpsConfigurator;
+import com.sun.net.httpserver.HttpsParameters;
+import com.sun.net.httpserver.HttpsServer;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
@@ -73,66 +80,42 @@ import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.evolving.nglm.core.Alarm;
-import com.evolving.nglm.core.AlternateID;
-import com.evolving.nglm.core.AssignSubscriberIDs;
-import com.evolving.nglm.core.AutoProvisionEvent;
-import com.evolving.nglm.core.AutoProvisionSubscriberStreamEvent;
-import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.Deployment;
-import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
-import com.evolving.nglm.core.LicenseChecker;
-import com.evolving.nglm.core.LicenseChecker.LicenseState;
-import com.evolving.nglm.core.NGLMRuntime;
-import com.evolving.nglm.core.Pair;
-import com.evolving.nglm.core.RLMDateUtils;
-import com.evolving.nglm.core.ReferenceDataReader;
-import com.evolving.nglm.core.ServerException;
-import com.evolving.nglm.core.ServerRuntimeException;
-import com.evolving.nglm.core.StringKey;
-import com.evolving.nglm.core.SubscriberIDService;
-import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
-import com.evolving.nglm.core.SubscriberStreamEvent.SubscriberAction;
-import com.evolving.nglm.core.SubscriberStreamOutput;
-import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.Badge.BadgeAction;
-import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
-import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
-import com.evolving.nglm.evolution.DeliveryRequest.Module;
-import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
-import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
-import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
-import com.evolving.nglm.evolution.GUIManager.API;
-import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
-import com.evolving.nglm.evolution.Journey.TargetingType;
-import com.evolving.nglm.evolution.JourneyHistory.NodeHistory;
-import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
-import com.evolving.nglm.evolution.LoyaltyProgramChallengeHistory.LevelHistory;
-import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
-import com.evolving.nglm.evolution.LoyaltyProgramMissionHistory.StepHistory;
-import com.evolving.nglm.evolution.OfferCharacteristics.OfferCharacteristicsLanguageProperty;
-import com.evolving.nglm.evolution.OfferCharacteristics.OfferCharacteristicsProperty;
-import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
-import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentStatus;
-import com.evolving.nglm.evolution.SubscriberProfile.ValidateUpdateProfileRequestException;
-import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
-import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
-import com.evolving.nglm.evolution.Token.TokenStatus;
-import com.evolving.nglm.evolution.commoditydelivery.CommodityDeliveryException;
-import com.evolving.nglm.evolution.commoditydelivery.CommodityDeliveryManagerRemovalUtils;
-import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
-import com.evolving.nglm.evolution.offeroptimizer.DNBOMatrixAlgorithmParameters;
-import com.evolving.nglm.evolution.offeroptimizer.GetOfferException;
-import com.evolving.nglm.evolution.offeroptimizer.ProposedOfferDetails;
-import com.evolving.nglm.evolution.otp.OTPInstanceChangeEvent;
-import com.evolving.nglm.evolution.statistics.DurationStat;
-import com.evolving.nglm.evolution.statistics.StatBuilder;
-import com.evolving.nglm.evolution.statistics.StatsBuilders;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
+import java.io.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.net.InetSocketAddress;
+import java.nio.file.Files;
+import java.security.KeyFactory;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLParameters;
+import javax.net.ssl.TrustManagerFactory;
+import javax.xml.bind.DatatypeConverter;
 
 public class ThirdPartyManager 
 {
@@ -141,6 +124,8 @@ public class ThirdPartyManager
   private static final String CUSTOMER_ID_TYPE = "customerIDType";
   private static final String CUSTOMER_ID_VALUE = "customerIDValue";
   private static final DeliveryRequest.DeliveryPriority DELIVERY_REQUEST_PRIORITY = DeliveryRequest.DeliveryPriority.High;
+  
+  private static final String TEMPORARY_KEY_PASSWORD = "changeit2";
 
   /*****************************************
    *
@@ -196,6 +181,7 @@ public class ThirdPartyManager
   private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
   private static final int RESTAPIVersion = 1;
   private HttpServer restServer;
+  //private HttpsServer restHttpsServer;
   private ZookeeperUniqueKeyServer zuks;
   private ZookeeperUniqueKeyServer zuksVoucherChange;
   private ElasticsearchClientAPI elasticsearch;
@@ -359,6 +345,8 @@ public class ThirdPartyManager
     int threadPoolSize = Integer.parseInt(args[3]);
     String guimanagerHost = args[4];
     int guimanagerPort = Integer.parseInt(args[5]);
+    
+    String apiProtocol = args[6];
 
     String nodeID = System.getProperty("nglm.license.nodeid");
     String bootstrapServers = Deployment.getBrokerServers();
@@ -602,7 +590,47 @@ public class ThirdPartyManager
     try
     {
       InetSocketAddress addr = new InetSocketAddress(apiRestPort);
-      restServer = HttpServer.create(addr, 0);
+      
+      if (apiProtocol.equalsIgnoreCase("https")) 
+        {
+          restServer = HttpsServer.create(addr, 0);
+          try
+            {
+              String pemFilePath = System.getProperty("pem.location");
+              log.info("[HTTPS] pemFilePath: {}", pemFilePath);
+
+              SSLContext sslContext = getSSLContext(pemFilePath);
+              
+              ((HttpsServer) restServer).setHttpsConfigurator(new HttpsConfigurator(sslContext) {
+                public void configure(HttpsParameters params) {
+                    try {
+                        // Initialise the SSL context
+                        SSLContext c = SSLContext.getDefault();
+                        SSLEngine engine = c.createSSLEngine();
+                        params.setNeedClientAuth(false);
+                        params.setCipherSuites(engine.getEnabledCipherSuites());
+                        params.setProtocols(engine.getEnabledProtocols());
+
+                        // Get the default parameters
+                        SSLParameters defaultSSLParameters = c.getDefaultSSLParameters();
+                        params.setSSLParameters(defaultSSLParameters);
+                    } catch (Exception ex) {
+                        System.out.println("Failed to create HTTPS port");
+                    }
+                }
+            });
+              
+            } 
+          catch (NoSuchAlgorithmException | UnrecoverableKeyException | KeyManagementException | KeyStoreException e)
+            {
+              throw new ServerRuntimeException("could not initialize HTTPS server", e);
+            }
+        }
+      else
+        {
+          restServer = HttpServer.create(addr, 0);
+        }
+      
       restServer.createContext("/nglm-thirdpartymanager/ping", new APIHandler(API.ping));
       restServer.createContext("/nglm-thirdpartymanager/getCustomer", new APIHandler(API.getCustomer));
       restServer.createContext("/nglm-thirdpartymanager/getCustomerBDRs", new APIHandler(API.getCustomerBDRs));
@@ -672,8 +700,73 @@ public class ThirdPartyManager
      *
      *****************************************/
 
-    log.info("main restServerStarted");
+    log.info("main restServerStarted -- [{}]", apiProtocol);
     log.info("methodPermissionsMapper : {} ", methodPermissionsMapper);
+  }
+
+  private SSLContext getSSLContext(String pemFilePath) throws NoSuchAlgorithmException, UnrecoverableKeyException, KeyStoreException, KeyManagementException
+  {
+    SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
+    KeyStore ks = null;
+    try
+      {
+        ks = getKeyStoreFromPEM(pemFilePath);
+      } 
+    catch (Exception e)
+      {
+        e.printStackTrace();
+      }
+ 
+    // Set up the key manager factory
+    KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+    kmf.init(ks, TEMPORARY_KEY_PASSWORD.toCharArray());
+    
+    // Set up the trust manager factory
+    TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+    tmf.init(ks);
+    
+    // Set up the HTTPS context and parameters
+    sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+    
+    return sslContext;
+  }
+  
+  protected static KeyStore getKeyStoreFromPEM(String pemFilePath) throws Exception 
+  {
+    byte[] certAndKey = Files.readAllBytes(new File(pemFilePath).toPath());
+    byte[] certBytes = parseDERFromPEM(certAndKey, "-----BEGIN CERTIFICATE-----", "-----END CERTIFICATE-----");
+    byte[] keyBytes = parseDERFromPEM(certAndKey, "-----BEGIN PRIVATE KEY-----", "-----END PRIVATE KEY-----");
+
+    X509Certificate cert = generateCertificateFromDER(certBytes);
+    PrivateKey key = generatePrivateKeyFromDER(keyBytes);
+
+    KeyStore keystore = KeyStore.getInstance("PKCS12");
+    keystore.load(null);
+    keystore.setCertificateEntry("cert-alias", cert);
+    keystore.setKeyEntry("key-alias", key, TEMPORARY_KEY_PASSWORD.toCharArray(), new Certificate[] { cert });
+
+    return keystore;
+  }
+  
+  protected static X509Certificate generateCertificateFromDER(byte[] certBytes) throws CertificateException 
+  {
+    CertificateFactory factory = CertificateFactory.getInstance("X.509");
+    return (X509Certificate) factory.generateCertificate(new ByteArrayInputStream(certBytes));
+  }
+  
+  protected static PrivateKey generatePrivateKeyFromDER(byte[] keyBytes) throws InvalidKeySpecException, NoSuchAlgorithmException 
+  {
+    PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(keyBytes);
+    KeyFactory factory = KeyFactory.getInstance("RSA");
+    return factory.generatePrivate(spec);
+  }
+  
+  protected static byte[] parseDERFromPEM(byte[] pem, String beginDelimiter, String endDelimiter) 
+  {
+    String data = new String(pem);
+    String[] tokens = data.split(beginDelimiter);
+    tokens = tokens[1].split(endDelimiter);
+    return DatatypeConverter.parseBase64Binary(tokens[0]);
   }
 
   /*****************************************
