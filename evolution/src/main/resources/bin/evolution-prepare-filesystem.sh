@@ -92,7 +92,7 @@ do
    ssh $HOST "
       mkdir -p $NGLM_CONFIG_CERTIFICATE      
    " 
-   scp $DEPLOY_ROOT/certificates/thirdpartymanager.pem $HOST:$NGLM_CONFIG_CERTIFICATE/thirdpartymanager.pem
+   scp $DEPLOY_ROOT/config/resources/thirdpartymanager.pem $HOST:$NGLM_CONFIG_CERTIFICATE/thirdpartymanager.pem
  done
 
  #
