@@ -715,7 +715,7 @@ public class ThirdPartyManager
       } 
     catch (Exception e)
       {
-        e.printStackTrace();
+        throw new ServerRuntimeException("could not initialize SSLContext", e);
       }
  
     // Set up the key manager factory
