@@ -39,10 +39,12 @@ thirdpartymanager-<_KEY_>:
     ENTRYPOINT: thirdpartymanager
   volumes:
     - <_NGLM_CONFIG_LOGS_>/log4j-thirdpartyevent-<_KEY_>.xml:/app/config/log4j-thirdpartyevent.xml
-    - <_NGLM_CONFIG_CERTIFICATES_>/thirdpartymanager.pem:/app/thirdpartymanager.pem
     - type: bind
       source: <_NGLM_LOGS_>
       target: /app/logs
+  configs:
+    - source: <_NGLM_THIRDPARTY_RUNTIME_>/certificates/thirdpartymanager.pem
+      target: /app/thirdpartymanager.pem
   deploy: 
     restart_policy:
       condition: <_DOCKER_RESTART_POLICY_>
