@@ -129,6 +129,13 @@ if [ "$THIRDPARTYMANAGER_ENABLED" = "true" ]; then
   done
 
   #
+  # thirdparty stack config
+  #
+  
+  cat $DEPLOY_ROOT/docker/thirdpartymanager-config.yml >> $DEPLOY_ROOT/stack/stack-thirdpartymanager.yml
+  echo >> $DEPLOY_ROOT/stack/stack-thirdpartymanager.yml
+
+  #
   #  postamble
   #
 

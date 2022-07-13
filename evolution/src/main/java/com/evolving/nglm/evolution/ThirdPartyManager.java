@@ -181,7 +181,6 @@ public class ThirdPartyManager
   private ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
   private static final int RESTAPIVersion = 1;
   private HttpServer restServer;
-  //private HttpsServer restHttpsServer;
   private ZookeeperUniqueKeyServer zuks;
   private ZookeeperUniqueKeyServer zuksVoucherChange;
   private ElasticsearchClientAPI elasticsearch;
@@ -716,7 +715,7 @@ public class ThirdPartyManager
   
   private SSLContext getSSLContext(String pemLocation, String tempKeyPass) throws NoSuchAlgorithmException, UnrecoverableKeyException, KeyStoreException, KeyManagementException
   {
-    SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
+    SSLContext sslContext = SSLContext.getInstance("TLSv1.2"); // using standard algo "TLSv1.2"
     KeyStore keyStore = null;
     try
       {
@@ -728,11 +727,11 @@ public class ThirdPartyManager
       }
  
     // Set up the key manager factory
-    KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+    KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm()); // using default algo "SunX509"
     kmf.init(keyStore, tempKeyPass.toCharArray());
     
     // Set up the trust manager factory
-    TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+    TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm()); // using default algo "SunX509"
     tmf.init(keyStore);
     
     // Set up the HTTPS context and parameters
@@ -750,7 +749,7 @@ public class ThirdPartyManager
     X509Certificate cert = generateCertificate(certBytes);
     PrivateKey key = generatePrivateKey(keyBytes);
 
-    KeyStore keystore = KeyStore.getInstance(KeyStore.getDefaultType()); // PKCS12
+    KeyStore keystore = KeyStore.getInstance(KeyStore.getDefaultType()); // using default algo "jks" - standard algo "PKCS12"
     keystore.load(null);
     keystore.setCertificateEntry("cert-alias", cert);
     keystore.setKeyEntry("key-alias", key, tempKeyPass.toCharArray(), new Certificate[] { cert });
@@ -760,14 +759,14 @@ public class ThirdPartyManager
   
   protected static X509Certificate generateCertificate(byte[] certBytes) throws CertificateException 
   {
-    CertificateFactory factory = CertificateFactory.getInstance("X.509"); // "X.509"
+    CertificateFactory factory = CertificateFactory.getInstance("X.509"); // using standard algo "X.509"
     return (X509Certificate) factory.generateCertificate(new ByteArrayInputStream(certBytes));
   }
   
   protected static PrivateKey generatePrivateKey(byte[] keyBytes) throws InvalidKeySpecException, NoSuchAlgorithmException 
   {
     PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(keyBytes);
-    KeyFactory factory = KeyFactory.getInstance("RSA"); // RSA algo
+    KeyFactory factory = KeyFactory.getInstance("RSA"); // using standard algo "RSA"
     return factory.generatePrivate(spec);
   }
   
