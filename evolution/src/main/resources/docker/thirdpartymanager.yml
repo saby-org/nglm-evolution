@@ -43,7 +43,7 @@ thirdpartymanager-<_KEY_>:
       source: <_NGLM_LOGS_>
       target: /app/logs
   configs:
-    - source: <_NGLM_THIRDPARTY_RUNTIME_>/certificates/thirdpartymanager.pem
+    - source: thirdparty_pem_file
       target: /app/thirdpartymanager.pem
   deploy: 
     restart_policy:
