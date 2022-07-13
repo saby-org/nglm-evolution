@@ -346,8 +346,8 @@ public class ThirdPartyManager
     String guimanagerHost = args[4];
     int guimanagerPort = Integer.parseInt(args[5]);
     
-    String apiProtocol = ObjectUtils.defaultIfNull(args[6], "http");
-    String tempKeyPass = ObjectUtils.defaultIfNull(args[7], "changeit2");
+    String apiProtocol = (args.length > 6) ? args[6] : "http";
+    String tempKeyPass = (args.length > 7) ? args[7] : "";
     log.info("[HTTPS] THIRDPARTY_API_PROTOCOL: {}", apiProtocol);
     
     String nodeID = System.getProperty("nglm.license.nodeid");
