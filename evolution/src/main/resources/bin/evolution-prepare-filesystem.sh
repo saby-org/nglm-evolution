@@ -90,9 +90,9 @@ do
    rm -f $DEPLOY_ROOT/config/logger/log4j-thirdpartyevent-$KEY.xml
    
    ssh $HOST "
-      mkdir -p $NGLM_CONFIG_CERTIFICATE      
+      mkdir -p $NGLM_CONFIG_CERTIFICATES      
    " 
-   scp $DEPLOY_ROOT/config/resources/thirdpartymanager.pem $HOST:$NGLM_CONFIG_CERTIFICATE/thirdpartymanager.pem
+   scp $DEPLOY_ROOT/config/resources/thirdpartymanager.pem $HOST:$NGLM_CONFIG_CERTIFICATES/thirdpartymanager.pem
  done
 
  #

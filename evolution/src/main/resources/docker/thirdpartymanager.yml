@@ -24,8 +24,8 @@ thirdpartymanager-<_KEY_>:
     CONNECT_CUB_ES_SERVERS: <_ELASTICSEARCH_SERVERS_>
     CONNECT_CUB_ESROUTER_HOST: <_MASTER_ESROUTER_HOST_>
     CONNECT_CUB_ESROUTER_PORT: <_MASTER_ESROUTER_PORT_>
-    THIRDPARTY_API_PROTOCOL: <_THIRDPARTY_API_PROTOCOL_>
-    THIRDPARTY_API_TEMP_KEYPASS: <_THIRDPARTY_API_TEMP_KEYPASS_>
+    THIRDPARTYMANAGER_API_PROTOCOL: <_THIRDPARTYMANAGER_API_PROTOCOL_>
+    THIRDPARTYMANAGER_API_TEMP_KEYPASS: <_THIRDPARTYMANAGER_API_TEMP_KEYPASS_>
     KEY: <_KEY_>
     API_PORT: <_API_PORT_>
     GUI_FWK_API_SERVER: <_GUI_FWK_API_SERVER_>
@@ -39,7 +39,7 @@ thirdpartymanager-<_KEY_>:
     ENTRYPOINT: thirdpartymanager
   volumes:
     - <_NGLM_CONFIG_LOGS_>/log4j-thirdpartyevent-<_KEY_>.xml:/app/config/log4j-thirdpartyevent.xml
-    - <_NGLM_CONFIG_CERTIFICATE_>/thirdpartymanager.pem:/app/thirdpartymanager.pem
+    - <_NGLM_CONFIG_CERTIFICATES_>/thirdpartymanager.pem:/app/thirdpartymanager.pem
     - type: bind
       source: <_NGLM_LOGS_>
       target: /app/logs
