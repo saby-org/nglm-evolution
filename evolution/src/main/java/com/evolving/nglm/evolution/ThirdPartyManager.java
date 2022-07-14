@@ -47,6 +47,7 @@ import com.evolving.nglm.evolution.otp.OTPInstanceChangeEvent;
 import com.evolving.nglm.evolution.statistics.DurationStat;
 import com.evolving.nglm.evolution.statistics.StatBuilder;
 import com.evolving.nglm.evolution.statistics.StatsBuilders;
+import com.evolving.nglm.evolution.thirdparty.PEMUtils;
 import com.evolving.nglm.evolution.uniquekey.ZookeeperUniqueKeyServer;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -55,7 +56,6 @@ import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsParameters;
 import com.sun.net.httpserver.HttpsServer;
 
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
@@ -86,20 +86,10 @@ import java.io.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.InetSocketAddress;
-import java.nio.file.Files;
-import java.security.KeyFactory;
 import java.security.KeyManagementException;
-import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
 import java.security.UnrecoverableKeyException;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.PKCS8EncodedKeySpec;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -112,12 +102,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
-import javax.net.ssl.TrustManagerFactory;
-import javax.xml.bind.DatatypeConverter;
 
 public class ThirdPartyManager 
 {
@@ -233,7 +220,6 @@ public class ThirdPartyManager
   RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(httpTimeout).setSocketTimeout(httpTimeout).setConnectionRequestTimeout(httpTimeout).build();
   private HttpClient httpClient;
 
-  
   private static final String THIRDPARTYMANAGER_API_PROTOCOL = "THIRDPARTYMANAGER_API_PROTOCOL";
   private static final String THIRDPARTYMANAGER_API_TEMP_KEYPASS = "THIRDPARTYMANAGER_API_TEMP_KEYPASS";
   private static final String PEM_LOCATION = "PEM_LOCATION";
@@ -349,13 +335,6 @@ public class ThirdPartyManager
     int threadPoolSize = Integer.parseInt(args[3]);
     String guimanagerHost = args[4];
     int guimanagerPort = Integer.parseInt(args[5]);
-    
-    //String apiProtocol = (args.length > 6) ? args[6] : "http";
-    String apiProtocol = System.getenv().get(THIRDPARTYMANAGER_API_PROTOCOL);
-    log.info("[HTTPS] THIRDPARTYMANAGER_API_PROTOCOL: {}", apiProtocol);
-    //String tempKeyPass = (args.length > 7) ? args[7] : "";
-    String tempKeyPass = System.getenv().get(THIRDPARTYMANAGER_API_TEMP_KEYPASS);
-    log.info("[HTTPS] THIRDPARTYMANAGER_API_TEMP_KEYPASS: {}", tempKeyPass);
     
     String nodeID = System.getProperty("nglm.license.nodeid");
     String bootstrapServers = Deployment.getBrokerServers();
@@ -591,11 +570,13 @@ public class ThirdPartyManager
     uploadedFileService.start();
 
     /*****************************************
-     *
-     *  REST interface -- server and handlers
-     *
-     *****************************************/
+    *
+    *  REST interface -- server and handlers
+    *
+    *****************************************/
 
+    String apiProtocol = System.getenv().get(THIRDPARTYMANAGER_API_PROTOCOL);
+    
     try
     {
       InetSocketAddress addr = new InetSocketAddress(apiRestPort);
@@ -605,11 +586,10 @@ public class ThirdPartyManager
           restServer = HttpsServer.create(addr, 0);
           try
             {
-              //String pemLocation = System.getProperty("pem.location");
               String pemLocation = System.getenv().get(PEM_LOCATION);
-              log.info("[HTTPS] pemLocation: {}", pemLocation);
+              String tempKeyPass = System.getenv().get(THIRDPARTYMANAGER_API_TEMP_KEYPASS);
 
-              SSLContext sslContext = getSSLContext(pemLocation, tempKeyPass);
+              SSLContext sslContext = PEMUtils.getSSLContext(pemLocation, tempKeyPass);
               
               ((HttpsServer) restServer).setHttpsConfigurator(new HttpsConfigurator(sslContext) {
                 public void configure(HttpsParameters params) {
@@ -713,77 +693,6 @@ public class ThirdPartyManager
 
     log.info("main restServerStarted -- [{}]", apiProtocol);
     log.info("methodPermissionsMapper : {} ", methodPermissionsMapper);
-  }
-
-  /*****************************************
-  *
-  *  SSLContext for https
-  *
-  *****************************************/
-  
-  private SSLContext getSSLContext(String pemLocation, String tempKeyPass) throws NoSuchAlgorithmException, UnrecoverableKeyException, KeyStoreException, KeyManagementException
-  {
-    SSLContext sslContext = SSLContext.getInstance("TLSv1.2"); // using standard algo "TLSv1.2"
-    KeyStore keyStore = null;
-    try
-      {
-        keyStore = getKeyStoreFromPem(pemLocation, tempKeyPass);
-      } 
-    catch (Exception e)
-      {
-        throw new ServerRuntimeException("could not initialize SSLContext", e);
-      }
- 
-    // Set up the key manager factory
-    KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm()); // using default algo "SunX509"
-    kmf.init(keyStore, tempKeyPass.toCharArray());
-    
-    // Set up the trust manager factory
-    TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm()); // using default algo "SunX509"
-    tmf.init(keyStore);
-    
-    // Set up the HTTPS context and parameters
-    sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-    
-    return sslContext;
-  }
-  
-  protected static KeyStore getKeyStoreFromPem(String pemLocation, String tempKeyPass) throws Exception 
-  {
-    byte[] certAndKey = Files.readAllBytes(new File(pemLocation).toPath());
-    byte[] certBytes = parsePemFile(certAndKey, "-----BEGIN CERTIFICATE-----", "-----END CERTIFICATE-----");
-    byte[] keyBytes = parsePemFile(certAndKey, "-----BEGIN PRIVATE KEY-----", "-----END PRIVATE KEY-----");
-
-    X509Certificate cert = generateCertificate(certBytes);
-    PrivateKey key = generatePrivateKey(keyBytes);
-
-    KeyStore keystore = KeyStore.getInstance(KeyStore.getDefaultType()); // using default algo "jks" - standard algo "PKCS12"
-    keystore.load(null);
-    keystore.setCertificateEntry("cert-alias", cert);
-    keystore.setKeyEntry("key-alias", key, tempKeyPass.toCharArray(), new Certificate[] { cert });
-
-    return keystore;
-  }
-  
-  protected static X509Certificate generateCertificate(byte[] certBytes) throws CertificateException 
-  {
-    CertificateFactory factory = CertificateFactory.getInstance("X.509"); // using standard algo "X.509"
-    return (X509Certificate) factory.generateCertificate(new ByteArrayInputStream(certBytes));
-  }
-  
-  protected static PrivateKey generatePrivateKey(byte[] keyBytes) throws InvalidKeySpecException, NoSuchAlgorithmException 
-  {
-    PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(keyBytes);
-    KeyFactory factory = KeyFactory.getInstance("RSA"); // using standard algo "RSA"
-    return factory.generatePrivate(spec);
-  }
-  
-  protected static byte[] parsePemFile(byte[] pem, String beginDelimiter, String endDelimiter) 
-  {
-    String data = new String(pem);
-    String[] tokens = data.split(beginDelimiter);
-    tokens = tokens[1].split(endDelimiter);
-    return DatatypeConverter.parseBase64Binary(tokens[0]);
   }
 
   /*****************************************
