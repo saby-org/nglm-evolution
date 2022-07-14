@@ -233,6 +233,11 @@ public class ThirdPartyManager
   RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(httpTimeout).setSocketTimeout(httpTimeout).setConnectionRequestTimeout(httpTimeout).build();
   private HttpClient httpClient;
 
+  
+  private static final String THIRDPARTYMANAGER_API_PROTOCOL = "THIRDPARTYMANAGER_API_PROTOCOL";
+  private static final String THIRDPARTYMANAGER_API_TEMP_KEYPASS = "THIRDPARTYMANAGER_API_TEMP_KEYPASS";
+  private static final String PEM_LOCATION = "PEM_LOCATION";
+  
   /*****************************************
    *
    *  enum
@@ -345,9 +350,11 @@ public class ThirdPartyManager
     String guimanagerHost = args[4];
     int guimanagerPort = Integer.parseInt(args[5]);
     
-    String apiProtocol = (args.length > 6) ? args[6] : "http";
+    //String apiProtocol = (args.length > 6) ? args[6] : "http";
+    String apiProtocol = System.getenv().get(THIRDPARTYMANAGER_API_PROTOCOL);
     log.info("[HTTPS] THIRDPARTYMANAGER_API_PROTOCOL: {}", apiProtocol);
-    String tempKeyPass = (args.length > 7) ? args[7] : "";
+    //String tempKeyPass = (args.length > 7) ? args[7] : "";
+    String tempKeyPass = System.getenv().get(THIRDPARTYMANAGER_API_TEMP_KEYPASS);
     log.info("[HTTPS] THIRDPARTYMANAGER_API_TEMP_KEYPASS: {}", tempKeyPass);
     
     String nodeID = System.getProperty("nglm.license.nodeid");
@@ -598,7 +605,8 @@ public class ThirdPartyManager
           restServer = HttpsServer.create(addr, 0);
           try
             {
-              String pemLocation = System.getProperty("pem.location");
+              //String pemLocation = System.getProperty("pem.location");
+              String pemLocation = System.getenv().get(PEM_LOCATION);
               log.info("[HTTPS] pemLocation: {}", pemLocation);
 
               SSLContext sslContext = getSSLContext(pemLocation, tempKeyPass);
