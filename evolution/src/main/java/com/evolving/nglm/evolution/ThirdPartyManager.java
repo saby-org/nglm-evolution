@@ -377,16 +377,16 @@ public class ThirdPartyManager
     String subscriberProfileEndpoints = Deployment.getSubscriberProfileEndpoints();
     methodPermissionsMapper = Deployment.getThirdPartyMethodPermissionsMap();
     authResponseCacheLifetimeInMinutes = Deployment.getAuthResponseCacheLifetimeInMinutes() == null ? new Integer(0) : Deployment.getAuthResponseCacheLifetimeInMinutes();
-
-    this.thirdPartyMethodTypes = args[6];
-    this.thirdPartyAPIHeaders = args[7];
+     
+	this.thirdPartyMethodTypes = System.getenv().get("ALLOWED_THIRDPARTY_METHOD_TYPES");
+	this.thirdPartyAPIHeaders = System.getenv().get("THIRDPARTY_API_HEADERS");
     //
     //  log
     //
 
     log.info("main START: {} {} {} {} {} {}", apiProcessKey, bootstrapServers, apiRestPort, fwkServer, threadPoolSize, authResponseCacheLifetimeInMinutes);
 
-    log.info("main START: thirdPartyMethodTypes {}  ", thirdPartyMethodTypes);
+    log.info("main START: ALLOWED_THIRDPARTY_METHOD_TYPES {}  ", thirdPartyMethodTypes);
     log.info("main START: THIRDPARTY_API_HEADERS {}  ", thirdPartyAPIHeaders);
 
     /*****************************************
@@ -1246,22 +1246,22 @@ public class ThirdPartyManager
   *****************************************/
   
   private void updateResponseHeaders(HttpExchange exchange) {
-	  // Update with configured THIRDPARTY_API_HEADERS
-      log.info("thirdPartyAPIHeaders {} ", thirdPartyAPIHeaders);
+  // Update with configured THIRDPARTY_API_HEADERS
+  // log.info("thirdPartyAPIHeaders {} ", thirdPartyAPIHeaders);
 
 	  if(thirdPartyAPIHeaders!=null && thirdPartyAPIHeaders.length()>0) {
 		  String[] list = thirdPartyAPIHeaders.split(",");
 		  for (int i = 0; i < list.length; i++) {
 			 String[] values = list[i].split(":");
 		     exchange.getResponseHeaders().set(values[0], values[1]);
-		      log.info("thirdPartyAPIHeaders key {} and value {} ", values[0],values[1]);
+  // log.info("thirdPartyAPIHeaders key {} and value {} ", values[0],values[1]);
 		  }
 	  }else {
 	      exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
 	      exchange.getResponseHeaders().set("Content-Type", "application/json");
 	  }
-//      exchange.getResponseHeaders().set("X-Frame-Options", "SAMEORIGIN");
-//      exchange.getResponseHeaders().set("X-Content-Type-Options", "nosniff");
+	//      exchange.getResponseHeaders().set("X-Frame-Options", "SAMEORIGIN");
+	//      exchange.getResponseHeaders().set("X-Content-Type-Options", "nosniff");
 
   }
 
@@ -1280,11 +1280,15 @@ public class ThirdPartyManager
     //  validate
     //
     
-    if (! path.equals(exchange.getHttpContext().getPath()) ||
-    		(thirdPartyMethodTypes!=null && !thirdPartyMethodTypes.contains(exchange.getRequestMethod())))
+    if (! path.equals(exchange.getHttpContext().getPath()))
       {
         log.warn("invalid url {} should be {}", path, exchange.getHttpContext().getPath());
         throw new ThirdPartyManagerException("invalid URL", -404);
+      }
+    if (thirdPartyMethodTypes!=null && thirdPartyMethodTypes.length()>0 && !thirdPartyMethodTypes.contains(exchange.getRequestMethod()))
+      {
+        log.warn("invalid thirdPartyMethodTypes {} ", thirdPartyMethodTypes);
+        throw new ThirdPartyManagerException("invalid http Method Types", -404);
       }
     
   }
