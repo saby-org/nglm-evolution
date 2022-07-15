@@ -6,9 +6,13 @@
 
 package com.evolving.nglm.evolution;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
 
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -192,7 +196,82 @@ public class SubscriberRelatives
       return JSONUtilities.encodeObject(json);
     }
   
-  /*****************************************
+ 
+  public JSONObject getNewJSONRepresentation(String relationshipID, SubscriberProfileService subscriberProfileService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader, int tenantID)
+  {
+    HashMap<String, Object> json = new HashMap<String, Object>();
+    
+    //
+    //  obj
+    //
+    
+    json.put("relationshipID", relationshipID);
+    json.put("relationshipName", Deployment.getSupportedRelationships().get(relationshipID) != null ? Deployment.getSupportedRelationships().get(relationshipID).getName() : null);
+    json.put("relationshipDisplay", Deployment.getSupportedRelationships().get(relationshipID) != null ? Deployment.getSupportedRelationships().get(relationshipID).getDisplay() : null);
+    
+    //
+    //  parent
+    //
+    
+    HashMap<String, Object> parentJsonMap = new HashMap<String, Object>();
+    try
+      {
+        if (getParentSubscriberID() != null && !getParentSubscriberID().isEmpty())
+          {
+            SubscriberProfile parentProfile = subscriberProfileService.getSubscriberProfile(getParentSubscriberID());
+            if (parentProfile != null)
+              {
+                parentJsonMap.put("subscriberID", getParentSubscriberID());
+                SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(parentProfile, subscriberGroupEpochReader, SystemTime.getCurrentTime(), parentProfile.getTenantID());
+                for (String id : Deployment.getAlternateIDs().keySet())
+                  {
+                    AlternateID alternateID = Deployment.getAlternateIDs().get(id);
+                    CriterionField criterionField = Deployment.getProfileCriterionFields().get(alternateID.getProfileCriterionField());
+                    if (criterionField != null)
+                      {
+                        String alternateIDValue = (String) criterionField.retrieve(evaluationRequest);
+                        parentJsonMap.put(alternateID.getID(), alternateIDValue);
+                      }
+                  }
+              }
+          }
+      } 
+    catch (SubscriberProfileServiceException e)
+      {
+        e.printStackTrace();
+      }
+    json.put("parentDetails", parentJsonMap.isEmpty() ? null : JSONUtilities.encodeObject(parentJsonMap));
+    
+    //
+    //  children
+    //
+    
+    json.put("numberOfChildren", getChildrenSubscriberIDs().size());
+    json.put("childrenSubscriberIDs", getDatedMapOfChildren(getChildrenSubscriberIDs(), tenantID));
+    
+    //
+    //  result
+    //
+    
+    return JSONUtilities.encodeObject(json);
+  }
+  
+  private Object getDatedMapOfChildren(List<String> childrenSubscriberIDs,int tenantID) {
+	Map datedMap=new HashMap<String,String>();
+	String date,childId;
+	for(String child: childrenSubscriberIDs ){
+		if(child!=null && !child.isEmpty()) {
+			childId=new String();
+			childId=child.substring(0,child.lastIndexOf("@")-1);
+			date=new String();
+		date=getDateString(child.substring(child.lastIndexOf("@")+1),tenantID);
+		datedMap.put(datedMap, date);
+		}
+		}
+	
+	return datedMap;
+}
+/*****************************************
    *
    * pack
    *
@@ -279,4 +358,24 @@ public class SubscriberRelatives
       return result;
     }
 
+  
+  
+  /*****************************************
+  *
+  *  getDateString
+  *
+  *****************************************/
+
+  public String getDateString(String date,int tenantID)
+
+  {
+    String result = null;
+    if (null == date) return result;
+    
+        SimpleDateFormat dateFormat = new SimpleDateFormat(Deployment.getAPIresponseDateFormat());   // TODO EVPRO-99
+        dateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getTimeZone()));
+        result = dateFormat.format(date);
+     
+    return result;
+  }
 }

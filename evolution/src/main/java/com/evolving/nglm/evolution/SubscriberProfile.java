@@ -1470,7 +1470,7 @@ public abstract class SubscriberProfile
   //  getProfileMapForThirdPartyPresentation
   //
 
-  public Map<String,Object> getProfileMapForThirdPartyPresentation(SegmentationDimensionService segmentationDimensionService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ExclusionInclusionTargetService exclusionInclusionTargetService, LoyaltyProgramService loyaltyProgramService)
+  public Map<String,Object> getProfileMapForThirdPartyPresentation(SubscriberProfileService subscriberProfileService, SegmentationDimensionService segmentationDimensionService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ExclusionInclusionTargetService exclusionInclusionTargetService, LoyaltyProgramService loyaltyProgramService)
   {
     HashMap<String, Object> baseProfilePresentation = new HashMap<String,Object>();
     HashMap<String, Object> generalDetailsPresentation = new HashMap<String,Object>();
@@ -1499,6 +1499,20 @@ public abstract class SubscriberProfile
             badgesPresentation.add(JSONUtilities.encodeObject(badgeJSONMap));
           }
       }
+   
+    //
+    // prepare hierarchy
+    //
+    
+    ArrayList<JSONObject> hierarchyRelations = new ArrayList<JSONObject>();
+    for (String relationshipID : this.relations.keySet())
+      {
+        SubscriberRelatives relatives = this.relations.get(relationshipID);
+        if (relatives != null && !(relatives.getParentSubscriberID() == null && relatives.getChildrenSubscriberIDs().isEmpty()))
+          {
+            hierarchyRelations.add(relatives.getNewJSONRepresentation(relationshipID, subscriberProfileService, subscriberGroupEpochReader,tenantID));
+          }
+      }
     
 
     //
@@ -1518,6 +1532,7 @@ public abstract class SubscriberProfile
     generalDetailsPresentation.put("universalControlGroupChangeDate",getDateString(getUniversalControlGroupChangeDate()));
     generalDetailsPresentation.put("badges", JSONUtilities.encodeArray(badgesPresentation));
   
+    generalDetailsPresentation.put("relations", JSONUtilities.encodeArray(hierarchyRelations));
     //
     // prepare basic kpiPresentation (if any)
     //

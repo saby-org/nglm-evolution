@@ -1340,7 +1340,7 @@ public class ThirdPartyManager
         }
       else
         {
-          response = baseSubscriberProfile.getProfileMapForThirdPartyPresentation(segmentationDimensionService, subscriberGroupEpochReader, exclusionInclusionTargetService, loyaltyProgramService);
+          response = baseSubscriberProfile.getProfileMapForThirdPartyPresentation(subscriberProfileService,segmentationDimensionService, subscriberGroupEpochReader, exclusionInclusionTargetService, loyaltyProgramService);
           response.putAll(resolveAllSubscriberIDs(baseSubscriberProfile, tenantID));
           updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
         }

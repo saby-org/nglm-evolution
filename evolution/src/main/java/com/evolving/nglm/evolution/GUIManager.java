@@ -756,7 +756,9 @@ public class GUIManager
 
   protected static final String MULTIPART_FORM_DATA = "multipart/form-data"; 
   protected static final String FILE_REQUEST = "file"; 
-  protected static final String FILE_UPLOAD_META_DATA= "fileUploadMetaData"; 
+  protected static final String FILE_UPLOAD_META_DATA= "fileUploadMetaData";
+
+private static final String DATE_SEPERATOR = "@"; 
 
   //
   //  context
@@ -21147,6 +21149,11 @@ public class GUIManager
     * resolve relationship
     *
     *****************************************/
+      String today=new Date().toString();
+      String newparentwithDate=newParentCustomerID+DATE_SEPERATOR+today;
+      String subscriberwithDate=customerID+DATE_SEPERATOR+today;
+      
+      
       
     boolean isRelationshipSupported = false;
     for (SupportedRelationship supportedRelationship : Deployment.getDeployment(tenantID).getSupportedRelationships().values())
@@ -21205,8 +21212,9 @@ public class GUIManager
                 //
                 // Delete child for the parent 
                 // 
+                /* EVPRO-1503 Keeping this for backward compatibility to older version, when a parent may have a child without date. This may be removed when all customer has relationship in teh format <SUBSCRIBER_ID>@<DATE_OF_RELATION> */
                 
-                jsonRoot.put("subscriberID", previousParentSubscriberID);
+            	jsonRoot.put("subscriberID", previousParentSubscriberID);
                 SubscriberProfileForceUpdate previousParentProfileForceUpdate = new SubscriberProfileForceUpdate(jsonRoot);
                 ParameterMap previousParentParameterMap = previousParentProfileForceUpdate.getParameterMap();
                 previousParentParameterMap.put("subscriberRelationsUpdateMethod", SubscriberRelationsUpdateMethod.RemoveChild.getExternalRepresentation());
@@ -21218,7 +21226,21 @@ public class GUIManager
                 //
                   
                 kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(previousParentProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), previousParentProfileForceUpdate)));
+                /* END Old regression */  
+                /* Additionally EVPRO-1503 if the relation was in new format <SUBSCRIBER_ID>@<DATE_OF_RELATION>, need to handle that as well */
+             
+                previousParentParameterMap.put("subscriberRelationsUpdateMethod", SubscriberRelationsUpdateMethod.RemoveChild.getExternalRepresentation());
+                previousParentParameterMap.put("relationshipID", relationshipID);
+                previousParentParameterMap.put("relativeSubscriberID", subscriberwithDate);
                 
+                //
+                // submit to kafka 
+                //
+                  
+                kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(previousParentProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), previousParentProfileForceUpdate)));
+        
+              
+              
               }
             
 
@@ -21231,7 +21253,7 @@ public class GUIManager
             ParameterMap newParentParameterMap = newParentProfileForceUpdate.getParameterMap();
             newParentParameterMap.put("subscriberRelationsUpdateMethod", SubscriberRelationsUpdateMethod.AddChild.getExternalRepresentation());
             newParentParameterMap.put("relationshipID", relationshipID);
-            newParentParameterMap.put("relativeSubscriberID", subscriberID);
+            newParentParameterMap.put("relativeSubscriberID", subscriberwithDate);
               
             //
             // Set parent 
@@ -21242,7 +21264,7 @@ public class GUIManager
             ParameterMap subscriberParameterMap = subscriberProfileForceUpdate.getParameterMap();
             subscriberParameterMap.put("subscriberRelationsUpdateMethod", SubscriberRelationsUpdateMethod.SetParent.getExternalRepresentation());
             subscriberParameterMap.put("relationshipID", relationshipID);
-            subscriberParameterMap.put("relativeSubscriberID", newParentSubscriberID);
+            subscriberParameterMap.put("relativeSubscriberID", newparentwithDate);
             
             //
             // submit to kafka 
