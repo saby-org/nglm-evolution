@@ -122,7 +122,7 @@ public class PEMUtils
         endDelimiter = END_PRIVATE_KEY;
         break;
       default:
-        return null;
+        throw new ServerRuntimeException("Failed to create SSLContext - unsupported type "+ type);
     }
     
     String data = new String(pemByte);

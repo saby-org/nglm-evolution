@@ -48,6 +48,7 @@ import com.evolving.nglm.evolution.statistics.DurationStat;
 import com.evolving.nglm.evolution.statistics.StatBuilder;
 import com.evolving.nglm.evolution.statistics.StatsBuilders;
 import com.evolving.nglm.evolution.thirdparty.PEMUtils;
+import com.evolving.nglm.evolution.thirdparty.ThirdPartyHttpsConfigurator;
 import com.evolving.nglm.evolution.uniquekey.ZookeeperUniqueKeyServer;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -581,7 +582,7 @@ public class ThirdPartyManager
     {
       InetSocketAddress addr = new InetSocketAddress(apiRestPort);
       
-      if (apiProtocol.equalsIgnoreCase("https")) 
+      if ("https".equalsIgnoreCase(apiProtocol)) 
         {
           restServer = HttpsServer.create(addr, 0);
           try
@@ -590,27 +591,7 @@ public class ThirdPartyManager
               String tempKeyPass = System.getenv().get(THIRDPARTYMANAGER_API_TEMP_KEYPASS);
 
               SSLContext sslContext = PEMUtils.getSSLContext(pemLocation, tempKeyPass);
-              
-              ((HttpsServer) restServer).setHttpsConfigurator(new HttpsConfigurator(sslContext) {
-                public void configure(HttpsParameters params) {
-                    try {
-                        // Initialise the SSL context
-                        SSLContext c = SSLContext.getDefault();
-                        SSLEngine engine = c.createSSLEngine();
-                        params.setNeedClientAuth(false);
-                        params.setCipherSuites(engine.getEnabledCipherSuites());
-                        params.setProtocols(engine.getEnabledProtocols());
-
-                        // Get the default parameters
-                        SSLParameters defaultSSLParameters = c.getDefaultSSLParameters();
-                        params.setSSLParameters(defaultSSLParameters);
-                    } 
-                    catch (Exception ex) {
-                      throw new ServerRuntimeException("Failed to create HttpsConfigurator", ex);
-                    }
-                }
-            });
-              
+              ((HttpsServer) restServer).setHttpsConfigurator(new ThirdPartyHttpsConfigurator(sslContext));
             } 
           catch (NoSuchAlgorithmException | UnrecoverableKeyException | KeyManagementException | KeyStoreException e)
             {
