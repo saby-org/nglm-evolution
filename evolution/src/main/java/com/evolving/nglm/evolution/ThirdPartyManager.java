@@ -244,8 +244,7 @@ public class ThirdPartyManager
   }
   private String fwkServer = null;
   private String guimanagerHost = null;
-  private String thirdPartyMethodTypes=null;
-  private String thirdPartyAPIHeaders=null;
+  
   private int guimanagerPort;
   RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(httpTimeout).setSocketTimeout(httpTimeout).setConnectionRequestTimeout(httpTimeout).build();
   private HttpClient httpClient;
@@ -378,16 +377,14 @@ public class ThirdPartyManager
     methodPermissionsMapper = Deployment.getThirdPartyMethodPermissionsMap();
     authResponseCacheLifetimeInMinutes = Deployment.getAuthResponseCacheLifetimeInMinutes() == null ? new Integer(0) : Deployment.getAuthResponseCacheLifetimeInMinutes();
      
-	this.thirdPartyMethodTypes = System.getenv().get("ALLOWED_THIRDPARTY_METHOD_TYPES");
-	this.thirdPartyAPIHeaders = System.getenv().get("THIRDPARTY_API_HEADERS");
     //
     //  log
     //
 
     log.info("main START: {} {} {} {} {} {}", apiProcessKey, bootstrapServers, apiRestPort, fwkServer, threadPoolSize, authResponseCacheLifetimeInMinutes);
 
-    log.info("main START: ALLOWED_THIRDPARTY_METHOD_TYPES {}  ", thirdPartyMethodTypes);
-    log.info("main START: THIRDPARTY_API_HEADERS {}  ", thirdPartyAPIHeaders);
+    log.info("main START: ALLOWED_THIRDPARTY_METHOD_TYPES {}  ", Deployment.getThirdPartyMethodTypes());
+    log.info("main START: THIRDPARTY_API_HEADERS {}  ", Deployment.getThirdPartyAPIHeaders());
 
     /*****************************************
      *
@@ -1247,15 +1244,12 @@ public class ThirdPartyManager
   
   private void updateResponseHeaders(HttpExchange exchange) {
   // Update with configured THIRDPARTY_API_HEADERS
-  // log.info("thirdPartyAPIHeaders {} ", thirdPartyAPIHeaders);
-
-	  if(thirdPartyAPIHeaders!=null && thirdPartyAPIHeaders.length()>0) {
-		  String[] list = thirdPartyAPIHeaders.split(",");
-		  for (int i = 0; i < list.length; i++) {
-			 String[] values = list[i].split(":");
-		     exchange.getResponseHeaders().set(values[0], values[1]);
-  // log.info("thirdPartyAPIHeaders key {} and value {} ", values[0],values[1]);
-		  }
+	  Map<String, String> thirdPartyAPIHeaders = Deployment.getThirdPartyAPIHeaders();
+	  if(thirdPartyAPIHeaders!=null && thirdPartyAPIHeaders.size()>0) {
+ 	      for (Map.Entry<String,String> entry : thirdPartyAPIHeaders.entrySet()) {
+ 	    	 log.info("thirdPartyAPIHeaders Key = " + entry.getKey() + ", Value = " + entry.getValue());
+ 	    	 exchange.getResponseHeaders().set(entry.getKey(), entry.getValue());
+ 	      }
 	  }else {
 	      exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
 	      exchange.getResponseHeaders().set("Content-Type", "application/json");
@@ -1275,7 +1269,7 @@ public class ThirdPartyManager
   {
     String path = exchange.getRequestURI().getPath();
     if (path.endsWith("/")) path = path.substring(0, path.length()-1);
-    
+    List<String> thirdPartyMethodTypes = Deployment.getThirdPartyMethodTypes();
     //
     //  validate
     //
@@ -1285,7 +1279,7 @@ public class ThirdPartyManager
         log.warn("invalid url {} should be {}", path, exchange.getHttpContext().getPath());
         throw new ThirdPartyManagerException("invalid URL", -404);
       }
-    if (thirdPartyMethodTypes!=null && thirdPartyMethodTypes.length()>0 && !thirdPartyMethodTypes.contains(exchange.getRequestMethod()))
+    if (thirdPartyMethodTypes!=null && thirdPartyMethodTypes.size()>0 && !thirdPartyMethodTypes.contains(exchange.getRequestMethod()))
       {
         log.warn("invalid thirdPartyMethodTypes {} ", thirdPartyMethodTypes);
         throw new ThirdPartyManagerException("invalid http Method Types", -404);

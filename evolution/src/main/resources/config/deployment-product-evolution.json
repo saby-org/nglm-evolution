@@ -1376,6 +1376,13 @@
   "eventMaxDelayMinutes" : 360,
   "ucgQuickRemovalAtRefresh" : true,
   "minDaysInUCGForQuickRemoval" : 0,
-  "ucgQuickOverloadRemoval" : true
+  "ucgQuickOverloadRemoval" : true,
+  "thirdPartyMethodTypes" : ["POST","GET"],
+  "thirdPartyAPIHeaders" : {
+    "Access-Control-Allow-Origin":"*",
+    "Content-Type":"Type:application/json",
+    "X-Frame-Options":"SAMEORIGIN",
+    "X-Content-Type-Options":"nosniff"
+	}
   
 }
