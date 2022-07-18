@@ -192,6 +192,24 @@ public class PointBalance
     return result;
   }
   
+  // EVPRO-1595 -- for "earliestexpiryquantity" criteria in Point and loyalty only
+  public int getFirstExpirationQuantity(Date evaluationDate)
+  {
+    int result = 0;
+    if (evaluationDate != null)
+      {
+        for (Date expirationDate : balances.keySet())
+          {
+            if (evaluationDate.compareTo(expirationDate) <= 0)
+              {
+                result = balances.get(expirationDate);
+                break;
+              }
+          }
+      }
+    return result;
+  }
+  
   /**
    * Retrieve balance at the end of yesterday.
    */

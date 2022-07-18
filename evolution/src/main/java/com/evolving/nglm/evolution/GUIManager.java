@@ -552,6 +552,7 @@ public class GUIManager
     getTokensCodesList("getTokensCodesList"),
     acceptOffer("acceptOffer"),
     purchaseOffer("purchaseOffer"),
+    cancelPurchaseOffer("cancelPurchaseOffer"),
     getTokenEventDetails("getTokenEventDetails"),
     getTenantList("getTenantList"),
     getOffersList("getOffersList"),
@@ -2501,6 +2502,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getTokensCodesList", new APISimpleHandler(API.getTokensCodesList));
         restServer.createContext("/nglm-guimanager/acceptOffer", new APISimpleHandler(API.acceptOffer));
         restServer.createContext("/nglm-guimanager/purchaseOffer", new APISimpleHandler(API.purchaseOffer));
+        restServer.createContext("/nglm-guimanager/cancelPurchaseOffer", new APISimpleHandler(API.cancelPurchaseOffer));
         restServer.createContext("/nglm-guimanager/getOffersList", new APISimpleHandler(API.getOffersList));
 
         restServer.createContext("/nglm-guimanager/getTokenEventDetails", new APISimpleHandler(API.getTokenEventDetails));
@@ -4482,6 +4484,10 @@ public class GUIManager
 
                 case purchaseOffer:
                   jsonResponse = processPurchaseOffer(userID, jsonRoot, tenantID);
+                  break;
+
+                case cancelPurchaseOffer:
+                  jsonResponse = processCancelPurchaseOffer(userID, jsonRoot, tenantID);
                   break;
 
                 case getOffersList:
@@ -24917,12 +24923,12 @@ public class GUIManager
 
           TokenChange redeemResponse = handleWaitingResponse(tokenChangeWaitingResponse);
           if(redeemResponse!=null && redeemResponse.getReturnStatus().equals(RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode()+"")){
-            handlePurchaseResponse(purchaseWaitingResponse);
+            handlePurchaseResponse(purchaseWaitingResponse, false);
             response.put("responseCode", "ok");
 		  }else{
           	purchaseWaitingResponse.cancel(true);
             if(redeemResponse!=null){
-              handlePurchaseResponse(purchaseWaitingResponse);
+              handlePurchaseResponse(purchaseWaitingResponse, false);
             }
             else
             response.put("responseMessage", redeemResponse.getReturnStatus());
@@ -25041,11 +25047,11 @@ public class GUIManager
         String resellerID = "";
         if(!sync)
           {
-            purchaseResponse = purchaseOffer(subscriberProfile,false,subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, origin, resellerID, kafkaProducer);
+            purchaseResponse = purchaseOffer(subscriberProfile,false,subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, origin, resellerID, kafkaProducer, zuks.getStringKey(), false, null);
           }
         else
           {
-            purchaseResponse = purchaseOffer(subscriberProfile,true,subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, origin, resellerID, kafkaProducer);
+            purchaseResponse = purchaseOffer(subscriberProfile,true,subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, origin, resellerID, kafkaProducer, zuks.getStringKey(), false, null);
             response.put("offer",purchaseResponse.getGUIPresentationMap(subscriberMessageTemplateService,salesChannelService,journeyService,offerService,loyaltyProgramService,productService,voucherService,deliverableService,paymentMeanService, resellerService, tenantID));
           }
       }
@@ -25082,7 +25088,166 @@ public class GUIManager
    }
    return JSONUtilities.encodeObject(response);
  }
+ 
+ /*****************************************
+  *
+  * processCancelPurchaseOffer
+  *
+  *****************************************/
 
+ private JSONObject processCancelPurchaseOffer(String userID, JSONObject jsonRoot, int tenantID) throws GUIManagerException
+ {
+   boolean sync = true; // always sync today
+   
+   /****************************************
+    *
+    * response
+    *
+    ****************************************/
+
+   HashMap<String, Object> response = new HashMap<String, Object>();
+   Date now = SystemTime.getCurrentTime();
+   String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+
+   /*****************************************
+    *
+    * resolve subscriberID
+    *
+    *****************************************/
+
+   String subscriberID = resolveSubscriberID(customerID, tenantID);
+   if (subscriberID == null)
+     {
+       log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID ", getCustomerAlternateID, customerID);
+       response.put("responseCode", "CustomerNotFound");
+       return JSONUtilities.encodeObject(response);
+     }
+   
+   //
+   //  subscriberProfile
+   //
+   
+   SubscriberProfile subscriberProfile = null;
+   try
+     {
+       subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
+     } 
+   catch (SubscriberProfileServiceException e)
+     {
+       e.printStackTrace();
+       response.put("responseCode", "CustomerNotFound");
+       return JSONUtilities.encodeObject(response);
+     }
+   if (subscriberProfile == null)
+     {
+       response.put("responseCode", "CustomerNotFound");
+       return JSONUtilities.encodeObject(response);
+     }
+   
+   //
+   //  request
+   //
+   
+   String moduleID = DeliveryRequest.Module.Customer_Care.getExternalRepresentation();
+   String featureID = JSONUtilities.decodeString(jsonRoot, "userName", "administrator");
+   String origin = "CC";
+   String deliveryRequestID = JSONUtilities.decodeString(jsonRoot, "deliveryRequestID", true);
+   
+   //
+   //  filters
+   //
+   
+   List<QueryBuilder> filters = new ArrayList<QueryBuilder>();
+   filters.add(QueryBuilders.matchQuery("deliveryRequestID", deliveryRequestID));
+   
+   //
+   //  get from elasticsearch
+   //
+   
+   List<PurchaseFulfillmentRequest> purchaseFulfillmentRequests = new ArrayList<PurchaseFulfillmentRequest>();
+   SearchRequest searchRequest = this.elasticsearch.getSearchRequest(API.getCustomerODRs, subscriberID,  null, filters, tenantID);
+   try
+     {
+       List<SearchHit> hits = this.elasticsearch.getESHits(searchRequest);
+       for (SearchHit hit : hits)
+         {
+           PurchaseFulfillmentRequest purchaseFulfillmentRequestES = new PurchaseFulfillmentRequest(hit.getSourceAsMap(), supplierService, offerService, productService, voucherService, resellerService);
+           purchaseFulfillmentRequests.add(purchaseFulfillmentRequestES);
+         }
+     } 
+   catch (GUIManagerException e)
+     {
+       response.put("responseCode", e.getMessage());
+       log.error("no purchase found for deliveryRequestID {}, error is {}", deliveryRequestID, e.getMessage());
+       return JSONUtilities.encodeObject(response);
+     }
+   
+   if (purchaseFulfillmentRequests.isEmpty())
+     {
+       response.put("responseCode", "no purchase found for deliveryRequestID ".concat(deliveryRequestID));
+       log.error("no purchase found for deliveryRequestID {}", deliveryRequestID);
+       return JSONUtilities.encodeObject(response);
+     }
+   
+   //
+   // cancelledDeliveryRequest
+   //
+   
+   String cancelledDeliveryRequestID = deliveryRequestID.concat("_cancel_purchase");
+   boolean cancelledDeliveryRequest = false;
+   
+   //
+   //  filters
+   //
+   
+   filters = new ArrayList<QueryBuilder>();
+   filters.add(QueryBuilders.matchQuery("deliveryRequestID", cancelledDeliveryRequestID));
+   searchRequest = this.elasticsearch.getSearchRequest(API.getCustomerODRs, subscriberID,  null, filters, tenantID);
+   try
+     {
+       List<SearchHit> hits = this.elasticsearch.getESHits(searchRequest);
+       cancelledDeliveryRequest = !hits.isEmpty();
+     } 
+   catch (GUIManagerException e)
+     {
+       response.put("responseCode", e.getMessage());
+       log.error("es error for deliveryRequestID {}, error is {}", deliveryRequestID, e.getMessage());
+       return JSONUtilities.encodeObject(response);
+     }
+   
+   if (cancelledDeliveryRequest)
+     {
+       response.put("responseCode", "already cancelled for deliveryRequestID ".concat(deliveryRequestID));
+       log.error("purchase already cancelled for deliveryRequestID {}", deliveryRequestID);
+       return JSONUtilities.encodeObject(response);
+     }
+   
+   
+   //
+   //  actual purchaseFulfillmentRequest
+   //
+   
+   PurchaseFulfillmentRequest purchaseFulfillmentRequest = purchaseFulfillmentRequests.get(0);
+   
+   //
+   // cancelPurchaseOffer
+   //
+   
+   PurchaseFulfillmentRequest purchaseResponse = null;
+   if (!sync)
+     {
+       purchaseResponse = purchaseOffer(subscriberProfile, sync, subscriberID, purchaseFulfillmentRequest.getOfferID(), purchaseFulfillmentRequest.getSalesChannelID(), purchaseFulfillmentRequest.getQuantity(), moduleID, featureID, origin, purchaseFulfillmentRequest.getResellerID(), kafkaProducer, cancelledDeliveryRequestID, true, purchaseFulfillmentRequest.getCreationDate());
+       response.put("responseCode", "ok");
+     } 
+   else
+     {
+       purchaseResponse = purchaseOffer(subscriberProfile, sync, subscriberID, purchaseFulfillmentRequest.getOfferID(), purchaseFulfillmentRequest.getSalesChannelID(), purchaseFulfillmentRequest.getQuantity(), moduleID, featureID, origin, purchaseFulfillmentRequest.getResellerID(), kafkaProducer, cancelledDeliveryRequestID, true, purchaseFulfillmentRequest.getCreationDate());
+       response.put("offer", purchaseResponse.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, tenantID));
+       response.put("responseCode", "ok");
+     }
+   return JSONUtilities.encodeObject(response);
+ }
+ 
  /*****************************************
  *
  *  processGetOffersList
@@ -26477,7 +26642,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
    *
    *****************************************/
   
-  private PurchaseFulfillmentRequest purchaseOffer(SubscriberProfile subscriberProfile, boolean sync, String subscriberID, String offerID, String salesChannelID, int quantity, String moduleID, String featureID, String origin, String resellerID, KafkaProducer<byte[],byte[]> kafkaProducer) throws GUIManagerException
+  private PurchaseFulfillmentRequest purchaseOffer(SubscriberProfile subscriberProfile, boolean sync, String subscriberID, String offerID, String salesChannelID, int quantity, String moduleID, String featureID, String origin, String resellerID, KafkaProducer<byte[],byte[]> kafkaProducer, String purchaseDeliveryRequestID, boolean cancelPurchase, Date previousPurchaseDate) throws GUIManagerException
   {
     DeliveryManagerDeclaration deliveryManagerDeclaration = null;
     for (DeliveryManagerDeclaration dmd : Deployment.getDeliveryManagers().values())
@@ -26506,8 +26671,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     Serializer<StringKey> keySerializer = StringKey.serde().serializer();
     Serializer<PurchaseFulfillmentRequest> valueSerializer = ((ConnectSerde<PurchaseFulfillmentRequest>) deliveryManagerDeclaration.getRequestSerde()).serializer();
     
-    String deliveryRequestID = zuks.getStringKey();
-    // Build a json doc to create the PurchaseFulfillmentRequest
+    String deliveryRequestID = purchaseDeliveryRequestID;
     HashMap<String,Object> request = new HashMap<String,Object>();
     request.put("subscriberID", subscriberID);
     request.put("offerID", offerID);
@@ -26520,10 +26684,12 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     request.put("origin", origin);
     request.put("resellerID", resellerID);
     request.put("deliveryType", deliveryManagerDeclaration.getDeliveryType());
+    request.put("cancelPurchase", cancelPurchase);
     JSONObject valueRes = JSONUtilities.encodeObject(request);
     
     PurchaseFulfillmentRequest purchaseRequest = new PurchaseFulfillmentRequest(subscriberProfile,subscriberGroupEpochReader,valueRes, deliveryManagerDeclaration, offerService, paymentMeanService, resellerService, productService, supplierService, voucherService, SystemTime.getCurrentTime(), subscriberProfile.getTenantID());
     purchaseRequest.forceDeliveryPriority(DELIVERY_REQUEST_PRIORITY);
+    purchaseRequest.setPreviousPurchaseDate(previousPurchaseDate);
     String topic = deliveryManagerDeclaration.getRequestTopic(purchaseRequest.getDeliveryPriority());
 
     Future<PurchaseFulfillmentRequest> waitingResponse=null;
@@ -26538,43 +26704,51 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
         ));
 
     if (sync) {
-    	return handlePurchaseResponse(waitingResponse);
+    	return handlePurchaseResponse(waitingResponse, cancelPurchase);
     }
     return purchaseRequest;
   }
 
-  private PurchaseFulfillmentRequest handlePurchaseResponse(Future<PurchaseFulfillmentRequest> waitingResponse) throws GUIManagerException {
-	  PurchaseFulfillmentRequest result =  handleWaitingResponse(waitingResponse);
-	  if (result != null)
-	  {
-		  if (result.getStatus().getReturnCode() == ((PurchaseFulfillmentStatus.PURCHASED).getReturnCode()))
-		  {
-			  return handleWaitingResponse(waitingResponse);
-		  }
-		  else
-		  {
-			  String returnCode = (result.getStatus().getReturnCode()).toString();
-			  String returnMessage = result.getStatus().name();
-			  throw new GUIManagerException(returnMessage, returnCode);
-		  }
-	  }
-	  return result;
+  private PurchaseFulfillmentRequest handlePurchaseResponse(Future<PurchaseFulfillmentRequest> waitingResponse, boolean cancelPurchase) throws GUIManagerException
+  {
+    PurchaseFulfillmentRequest result = handleWaitingResponse(waitingResponse);
+    if (result != null)
+      {
+        Integer returnCodeExpected = cancelPurchase ? PurchaseFulfillmentStatus.PURCHASED_AND_CANCELLED.getReturnCode() : PurchaseFulfillmentStatus.PURCHASED.getReturnCode();
+        if (result.getStatus().getReturnCode() == returnCodeExpected)
+          {
+            return handleWaitingResponse(waitingResponse);
+          } 
+        else
+          {
+            String returnCode = (result.getStatus().getReturnCode()).toString();
+            String returnMessage = result.getStatus().name();
+            throw new GUIManagerException(returnMessage, returnCode);
+          }
+      }
+    return result;
   }
 
-  private <T> T handleWaitingResponse(Future<T> waitingResponse) throws GUIManagerException {
-    try {
-      T response = waitingResponse.get(httpTimeout, TimeUnit.MILLISECONDS);
-      if(log.isDebugEnabled()) log.debug("response processed : "+response);
-      return response;
-    } catch (InterruptedException|ExecutionException e) {
-      String str = "Error waiting response";
-      log.warn(str);
-      throw new GUIManagerException("Internal error", str);
-    } catch (TimeoutException e) {
-      String str = "Timeout waiting response";
-      log.info(str);
-      throw new GUIManagerException("Internal error", str);
-    }
+  private <T> T handleWaitingResponse(Future<T> waitingResponse) throws GUIManagerException
+  {
+    try
+      {
+        T response = waitingResponse.get(httpTimeout, TimeUnit.MILLISECONDS);
+        if (log.isDebugEnabled()) log.debug("response processed : " + response);
+        return response;
+      } 
+    catch (InterruptedException | ExecutionException e)
+      {
+        String str = "Error waiting response";
+        log.warn(str);
+        throw new GUIManagerException("Internal error", str);
+      } 
+    catch (TimeoutException e)
+      {
+        String str = "Timeout waiting response";
+        log.info(str);
+        throw new GUIManagerException("Internal error", str);
+      }
   }
 
   /*****************************************

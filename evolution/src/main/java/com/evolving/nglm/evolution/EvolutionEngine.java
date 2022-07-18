@@ -4010,6 +4010,20 @@ public class EvolutionEngine
           {
             log.info("Got a purchase for inexistent offer " + offerID);
           }
+        else if (purchaseFulfillmentRequest.getCancelPurchase())
+          {
+            List<Pair<String, Date>> purchases = subscriberProfile.getOfferPurchaseSalesChannelHistory().get(offerID);
+            if (purchases != null)
+              {
+                Pair<String, Date> purchaseToRemove = purchases.stream().filter(purchase -> purchase.getFirstElement().equals(salesChannelID) && RLMDateUtils.truncatedCompareTo(purchase.getSecondElement(), purchaseFulfillmentRequest.getPreviousPurchaseDate(), Calendar.DATE, salesChannelID) == 0).findFirst().orElse(null);            
+                if (purchaseToRemove != null)
+                  {
+                    subscriberProfile.getOfferPurchaseSalesChannelHistory().get(offerID).remove(purchaseToRemove);
+                    subscriberProfileUpdated = true;
+                  }
+              }
+            
+          }
         else
           {
             Date earliestDateToKeepForCriteria = computeEarliestDateForAdvanceCriteria(context.processingDate(), tenantID);
