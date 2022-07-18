@@ -1231,9 +1231,13 @@ public abstract class SubscriberProfile
         SubscriberRelatives relatives = this.relations.get(relationshipID);
         if (relatives != null && !(relatives.getParentSubscriberID() == null && relatives.getChildrenSubscriberIDs().isEmpty()))
           {
-            hierarchyRelations.add(relatives.getJSONRepresentation(relationshipID, subscriberProfileService, subscriberGroupEpochReader));
+            //hierarchyRelations.add(relatives.getJSONRepresentation(relationshipID, subscriberProfileService, subscriberGroupEpochReader));
+        	hierarchyRelations.add(relatives.getNewJSONRepresentation(relationshipID, subscriberProfileService, subscriberGroupEpochReader,tenantID));
+            
           }
       }
+    
+    
     
     //prepare complexObjectInstances
     
