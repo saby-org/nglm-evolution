@@ -1380,7 +1380,7 @@
   "thirdPartyMethodTypes" : ["POST","GET"],
   "thirdPartyAPIHeaders" : {
     "Access-Control-Allow-Origin":"*",
-    "Content-Type":"Type:application/json",
+    "Content-Type":"application/json",
     "X-Frame-Options":"SAMEORIGIN",
     "X-Content-Type-Options":"nosniff"
 	}
