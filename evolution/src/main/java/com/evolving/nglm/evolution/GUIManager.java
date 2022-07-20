@@ -46,12 +46,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.evolving.nglm.evolution.commoditydelivery.CommodityDeliveryException;
-import com.evolving.nglm.evolution.commoditydelivery.CommodityDeliveryManagerRemovalUtils;
-
-import com.evolving.nglm.evolution.job.Reader;
-import com.evolving.nglm.evolution.job.Sender;
-import com.evolving.nglm.evolution.uniquekey.ZookeeperUniqueKeyServer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.Serdes;
@@ -110,8 +104,6 @@ import com.evolving.nglm.evolution.EvaluationCriterion.CriterionOperator;
 import com.evolving.nglm.evolution.Expression.ConstantExpression;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
-import com.evolving.nglm.evolution.GUIManager.GUIManagerContext;
-import com.evolving.nglm.evolution.GUIManager.RenamedProfileCriterionField;
 import com.evolving.nglm.evolution.GUIService.GUIManagedObjectListener;
 import com.evolving.nglm.evolution.Journey.GUINode;
 import com.evolving.nglm.evolution.Journey.JourneyStatus;
@@ -131,15 +123,20 @@ import com.evolving.nglm.evolution.SubscriberProfile.EvolutionSubscriberStatus;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
 import com.evolving.nglm.evolution.Token.TokenStatus;
+import com.evolving.nglm.evolution.commoditydelivery.CommodityDeliveryException;
+import com.evolving.nglm.evolution.commoditydelivery.CommodityDeliveryManagerRemovalUtils;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectTypeService;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientException;
 import com.evolving.nglm.evolution.grafana.GrafanaUtils;
+import com.evolving.nglm.evolution.job.Reader;
+import com.evolving.nglm.evolution.job.Sender;
 import com.evolving.nglm.evolution.offeroptimizer.GetOfferException;
 import com.evolving.nglm.evolution.offeroptimizer.ProposedOfferDetails;
 import com.evolving.nglm.evolution.otp.GUIManagerOTP;
 import com.evolving.nglm.evolution.otp.OTPTypeService;
 import com.evolving.nglm.evolution.tenancy.Tenant;
+import com.evolving.nglm.evolution.uniquekey.ZookeeperUniqueKeyServer;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -21149,7 +21146,9 @@ private static final String DATE_SEPERATOR = "@";
     * resolve relationship
     *
     *****************************************/
-      String today=new Date().toString();
+    SimpleDateFormat dateFormat = new SimpleDateFormat(Deployment.getAPIresponseDateFormat());   // TODO EVPRO-99
+      
+      String today=dateFormat.format(new Date());
       String newparentwithDate=newParentCustomerID+DATE_SEPERATOR+today;
       String subscriberwithDate=customerID+DATE_SEPERATOR+today;
       
