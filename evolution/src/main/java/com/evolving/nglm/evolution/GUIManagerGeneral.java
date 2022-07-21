@@ -4648,6 +4648,8 @@ public class GUIManagerGeneral extends GUIManager
     
     List<String> existingVoucherCodes = new ArrayList<>();
     Collection<GUIManagedObject> uploadedFileObjects = uploadedFileService.getStoredGUIManagedObjects(true, tenantID);
+    log.info("[PRJT] uploadedFileObjects found: {}", uploadedFileObjects.size());
+    uploadedFileObjects.stream().forEach(u -> log.info("[PRJT] uploadedFileObjects: [{}]",u.getGUIManagedObjectDisplay()));
 
     String supplierID = JSONUtilities.decodeString(jsonRoot, "supplierID", true);
 
@@ -4655,11 +4657,13 @@ public class GUIManagerGeneral extends GUIManager
     
     for (GUIManagedObject uploaded : uploadedFileObjects)
       {
+        log.info("[PRJT] for uploaded: {}", uploaded.getGUIManagedObjectDisplay());
         String fileApplicationID = JSONUtilities.decodeString(uploaded.getJSONRepresentation(), "applicationID", false);
         if (Objects.equals(applicationID, fileApplicationID))
           {
             if (uploaded instanceof UploadedFile)
               {
+                log.info("[PRJT] valid UploadedFile: {}", uploaded.getGUIManagedObjectDisplay());
                 UploadedFile uploadedFile = (UploadedFile) uploaded;
                 BufferedReader reader = null;
                 String filename = UploadedFile.OUTPUT_FOLDER + uploadedFile.getDestinationFilename();
@@ -4671,6 +4675,7 @@ public class GUIManagerGeneral extends GUIManager
                       if (line.trim().isEmpty()) continue;
                       existingVoucherCodes.add(line.trim());
                     }
+                  log.info("[PRJT] read existingVoucherCodes: {}", existingVoucherCodes.size());
                 }
                 catch (IOException e)
                 {
@@ -4678,6 +4683,7 @@ public class GUIManagerGeneral extends GUIManager
                 } finally {
                   try {
                     if (reader != null) reader.close();
+                    log.info("[PRJT] reader close.");
                   }
                   catch (IOException e)
                   {
@@ -4688,6 +4694,7 @@ public class GUIManagerGeneral extends GUIManager
           }
       }
         
+    log.info("[PRJT] voucher generation started at {}", SystemTime.getCurrentTime());
     List<String> currentVoucherCodes = new ArrayList<>();
     for (int q=0; q<quantity; q++)
       {
@@ -4710,6 +4717,7 @@ public class GUIManagerGeneral extends GUIManager
         log.debug("voucherCode  generated : " + voucherCode);
         currentVoucherCodes.add(voucherCode);
       }
+    log.info("[PRJT] [{}] voucher generation ended at {}", currentVoucherCodes.size(), SystemTime.getCurrentTime());
 
     // convert list to InputStream
     
@@ -4730,6 +4738,8 @@ public class GUIManagerGeneral extends GUIManager
     byte[] bytes = baos.toByteArray();
     InputStream vouchersStream = new ByteArrayInputStream(bytes);
 
+    log.info("[PRJT] voucher list to InputStream");
+    
     // write list to UploadedFile
 
     String fileID = uploadedFileService.generateFileID();
@@ -4744,6 +4754,8 @@ public class GUIManagerGeneral extends GUIManager
     GUIManagedObject existingFileUpload = uploadedFileService.getStoredUploadedFile(fileID);
     long epoch = epochServer.getKey();
     
+    log.info("[PRJT] creating uploaded voucher file");
+    
     try
       {
         UploadedFile uploadedFile = new UploadedFile(fileJSON, epoch, existingFileUpload, tenantID);
@@ -4753,6 +4765,8 @@ public class GUIManagerGeneral extends GUIManager
       {
         log.info("Issue when creating uploaded voucher file : " + e.getLocalizedMessage());
       }
+    
+    log.info("[PRJT] creating uploaded voucher file DONE");
     
     /*****************************************
     *
