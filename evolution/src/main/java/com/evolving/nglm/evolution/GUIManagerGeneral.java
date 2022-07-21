@@ -28,6 +28,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import com.evolving.nglm.evolution.uniquekey.ZookeeperUniqueKeyServer;
 import org.apache.commons.fileupload.FileItemIterator;
@@ -4657,14 +4659,14 @@ public class GUIManagerGeneral extends GUIManager
     
     for (GUIManagedObject uploaded : uploadedFileObjects)
       {
+        log.info("[PRJT] for uploaded: {}", uploaded.getGUIManagedObjectDisplay());
         String fileApplicationID = JSONUtilities.decodeString(uploaded.getJSONRepresentation(), "applicationID", false);
         if (Objects.equals(applicationID, fileApplicationID))
           {
             if (uploaded instanceof UploadedFile)
               {
+                log.info("[PRJT] valid UploadedFile: {}", uploaded.getGUIManagedObjectDisplay());
                 UploadedFile uploadedFile = (UploadedFile) uploaded;
-                log.info("[PRJT] valid UploadedFile: {}", uploadedFile.getGUIManagedObjectDisplay());
-                
                 BufferedReader reader = null;
                 String filename = UploadedFile.OUTPUT_FOLDER + uploadedFile.getDestinationFilename();
                 try
@@ -4695,24 +4697,12 @@ public class GUIManagerGeneral extends GUIManager
       }
         
     String fileID = uploadedFileService.generateFileID();
-    generateVouchers(fileID, applicationID, quantity, pattern, existingVoucherCodes, userID, tenantID);
     
-    /*****************************************
-    *
-    *  response
-    *
-    *****************************************/
-
-    response.put("id", fileID);
-    response.put("responseCode", "ok");
-    return JSONUtilities.encodeObject(response);
-  }
-  
-  public static void generateVouchers(String fileID, String applicationID, int quantity, String pattern, List<String> existingVoucherCodes, String userID, int tenantID)
-  {
+    Runnable r = new Runnable() {
+      public void run() {
+          
     Date startDate = SystemTime.getCurrentTime();
     log.info("[PRJT] voucher generation started at {}", startDate);
-    
     List<String> currentVoucherCodes = new ArrayList<>();
     for (int q=0; q<quantity; q++)
       {
@@ -4778,13 +4768,30 @@ public class GUIManagerGeneral extends GUIManager
       {
         UploadedFile uploadedFile = new UploadedFile(fileJSON, epoch, existingFileUpload, tenantID);
         uploadedFileService.putUploadedFile(uploadedFile, vouchersStream, uploadedFile.getDestinationFilename(), (uploadedFile == null), userID);
-      
-        log.info("[PRJT] creating uploaded voucher file DONE");
       }
     catch (GUIManagerException|IOException e)
       {
         log.info("Issue when creating uploaded voucher file : " + e.getLocalizedMessage());
       }
+    
+    log.info("[PRJT] creating uploaded voucher file DONE");
+    
+      }
+    };
+    
+    ExecutorService executor = Executors.newCachedThreadPool();
+    executor.submit(r);
+    executor.shutdown();
+    
+    /*****************************************
+    *
+    *  response
+    *
+    *****************************************/
+
+    response.put("id", fileID);
+    response.put("responseCode", "ok");
+    return JSONUtilities.encodeObject(response);
   }
 
   
