@@ -4695,7 +4695,7 @@ public class GUIManagerGeneral extends GUIManager
       }
         
     String fileID = uploadedFileService.generateFileID();
-    generateVouchers(fileID, quantity, pattern, existingVoucherCodes, userID, tenantID);
+    generateVouchers(fileID, applicationID, quantity, pattern, existingVoucherCodes, userID, tenantID);
     
     /*****************************************
     *
@@ -4708,7 +4708,7 @@ public class GUIManagerGeneral extends GUIManager
     return JSONUtilities.encodeObject(response);
   }
   
-  public static void generateVouchers(String fileID, int quantity, String pattern, List<String> existingVoucherCodes, String userID, int tenantID)
+  public static void generateVouchers(String fileID, String applicationID, int quantity, String pattern, List<String> existingVoucherCodes, String userID, int tenantID)
   {
     Date startDate = SystemTime.getCurrentTime();
     log.info("[PRJT] voucher generation started at {}", startDate);
