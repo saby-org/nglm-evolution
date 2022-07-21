@@ -729,7 +729,7 @@ public class GUIManager
   protected ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader;
   protected ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader;
   protected String getCustomerAlternateID;
-  protected UploadedFileService uploadedFileService;
+  protected static UploadedFileService uploadedFileService;
   protected TargetService targetService;
   protected CommunicationChannelBlackoutService communicationChannelBlackoutService;
   protected CommunicationChannelTimeWindowService communicationChannelTimeWindowService;
