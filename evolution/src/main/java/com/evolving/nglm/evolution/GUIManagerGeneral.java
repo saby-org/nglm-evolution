@@ -28,8 +28,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import com.evolving.nglm.evolution.uniquekey.ZookeeperUniqueKeyServer;
 import org.apache.commons.fileupload.FileItemIterator;
@@ -4780,8 +4782,26 @@ public class GUIManagerGeneral extends GUIManager
     };
     
     ExecutorService executor = Executors.newCachedThreadPool();
-    executor.submit(r);
-    executor.shutdown();
+    //executor.submit(r);
+    //executor.shutdown();
+    Future future = executor.submit(r);
+    if (future.isDone())
+      {
+        try
+          {
+            log.info("[PRJT] work done - {}",future.get());
+          } 
+        catch (InterruptedException | ExecutionException e)
+          {
+            e.printStackTrace();
+          }
+        executor.shutdown();
+        log.info("[PRJT] thread died");
+      }
+    else
+      {
+        log.info("[PRJT] thread is live");
+      }
     
     /*****************************************
     *
