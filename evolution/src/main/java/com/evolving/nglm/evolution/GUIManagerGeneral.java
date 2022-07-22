@@ -102,7 +102,7 @@ public class GUIManagerGeneral extends GUIManager
           {
             if (instance == null) 
               {
-                instance = (GUIManagerGeneral) new GUIManager();
+                instance = new GUIManagerGeneral();
               }
           }
         }
@@ -126,6 +126,11 @@ public class GUIManagerGeneral extends GUIManager
   private final List<GUIService> guiServiceList = new ArrayList<GUIService>();
 
 
+  public GUIManagerGeneral()
+  {
+    super();
+  }
+  
   /***************************
    * 
    * GUIManagerGeneral
