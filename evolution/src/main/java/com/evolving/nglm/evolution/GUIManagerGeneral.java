@@ -84,12 +84,32 @@ import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTa
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectType;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectTypeService;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
+import com.evolving.nglm.evolution.offeroptimizer.OfferOptimizerAlgoManager;
+import com.evolving.nglm.evolution.propensity.PropensityService;
 import com.evolving.nglm.evolution.tenancy.Tenant;
 import com.sun.net.httpserver.HttpExchange;
 
 public class GUIManagerGeneral extends GUIManager
 {
 
+  private static GUIManagerGeneral instance;
+  private static Object lock = new Object();
+  public static GUIManagerGeneral getInstance() {
+    if (instance == null) 
+      {
+        synchronized (lock) 
+        {
+          {
+            if (instance == null) 
+              {
+                instance = (GUIManagerGeneral) new GUIManager();
+              }
+          }
+        }
+      }
+    return instance;
+  }
+  
   //
   // log
   //
@@ -4698,11 +4718,6 @@ public class GUIManagerGeneral extends GUIManager
           }
       }
         
-    String fileID = uploadedFileService.generateFileID();
-    
-    Runnable r = new Runnable() {
-      public void run() {
-          
     Date startDate = SystemTime.getCurrentTime();
     log.info("[PRJT] voucher generation started at {}", startDate);
     List<String> currentVoucherCodes = new ArrayList<>();
@@ -4728,7 +4743,7 @@ public class GUIManagerGeneral extends GUIManager
         currentVoucherCodes.add(voucherCode);
       }
     Date endDate = SystemTime.getCurrentTime();
-    log.info("[PRJT] [{}] voucher generation ended at {} - [{}s]", currentVoucherCodes.size(), (endDate.getTime() - startDate.getTime())/1000);
+    log.info("[PRJT] [{}] voucher generation ended at {} - [{}s]", currentVoucherCodes.size(), endDate, (endDate.getTime() - startDate.getTime())/1000);
 
     // convert list to InputStream
     
@@ -4753,6 +4768,7 @@ public class GUIManagerGeneral extends GUIManager
     
     // write list to UploadedFile
 
+    String fileID = uploadedFileService.generateFileID();
     String sourceFilename = "Generated_internally_" + fileID + ".txt";
     
     JSONObject fileJSON = new JSONObject();
@@ -4777,31 +4793,6 @@ public class GUIManagerGeneral extends GUIManager
       }
     
     log.info("[PRJT] creating uploaded voucher file DONE");
-    
-      }
-    };
-    
-    ExecutorService executor = Executors.newCachedThreadPool();
-    //executor.submit(r);
-    //executor.shutdown();
-    Future future = executor.submit(r);
-    if (future.isDone())
-      {
-        try
-          {
-            log.info("[PRJT] work done - {}",future.get());
-          } 
-        catch (InterruptedException | ExecutionException e)
-          {
-            e.printStackTrace();
-          }
-        executor.shutdown();
-        log.info("[PRJT] thread died");
-      }
-    else
-      {
-        log.info("[PRJT] thread is live");
-      }
     
     /*****************************************
     *

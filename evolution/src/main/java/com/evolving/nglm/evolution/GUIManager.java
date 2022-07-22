@@ -3758,7 +3758,8 @@ public class GUIManager
                   break;
                   
                 case generateVouchers:
-                  jsonResponse = guiManagerGeneral.processGenerateVouchers(userID, jsonRoot, tenantID);
+                  //jsonResponse = guiManagerGeneral.processGenerateVouchers(userID, jsonRoot, tenantID);
+                  jsonResponse = GUIManagerGeneral.getInstance().processGenerateVouchers(userID, jsonRoot, tenantID);
                   break;
                   
                 case getVoucherTypeList:
