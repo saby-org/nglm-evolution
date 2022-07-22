@@ -91,25 +91,6 @@ import com.sun.net.httpserver.HttpExchange;
 
 public class GUIManagerGeneral extends GUIManager
 {
-
-  private static GUIManagerGeneral instance;
-  private static Object lock = new Object();
-  public static GUIManagerGeneral getInstance() {
-    if (instance == null) 
-      {
-        synchronized (lock) 
-        {
-          {
-            if (instance == null) 
-              {
-                instance = new GUIManagerGeneral();
-              }
-          }
-        }
-      }
-    return instance;
-  }
-  
   //
   // log
   //

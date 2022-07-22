@@ -2795,7 +2795,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private synchronized void handleSimpleHandler(API api, HttpExchange exchange) throws IOException
+  private void handleSimpleHandler(API api, HttpExchange exchange) throws IOException
   {
     try
       {
@@ -3758,8 +3758,7 @@ public class GUIManager
                   break;
                   
                 case generateVouchers:
-                  //jsonResponse = guiManagerGeneral.processGenerateVouchers(userID, jsonRoot, tenantID);
-                  jsonResponse = GUIManagerGeneral.getInstance().processGenerateVouchers(userID, jsonRoot, tenantID);
+                  jsonResponse = guiManagerGeneral.processGenerateVouchers(userID, jsonRoot, tenantID);
                   break;
                   
                 case getVoucherTypeList:
@@ -4718,7 +4717,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private synchronized void handleComplexAPI(API api, HttpExchange exchange) throws IOException
+  private void handleComplexAPI(API api, HttpExchange exchange) throws IOException
   {
     try
       {
