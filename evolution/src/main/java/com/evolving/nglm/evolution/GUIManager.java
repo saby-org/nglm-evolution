@@ -2326,7 +2326,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/expireVoucher", new APISimpleHandler(API.expireVoucher));
         
         restServer.createContext("/nglm-guimanager/getVoucherCodePatternList", new APISimpleHandler(API.getVoucherCodePatternList));
-        restServer.createContext("/nglm-guimanager/generateVouchers", new APISimpleHandler(API.generateVouchers));
+        restServer.createContext("/nglm-guimanager/generateVouchers", new APIAsyncHandler(API.generateVouchers));
 
         restServer.createContext("/nglm-guimanager/getMailTemplateList", new APISimpleHandler(API.getMailTemplateList));
         restServer.createContext("/nglm-guimanager/getFullMailTemplateList", new APISimpleHandler(API.getFullMailTemplateList));
@@ -2795,7 +2795,7 @@ public class GUIManager
   *
   *****************************************/
 
-  private void handleSimpleHandler(API api, HttpExchange exchange) throws IOException
+  private synchronized void handleSimpleHandler(API api, HttpExchange exchange) throws IOException
   {
     try
       {
@@ -4711,13 +4711,192 @@ public class GUIManager
       }
   }
 
+  private void handleAsyncAPI(API api, HttpExchange exchange) throws IOException
+  {
+    try
+      {
+        /*****************************************
+        *
+        *  get the user
+        *
+        *****************************************/
+
+        String userID = null;
+        if (exchange.getRequestURI().getQuery() != null)
+          {
+            Pattern pattern = Pattern.compile("^(.*\\&user_id|user_id)=(.*?)(\\&.*$|$)");
+            Matcher matcher = pattern.matcher(exchange.getRequestURI().getQuery());
+            if (matcher.matches())
+              {
+                userID = matcher.group(2);
+              }
+          }
+
+        /*****************************************
+        *
+        *  get the body
+        *
+        *****************************************/
+        
+        StringBuilder requestBodyStringBuilder = new StringBuilder();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(exchange.getRequestBody()));
+        while (true)
+          {
+            String line = reader.readLine();
+            if (line == null) break;
+            requestBodyStringBuilder.append(line);
+          }
+        reader.close();
+        log.debug("API (raw request): {} {}",api,requestBodyStringBuilder.toString());
+        JSONObject jsonRoot = (JSONObject) (new JSONParser()).parse(requestBodyStringBuilder.toString());
+        
+        /*****************************************
+        *
+        *  validate
+        *
+        *****************************************/
+
+        int apiVersion = JSONUtilities.decodeInteger(jsonRoot, "apiVersion", true);
+        if (apiVersion > RESTAPIVersion)
+          {
+            throw new ServerRuntimeException("unknown api version " + apiVersion);
+          }
+        jsonRoot.remove("apiVersion");
+        
+        /*****************************************
+        *
+        *  get the tenant
+        *
+        *****************************************/
+        
+        Integer tenantID = JSONUtilities.decodeInteger(jsonRoot, "tenantID", null);
+        
+        // EVPRO-1117
+        if(tenantID == null)
+          {
+            tenantID = DeploymentCommon.getDefaultTenant().getTenantID();
+          }
+        
+        /*****************************************
+        *
+        *  license state
+        *
+        *****************************************/
+
+        LicenseState licenseState = licenseChecker.checkLicense();
+        Alarm licenseAlarm = licenseState.getHighestAlarm();
+        boolean allowAccess = true;
+        switch (licenseAlarm.getLevel())
+          {
+            case None:
+            case Alert:
+            case Alarm:
+              allowAccess = true;
+              break;
+
+            case Limit:
+            case Block:
+              allowAccess = false;
+              break;
+          }
+        
+        /*****************************************
+        *
+        *  process
+        *
+        *****************************************/
+
+        //
+        //  standard response fields
+        //
+        JSONObject jsonResponse = new JSONObject();
+
+        if (licenseState.isValid() && allowAccess)
+          { 
+            switch (api)
+            {
+              case generateVouchers:
+                jsonResponse = guiManagerGeneral.processGenerateVouchers(userID, jsonRoot, tenantID);
+                break;
+            }
+          }
+        else
+          {
+            jsonResponse = processFailedLicenseCheck(licenseState);
+            log.warn("Failed license check {} ", licenseState);
+          }
+        
+        //
+        //  validate
+        //
+
+        if (jsonResponse == null)
+          {
+            throw new ServerException("no handler for " + api);
+          }
+        
+        /*****************************************
+        *
+        *  send response
+        *
+        *****************************************/
+
+        //
+        //  standard response fields
+        //
+
+        jsonResponse.put("apiVersion", RESTAPIVersion);
+        jsonResponse.put("licenseCheck", licenseAlarm.getJSONRepresentation());
+
+        //
+        //  log
+        //
+
+        log.debug("API (raw response): {}", jsonResponse.toString());
+
+        //
+        //  send
+        //
+
+        exchange.sendResponseHeaders(200, 0);
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
+        writer.write(jsonResponse.toString());
+        writer.close();
+        exchange.close();
+      }
+    catch (org.json.simple.parser.ParseException | IOException | ServerException | RuntimeException e )
+      {
+        //
+        //  log
+        //
+
+        StringWriter stackTraceWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+        log.error("Exception processing REST api: {}", stackTraceWriter.toString());
+
+        //
+        //  send error response
+        //
+
+        HashMap<String,Object> response = new HashMap<String,Object>();
+        response.put("responseCode", "systemError");
+        response.put("responseMessage", e.getMessage());
+        JSONObject jsonResponse = JSONUtilities.encodeObject(response);
+        exchange.sendResponseHeaders(200, 0);
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
+        writer.write(jsonResponse.toString());
+        writer.close();
+        exchange.close();
+      }
+  }
+  
   /*****************************************
   *
   *  handleFileAPI
   *
   *****************************************/
 
-  private void handleComplexAPI(API api, HttpExchange exchange) throws IOException
+  private synchronized void handleComplexAPI(API api, HttpExchange exchange) throws IOException
   {
     try
       {
@@ -29821,6 +30000,45 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     }
   }
 
+  /*****************************************
+  *
+  *  class APIAsyncHandler
+  *
+  *****************************************/
+
+  private class APIAsyncHandler implements HttpHandler
+  {
+    /*****************************************
+    *
+    *  data
+    *
+    *****************************************/
+
+    private API api;
+
+    /*****************************************
+    *
+    *  constructor
+    *
+    *****************************************/
+
+    private APIAsyncHandler(API api)
+    {
+      this.api = api;
+    }
+
+    /*****************************************
+    *
+    *  handle -- HttpHandler
+    *
+    *****************************************/
+
+    public void handle(HttpExchange exchange) throws IOException
+    {
+      handleAsyncAPI(api, exchange);
+    }
+  }
+  
   /*****************************************
   *
   *  class APIComplexHandler
