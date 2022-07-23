@@ -4655,14 +4655,11 @@ public class GUIManagerGeneral extends GUIManager
     ****************************************/
     String pattern = JSONUtilities.decodeString(jsonRoot, "pattern", true);
     int quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
-    
-    // to remove -- testing only
-    int threadNumber = (Math.abs(quantity) % 10);
-    quantity = Math.abs(quantity) / 10;
+    Integer threadCount = JSONUtilities.decodeInteger(jsonRoot, "threadCount", false);
     
     // find existing vouchers
     
-    List<String> existingVoucherCodes = new ArrayList<>();
+    Set<String> existingVoucherCodes = new HashSet();
     Collection<GUIManagedObject> uploadedFileObjects = uploadedFileService.getStoredGUIManagedObjects(true, tenantID);
     log.info("[PRJT] uploadedFileObjects found: {}", uploadedFileObjects.size());
 
@@ -4707,7 +4704,7 @@ public class GUIManagerGeneral extends GUIManager
     log.info("[PRJT] found existingVoucherCodes: {}", existingVoucherCodes.size());
         
     //List<String> currentVoucherCodes = new ArrayList<>();
-    Set<String> currentVoucherCodes = new HashSet<String>();
+    Set<String> currentVoucherCodes = existingVoucherCodes;
     
     //
     // EVPRO-1576
@@ -4715,7 +4712,10 @@ public class GUIManagerGeneral extends GUIManager
     
     ExecutorService es = Executors.newCachedThreadPool();
     int minPerThreadCount = 1000; // FROM_CONFIG
-    int threadCount = quantity > minPerThreadCount ? quantity/minPerThreadCount : 1;
+    if (threadCount == null)
+      {
+        threadCount = quantity > minPerThreadCount ? quantity/minPerThreadCount : 1;
+      }
     int reqPerThreadCount = quantity/threadCount;
     
     Date startDate = SystemTime.getCurrentTime();
@@ -4744,6 +4744,7 @@ public class GUIManagerGeneral extends GUIManager
             currentVoucherCodes.addAll(vCodes);
           }});
       }
+    currentVoucherCodes.removeAll(existingVoucherCodes);
     
     es.shutdownNow();
     boolean finished = false;
@@ -4763,7 +4764,26 @@ public class GUIManagerGeneral extends GUIManager
             log.info("[PRJT] adding missedVoucher: "+(quantity - currentVoucherCodes.size()));
             while(currentVoucherCodes.size() != quantity)
               {
-                currentVoucherCodes.add(TokenUtils.generateFromRegex(pattern));
+                //currentVoucherCodes.add(TokenUtils.generateFromRegex(pattern));
+                
+                String voucherCode = null; 
+                boolean newVoucherGenerated = false;
+                for (int i=0; i<HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE; i++)
+                  {
+                    voucherCode = TokenUtils.generateFromRegex(pattern);
+                    if (!currentVoucherCodes.contains(voucherCode) && !existingVoucherCodes.contains(voucherCode))
+                      {
+                        newVoucherGenerated = true;
+                        break;
+                      }
+                  }
+                if (!newVoucherGenerated)
+                  {
+                    log.info("After " + HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE + " tries, unable to generate a new voucher code with pattern " + pattern);
+                    break;
+                  }
+                log.debug("voucherCode  generated : " + voucherCode);
+                currentVoucherCodes.add(voucherCode);
               }
           }
       }
