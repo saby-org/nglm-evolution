@@ -35,6 +35,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import com.evolving.nglm.evolution.uniquekey.ZookeeperUniqueKeyServer;
 import org.apache.commons.fileupload.FileItemIterator;
@@ -4657,6 +4658,8 @@ public class GUIManagerGeneral extends GUIManager
     String pattern = JSONUtilities.decodeString(jsonRoot, "pattern", true);
     int quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
     
+    Set<String> generatedVoucherCodes = ConcurrentHashMap.newKeySet();
+    
     // find existing vouchers
     
     Set<String> existingVoucherCodes = new HashSet<>();
@@ -4712,7 +4715,7 @@ public class GUIManagerGeneral extends GUIManager
     
     ExecutorService es = Executors.newCachedThreadPool();
     int minPerThreadCount = 1000; // to config
-    int threadCount = quantity > minPerThreadCount ? Math.min(quantity/minPerThreadCount, 10) : 1;
+    int threadCount = quantity > minPerThreadCount ? Math.min(quantity/minPerThreadCount, 5) : 1;
     
     Date startDate = SystemTime.getCurrentTime();
     log.info("[PRJT] voucher generation started at {}", startDate);
@@ -4757,16 +4760,10 @@ public class GUIManagerGeneral extends GUIManager
     newVoucherCodes.removeAll(existingVoucherCodes);
     
     // remove extra vouchers
-    newVoucherCodes.removeIf(v -> {
-      if (newVoucherCodes.size() > quantity)
-        {
-          newVoucherCodes.remove(v);
-        }
-      return false;
-    });
+    generatedVoucherCodes = newVoucherCodes.stream().limit(quantity).collect(Collectors.toSet());
     
     Date endDate = SystemTime.getCurrentTime();
-    log.info("[PRJT] [{}] voucher generation finished - [{}s]", newVoucherCodes.size(), (endDate.getTime() - startDate.getTime())/1000.0);
+    log.info("[PRJT] [{}] voucher generation finished - [{}s]", generatedVoucherCodes.size(), (endDate.getTime() - startDate.getTime())/1000.0);
     
     //
     // EVPRO-1576 - end
@@ -4777,7 +4774,7 @@ public class GUIManagerGeneral extends GUIManager
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     try
     {
-      for (String voucherCode : existingVoucherCodes)
+      for (String voucherCode : generatedVoucherCodes)
         {
           baos.write(voucherCode.getBytes());
           baos.write("\n".getBytes());
@@ -4786,7 +4783,7 @@ public class GUIManagerGeneral extends GUIManager
     catch (IOException e) // will never happen as we write to memory
     {
       log.info("Issue when converting voucher list to file : " + e.getLocalizedMessage());
-      log.debug("Voucher list : " + existingVoucherCodes);
+      log.debug("Voucher list : " + generatedVoucherCodes);
     }
     byte[] bytes = baos.toByteArray();
     InputStream vouchersStream = new ByteArrayInputStream(bytes);
