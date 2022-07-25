@@ -261,11 +261,14 @@ public class SubscriberRelatives
 	String date,childId;
 	for(String child: childrenSubscriberIDs ){
 		if(child!=null && !child.isEmpty()) {
+			date=new String();
+			childId=new String();
 			childId=new String();
 			childId=child.substring(0,child.lastIndexOf("@")-1);
 			date=new String();
-		date=getDateString(child.substring(child.lastIndexOf("@")+1),tenantID);
-		datedMap.put(datedMap, date);
+		//date=getDateString(child.substring(child.lastIndexOf("@")+1),tenantID);
+		date=child.substring(child.lastIndexOf("@")+1);
+		datedMap.put(child, date);
 		}
 		}
 	
@@ -371,7 +374,7 @@ public class SubscriberRelatives
   {
     String result = null;
     if (null == date) return result;
-    
+    System.out.println("=================="+date+"======================");
         SimpleDateFormat dateFormat = new SimpleDateFormat(Deployment.getAPIresponseDateFormat());   // TODO EVPRO-99
         dateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getTimeZone()));
         result = dateFormat.format(date);
