@@ -755,7 +755,7 @@ public class GUIManager
   protected static final String FILE_REQUEST = "file"; 
   protected static final String FILE_UPLOAD_META_DATA= "fileUploadMetaData";
 
-private static final String DATE_SEPERATOR = "@"; 
+  public static final String DATE_SEPERATOR = "@"; 
 
   //
   //  context

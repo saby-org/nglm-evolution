@@ -1232,7 +1232,7 @@ public abstract class SubscriberProfile
         if (relatives != null && !(relatives.getParentSubscriberID() == null && relatives.getChildrenSubscriberIDs().isEmpty()))
           {
             //hierarchyRelations.add(relatives.getJSONRepresentation(relationshipID, subscriberProfileService, subscriberGroupEpochReader));
-        	hierarchyRelations.add(relatives.getNewJSONRepresentation(relationshipID, subscriberProfileService, subscriberGroupEpochReader,tenantID));
+        	hierarchyRelations.add(relatives.getJSONRepresentation(relationshipID, subscriberProfileService, subscriberGroupEpochReader));
             
           }
       }

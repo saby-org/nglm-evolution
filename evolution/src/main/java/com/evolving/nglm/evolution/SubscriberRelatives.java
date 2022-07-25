@@ -8,6 +8,7 @@ package com.evolving.nglm.evolution;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -64,7 +65,7 @@ public class SubscriberRelatives
 
   public static Schema schema() { return schema; }
   public static ConnectSerde<SubscriberRelatives> serde() { return serde; }
-
+ 
   /*****************************************
    *
    * data
@@ -187,7 +188,7 @@ public class SubscriberRelatives
       //
       
       json.put("numberOfChildren", getChildrenSubscriberIDs().size());
-      json.put("childrenSubscriberIDs", JSONUtilities.encodeArray(new ArrayList<String>(getChildrenSubscriberIDs())));
+      json.put("childrenSubscriberIDs", JSONUtilities.encodeArray(new ArrayList<String>(unDated(getChildrenSubscriberIDs()))));
       
       //
       //  result
@@ -197,7 +198,15 @@ public class SubscriberRelatives
     }
   
  
-  public JSONObject getNewJSONRepresentation(String relationshipID, SubscriberProfileService subscriberProfileService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader, int tenantID)
+  private Collection<? extends String> unDated(List<String> childrenSubscriberIDs2) {
+	  List<String> unDatedIds=new ArrayList();
+	  for(String datedString:childrenSubscriberIDs2) {
+		  unDatedIds.add(datedString.substring(0,datedString.lastIndexOf(GUIManager.DATE_SEPERATOR)-1));
+	  }
+	  return unDatedIds;
+	  
+  }
+public JSONObject getNewJSONRepresentation(String relationshipID, SubscriberProfileService subscriberProfileService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader, int tenantID)
   {
     HashMap<String, Object> json = new HashMap<String, Object>();
     
@@ -264,11 +273,11 @@ public class SubscriberRelatives
 			date=new String();
 			childId=new String();
 			childId=new String();
-			childId=child.substring(0,child.lastIndexOf("@")-1);
+			childId=child.substring(0,child.lastIndexOf(GUIManager.DATE_SEPERATOR)-1);
 			date=new String();
 		//date=getDateString(child.substring(child.lastIndexOf("@")+1),tenantID);
-		date=child.substring(child.lastIndexOf("@")+1);
-		datedMap.put(child, date);
+		date=child.substring(child.lastIndexOf(GUIManager.DATE_SEPERATOR)+1);
+		datedMap.put(childId, date);
 		}
 		}
 	
