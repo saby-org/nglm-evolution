@@ -188,7 +188,7 @@ public class SubscriberRelatives
       //
       
       json.put("numberOfChildren", getChildrenSubscriberIDs().size());
-      json.put("childrenSubscriberIDs", JSONUtilities.encodeArray(new ArrayList<String>(unDated(getChildrenSubscriberIDs()))));
+      json.put("childrenSubscriberIDs", JSONUtilities.encodeArray(new ArrayList<String>(getChildrenSubscriberIDs())));
       
       //
       //  result
