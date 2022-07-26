@@ -10,14 +10,14 @@
       "url": "https://<_MASTER_ESROUTER_HOST_>:<_MASTER_ESROUTER_PORT_>",
       "basicAuth": true,
       "withCredentials": true,
-      "tlsSkipVerify": true,
       "basicAuthUser": "admin",
       "secureJsonData": {
         "basicAuthPassword": "<_ELASTICSEARCH_ADMIN_PASSWORD_>"
       },
       "jsonData": {
         "timeField": "timestamp",
-        "esVersion": 70
+        "esVersion": 70 ,
+        "tlsSkipVerify": true
       }
     }
   ]

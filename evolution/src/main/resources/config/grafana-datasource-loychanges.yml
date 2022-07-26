@@ -5,7 +5,7 @@ datasources:
   type: elasticsearch
   access: proxy
   database: t*_datacube_loyaltyprogramschanges
-  url: 'http://<_MASTER_ESROUTER_HOST_>:<_MASTER_ESROUTER_PORT_>'
+  url: 'https://<_MASTER_ESROUTER_HOST_>:<_MASTER_ESROUTER_PORT_>'
   basicAuth: true
   withCredentials: true
   basicAuthUser: admin
@@ -14,3 +14,4 @@ datasources:
   jsonData:
     timeField: timestamp
     esVersion: 70
+    tlsSkipVerify: true
