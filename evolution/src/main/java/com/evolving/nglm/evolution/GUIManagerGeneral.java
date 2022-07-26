@@ -4749,9 +4749,10 @@ public class GUIManagerGeneral extends GUIManager
       {
         while(!es.awaitTermination(5,TimeUnit.SECONDS))
           {
-            log.info("GUIManager.processGenerateVouchers taking time to generate vocuhers.");   
+            log.info("GUIManager.processGenerateVouchers taking time to generate vocuhers.");  
           }
-      } catch (InterruptedException ex)
+      } 
+    catch (InterruptedException ex)
       {
         log.error("Issue when finishing ExecutorService threads for voucher generation : " + ex.getMessage());
       }
