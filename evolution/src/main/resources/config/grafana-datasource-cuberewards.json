@@ -7,9 +7,10 @@
       "type": "elasticsearch",
       "access": "proxy",
       "database": "t*_datacube_journeyrewards-*",
-      "url": "http://<_MASTER_ESROUTER_HOST_>:<_MASTER_ESROUTER_PORT_>",
+      "url": "https://<_MASTER_ESROUTER_HOST_>:<_MASTER_ESROUTER_PORT_>",
       "basicAuth": true,
       "withCredentials": true,
+      "tlsSkipVerify": true,
       "basicAuthUser": "admin",
       "secureJsonData": {
         "basicAuthPassword": "<_ELASTICSEARCH_ADMIN_PASSWORD_>"
