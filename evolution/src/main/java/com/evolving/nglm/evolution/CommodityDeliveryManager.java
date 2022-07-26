@@ -420,6 +420,7 @@ public class CommodityDeliveryManager
       try {
         setCreationDate(RLMDateUtils.parseDateFromElasticsearch((String) esFields.get("creationDate")));
         setDeliveryDate(RLMDateUtils.parseDateFromElasticsearch((String) esFields.get("eventDatetime")));
+        setEventDate(RLMDateUtils.parseDateFromElasticsearch((String) esFields.get("eventDatetime")));
         
         //
         //  this
