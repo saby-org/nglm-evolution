@@ -21140,17 +21140,30 @@ public class GUIManager
     String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
     String relationshipID = JSONUtilities.decodeString(jsonRoot, "relationshipID", true);
     String newParentCustomerID = JSONUtilities.decodeString(jsonRoot, "newParentCustomerID", true);
+    String updateDateStr = JSONUtilities.decodeString(jsonRoot, "updateDate", false);
 
     /*****************************************
     *
     * resolve relationship
     *
     *****************************************/
-    SimpleDateFormat dateFormat = new SimpleDateFormat(Deployment.getAPIresponseDateFormat());   // TODO EVPRO-99
-      
-      String today=dateFormat.format(new Date());
-      String newparentwithDate=newParentCustomerID+DATE_SEPERATOR+today;
-      String subscriberwithDate=customerID+DATE_SEPERATOR+today;
+    Date updateDate=new Date();
+    
+      SimpleDateFormat dateFormat = new SimpleDateFormat(Deployment.getAPIresponseDateFormat());   // TODO EVPRO-99
+      dateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getTimeZone()));
+
+      if(updateDateStr!=null && !updateDateStr.isEmpty()) {
+      try {
+    	  updateDate=dateFormat.parse(updateDateStr);  
+     } catch(Exception e) {
+    	 response.put("responseCode", RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage() + "-{check updateDate field and APIresponseDateFormat }");
+         return JSONUtilities.encodeObject(response);
+     }
+    
+  }
+      String relationDate=dateFormat.format(updateDate);
+      String newparentwithDate=newParentCustomerID+DATE_SEPERATOR+relationDate;
+      String subscriberwithDate=customerID+DATE_SEPERATOR+relationDate;
       
       
       
@@ -21211,9 +21224,9 @@ public class GUIManager
                 //
                 // Delete child for the parent 
                 // 
-                /* EVPRO-1503 Keeping this for backward compatibility to older version, when a parent may have a child without date. This may be removed when all customer has relationship in teh format <SUBSCRIBER_ID>@<DATE_OF_RELATION> */
-                
-            	jsonRoot.put("subscriberID", previousParentSubscriberID);
+                 
+            	String onlyId=previousParentSubscriberID.substring(0,previousParentSubscriberID.lastIndexOf(DATE_SEPERATOR)-1);
+            	jsonRoot.put("subscriberID", onlyId);
                 SubscriberProfileForceUpdate previousParentProfileForceUpdate = new SubscriberProfileForceUpdate(jsonRoot);
                 ParameterMap previousParentParameterMap = previousParentProfileForceUpdate.getParameterMap();
                 previousParentParameterMap.put("subscriberRelationsUpdateMethod", SubscriberRelationsUpdateMethod.RemoveChild.getExternalRepresentation());
@@ -21225,21 +21238,6 @@ public class GUIManager
                 //
                   
                 kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(previousParentProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), previousParentProfileForceUpdate)));
-                /* END Old regression */  
-                /* Additionally EVPRO-1503 if the relation was in new format <SUBSCRIBER_ID>@<DATE_OF_RELATION>, need to handle that as well */
-             
-                previousParentParameterMap.put("subscriberRelationsUpdateMethod", SubscriberRelationsUpdateMethod.RemoveChild.getExternalRepresentation());
-                previousParentParameterMap.put("relationshipID", relationshipID);
-                previousParentParameterMap.put("relativeSubscriberID", subscriberwithDate);
-                
-                //
-                // submit to kafka 
-                //
-                  
-                kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(previousParentProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), previousParentProfileForceUpdate)));
-        
-              
-              
               }
             
 

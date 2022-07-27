@@ -3745,6 +3745,29 @@ public class ThirdPartyManager
     * resolve relationship
     *
     *****************************************/
+    String updateDateStr = JSONUtilities.decodeString(jsonRoot, "updateDate", false);
+
+    /*****************************************
+    *
+    * resolve relationship
+    *
+    *****************************************/
+      Date updateDate=new Date();
+    
+      SimpleDateFormat dateFormat = new SimpleDateFormat(Deployment.getAPIresponseDateFormat());   // TODO EVPRO-99
+      dateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getTimeZone()));
+
+      if(updateDateStr!=null && !updateDateStr.isEmpty()) {
+      try {
+    	  updateDate=dateFormat.parse(updateDateStr);  
+     } catch(Exception e) {
+    	 response.put("responseCode", RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage() + "-{check updateDate field and APIresponseDateFormat }");
+         return JSONUtilities.encodeObject(response);
+     }
+    
+  }
+      String relationDate=dateFormat.format(updateDate);
+     
       
     boolean isRelationshipSupported = false;
     String relationshipID = null;
@@ -3785,6 +3808,10 @@ public class ThirdPartyManager
             + "-{a customer cannot be its own parent}");
         return JSONUtilities.encodeObject(response);
       }
+    
+    String newparentwithDate=newParentSubscriberID+GUIManager.DATE_SEPERATOR+relationDate;
+    String subscriberwithDate=subscriberID+GUIManager.DATE_SEPERATOR+relationDate;
+    
 
     try
       {
@@ -3803,7 +3830,7 @@ public class ThirdPartyManager
                 //
                 // Delete child for the parent 
                 // 
-                
+            	                    
                 jsonRoot.put("subscriberID", previousParentSubscriberID);
                 SubscriberProfileForceUpdate previousParentProfileForceUpdate = new SubscriberProfileForceUpdate(jsonRoot);
                 ParameterMap previousParentParameterMap = previousParentProfileForceUpdate.getParameterMap();
@@ -3816,6 +3843,7 @@ public class ThirdPartyManager
                 //
                   
                 kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(previousParentProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), previousParentProfileForceUpdate)));
+              
                 
               }
             
@@ -3829,7 +3857,7 @@ public class ThirdPartyManager
             ParameterMap newParentParameterMap = newParentProfileForceUpdate.getParameterMap();
             newParentParameterMap.put("subscriberRelationsUpdateMethod", SubscriberRelationsUpdateMethod.AddChild.getExternalRepresentation());
             newParentParameterMap.put("relationshipID", relationshipID);
-            newParentParameterMap.put("relativeSubscriberID", subscriberID);
+            newParentParameterMap.put("relativeSubscriberID", subscriberwithDate);
             
 
             //
@@ -3849,7 +3877,7 @@ public class ThirdPartyManager
             ParameterMap subscriberParameterMap = subscriberProfileForceUpdate.getParameterMap();
             subscriberParameterMap.put("subscriberRelationsUpdateMethod", SubscriberRelationsUpdateMethod.SetParent.getExternalRepresentation());
             subscriberParameterMap.put("relationshipID", relationshipID);
-            subscriberParameterMap.put("relativeSubscriberID", newParentSubscriberID);
+            subscriberParameterMap.put("relativeSubscriberID", newparentwithDate);
             
             
             
