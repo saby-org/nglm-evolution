@@ -3573,14 +3573,15 @@ public class EvolutionEngine
             
             if (method == SubscriberRelationsUpdateMethod.SetParent)
               {
-            	String justID="";
-    			if(relativeSubscriberID!=null && relativeSubscriberID.contains("@")) {			
-    				justID=relativeSubscriberID.substring(0,relativeSubscriberID.lastIndexOf("@")-1);
-    			}
-            	if(relativeSubscriberID==null || relatives.getParentSubscriberID()==null || !relatives.getParentSubscriberID().startsWith(justID))
-            	{ relatives.setParentSubscriberID(relativeSubscriberID);
+//            	String justID="";
+//    			if(relativeSubscriberID!=null && relativeSubscriberID.contains("@")) {			
+//    				justID=relativeSubscriberID.substring(0,relativeSubscriberID.lastIndexOf("@")-1);
+//    			}
+//            	if(relativeSubscriberID==null || relatives.getParentSubscriberID()==null || !relatives.getParentSubscriberID().startsWith(justID))
+//            	{ 
+            	relatives.setParentSubscriberID(relativeSubscriberID);
                 subscriberProfileUpdated = true;
-            	}
+       //     	}
               }
             else if (method == SubscriberRelationsUpdateMethod.AddChild)
               {

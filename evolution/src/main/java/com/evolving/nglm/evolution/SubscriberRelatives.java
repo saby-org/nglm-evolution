@@ -94,43 +94,28 @@ public class SubscriberRelatives
   public void addChildSubscriberID(String childSubscriberID) 
   {
 	  //EVPRO-1503
-    if(!alreadyExists(this.childrenSubscriberIDs,childSubscriberID))
-      {
-        this.childrenSubscriberIDs.add(childSubscriberID);
-      }
-    
+	    removeChildSubscriberID(childSubscriberID);
+       	this.childrenSubscriberIDs.add(childSubscriberID);
     while(this.childrenSubscriberIDs.size() > 10)
       {
         this.childrenSubscriberIDs.remove(this.childrenSubscriberIDs.remove(0));
       }
   }
-  private boolean alreadyExists(List<String> childrenSubscriberIDs2, String childSubscriberID) {
-	boolean alreadyExists=false;
-	for(String childID:childrenSubscriberIDs2) {
-		String justID="";
-			if(childSubscriberID.contains("@")) {			
-				justID=childSubscriberID.substring(0,childSubscriberID.lastIndexOf("@")-1);
-			}
-		if(childID.equals(childSubscriberID)
-    			|| ( !justID.isEmpty() && childID.startsWith(justID) 
-    			&& childID.charAt(justID.length())=='@')){
-			alreadyExists=true;
-		    break;	
-		}
-	}
-	return alreadyExists;
-}
+
 public void removeChildSubscriberID(String childSubscriberID)
   {
    // this.childrenSubscriberIDs.remove(childSubscriberID);
 	  //EVPRO-1503
+	if(childSubscriberID!=null && !childSubscriberID.isEmpty()) {
     for(String childID:childrenSubscriberIDs) {
-    	if(childID.equals(childSubscriberID)
+    	if(childID.trim().equals(childSubscriberID.trim())
     			|| (childID.startsWith(childSubscriberID) 
     			&& (childID.charAt(childSubscriberID.length())=='@'))){
     		this.childrenSubscriberIDs.remove(childID);	
+    		break;
     	}
     }
+	}
   }
   
   /*****************************************
