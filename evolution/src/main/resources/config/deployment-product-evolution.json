@@ -1377,12 +1377,10 @@
   "ucgQuickRemovalAtRefresh" : true,
   "minDaysInUCGForQuickRemoval" : 0,
   "ucgQuickOverloadRemoval" : true,
-  "thirdPartyMethodTypes" : ["POST","GET"],
+  "thirdPartyMethodTypes" : ["GET","POST"],
   "thirdPartyAPIHeaders" : {
     "Access-Control-Allow-Origin":"*",
-    "Content-Type":"application/json",
-    "X-Frame-Options":"SAMEORIGIN",
-    "X-Content-Type-Options":"nosniff"
+    "Content-Type":"application/json"
 	}
   
 }
