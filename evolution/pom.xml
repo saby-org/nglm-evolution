@@ -44,7 +44,7 @@
     <!-- dependencies - gui -->
     <gui-csr.version>2.1.2_7</gui-csr.version>
     <gui-stg.version>2.1.2_5</gui-stg.version>
-    <gui-fwk.version>2.1.2_4</gui-fwk.version>
+    <gui-fwk.version>2.1.2_5</gui-fwk.version>
     <gui-itm.version>2.1.2_4</gui-itm.version>
     <gui-jmr.version>2.1.2_4</gui-jmr.version>
     <gui-iar.version>2.1.2_4</gui-iar.version>
