@@ -3830,8 +3830,12 @@ public class ThirdPartyManager
                 //
                 // Delete child for the parent 
                 // 
-            	                    
-                jsonRoot.put("subscriberID", previousParentSubscriberID);
+            	
+            	String onlyId=previousParentSubscriberID;
+            	if(previousParentSubscriberID.contains("@"));
+            	onlyId=previousParentSubscriberID.substring(0,previousParentSubscriberID.lastIndexOf("@"));
+                        
+                jsonRoot.put("subscriberID", onlyId);
                 SubscriberProfileForceUpdate previousParentProfileForceUpdate = new SubscriberProfileForceUpdate(jsonRoot);
                 ParameterMap previousParentParameterMap = previousParentProfileForceUpdate.getParameterMap();
                 previousParentParameterMap.put("subscriberRelationsUpdateMethod", SubscriberRelationsUpdateMethod.RemoveChild.getExternalRepresentation());

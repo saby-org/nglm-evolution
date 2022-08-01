@@ -3579,6 +3579,8 @@ public class EvolutionEngine
 //    			}
 //            	if(relativeSubscriberID==null || relatives.getParentSubscriberID()==null || !relatives.getParentSubscriberID().startsWith(justID))
 //            	{ 
+            	
+            	System.out.println("priyanka============setting parent"+relativeSubscriberID);
             	relatives.setParentSubscriberID(relativeSubscriberID);
                 subscriberProfileUpdated = true;
        //     	}

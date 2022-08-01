@@ -21224,9 +21224,12 @@ public class GUIManager
                 //
                 // Delete child for the parent 
                 // 
-                 
-            	String onlyId=previousParentSubscriberID.substring(0,previousParentSubscriberID.lastIndexOf(DATE_SEPERATOR)-1);
+            	String onlyId=previousParentSubscriberID;
+            	if(previousParentSubscriberID.contains("@"));
+            	onlyId=previousParentSubscriberID.substring(0,previousParentSubscriberID.lastIndexOf(DATE_SEPERATOR));
             	jsonRoot.put("subscriberID", onlyId);
+            	System.out.println("priyanka============only ID"+onlyId);
+                
                 SubscriberProfileForceUpdate previousParentProfileForceUpdate = new SubscriberProfileForceUpdate(jsonRoot);
                 ParameterMap previousParentParameterMap = previousParentProfileForceUpdate.getParameterMap();
                 previousParentParameterMap.put("subscriberRelationsUpdateMethod", SubscriberRelationsUpdateMethod.RemoveChild.getExternalRepresentation());
@@ -21255,7 +21258,7 @@ public class GUIManager
             //
             // Set parent 
             //
-            
+          System.out.println("priyanka=================new parent with date"+newparentwithDate);  
             jsonRoot.put("subscriberID", subscriberID);
             SubscriberProfileForceUpdate subscriberProfileForceUpdate = new SubscriberProfileForceUpdate(jsonRoot);
             ParameterMap subscriberParameterMap = subscriberProfileForceUpdate.getParameterMap();
