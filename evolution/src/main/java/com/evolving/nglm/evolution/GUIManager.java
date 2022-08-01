@@ -29678,9 +29678,11 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
   {
     try
       {
+    	System.out.println("priyanka===========from guimanager"+getCustomerAlternateID+"  and value:"+customerID);
     	Pair<String, Integer> s = subscriberIDService.getSubscriberIDAndTenantID(getCustomerAlternateID, customerID);
         if(s != null && s.getSecondElement().intValue() == tenantID)
-          {            
+          {    
+        	System.out.println("priyanka==========return value GM"+s.getFirstElement());
             return s.getFirstElement();
           }
       }
