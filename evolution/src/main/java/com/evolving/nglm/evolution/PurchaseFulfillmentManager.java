@@ -2133,7 +2133,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
                 if (deliveryStatus == PurchaseFulfillmentStatus.PURCHASED_AND_CANCELLED)
                   {
                     log.info("revert back stock for product {}", product.getGUIManagedObjectDisplay());
-                    stockService.voidConsumption(product, quantity); //RAJ K TO DO 
+                    stockService.voidConsumption(product, quantity); //voidConsumption is a new method and need be checked
                   }
                 else
                   {
