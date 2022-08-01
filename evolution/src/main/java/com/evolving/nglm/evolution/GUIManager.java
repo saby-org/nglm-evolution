@@ -29678,7 +29678,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
   {
     try
       {
-        Pair<String, Integer> s = subscriberIDService.getSubscriberIDAndTenantID(getCustomerAlternateID, customerID);
+    	Pair<String, Integer> s = subscriberIDService.getSubscriberIDAndTenantID(getCustomerAlternateID, customerID);
         if(s != null && s.getSecondElement().intValue() == tenantID)
           {            
             return s.getFirstElement();

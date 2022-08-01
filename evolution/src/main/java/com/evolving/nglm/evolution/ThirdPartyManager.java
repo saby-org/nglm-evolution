@@ -3733,10 +3733,10 @@ public class ThirdPartyManager
     ****************************************/
 
     String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
-
+System.out.println("priyanka======1:"+subscriberID);
     String relationshipDisplay = JSONUtilities.decodeString(jsonRoot, "relationship", true);
     String newParentSubscriberID = resolveParentSubscriberID(jsonRoot);
-    
+ System.out.println("priyanka==========2"+newParentSubscriberID);   
     String subscriberProfileForceUpdateRequestID = UUID.randomUUID().toString();
     jsonRoot.put("subscriberProfileForceUpdateRequestID", subscriberProfileForceUpdateRequestID); //unique id added for listener to check if the request and response are same
 
@@ -7460,6 +7460,7 @@ public class ThirdPartyManager
               {
                 try
                 {
+                	System.out.println("priyanka=================="+id+"value:"+param);
                   Pair<String, Integer> s = subscriberIDService.getSubscriberIDAndTenantID(id, param);
                   
                   if (s == null || s.getSecondElement().intValue() != tenantID)
@@ -7467,6 +7468,7 @@ public class ThirdPartyManager
                       throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND);
                     }
                   alternateSubscriberID = s.getFirstElement();
+                  System.out.println("priyanka============"+alternateSubscriberID);
                   break;
                 } catch (SubscriberIDServiceException e)
                 {
@@ -7482,6 +7484,7 @@ public class ThirdPartyManager
           {
             throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.MISSING_PARAMETERS);
           }
+        System.out.println("priyanka======================= here");
         subscriberID = alternateSubscriberID;
       }
     else if (alternateSubscriberID != null)
@@ -7489,6 +7492,7 @@ public class ThirdPartyManager
         throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE);
       }
     // Returns a value, or an exception
+    System.out.println("priyanka===========return value"+subscriberID);
     return subscriberID;
   }
 
