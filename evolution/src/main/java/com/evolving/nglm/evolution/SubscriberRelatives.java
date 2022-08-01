@@ -174,6 +174,7 @@ public void removeChildSubscriberID(String childSubscriberID)
         {
           if (getParentSubscriberID() != null && !getParentSubscriberID().isEmpty())
             {
+        	  System.out.println("priyanka===========getParentSubscriberID================"+getParentSubscriberID());
               SubscriberProfile parentProfile = subscriberProfileService.getSubscriberProfile(getParentSubscriberID());
               if (parentProfile != null)
                 {
