@@ -171,11 +171,14 @@ public void removeChildSubscriberID(String childSubscriberID)
       
       HashMap<String, Object> parentJsonMap = new HashMap<String, Object>();
       try
-        {  System.out.println("priyanka===========getParentSubscriberID================");
+        {  
           if (getParentSubscriberID() != null && !getParentSubscriberID().isEmpty())
             {
         	  System.out.println("priyanka===========getParentSubscriberID================"+getParentSubscriberID());
-              SubscriberProfile parentProfile = subscriberProfileService.getSubscriberProfile(getParentSubscriberID());
+        	  String justID=getParentSubscriberID();
+        	  if(getParentSubscriberID().contains("@"))
+        		  justID=getParentSubscriberID().substring(0,getParentSubscriberID().lastIndexOf("@"));
+              SubscriberProfile parentProfile = subscriberProfileService.getSubscriberProfile(justID);
               if (parentProfile != null)
                 {
                   parentJsonMap.put("subscriberID", getParentSubscriberID());
