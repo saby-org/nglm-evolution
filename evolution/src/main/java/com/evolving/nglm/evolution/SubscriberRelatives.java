@@ -106,12 +106,15 @@ public void removeChildSubscriberID(String childSubscriberID)
   {
    // this.childrenSubscriberIDs.remove(childSubscriberID);
 	  //EVPRO-1503
-	String onlyId=childSubscriberID.substring(0,childSubscriberID.lastIndexOf("@"));
+	System.out.println("child ID:"+childSubscriberID);
+	String onlyId=childSubscriberID;
+	if(childSubscriberID.lastIndexOf("@")!=-1)
+	onlyId=childSubscriberID.substring(0,childSubscriberID.lastIndexOf("@"));
 	if(childSubscriberID!=null && !childSubscriberID.isEmpty()) {
     for(String childID:childrenSubscriberIDs) {
     	System.out.println("priyanka====================="+childID.trim()+"=============="+onlyId+"========="+childID.startsWith(onlyId)+"============="+childID.charAt(onlyId.length()));
     	if(childID.trim().equals(childSubscriberID.trim())
-    			|| (childID.startsWith(onlyId) 
+    			|| (childID.startsWith(onlyId) && childID.length()>onlyId.length()
     			&& (childID.charAt(onlyId.length())=='@'))){
     		this.childrenSubscriberIDs.remove(childID);	
     		break;
