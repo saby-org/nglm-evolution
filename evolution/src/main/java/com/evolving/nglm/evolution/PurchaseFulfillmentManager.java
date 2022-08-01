@@ -2130,7 +2130,15 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
             else
               {
                 int quantity = offerProduct.getQuantity() * purchaseStatus.getQuantity();
-                stockService.voidReservation(product, quantity);
+                if (deliveryStatus == PurchaseFulfillmentStatus.PURCHASED_AND_CANCELLED)
+                  {
+                    log.info("revert back stock for product {}", product.getGUIManagedObjectDisplay());
+                    stockService.voidConsumption(product, quantity); //RAJ K TO DO 
+                  }
+                else
+                  {
+                    stockService.voidReservation(product, quantity);
+                  }
                 purchaseStatus.addProductStockRollbacked(offerProduct);
                 if (log.isDebugEnabled()) log.debug("proceedRollback() : reservation product " + product.getProductID() + " canceled " + quantity);
               }
@@ -2227,7 +2235,15 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
             else
               {
                 int quantity = purchaseStatus.getQuantity();
-                stockService.voidReservation(offer, quantity);
+                if (deliveryStatus == PurchaseFulfillmentStatus.PURCHASED_AND_CANCELLED)
+                  {
+                    log.info("revert back stock for offer {}", offer.getGUIManagedObjectDisplay());
+                    stockService.voidConsumption(offer, quantity); //RAJ K TO DO 
+                  }
+                else
+                  {
+                    stockService.voidReservation(offer, quantity);
+                  }
                 purchaseStatus.addOfferStockRollbacked(offerID);
                 if (log.isDebugEnabled()) log.debug("proceedRollback() : reservation offer " + offer.getOfferID() + " canceled");
               }

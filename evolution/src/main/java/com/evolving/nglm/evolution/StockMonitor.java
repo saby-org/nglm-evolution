@@ -345,6 +345,27 @@ public class StockMonitor implements Runnable
         uncommitted.voidReservation(quantity);
       }
   }
+  
+  /*****************************************
+  *
+  *  voidConsumption
+  *
+  *****************************************/
+
+  public synchronized void voidConsumption(StockableItem stockableItem, int quantity)
+  {
+    //
+    //  stock
+    //
+    
+    LocalAllocation allocation = localAllocations.get(stockableItem.getStockableItemID());
+    LocalUncommitted uncommitted = localUncommitted.get(stockableItem.getStockableItemID());
+    if (stockableItem.getStock() != null && allocation != null && uncommitted != null)
+      {
+        allocation.voidReservation(quantity);
+        uncommitted.voidConsumption(quantity);
+      }
+  }
 
   /*****************************************
   *
@@ -1356,6 +1377,11 @@ public class StockMonitor implements Runnable
     void voidReservation(int quantity)
     {
       reserved -= quantity;
+    }
+    
+    void voidConsumption(int quantity)
+    {
+      consumed -= quantity;
     }
 
     /*****************************************
