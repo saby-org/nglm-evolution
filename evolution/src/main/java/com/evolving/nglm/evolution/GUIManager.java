@@ -21162,8 +21162,6 @@ public class GUIManager
     
   }
       String relationDate=dateFormat.format(updateDate);
-      String newparentwithDate=newParentCustomerID+DATE_SEPERATOR+relationDate;
-      String subscriberwithDate=customerID+DATE_SEPERATOR+relationDate;
       
       
       
@@ -21206,7 +21204,9 @@ public class GUIManager
         response.put("responseCode", RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage() + "-{a customer cannot be its own parent}");
         return JSONUtilities.encodeObject(response);
       }
-
+    String newparentwithDate=newParentSubscriberID+DATE_SEPERATOR+relationDate;
+    String subscriberwithDate=subscriberID+DATE_SEPERATOR+relationDate;
+    
     try
       {
         SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID);
