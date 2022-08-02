@@ -183,6 +183,7 @@ public abstract class SubscriberProfile
     schemaBuilder.field("universalControlGroupChangeDate",Timestamp.builder().optional().schema());
     schemaBuilder.field("badges", SchemaBuilder.array(BadgeState.schema()).name("subscriber_profile_badges").optional().schema());
     schemaBuilder.field("universalControlGroupHistoryAuditInfo",SchemaBuilder.array(Schema.STRING_SCHEMA).defaultValue(new ArrayList<String>()).schema());
+    schemaBuilder.field("limitedCancelPurchases",SchemaBuilder.array(Schema.STRING_SCHEMA).defaultValue(new ArrayList<String>()).schema());
 
     commonSchema = schemaBuilder.build();
   };
@@ -275,6 +276,7 @@ public abstract class SubscriberProfile
   private List<Pair<String, String>> unknownRelationships = new ArrayList<>();
   private List<BadgeState> badges;
   private List<String> universalControlGroupHistoryAuditInfo;
+  private List<String> limitedCancelPurchases;
   
  
 
@@ -334,6 +336,12 @@ public abstract class SubscriberProfile
     return badges.stream().filter(badge -> badge.getBadgeID().equals(badgeID)).findFirst().orElse(null); 
   }
   public List<String> getUniversalControlGroupHistoryAuditInfo() {return universalControlGroupHistoryAuditInfo; }
+  public List<String> getLimitedCancelPurchases() { return limitedCancelPurchases; }
+  public void addCancelPurchase(String deliveryRequestedID)
+  {
+    if (getLimitedCancelPurchases().size() > 9)getLimitedCancelPurchases().subList(9, getLimitedCancelPurchases().size()).clear();
+    getLimitedCancelPurchases().add(deliveryRequestedID);
+  }
   
   //
   //  temporary (until we can update nglm-kazakhstan)
@@ -1879,6 +1887,7 @@ public abstract class SubscriberProfile
     this.universalControlGroupChangeDate = null;
     this.badges = new LinkedList<BadgeState>();
     this.universalControlGroupHistoryAuditInfo = new ArrayList<>();
+    this.limitedCancelPurchases = new ArrayList<>();
   }
 
   /*****************************************
@@ -1933,6 +1942,7 @@ public abstract class SubscriberProfile
     Map<String,MetricHistory> progressionBalances = schema.field("progressionBalances") != null ? unpackProgressionBalances(schema.field("progressionBalances").schema(), (Map<String,Object>) valueStruct.get("progressionBalances")): Collections.<String,MetricHistory>emptyMap();
     List<BadgeState> badges = schema.field("badges") != null ? unpackBadges(schema.field("badges").schema(), valueStruct.get("badges")) : new LinkedList<BadgeState>();
     List<String> universalControlGroupHistoryAuditInfo = schema.field("universalControlGroupHistoryAuditInfo") != null ? valueStruct.getArray("universalControlGroupHistoryAuditInfo") : null;
+    List<String> limitedCancelPurchases = schema.field("limitedCancelPurchases") != null ? valueStruct.getArray("limitedCancelPurchases") : new ArrayList<String>();
 
     //
     //  return
@@ -1968,6 +1978,7 @@ public abstract class SubscriberProfile
     this.universalControlGroupChangeDate = universalControlGroupChangeDate;
     this.badges = badges;
     this.universalControlGroupHistoryAuditInfo = universalControlGroupHistoryAuditInfo;
+    this.limitedCancelPurchases = limitedCancelPurchases;
   }
 
   /*****************************************
@@ -2448,6 +2459,7 @@ public abstract class SubscriberProfile
     this.universalControlGroupChangeDate = subscriberProfile.getUniversalControlGroupChangeDate();
     this.badges = new LinkedList<BadgeState>(subscriberProfile.getBadges());
     this.universalControlGroupHistoryAuditInfo = subscriberProfile.getUniversalControlGroupHistoryAuditInfo();
+    this.limitedCancelPurchases = subscriberProfile.getLimitedCancelPurchases();
   }
 
   /*****************************************
@@ -2488,6 +2500,7 @@ public abstract class SubscriberProfile
     struct.put("universalControlGroupChangeDate",subscriberProfile.getUniversalControlGroupChangeDate());
     struct.put("badges", packBadges(subscriberProfile.getBadges()));
     struct.put("universalControlGroupHistoryAuditInfo",subscriberProfile.getUniversalControlGroupHistoryAuditInfo());
+    struct.put("limitedCancelPurchases",subscriberProfile.getLimitedCancelPurchases());
   }
 
   /*****************************************

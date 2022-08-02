@@ -3553,6 +3553,20 @@ public class EvolutionEngine
                 subscriberProfileUpdated = true;
               }
           }
+        
+        //
+        //  limitedCancelPurchase
+        //
+
+        if (subscriberProfileForceUpdate.getParameterMap().containsKey("limitedCancelPurchase"))
+          {
+            String deliveryRequestID = (String) subscriberProfileForceUpdate.getParameterMap().get("limitedCancelPurchase");
+            if (deliveryRequestID != null)
+              {
+                subscriberProfile.addCancelPurchase(deliveryRequestID);
+                subscriberProfileUpdated = true;
+              }
+          }
 
         //
         //  Hierarchy modifications 

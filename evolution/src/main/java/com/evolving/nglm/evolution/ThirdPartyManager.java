@@ -5199,26 +5199,29 @@ public class ThirdPartyManager
     //
     
     String cancelledDeliveryRequestID = deliveryRequestID.concat("_cancel_purchase");
-    boolean cancelledDeliveryRequest = false;
+    boolean cancelledDeliveryRequest = !subscriberProfile.getLimitedCancelPurchases().isEmpty();
     
-    //
-    //  filters
-    //
-    
-    filters = new ArrayList<QueryBuilder>();
-    filters.add(QueryBuilders.matchQuery("deliveryRequestID", cancelledDeliveryRequestID));
-    searchRequest = this.elasticsearch.getSearchRequest(API.getCustomerODRs, subscriberID,  null, filters, tenantID);
-    try
+    if (!cancelledDeliveryRequest)
       {
-        List<SearchHit> hits = this.elasticsearch.getESHits(searchRequest);
-        cancelledDeliveryRequest = !hits.isEmpty();
-      } 
-    catch (GUIManagerException e)
-      {
-        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
-        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage());
-        log.error("es error for deliveryRequestID {}, error is {}", deliveryRequestID, e.getMessage());
-        return JSONUtilities.encodeObject(response);
+        //
+        //  actual check from - es filters
+        //
+        
+        filters = new ArrayList<QueryBuilder>();
+        filters.add(QueryBuilders.matchQuery("deliveryRequestID", cancelledDeliveryRequestID));
+        searchRequest = this.elasticsearch.getSearchRequest(API.getCustomerODRs, subscriberID,  null, filters, tenantID);
+        try
+          {
+            List<SearchHit> hits = this.elasticsearch.getESHits(searchRequest);
+            cancelledDeliveryRequest = !hits.isEmpty();
+          } 
+        catch (GUIManagerException e)
+          {
+            response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
+            response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage());
+            log.error("es error for deliveryRequestID {}, error is {}", deliveryRequestID, e.getMessage());
+            return JSONUtilities.encodeObject(response);
+          }
       }
     
     if (cancelledDeliveryRequest)
@@ -5251,6 +5254,22 @@ public class ThirdPartyManager
       {
         purchaseResponse = purchaseOffer(subscriberProfile, sync, subscriberID, purchaseFulfillmentRequest.getOfferID(), purchaseFulfillmentRequest.getSalesChannelID(), purchaseFulfillmentRequest.getQuantity(), moduleID, featureID, origin, purchaseFulfillmentRequest.getResellerID(), kafkaProducer, tenantID, cancelledDeliveryRequestID, true, purchaseFulfillmentRequest.getCreationDate());
         response.put("offer", purchaseResponse.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, tenantID));
+        if (purchaseResponse.getStatus() == PurchaseFulfillmentStatus.PURCHASED_AND_CANCELLED)
+          {
+
+            //
+            // SubscriberProfileForceUpdate
+            //
+            
+            SubscriberProfileForceUpdate subscriberProfileForceUpdate = new SubscriberProfileForceUpdate(subscriberID, new ParameterMap(), null);
+            subscriberProfileForceUpdate.getParameterMap().put("limitedCancelPurchase", deliveryRequestID);
+            
+            //
+            //  send
+            //
+            
+            kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(subscriberProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), subscriberProfileForceUpdate)));
+          }
       }
 
     return JSONUtilities.encodeObject(response);
