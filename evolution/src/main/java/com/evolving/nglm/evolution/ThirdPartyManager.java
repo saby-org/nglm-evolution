@@ -3733,10 +3733,8 @@ public class ThirdPartyManager
     ****************************************/
 
     String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
-System.out.println("priyanka======1:"+subscriberID);
     String relationshipDisplay = JSONUtilities.decodeString(jsonRoot, "relationship", true);
     String newParentSubscriberID = resolveParentSubscriberID(jsonRoot);
- System.out.println("priyanka==========2"+newParentSubscriberID);   
     String subscriberProfileForceUpdateRequestID = UUID.randomUUID().toString();
     jsonRoot.put("subscriberProfileForceUpdateRequestID", subscriberProfileForceUpdateRequestID); //unique id added for listener to check if the request and response are same
 
@@ -7460,16 +7458,14 @@ System.out.println("priyanka======1:"+subscriberID);
               {
                 try
                 {
-                	System.out.println("priyanka=================="+id+"value:"+param);
-                  Pair<String, Integer> s = subscriberIDService.getSubscriberIDAndTenantID(id, param);
+                 Pair<String, Integer> s = subscriberIDService.getSubscriberIDAndTenantID(id, param);
                   
                   if (s == null || s.getSecondElement().intValue() != tenantID)
                     {
                       throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND);
                     }
                   alternateSubscriberID = s.getFirstElement();
-                  System.out.println("priyanka============"+alternateSubscriberID);
-                  break;
+                 break;
                 } catch (SubscriberIDServiceException e)
                 {
                   log.error("SubscriberIDServiceException can not resolve subscriberID for {} error is {}", id, e.getMessage());
@@ -7484,15 +7480,13 @@ System.out.println("priyanka======1:"+subscriberID);
           {
             throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.MISSING_PARAMETERS);
           }
-        System.out.println("priyanka======================= here");
-        subscriberID = alternateSubscriberID;
+       subscriberID = alternateSubscriberID;
       }
     else if (alternateSubscriberID != null)
       {
         throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.BAD_FIELD_VALUE);
       }
     // Returns a value, or an exception
-    System.out.println("priyanka===========return value"+subscriberID);
     return subscriberID;
   }
 

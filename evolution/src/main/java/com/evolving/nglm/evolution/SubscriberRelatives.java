@@ -112,7 +112,6 @@ public void removeChildSubscriberID(String childSubscriberID)
 	onlyId=childSubscriberID.substring(0,childSubscriberID.lastIndexOf("@"));
 	if(childSubscriberID!=null && !childSubscriberID.isEmpty()) {
     for(String childID:childrenSubscriberIDs) {
-    	System.out.println("priyanka====================="+childID.trim()+"=============="+onlyId+"========="+childID.startsWith(onlyId)+"============="+childID.charAt(onlyId.length()));
     	if(childID.trim().equals(childSubscriberID.trim())
     			|| (childID.startsWith(onlyId) && childID.length()>onlyId.length()
     			&& (childID.charAt(onlyId.length())=='@'))){
@@ -174,8 +173,7 @@ public void removeChildSubscriberID(String childSubscriberID)
         {  
           if (getParentSubscriberID() != null && !getParentSubscriberID().isEmpty())
             {
-        	  System.out.println("priyanka===========getParentSubscriberID================"+getParentSubscriberID());
-        	  String justID=getParentSubscriberID();
+        	 String justID=getParentSubscriberID();
         	  if(getParentSubscriberID().contains("@"))
         		  justID=getParentSubscriberID().substring(0,getParentSubscriberID().lastIndexOf("@"));
               SubscriberProfile parentProfile = subscriberProfileService.getSubscriberProfile(justID);
@@ -402,8 +400,7 @@ public JSONObject getNewJSONRepresentation(String relationshipID, SubscriberProf
   {
     String result = null;
     if (null == date) return result;
-    System.out.println("=================="+date+"======================");
-        SimpleDateFormat dateFormat = new SimpleDateFormat(Deployment.getAPIresponseDateFormat());   // TODO EVPRO-99
+    	SimpleDateFormat dateFormat = new SimpleDateFormat(Deployment.getAPIresponseDateFormat());   // TODO EVPRO-99
         dateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getTimeZone()));
         result = dateFormat.format(date);
      

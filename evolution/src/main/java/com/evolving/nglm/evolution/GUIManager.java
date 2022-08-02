@@ -21228,9 +21228,7 @@ public class GUIManager
             	if(previousParentSubscriberID.contains("@"));
             	onlyId=previousParentSubscriberID.substring(0,previousParentSubscriberID.lastIndexOf(DATE_SEPERATOR));
             	jsonRoot.put("subscriberID", onlyId);
-            	System.out.println("priyanka============only ID"+onlyId);
-                
-                SubscriberProfileForceUpdate previousParentProfileForceUpdate = new SubscriberProfileForceUpdate(jsonRoot);
+            	SubscriberProfileForceUpdate previousParentProfileForceUpdate = new SubscriberProfileForceUpdate(jsonRoot);
                 ParameterMap previousParentParameterMap = previousParentProfileForceUpdate.getParameterMap();
                 previousParentParameterMap.put("subscriberRelationsUpdateMethod", SubscriberRelationsUpdateMethod.RemoveChild.getExternalRepresentation());
                 previousParentParameterMap.put("relationshipID", relationshipID);
@@ -21258,7 +21256,6 @@ public class GUIManager
             //
             // Set parent 
             //
-          System.out.println("priyanka=================new parent with date"+newparentwithDate);  
             jsonRoot.put("subscriberID", subscriberID);
             SubscriberProfileForceUpdate subscriberProfileForceUpdate = new SubscriberProfileForceUpdate(jsonRoot);
             ParameterMap subscriberParameterMap = subscriberProfileForceUpdate.getParameterMap();
@@ -29678,12 +29675,10 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
   {
     try
       {
-    	System.out.println("priyanka===========from guimanager"+getCustomerAlternateID+"  and value:"+customerID);
     	Pair<String, Integer> s = subscriberIDService.getSubscriberIDAndTenantID(getCustomerAlternateID, customerID);
         if(s != null && s.getSecondElement().intValue() == tenantID)
           {    
-        	System.out.println("priyanka==========return value GM"+s.getFirstElement());
-            return s.getFirstElement();
+        	return s.getFirstElement();
           }
       }
     catch (SubscriberIDServiceException e)
