@@ -2326,7 +2326,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/expireVoucher", new APISimpleHandler(API.expireVoucher));
         
         restServer.createContext("/nglm-guimanager/getVoucherCodePatternList", new APISimpleHandler(API.getVoucherCodePatternList));
-        restServer.createContext("/nglm-guimanager/generateVouchers", new APISimpleHandler(API.generateVouchers));
+        restServer.createContext("/nglm-guimanager/generateVouchers", new APIAsyncHandler(API.generateVouchers));
 
         restServer.createContext("/nglm-guimanager/getMailTemplateList", new APISimpleHandler(API.getMailTemplateList));
         restServer.createContext("/nglm-guimanager/getFullMailTemplateList", new APISimpleHandler(API.getFullMailTemplateList));

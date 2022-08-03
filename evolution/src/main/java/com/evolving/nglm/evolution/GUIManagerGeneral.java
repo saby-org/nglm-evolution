@@ -4658,13 +4658,10 @@ public class GUIManagerGeneral extends GUIManager
     String pattern = JSONUtilities.decodeString(jsonRoot, "pattern", true);
     int quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
     
-    Set<String> generatedVoucherCodes = ConcurrentHashMap.newKeySet();
-    
     // find existing vouchers
     
-    Set<String> existingVoucherCodes = new HashSet<>();
+    List<String> existingVoucherCodes = new ArrayList<>();
     Collection<GUIManagedObject> uploadedFileObjects = uploadedFileService.getStoredGUIManagedObjects(true, tenantID);
-    log.info("[PRJT] uploadedFileObjects found: {}", uploadedFileObjects.size());
 
     String supplierID = JSONUtilities.decodeString(jsonRoot, "supplierID", true);
 
@@ -4704,50 +4701,56 @@ public class GUIManagerGeneral extends GUIManager
               }
           }
       }
-    log.info("[PRJT] found existingVoucherCodes: {}", existingVoucherCodes.size());
         
     //
     // EVPRO-1576 - start
     //
     
-    Set<String> newVoucherCodes = ConcurrentHashMap.newKeySet(); // store distinct voucher codes
-    newVoucherCodes.addAll(existingVoucherCodes);
+    Set<String> generatedVoucherCodes = ConcurrentHashMap.newKeySet();
+    Set<String> currentVoucherCodes = ConcurrentHashMap.newKeySet(); // store distinct voucher codes - skip for now
+    //List<String> currentVoucherCodes = new ArrayList<>(); // may generate and store duplicate vouchers 
     
     ExecutorService es = Executors.newCachedThreadPool();
-    int minPerThreadCount = 1000; // to config
-    int threadCount = quantity > minPerThreadCount ? Math.min(quantity/minPerThreadCount, 5) : 1;
+    int minPerThreadCount = 1000; 
+    int threadCount = quantity > minPerThreadCount ? Math.min(quantity/minPerThreadCount, 5) : 1; // max 5 thread will work
     
     Date startDate = SystemTime.getCurrentTime();
-    log.info("[PRJT] voucher generation started at {}", startDate);
-    
     for(int i=0; i<threadCount; i++)
       {
         es.execute(new Runnable() {
           @Override
           public void run()
           {
-            Date startDate = SystemTime.getCurrentTime();
-            
-            Set<String> codes = ConcurrentHashMap.newKeySet();
-            while (quantity > (newVoucherCodes.size() - existingVoucherCodes.size()))
+            while (quantity > currentVoucherCodes.size())
               {
-                String code = TokenUtils.generateFromRegex(pattern);
-                newVoucherCodes.add(code);
-                codes.add(code); // nothing to do with, just to check per thread count
+                String voucherCode = null;
+                boolean newVoucherGenerated = false;
+                for (int i=0; i<HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE; i++)
+                  {
+                    voucherCode = TokenUtils.generateFromRegex(pattern);
+                    if (!currentVoucherCodes.contains(voucherCode) && !existingVoucherCodes.contains(voucherCode))
+                      {
+                        newVoucherGenerated = true;
+                        break;
+                      }
+                  }
+                if (!newVoucherGenerated)
+                  {
+                    log.info("After " + HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE + " tries, unable to generate a new voucher code with pattern " + pattern);
+                    break;
+                  }
+                log.debug("voucherCode  generated : " + voucherCode);
+                currentVoucherCodes.add(voucherCode);
               }
-              
-            Date endTime = SystemTime.getCurrentTime();
-            double time = (endTime.getTime() - startDate.getTime())/1000.0;
-            log.info("[PRJT] time spend for expensive task thread [{}] -- time[{}s], voucher.size[{}]", Thread.currentThread().getName(), time, codes.size());
-            
-          }});
+          }
+        });
       }
     es.shutdownNow();
     
-    // waiting to complete all threads
+ // waiting to complete all threads
     try
       {
-        while(!es.awaitTermination(5,TimeUnit.SECONDS))
+        while(!es.awaitTermination(1, TimeUnit.SECONDS))
           {
             log.info("GUIManager.processGenerateVouchers taking time to generate vocuhers.");  
           }
@@ -4757,18 +4760,37 @@ public class GUIManagerGeneral extends GUIManager
         log.error("Issue when finishing ExecutorService threads for voucher generation : " + ex.getMessage());
       }
     
-    // remove old vouchers
-    newVoucherCodes.removeAll(existingVoucherCodes);
+    // remove extra vouchers - in case
+    generatedVoucherCodes = currentVoucherCodes.stream().limit(quantity).collect(Collectors.toSet());
     
-    // remove extra vouchers
-    generatedVoucherCodes = newVoucherCodes.stream().limit(quantity).collect(Collectors.toSet());
-    
-    Date endDate = SystemTime.getCurrentTime();
-    log.info("[PRJT] [{}] voucher generation finished - [{}s]", generatedVoucherCodes.size(), (endDate.getTime() - startDate.getTime())/1000.0);
+    log.info("[{}] voucher generation finished - [{}s]", generatedVoucherCodes.size(), (SystemTime.getCurrentTime().getTime() - startDate.getTime())/1000.0);
     
     //
     // EVPRO-1576 - end
     //
+    
+    /*List<String> currentVoucherCodes = new ArrayList<>();
+    for (int q=0; q<quantity; q++)
+      {
+        String voucherCode = null; 
+        boolean newVoucherGenerated = false;
+        for (int i=0; i<HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE; i++)
+          {
+            voucherCode = TokenUtils.generateFromRegex(pattern);
+            if (!currentVoucherCodes.contains(voucherCode) && !existingVoucherCodes.contains(voucherCode))
+              {
+                newVoucherGenerated = true;
+                break;
+              }
+          }
+        if (!newVoucherGenerated)
+          {
+            log.info("After " + HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE + " tries, unable to generate a new voucher code with pattern " + pattern);
+            break;
+          }
+        log.debug("voucherCode  generated : " + voucherCode);
+        currentVoucherCodes.add(voucherCode);
+      }*/
     
     // convert list to InputStream
     
