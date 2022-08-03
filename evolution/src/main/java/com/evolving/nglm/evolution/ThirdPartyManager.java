@@ -5199,8 +5199,7 @@ public class ThirdPartyManager
     //
     
     String cancelledDeliveryRequestID = deliveryRequestID.concat("_cancel_purchase");
-    boolean cancelledDeliveryRequest = !subscriberProfile.getLimitedCancelPurchases().isEmpty();
-    
+    boolean cancelledDeliveryRequest = subscriberProfile.getLimitedCancelPurchases().contains(deliveryRequestID);
     if (!cancelledDeliveryRequest)
       {
         //

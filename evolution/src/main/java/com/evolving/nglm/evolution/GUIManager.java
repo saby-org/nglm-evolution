@@ -25196,7 +25196,7 @@ public class GUIManager
    //
    
    String cancelledDeliveryRequestID = deliveryRequestID.concat("_cancel_purchase");
-   boolean cancelledDeliveryRequest = !subscriberProfile.getLimitedCancelPurchases().isEmpty(); // first level check
+   boolean cancelledDeliveryRequest = subscriberProfile.getLimitedCancelPurchases().contains(deliveryRequestID); // first level check
    
    if (!cancelledDeliveryRequest)
      {
@@ -25239,33 +25239,25 @@ public class GUIManager
    // cancelPurchaseOffer
    //
    
-   PurchaseFulfillmentRequest purchaseResponse = null;
-   if (!sync)
+   PurchaseFulfillmentRequest purchaseResponse = purchaseOffer(subscriberProfile, true, subscriberID, purchaseFulfillmentRequest.getOfferID(), purchaseFulfillmentRequest.getSalesChannelID(), purchaseFulfillmentRequest.getQuantity(), moduleID, featureID, origin, purchaseFulfillmentRequest.getResellerID(), kafkaProducer, cancelledDeliveryRequestID, true, purchaseFulfillmentRequest.getCreationDate());
+   response.put("offer", purchaseResponse.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, tenantID));
+   response.put("responseCode", "ok");
+   log.info("purchaseResponse.getStatus() {}", purchaseResponse.getStatus());
+   if (purchaseResponse.getStatus() == PurchaseFulfillmentStatus.PURCHASED_AND_CANCELLED)
      {
-       purchaseResponse = purchaseOffer(subscriberProfile, sync, subscriberID, purchaseFulfillmentRequest.getOfferID(), purchaseFulfillmentRequest.getSalesChannelID(), purchaseFulfillmentRequest.getQuantity(), moduleID, featureID, origin, purchaseFulfillmentRequest.getResellerID(), kafkaProducer, cancelledDeliveryRequestID, true, purchaseFulfillmentRequest.getCreationDate());
-       response.put("responseCode", "ok");
-     } 
-   else
-     {
-       purchaseResponse = purchaseOffer(subscriberProfile, sync, subscriberID, purchaseFulfillmentRequest.getOfferID(), purchaseFulfillmentRequest.getSalesChannelID(), purchaseFulfillmentRequest.getQuantity(), moduleID, featureID, origin, purchaseFulfillmentRequest.getResellerID(), kafkaProducer, cancelledDeliveryRequestID, true, purchaseFulfillmentRequest.getCreationDate());
-       response.put("offer", purchaseResponse.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, tenantID));
-       response.put("responseCode", "ok");
-       if (purchaseResponse.getStatus() == PurchaseFulfillmentStatus.PURCHASED_AND_CANCELLED)
-         {
 
-           //
-           // SubscriberProfileForceUpdate
-           //
-           
-           SubscriberProfileForceUpdate subscriberProfileForceUpdate = new SubscriberProfileForceUpdate(subscriberID, new ParameterMap(), null);
-           subscriberProfileForceUpdate.getParameterMap().put("limitedCancelPurchase", deliveryRequestID);
-           
-           //
-           //  send
-           //
-           
-           kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(subscriberProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), subscriberProfileForceUpdate)));
-         }
+       //
+       // SubscriberProfileForceUpdate
+       //
+       
+       SubscriberProfileForceUpdate subscriberProfileForceUpdate = new SubscriberProfileForceUpdate(subscriberID, new ParameterMap(), null);
+       subscriberProfileForceUpdate.getParameterMap().put("limitedCancelPurchase", deliveryRequestID);
+       
+       //
+       //  send
+       //
+       
+       kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(subscriberProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), subscriberProfileForceUpdate)));
      }
    return JSONUtilities.encodeObject(response);
  }
