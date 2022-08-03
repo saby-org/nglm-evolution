@@ -1315,6 +1315,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         int quantity = purchaseRequest.getQuantity();
         String subscriberID = purchaseRequest.getSubscriberID();
         String salesChannelID = purchaseRequest.getSalesChannelID();
+        String previousDeliveryReqId = deliveryRequest.getDeliveryRequestID().replaceAll("_cancel_purchase", "");
         
         if (purchaseRequest.getCancelPurchase())
           {
@@ -1323,6 +1324,40 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
             //
             
             PurchaseRequestStatus purchaseStatus = new PurchaseRequestStatus(correlator, purchaseRequest.getEventID(), purchaseRequest.getModuleID(), purchaseRequest.getFeatureID(), offerID, subscriberID, quantity, salesChannelID);
+            
+            //
+            //  subscriberProfile
+            //
+            
+            SubscriberProfile subscriberProfile = null;
+            try
+              {
+                subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID);
+                if (subscriberProfile == null)
+                  {
+                    log.info("run() : (offer " + offerID + ", subscriberID " + subscriberID + ") : subscriber " + subscriberID + " not found");
+                    submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.CUSTOMER_NOT_FOUND, "customer " + subscriberID + " not found");
+                    continue mainLoop;
+                  } 
+                else
+                  {
+                    if (log.isDebugEnabled()) log.debug("run() : (offer " + offerID + ", subscriberID " + subscriberID + ") : subscriber " + subscriberID + " found (" + subscriberProfile + ")");
+                  }
+              } 
+            catch (SubscriberProfileServiceException e)
+              {
+                log.info("run() : (offer " + offerID + ", subscriberID " + subscriberID + ") : subscriberService not available");
+                submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.SYSTEM_ERROR, "subscriberService not available");
+                continue mainLoop;
+              }
+            
+            log.info("RAJ K previousDeliveryReqId {}, subscriberProfile.getLimitedCancelPurchases() {}", previousDeliveryReqId, subscriberProfile.getLimitedCancelPurchases());
+            if (subscriberProfile.getLimitedCancelPurchases().contains(previousDeliveryReqId))
+              {
+                log.error("purchase already is in progress for reqID {}", previousDeliveryReqId);
+                submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.SYSTEM_ERROR, "purchase already is in progres");
+                continue mainLoop;
+              }
             
             Offer offer = offerService.getActiveOffer(offerID, purchaseRequest.getPreviousPurchaseDate());
             if (offer != null)
@@ -1440,7 +1475,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
                 submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.SYSTEM_ERROR, "subscriberService not available");
                 continue mainLoop;
               }
-
+            
             //
             // Get offer
             //

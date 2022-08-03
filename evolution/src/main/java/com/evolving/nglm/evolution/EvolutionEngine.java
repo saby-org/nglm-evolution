@@ -3561,6 +3561,7 @@ public class EvolutionEngine
         if (subscriberProfileForceUpdate.getParameterMap().containsKey("limitedCancelPurchase"))
           {
             String deliveryRequestID = (String) subscriberProfileForceUpdate.getParameterMap().get("limitedCancelPurchase");
+            log.info("RAJ K limitedCancelPurchase deliveryRequestID {}", deliveryRequestID);
             if (deliveryRequestID != null)
               {
                 subscriberProfile.addCancelPurchase(deliveryRequestID);
