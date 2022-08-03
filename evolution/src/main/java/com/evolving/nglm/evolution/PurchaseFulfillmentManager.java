@@ -1351,7 +1351,6 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
                 continue mainLoop;
               }
             
-            log.info("RAJ K previousDeliveryReqId {}, subscriberProfile.getLimitedCancelPurchases() {}", previousDeliveryReqId, subscriberProfile.getLimitedCancelPurchases());
             if (subscriberProfile.getLimitedCancelPurchases().contains(previousDeliveryReqId))
               {
                 log.error("purchase already is in progress for reqID {}", previousDeliveryReqId);

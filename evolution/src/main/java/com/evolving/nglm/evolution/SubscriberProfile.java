@@ -341,11 +341,9 @@ public abstract class SubscriberProfile
   {
     if (getLimitedCancelPurchases().size() > 9)
       {
-        log.info("RAJ K addCancelPurchase size is full {}", getLimitedCancelPurchases().size());
         getLimitedCancelPurchases().subList(9, getLimitedCancelPurchases().size()).clear();
       }
     getLimitedCancelPurchases().add(deliveryRequestedID);
-    log.info("RAJ K LimitedCancelPurchases {}", getLimitedCancelPurchases());
   }
   
   //
