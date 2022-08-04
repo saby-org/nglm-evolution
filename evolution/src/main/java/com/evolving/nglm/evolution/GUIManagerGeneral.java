@@ -4723,7 +4723,7 @@ public class GUIManagerGeneral extends GUIManager
           @Override
           public void run()
           {
-            while(quantity > currentVoucherCodes.size())
+            while(quantity > (currentVoucherCodes.size() - existingVoucherCodes.size()))
               {
                 boolean newVoucherGenerated = false;
                 for (int i=1; i<=HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE; i++)
