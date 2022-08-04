@@ -4706,7 +4706,6 @@ public class GUIManagerGeneral extends GUIManager
     // EVPRO-1576 - start
     //
     
-    Set<String> generatedVoucherCodes = ConcurrentHashMap.newKeySet();
     Set<String> currentVoucherCodes = ConcurrentHashMap.newKeySet(); // store distinct voucher codes - skip for now
     //List<String> currentVoucherCodes = new ArrayList<>(); // may generate and store duplicate vouchers 
     
@@ -4721,14 +4720,13 @@ public class GUIManagerGeneral extends GUIManager
           @Override
           public void run()
           {
-            while (quantity > currentVoucherCodes.size())
+            while(quantity > currentVoucherCodes.size())
               {
-                String voucherCode = null;
                 boolean newVoucherGenerated = false;
-                for (int i=0; i<HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE; i++)
+                for (int i=1; i<=HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE; i++)
                   {
-                    voucherCode = TokenUtils.generateFromRegex(pattern);
-                    if (!currentVoucherCodes.contains(voucherCode) && !existingVoucherCodes.contains(voucherCode))
+                    String voucherCode = TokenUtils.generateFromRegex(pattern);
+                    if (currentVoucherCodes.add(voucherCode))
                       {
                         newVoucherGenerated = true;
                         break;
@@ -4739,15 +4737,13 @@ public class GUIManagerGeneral extends GUIManager
                     log.info("After " + HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE + " tries, unable to generate a new voucher code with pattern " + pattern);
                     break;
                   }
-                log.debug("voucherCode  generated : " + voucherCode);
-                currentVoucherCodes.add(voucherCode);
               }
           }
         });
       }
     es.shutdownNow();
     
- // waiting to complete all threads
+    // waiting to complete all threads
     try
       {
         while(!es.awaitTermination(1, TimeUnit.SECONDS))
@@ -4761,7 +4757,7 @@ public class GUIManagerGeneral extends GUIManager
       }
     
     // remove extra vouchers - in case
-    generatedVoucherCodes = currentVoucherCodes.stream().limit(quantity).collect(Collectors.toSet());
+    Set<String> generatedVoucherCodes = currentVoucherCodes.stream().limit(quantity).collect(Collectors.toSet());
     
     log.info("[{}] voucher generation finished - [{}s]", generatedVoucherCodes.size(), (SystemTime.getCurrentTime().getTime() - startDate.getTime())/1000.0);
     
@@ -4799,8 +4795,11 @@ public class GUIManagerGeneral extends GUIManager
     {
       for (String voucherCode : generatedVoucherCodes)
         {
-          baos.write(voucherCode.getBytes());
-          baos.write("\n".getBytes());
+          if (voucherCode != null)
+            {
+              baos.write(voucherCode.getBytes());
+              baos.write("\n".getBytes());
+            }
         }
     }
     catch (IOException e) // will never happen as we write to memory
@@ -4811,8 +4810,6 @@ public class GUIManagerGeneral extends GUIManager
     byte[] bytes = baos.toByteArray();
     InputStream vouchersStream = new ByteArrayInputStream(bytes);
 
-    log.info("[PRJT] voucher list to InputStream");
-    
     // write list to UploadedFile
 
     String fileID = uploadedFileService.generateFileID();
@@ -4827,8 +4824,6 @@ public class GUIManagerGeneral extends GUIManager
     GUIManagedObject existingFileUpload = uploadedFileService.getStoredUploadedFile(fileID);
     long epoch = epochServer.getKey();
     
-    log.info("[PRJT] creating uploaded voucher file");
-    
     try
       {
         UploadedFile uploadedFile = new UploadedFile(fileJSON, epoch, existingFileUpload, tenantID);
@@ -4838,8 +4833,6 @@ public class GUIManagerGeneral extends GUIManager
       {
         log.info("Issue when creating uploaded voucher file : " + e.getLocalizedMessage());
       }
-    
-    log.info("[PRJT] creating uploaded voucher file DONE");
     
     /*****************************************
     *
