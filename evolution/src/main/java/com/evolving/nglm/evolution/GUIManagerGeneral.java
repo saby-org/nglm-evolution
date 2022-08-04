@@ -4706,7 +4706,10 @@ public class GUIManagerGeneral extends GUIManager
     // EVPRO-1576 - start
     //
     
+    log.info("GUIManager.processGenerateVouchers- Existing Vouchers count [{}]", existingVoucherCodes.size());
+    
     Set<String> currentVoucherCodes = ConcurrentHashMap.newKeySet(); // store distinct voucher codes - skip for now
+    currentVoucherCodes.addAll(existingVoucherCodes);
     //List<String> currentVoucherCodes = new ArrayList<>(); // may generate and store duplicate vouchers 
     
     ExecutorService es = Executors.newCachedThreadPool();
@@ -4746,9 +4749,9 @@ public class GUIManagerGeneral extends GUIManager
     // waiting to complete all threads
     try
       {
-        while(!es.awaitTermination(1, TimeUnit.SECONDS))
+        while(!es.awaitTermination(2, TimeUnit.SECONDS))
           {
-            log.info("GUIManager.processGenerateVouchers taking time to generate vocuhers.");  
+            log.info("GUIManager.processGenerateVouchers- taking more time to generate vocuhers");  
           }
       } 
     catch (InterruptedException ex)
@@ -4756,10 +4759,11 @@ public class GUIManagerGeneral extends GUIManager
         log.error("Issue when finishing ExecutorService threads for voucher generation : " + ex.getMessage());
       }
     
+    currentVoucherCodes.removeAll(existingVoucherCodes);
     // remove extra vouchers - in case
     Set<String> generatedVoucherCodes = currentVoucherCodes.stream().limit(quantity).collect(Collectors.toSet());
     
-    log.info("[{}] voucher generation finished - [{}s]", generatedVoucherCodes.size(), (SystemTime.getCurrentTime().getTime() - startDate.getTime())/1000.0);
+    log.info("GUIManager.processGenerateVouchers- new vouchers[{}] generation completed [{}s]", generatedVoucherCodes.size(), (SystemTime.getCurrentTime().getTime() - startDate.getTime())/1000.0);
     
     //
     // EVPRO-1576 - end
