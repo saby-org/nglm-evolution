@@ -515,8 +515,9 @@ public class DeploymentCommon
   private static boolean ucgQuickRemovalAtRefresh;
   private static int minDaysInUCGForQuickRemoval;
   private static boolean ucgQuickOverloadRemoval;
-
-
+  //Third Party Manager
+  private static List<String> thirdPartyMethodTypes;
+  private static Map<String,String> thirdPartyAPIHeaders;
 
   
   /*****************************************
@@ -870,6 +871,9 @@ public class DeploymentCommon
   public static int getMinDaysInUCGForQuickRemoval() { return minDaysInUCGForQuickRemoval; }
   public static boolean getUcgQuickOverloadRemoval() { return ucgQuickOverloadRemoval; }
   
+  public static List<String> getThirdPartyMethodTypes() { return thirdPartyMethodTypes; }
+  public static Map<String, String> getThirdPartyAPIHeaders() { return thirdPartyAPIHeaders; }
+
   
   /****************************************
   *
@@ -1596,7 +1600,20 @@ public class DeploymentCommon
     ucgQuickRemovalAtRefresh = jsonReader.decodeBoolean("ucgQuickRemovalAtRefresh");
     minDaysInUCGForQuickRemoval = jsonReader.decodeInteger("minDaysInUCGForQuickRemoval");
     ucgQuickOverloadRemoval = jsonReader.decodeBoolean("ucgQuickOverloadRemoval");
-
+    
+    //thirdParty api conf
+    thirdPartyMethodTypes = new ArrayList<>();
+    JSONArray methods = jsonReader.decodeJSONArray("thirdPartyMethodTypes");
+    for (int i = 0; i < methods.size(); i++) {
+      String data = methods.get(i).toString();
+      thirdPartyMethodTypes.add(data);
+    }
+    JSONObject thirdPartyAPIHeadersOBJ = jsonReader.decodeJSONObject("thirdPartyAPIHeaders");
+    thirdPartyAPIHeaders = new LinkedHashMap<String, String>();
+    for (Object key : thirdPartyAPIHeadersOBJ.keySet()) {
+    	thirdPartyAPIHeaders.put((String) key, (String) thirdPartyAPIHeadersOBJ.get(key));
+    }
+    
   }
 
   

@@ -217,6 +217,7 @@ public class ThirdPartyManager
   }
   private String fwkServer = null;
   private String guimanagerHost = null;
+  
   private int guimanagerPort;
   RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(httpTimeout).setSocketTimeout(httpTimeout).setConnectionRequestTimeout(httpTimeout).build();
   private HttpClient httpClient;
@@ -352,12 +353,15 @@ public class ThirdPartyManager
     String subscriberProfileEndpoints = Deployment.getSubscriberProfileEndpoints();
     methodPermissionsMapper = Deployment.getThirdPartyMethodPermissionsMap();
     authResponseCacheLifetimeInMinutes = Deployment.getAuthResponseCacheLifetimeInMinutes() == null ? new Integer(0) : Deployment.getAuthResponseCacheLifetimeInMinutes();
-
+     
     //
     //  log
     //
 
     log.info("main START: {} {} {} {} {} {}", apiProcessKey, bootstrapServers, apiRestPort, fwkServer, threadPoolSize, authResponseCacheLifetimeInMinutes);
+
+    log.info("main START: ALLOWED_THIRDPARTY_METHOD_TYPES {}  ", Deployment.getThirdPartyMethodTypes());
+    log.info("main START: THIRDPARTY_API_HEADERS {}  ", Deployment.getThirdPartyAPIHeaders());
 
     /*****************************************
      *
@@ -1088,9 +1092,7 @@ public class ThirdPartyManager
       //
       // headers
       //
-
-      exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
-      exchange.getResponseHeaders().set("Content-Type", "application/json");
+      updateResponseHeaders(exchange);
       exchange.sendResponseHeaders(200, 0);
       
       BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
@@ -1141,8 +1143,7 @@ public class ThirdPartyManager
       // headers
       //
 
-      exchange.getResponseHeaders().add("Content-Type", "application/json");
-      exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
+      updateResponseHeaders(exchange);
       exchange.sendResponseHeaders(headerValue, 0);
 
       BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
@@ -1182,8 +1183,7 @@ public class ThirdPartyManager
         // headers
         //
 
-        exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
-        exchange.getResponseHeaders().add("Content-Type", "application/json");
+        updateResponseHeaders(exchange);
         exchange.sendResponseHeaders(200, 0);
 
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
@@ -1226,8 +1226,7 @@ public class ThirdPartyManager
         // headers
         //
 
-        exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
-        exchange.getResponseHeaders().set("Content-Type", "application/json");
+        updateResponseHeaders(exchange);
         exchange.sendResponseHeaders(200, 0);
 
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(exchange.getResponseBody()));
@@ -1237,8 +1236,30 @@ public class ThirdPartyManager
       }
   }
 
-
   /*****************************************
+  *
+  *  updateResponseHeaders: Updates with configured THIRDPARTY_API_HEADERS 
+  *
+  *****************************************/
+  
+  private void updateResponseHeaders(HttpExchange exchange) {
+  // Update with configured THIRDPARTY_API_HEADERS
+	  Map<String, String> thirdPartyAPIHeaders = Deployment.getThirdPartyAPIHeaders();
+	  if(thirdPartyAPIHeaders!=null && thirdPartyAPIHeaders.size()>0) {
+ 	      for (Map.Entry<String,String> entry : thirdPartyAPIHeaders.entrySet()) {
+ 	    	 log.info("thirdPartyAPIHeaders Key = " + entry.getKey() + ", Value = " + entry.getValue());
+ 	    	 exchange.getResponseHeaders().set(entry.getKey(), entry.getValue());
+ 	      }
+	  }else {
+	      exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+	      exchange.getResponseHeaders().set("Content-Type", "application/json");
+	  }
+	//      exchange.getResponseHeaders().set("X-Frame-Options", "SAMEORIGIN");
+	//      exchange.getResponseHeaders().set("X-Content-Type-Options", "nosniff");
+
+  }
+
+/*****************************************
   *
   *  validateURIandContext
   *
@@ -1248,7 +1269,7 @@ public class ThirdPartyManager
   {
     String path = exchange.getRequestURI().getPath();
     if (path.endsWith("/")) path = path.substring(0, path.length()-1);
-    
+    List<String> thirdPartyMethodTypes = Deployment.getThirdPartyMethodTypes();
     //
     //  validate
     //
@@ -1257,6 +1278,11 @@ public class ThirdPartyManager
       {
         log.warn("invalid url {} should be {}", path, exchange.getHttpContext().getPath());
         throw new ThirdPartyManagerException("invalid URL", -404);
+      }
+    if (thirdPartyMethodTypes!=null && thirdPartyMethodTypes.size()>0 && !thirdPartyMethodTypes.contains(exchange.getRequestMethod()))
+      {
+        log.warn("invalid thirdPartyMethodTypes {} ", thirdPartyMethodTypes);
+        throw new ThirdPartyManagerException("invalid http Method Types", -404);
       }
     
   }
