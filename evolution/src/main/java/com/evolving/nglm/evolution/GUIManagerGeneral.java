@@ -22,12 +22,20 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import com.evolving.nglm.evolution.uniquekey.ZookeeperUniqueKeyServer;
 import org.apache.commons.fileupload.FileItemIterator;
@@ -80,12 +88,13 @@ import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTa
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectType;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectTypeService;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
+import com.evolving.nglm.evolution.offeroptimizer.OfferOptimizerAlgoManager;
+import com.evolving.nglm.evolution.propensity.PropensityService;
 import com.evolving.nglm.evolution.tenancy.Tenant;
 import com.sun.net.httpserver.HttpExchange;
 
 public class GUIManagerGeneral extends GUIManager
 {
-
   //
   // log
   //
@@ -102,6 +111,11 @@ public class GUIManagerGeneral extends GUIManager
   private final List<GUIService> guiServiceList = new ArrayList<GUIService>();
 
 
+  public GUIManagerGeneral()
+  {
+    super();
+  }
+  
   /***************************
    * 
    * GUIManagerGeneral
@@ -4688,7 +4702,74 @@ public class GUIManagerGeneral extends GUIManager
           }
       }
         
-    List<String> currentVoucherCodes = new ArrayList<>();
+    //
+    // EVPRO-1576 - start
+    //
+    
+    log.info("GUIManager.processGenerateVouchers- Existing Vouchers count [{}]", existingVoucherCodes.size());
+    
+    Set<String> currentVoucherCodes = ConcurrentHashMap.newKeySet(); // store distinct voucher codes - skip for now
+    currentVoucherCodes.addAll(existingVoucherCodes);
+    //List<String> currentVoucherCodes = new ArrayList<>(); // may generate and store duplicate vouchers 
+    
+    ExecutorService es = Executors.newCachedThreadPool();
+    int minPerThreadCount = 1000; 
+    int threadCount = quantity > minPerThreadCount ? Math.min(quantity/minPerThreadCount, 5) : 1; // max 5 thread will work
+    
+    Date startDate = SystemTime.getCurrentTime();
+    for(int i=0; i<threadCount; i++)
+      {
+        es.execute(new Runnable() {
+          @Override
+          public void run()
+          {
+            while(quantity > (currentVoucherCodes.size() - existingVoucherCodes.size()))
+              {
+                boolean newVoucherGenerated = false;
+                for (int i=1; i<=HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE; i++)
+                  {
+                    String voucherCode = TokenUtils.generateFromRegex(pattern);
+                    if (currentVoucherCodes.add(voucherCode))
+                      {
+                        newVoucherGenerated = true;
+                        break;
+                      }
+                  }
+                if (!newVoucherGenerated)
+                  {
+                    log.info("After " + HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE + " tries, unable to generate a new voucher code with pattern " + pattern);
+                    break;
+                  }
+              }
+          }
+        });
+      }
+    es.shutdownNow();
+    
+    // waiting to complete all threads
+    try
+      {
+        while(!es.awaitTermination(2, TimeUnit.SECONDS))
+          {
+            log.info("GUIManager.processGenerateVouchers- taking more time to generate vocuhers");  
+          }
+      } 
+    catch (InterruptedException ex)
+      {
+        log.error("Issue when finishing ExecutorService threads for voucher generation : " + ex.getMessage());
+      }
+    
+    currentVoucherCodes.removeAll(existingVoucherCodes);
+    // remove extra vouchers - in case
+    Set<String> generatedVoucherCodes = currentVoucherCodes.stream().limit(quantity).collect(Collectors.toSet());
+    
+    log.info("GUIManager.processGenerateVouchers- new vouchers[{}] generation completed [{}s]", generatedVoucherCodes.size(), (SystemTime.getCurrentTime().getTime() - startDate.getTime())/1000.0);
+    
+    //
+    // EVPRO-1576 - end
+    //
+    
+    /*List<String> currentVoucherCodes = new ArrayList<>();
     for (int q=0; q<quantity; q++)
       {
         String voucherCode = null; 
@@ -4709,23 +4790,26 @@ public class GUIManagerGeneral extends GUIManager
           }
         log.debug("voucherCode  generated : " + voucherCode);
         currentVoucherCodes.add(voucherCode);
-      }
-
+      }*/
+    
     // convert list to InputStream
     
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     try
     {
-      for (String voucherCode : currentVoucherCodes)
+      for (String voucherCode : generatedVoucherCodes)
         {
-          baos.write(voucherCode.getBytes());
-          baos.write("\n".getBytes());
+          if (voucherCode != null)
+            {
+              baos.write(voucherCode.getBytes());
+              baos.write("\n".getBytes());
+            }
         }
     }
     catch (IOException e) // will never happen as we write to memory
     {
       log.info("Issue when converting voucher list to file : " + e.getLocalizedMessage());
-      log.debug("Voucher list : " + currentVoucherCodes);
+      log.debug("Voucher list : " + generatedVoucherCodes);
     }
     byte[] bytes = baos.toByteArray();
     InputStream vouchersStream = new ByteArrayInputStream(bytes);
