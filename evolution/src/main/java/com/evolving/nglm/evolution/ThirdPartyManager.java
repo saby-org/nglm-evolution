@@ -1242,21 +1242,21 @@ public class ThirdPartyManager
   *
   *****************************************/
   
-  private void updateResponseHeaders(HttpExchange exchange) {
-  // Update with configured THIRDPARTY_API_HEADERS
-	  Map<String, String> thirdPartyAPIHeaders = Deployment.getThirdPartyAPIHeaders();
-	  if(thirdPartyAPIHeaders!=null && thirdPartyAPIHeaders.size()>0) {
- 	      for (Map.Entry<String,String> entry : thirdPartyAPIHeaders.entrySet()) {
- 	    	 log.info("thirdPartyAPIHeaders Key = " + entry.getKey() + ", Value = " + entry.getValue());
- 	    	 exchange.getResponseHeaders().set(entry.getKey(), entry.getValue());
- 	      }
-	  }else {
-	      exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
-	      exchange.getResponseHeaders().set("Content-Type", "application/json");
-	  }
-	//      exchange.getResponseHeaders().set("X-Frame-Options", "SAMEORIGIN");
-	//      exchange.getResponseHeaders().set("X-Content-Type-Options", "nosniff");
-
+  private void updateResponseHeaders(HttpExchange exchange)
+  {
+    Map<String, String> thirdPartyAPIHeaders = Deployment.getThirdPartyAPIHeaders();
+    if (thirdPartyAPIHeaders != null && thirdPartyAPIHeaders.size() > 0)
+      {
+        for (Map.Entry<String, String> entry : thirdPartyAPIHeaders.entrySet())
+          {
+            exchange.getResponseHeaders().set(entry.getKey(), entry.getValue());
+          }
+      } 
+    else
+      {
+        exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+        exchange.getResponseHeaders().set("Content-Type", "application/json");
+      }
   }
 
 /*****************************************
