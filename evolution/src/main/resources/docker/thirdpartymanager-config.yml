@@ -1,0 +1,3 @@
+configs:
+  thirdparty_pem_file:
+    file: <_NGLM_THIRDPARTY_RUNTIME_>/certificates/thirdpartymanager.pem

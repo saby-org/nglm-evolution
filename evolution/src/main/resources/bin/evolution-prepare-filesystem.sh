@@ -88,6 +88,11 @@ do
    cat $DEPLOY_ROOT/config/logger/log4j-thirdpartyevent.xml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' | sed 's/\\n/\n/g' | sed 's/^/  /g' > $DEPLOY_ROOT/config/logger/log4j-thirdpartyevent-$KEY.xml
    scp $DEPLOY_ROOT/config/logger/log4j-thirdpartyevent-$KEY.xml $HOST:$NGLM_CONFIG_LOGS/log4j-thirdpartyevent-$KEY.xml
    rm -f $DEPLOY_ROOT/config/logger/log4j-thirdpartyevent-$KEY.xml
+   
+   ssh $HOST "
+      mkdir -p $NGLM_THIRDPARTY_RUNTIME/certificates      
+   " 
+   scp $DEPLOY_ROOT/config/resources/thirdpartymanager.pem $HOST:$NGLM_THIRDPARTY_RUNTIME/certificates/thirdpartymanager.pem
  done
 
  #

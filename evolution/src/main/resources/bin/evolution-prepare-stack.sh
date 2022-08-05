@@ -129,6 +129,14 @@ if [ "$THIRDPARTYMANAGER_ENABLED" = "true" ]; then
   done
 
   #
+  # thirdparty stack config
+  #
+  
+  cat $DEPLOY_ROOT/docker/thirdpartymanager-config.yml | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' > $DEPLOY_ROOT/docker/thirdpartymanager-source-config.yml
+  cat $DEPLOY_ROOT/docker/thirdpartymanager-source-config.yml >> $DEPLOY_ROOT/stack/stack-thirdpartymanager.yml
+  echo >> $DEPLOY_ROOT/stack/stack-thirdpartymanager.yml
+
+  #
   #  postamble
   #
 

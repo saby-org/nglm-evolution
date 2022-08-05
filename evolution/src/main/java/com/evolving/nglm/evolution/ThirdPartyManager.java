@@ -6,47 +6,57 @@
 
 package com.evolving.nglm.evolution;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.net.InetSocketAddress;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.UUID;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import com.evolving.nglm.evolution.event.ExternalEvent;
+import com.evolving.nglm.core.*;
+import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
+import com.evolving.nglm.core.LicenseChecker.LicenseState;
+import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
+import com.evolving.nglm.core.SubscriberStreamEvent.SubscriberAction;
+import com.evolving.nglm.evolution.Badge.BadgeAction;
+import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
+import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
+import com.evolving.nglm.evolution.DeliveryRequest.Module;
+import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
+import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
+import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
+import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
+import com.evolving.nglm.evolution.Journey.TargetingType;
+import com.evolving.nglm.evolution.JourneyHistory.NodeHistory;
+import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
+import com.evolving.nglm.evolution.LoyaltyProgramChallengeHistory.LevelHistory;
+import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
+import com.evolving.nglm.evolution.LoyaltyProgramMissionHistory.StepHistory;
+import com.evolving.nglm.evolution.OfferCharacteristics.OfferCharacteristicsLanguageProperty;
+import com.evolving.nglm.evolution.OfferCharacteristics.OfferCharacteristicsProperty;
+import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
+import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentStatus;
+import com.evolving.nglm.evolution.SubscriberProfile.ValidateUpdateProfileRequestException;
+import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
+import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
+import com.evolving.nglm.evolution.Token.TokenStatus;
+import com.evolving.nglm.evolution.commoditydelivery.CommodityDeliveryException;
+import com.evolving.nglm.evolution.commoditydelivery.CommodityDeliveryManagerRemovalUtils;
+import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 import com.evolving.nglm.evolution.event.MapperUtils;
 import com.evolving.nglm.evolution.event.ProductExternalEvent;
 import com.evolving.nglm.evolution.event.SubscriberUpdated;
+import com.evolving.nglm.evolution.offeroptimizer.DNBOMatrixAlgorithmParameters;
+import com.evolving.nglm.evolution.offeroptimizer.GetOfferException;
+import com.evolving.nglm.evolution.offeroptimizer.ProposedOfferDetails;
+import com.evolving.nglm.evolution.otp.OTPInstanceChangeEvent;
+import com.evolving.nglm.evolution.statistics.DurationStat;
+import com.evolving.nglm.evolution.statistics.StatBuilder;
+import com.evolving.nglm.evolution.statistics.StatsBuilders;
+import com.evolving.nglm.evolution.thirdparty.PEMUtils;
+import com.evolving.nglm.evolution.thirdparty.ThirdPartyHttpsConfigurator;
 import com.evolving.nglm.evolution.uniquekey.ZookeeperUniqueKeyServer;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.HttpsConfigurator;
+import com.sun.net.httpserver.HttpsParameters;
+import com.sun.net.httpserver.HttpsServer;
+
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
@@ -73,66 +83,29 @@ import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.evolving.nglm.core.Alarm;
-import com.evolving.nglm.core.AlternateID;
-import com.evolving.nglm.core.AssignSubscriberIDs;
-import com.evolving.nglm.core.AutoProvisionEvent;
-import com.evolving.nglm.core.AutoProvisionSubscriberStreamEvent;
-import com.evolving.nglm.core.ConnectSerde;
-import com.evolving.nglm.core.Deployment;
-import com.evolving.nglm.core.JSONUtilities;
-import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
-import com.evolving.nglm.core.LicenseChecker;
-import com.evolving.nglm.core.LicenseChecker.LicenseState;
-import com.evolving.nglm.core.NGLMRuntime;
-import com.evolving.nglm.core.Pair;
-import com.evolving.nglm.core.RLMDateUtils;
-import com.evolving.nglm.core.ReferenceDataReader;
-import com.evolving.nglm.core.ServerException;
-import com.evolving.nglm.core.ServerRuntimeException;
-import com.evolving.nglm.core.StringKey;
-import com.evolving.nglm.core.SubscriberIDService;
-import com.evolving.nglm.core.SubscriberIDService.SubscriberIDServiceException;
-import com.evolving.nglm.core.SubscriberStreamEvent.SubscriberAction;
-import com.evolving.nglm.core.SubscriberStreamOutput;
-import com.evolving.nglm.core.SystemTime;
-import com.evolving.nglm.evolution.Badge.BadgeAction;
-import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryOperation;
-import com.evolving.nglm.evolution.CommodityDeliveryManager.CommodityDeliveryRequest;
-import com.evolving.nglm.evolution.DeliveryRequest.Module;
-import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
-import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
-import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
-import com.evolving.nglm.evolution.GUIManager.API;
-import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-import com.evolving.nglm.evolution.Journey.SubscriberJourneyStatus;
-import com.evolving.nglm.evolution.Journey.TargetingType;
-import com.evolving.nglm.evolution.JourneyHistory.NodeHistory;
-import com.evolving.nglm.evolution.LoyaltyProgram.LoyaltyProgramType;
-import com.evolving.nglm.evolution.LoyaltyProgramChallengeHistory.LevelHistory;
-import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
-import com.evolving.nglm.evolution.LoyaltyProgramMissionHistory.StepHistory;
-import com.evolving.nglm.evolution.OfferCharacteristics.OfferCharacteristicsLanguageProperty;
-import com.evolving.nglm.evolution.OfferCharacteristics.OfferCharacteristicsProperty;
-import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
-import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentStatus;
-import com.evolving.nglm.evolution.SubscriberProfile.ValidateUpdateProfileRequestException;
-import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
-import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
-import com.evolving.nglm.evolution.Token.TokenStatus;
-import com.evolving.nglm.evolution.commoditydelivery.CommodityDeliveryException;
-import com.evolving.nglm.evolution.commoditydelivery.CommodityDeliveryManagerRemovalUtils;
-import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
-import com.evolving.nglm.evolution.offeroptimizer.DNBOMatrixAlgorithmParameters;
-import com.evolving.nglm.evolution.offeroptimizer.GetOfferException;
-import com.evolving.nglm.evolution.offeroptimizer.ProposedOfferDetails;
-import com.evolving.nglm.evolution.otp.OTPInstanceChangeEvent;
-import com.evolving.nglm.evolution.statistics.DurationStat;
-import com.evolving.nglm.evolution.statistics.StatBuilder;
-import com.evolving.nglm.evolution.statistics.StatsBuilders;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
+import java.io.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.net.InetSocketAddress;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLParameters;
 
 public class ThirdPartyManager 
 {
@@ -141,7 +114,7 @@ public class ThirdPartyManager
   private static final String CUSTOMER_ID_TYPE = "customerIDType";
   private static final String CUSTOMER_ID_VALUE = "customerIDValue";
   private static final DeliveryRequest.DeliveryPriority DELIVERY_REQUEST_PRIORITY = DeliveryRequest.DeliveryPriority.High;
-
+  
   /*****************************************
    *
    *  ProductID
@@ -248,6 +221,10 @@ public class ThirdPartyManager
   RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(httpTimeout).setSocketTimeout(httpTimeout).setConnectionRequestTimeout(httpTimeout).build();
   private HttpClient httpClient;
 
+  private static final String THIRDPARTYMANAGER_API_PROTOCOL = "THIRDPARTYMANAGER_API_PROTOCOL";
+  private static final String THIRDPARTYMANAGER_API_TEMP_KEYPASS = "THIRDPARTYMANAGER_API_TEMP_KEYPASS";
+  private static final String PEM_LOCATION = "PEM_LOCATION";
+  
   /*****************************************
    *
    *  enum
@@ -359,7 +336,7 @@ public class ThirdPartyManager
     int threadPoolSize = Integer.parseInt(args[3]);
     String guimanagerHost = args[4];
     int guimanagerPort = Integer.parseInt(args[5]);
-
+    
     String nodeID = System.getProperty("nglm.license.nodeid");
     String bootstrapServers = Deployment.getBrokerServers();
     String offerTopic = Deployment.getOfferTopic();
@@ -594,15 +571,38 @@ public class ThirdPartyManager
     uploadedFileService.start();
 
     /*****************************************
-     *
-     *  REST interface -- server and handlers
-     *
-     *****************************************/
+    *
+    *  REST interface -- server and handlers
+    *
+    *****************************************/
 
+    String apiProtocol = System.getenv().get(THIRDPARTYMANAGER_API_PROTOCOL);
+    
     try
     {
       InetSocketAddress addr = new InetSocketAddress(apiRestPort);
-      restServer = HttpServer.create(addr, 0);
+      
+      if ("https".equalsIgnoreCase(apiProtocol)) 
+        {
+          restServer = HttpsServer.create(addr, 0);
+          try
+            {
+              String pemLocation = System.getenv().get(PEM_LOCATION);
+              String tempKeyPass = System.getenv().get(THIRDPARTYMANAGER_API_TEMP_KEYPASS);
+
+              SSLContext sslContext = PEMUtils.getSSLContext(pemLocation, tempKeyPass);
+              ((HttpsServer) restServer).setHttpsConfigurator(new ThirdPartyHttpsConfigurator(sslContext));
+            } 
+          catch (NoSuchAlgorithmException | UnrecoverableKeyException | KeyManagementException | KeyStoreException e)
+            {
+              throw new ServerRuntimeException("could not initialize HTTPS server", e);
+            }
+        }
+      else
+        {
+          restServer = HttpServer.create(addr, 0);
+        }
+      
       restServer.createContext("/nglm-thirdpartymanager/ping", new APIHandler(API.ping));
       restServer.createContext("/nglm-thirdpartymanager/getCustomer", new APIHandler(API.getCustomer));
       restServer.createContext("/nglm-thirdpartymanager/getCustomerBDRs", new APIHandler(API.getCustomerBDRs));
@@ -672,7 +672,7 @@ public class ThirdPartyManager
      *
      *****************************************/
 
-    log.info("main restServerStarted");
+    log.info("main restServerStarted -- [{}]", apiProtocol);
     log.info("methodPermissionsMapper : {} ", methodPermissionsMapper);
   }
 

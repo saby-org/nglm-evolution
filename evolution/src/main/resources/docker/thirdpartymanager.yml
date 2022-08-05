@@ -24,6 +24,9 @@ thirdpartymanager-<_KEY_>:
     CONNECT_CUB_ES_SERVERS: <_ELASTICSEARCH_SERVERS_>
     CONNECT_CUB_ESROUTER_HOST: <_MASTER_ESROUTER_HOST_>
     CONNECT_CUB_ESROUTER_PORT: <_MASTER_ESROUTER_PORT_>
+    THIRDPARTYMANAGER_API_PROTOCOL: <_THIRDPARTYMANAGER_API_PROTOCOL_>
+    THIRDPARTYMANAGER_API_TEMP_KEYPASS: <_THIRDPARTYMANAGER_API_TEMP_KEYPASS_>
+    PEM_LOCATION: /app/thirdpartymanager.pem
     KEY: <_KEY_>
     API_PORT: <_API_PORT_>
     GUI_FWK_API_SERVER: <_GUI_FWK_API_SERVER_>
@@ -40,6 +43,9 @@ thirdpartymanager-<_KEY_>:
     - type: bind
       source: <_NGLM_LOGS_>
       target: /app/logs
+  configs:
+    - source: thirdparty_pem_file
+      target: /app/thirdpartymanager.pem
   deploy: 
     restart_policy:
       condition: <_DOCKER_RESTART_POLICY_>
