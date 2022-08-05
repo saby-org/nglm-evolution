@@ -5,7 +5,7 @@ opr-api-<_KEY_>:
     FwkSettings__AuthorizationBaseUrl: "http://<_GUI_FWK_AUTH_SERVER_HOST_IP_>:<_GUI_FWK_AUTH_SERVER_PORT_>/api"
     FwkSettings__UploadFolder: '/mnt/upload'
     ConnectionStrings__FwkConnection: 'Server=<_MYSQL_GUI_SERVER_HOST_>;Port=<_MYSQL_GUI_SERVER_PORT_>;Database=dbframework;UID=root;Password=<_MYSQL_ROOT_PASSWORD_>'
-    OprSettings__ApiElasticsearchUrl: "http://<_MASTER_ESROUTER_HOST_>:<_MASTER_ESROUTER_PORT_>/"
+    OprSettings__ApiElasticsearchUrl: "https://<_MASTER_ESROUTER_HOST_>:<_MASTER_ESROUTER_PORT_>/"
     OprSettings__ODUser: 'admin'
     OprSettings__ODPassword: '<_ELASTICSEARCH_ADMIN_PASSWORD_>'
     TZ: <_DEPLOYMENT_TIMEZONE_>

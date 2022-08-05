@@ -16,6 +16,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -32,6 +34,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.net.ssl.SSLContext;
+
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -42,10 +46,16 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.config.RegistryBuilder;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.socket.PlainConnectionSocketFactory;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.ssl.TrustStrategy;
 import org.apache.http.util.EntityUtils;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
@@ -117,7 +127,24 @@ public class EvolutionSetup
       //
       // init utilities
       //
-      PoolingHttpClientConnectionManager httpClientConnectionManager = new PoolingHttpClientConnectionManager();
+      //PoolingHttpClientConnectionManager httpClientConnectionManager = new PoolingHttpClientConnectionManager();
+      System.setProperty("javax.net.debug", "ssl");
+		 TrustStrategy acceptingTrustStrategy = new TrustStrategy() {
+	            @Override
+	            public boolean isTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+	                return true;
+	            }
+	        };
+
+		SSLContext sslContext = org.apache.http.ssl.SSLContexts.custom().loadTrustMaterial(null, acceptingTrustStrategy)
+	            .build();
+
+	    SSLConnectionSocketFactory csf = new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE);
+	    PoolingHttpClientConnectionManager httpClientConnectionManager = new 
+			    PoolingHttpClientConnectionManager(RegistryBuilder.
+			                <ConnectionSocketFactory>create()
+			      .register("http",PlainConnectionSocketFactory.getSocketFactory())
+			      .register("https", csf).build());
       httpClientConnectionManager.setDefaultMaxPerRoute(50);
       httpClientConnectionManager.setMaxTotal(150);
       HttpClientBuilder httpClientBuilder = HttpClientBuilder.create();

@@ -14,7 +14,7 @@ opc-api-<_KEY_>:
     DNBOSettings__DNBOEngineSettings__SalesChannelId: <_OPC_WEB_SALE_CHANNEL_ID_>
     DNBOSettings__DNBOEngineSettings__ChannelId: <_OPC_WEB_CALLING_CHANNEL_ID_>
     DNBOSettings__RedisConfigurationSettings__InternalIdRedisConnectionString: '<_SUBSCRIBERIDS_REDIS_CONNECTION_STRING_>,allowAdmin=true,syncTimeout=5000'
-    ReportSettings__ApiElasticsearchUrl: "http://<_MASTER_ESROUTER_HOST_>:<_MASTER_ESROUTER_PORT_>/"
+    ReportSettings__ApiElasticsearchUrl: "https://<_MASTER_ESROUTER_HOST_>:<_MASTER_ESROUTER_PORT_>/"
     ReportSettings__ODUser: 'admin'
     ReportSettings__ODPassword: '<_ELASTICSEARCH_ADMIN_PASSWORD_>'
     DNBOSettings__DNBOEngineSettings__MsisdnParam: '<_OPC_DNBO_MSISDNPARAM_>'
