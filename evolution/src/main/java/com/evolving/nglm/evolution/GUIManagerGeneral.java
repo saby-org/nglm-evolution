@@ -4662,6 +4662,7 @@ public class GUIManagerGeneral extends GUIManager
     
     List<String> existingVoucherCodes = new ArrayList<>();
     Collection<GUIManagedObject> uploadedFileObjects = uploadedFileService.getStoredGUIManagedObjects(true, tenantID);
+    log.info("uploadedFileObjects size: {}", uploadedFileObjects.size());
 
     String supplierID = JSONUtilities.decodeString(jsonRoot, "supplierID", true);
 
@@ -4677,6 +4678,7 @@ public class GUIManagerGeneral extends GUIManager
                 UploadedFile uploadedFile = (UploadedFile) uploaded;
                 BufferedReader reader = null;
                 String filename = UploadedFile.OUTPUT_FOLDER + uploadedFile.getDestinationFilename();
+                log.info("filename: {}", filename);
                 try
                 {
                   reader = new BufferedReader(new FileReader(filename));
