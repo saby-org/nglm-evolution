@@ -4671,7 +4671,7 @@ public class GUIManagerGeneral extends GUIManager
     for (GUIManagedObject uploaded : uploadedFileObjects)
       {
         String fileApplicationID = JSONUtilities.decodeString(uploaded.getJSONRepresentation(), "applicationID", false);
-        log.info("[PRJT] applicationID: {}, fileApplicationID: {}", applicationID, fileApplicationID);
+        log.info("[PRJT] applicationID: {}, uploadedJson: {}", applicationID, uploaded.getJSONRepresentation());
         if (Objects.equals(applicationID, fileApplicationID))
           {
             if (uploaded instanceof UploadedFile)
