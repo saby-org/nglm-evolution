@@ -4703,19 +4703,17 @@ public class GUIManagerGeneral extends GUIManager
       }
         
     //
-    // EVPRO-1576 - start
+    // EVPRO-1576 & 1577 - start
     //
     
     log.info("GUIManager.processGenerateVouchers- Existing Vouchers count [{}]", existingVoucherCodes.size());
     
-    Set<String> currentVoucherCodes = ConcurrentHashMap.newKeySet(); // store distinct voucher codes - skip for now
+    Set<String> currentVoucherCodes = ConcurrentHashMap.newKeySet();
     currentVoucherCodes.addAll(existingVoucherCodes);
-    //List<String> currentVoucherCodes = new ArrayList<>(); // may generate and store duplicate vouchers 
     
     ExecutorService es = Executors.newCachedThreadPool();
     int minPerThreadCount = 1000; 
     int threadCount = quantity > minPerThreadCount ? Math.min(quantity/minPerThreadCount, 5) : 1; // max 5 thread will work
-    int maxOccurrencesFromRegex = TokenUtils.getMaxOccurrencesFromRegex(pattern);
     
     Date startDate = SystemTime.getCurrentTime();
     for(int i=0; i<threadCount; i++)
@@ -4724,16 +4722,8 @@ public class GUIManagerGeneral extends GUIManager
           @Override
           public void run()
           {
-            boolean forceExit = false;
-            while(quantity > (currentVoucherCodes.size() - existingVoucherCodes.size()) && !forceExit)
+            while(quantity > (currentVoucherCodes.size() - existingVoucherCodes.size()))
               {
-                if(maxOccurrencesFromRegex <= currentVoucherCodes.size())
-                  {
-                    log.info("GUIManager.processGenerateVouchers- forceExit, max limit[{}] reached for regex- {}, try another.", maxOccurrencesFromRegex, pattern);
-                    forceExit = true;
-                    break;
-                  }
-                
                 boolean newVoucherGenerated = false;
                 for (int i=1; i<=HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE; i++)
                   {
@@ -4768,38 +4758,11 @@ public class GUIManagerGeneral extends GUIManager
         log.error("Issue when finishing ExecutorService threads for voucher generation : " + ex.getMessage());
       }
     
-    currentVoucherCodes.removeAll(existingVoucherCodes);
     // remove extra vouchers - in case
+    currentVoucherCodes.removeAll(existingVoucherCodes);
     Set<String> generatedVoucherCodes = currentVoucherCodes.stream().limit(quantity).collect(Collectors.toSet());
     
     log.info("GUIManager.processGenerateVouchers- new vouchers[{}] generation completed [{}s]", generatedVoucherCodes.size(), (SystemTime.getCurrentTime().getTime() - startDate.getTime())/1000.0);
-    
-    //
-    // EVPRO-1576 - end
-    //
-    
-    /*List<String> currentVoucherCodes = new ArrayList<>();
-    for (int q=0; q<quantity; q++)
-      {
-        String voucherCode = null; 
-        boolean newVoucherGenerated = false;
-        for (int i=0; i<HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE; i++)
-          {
-            voucherCode = TokenUtils.generateFromRegex(pattern);
-            if (!currentVoucherCodes.contains(voucherCode) && !existingVoucherCodes.contains(voucherCode))
-              {
-                newVoucherGenerated = true;
-                break;
-              }
-          }
-        if (!newVoucherGenerated)
-          {
-            log.info("After " + HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE + " tries, unable to generate a new voucher code with pattern " + pattern);
-            break;
-          }
-        log.debug("voucherCode  generated : " + voucherCode);
-        currentVoucherCodes.add(voucherCode);
-      }*/
     
     // convert list to InputStream
     
