@@ -4715,6 +4715,7 @@ public class GUIManagerGeneral extends GUIManager
     ExecutorService es = Executors.newCachedThreadPool();
     int minPerThreadCount = 1000; 
     int threadCount = quantity > minPerThreadCount ? Math.min(quantity/minPerThreadCount, 5) : 1; // max 5 thread will work
+    int maxOccurrencesFromRegex = TokenUtils.getMaxOccurrencesFromRegex(pattern);
     
     Date startDate = SystemTime.getCurrentTime();
     for(int i=0; i<threadCount; i++)
@@ -4723,8 +4724,16 @@ public class GUIManagerGeneral extends GUIManager
           @Override
           public void run()
           {
-            while(quantity > (currentVoucherCodes.size() - existingVoucherCodes.size()))
+            boolean forceExit = false;
+            while(quantity > (currentVoucherCodes.size() - existingVoucherCodes.size()) && !forceExit)
               {
+                if(maxOccurrencesFromRegex <= currentVoucherCodes.size())
+                  {
+                    log.info("GUIManager.processGenerateVouchers- forceExit, max limit[{}] reached for regex- {}, try another.", maxOccurrencesFromRegex, pattern);
+                    forceExit = true;
+                    break;
+                  }
+                
                 boolean newVoucherGenerated = false;
                 for (int i=1; i<=HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE; i++)
                   {
@@ -4737,7 +4746,7 @@ public class GUIManagerGeneral extends GUIManager
                   }
                 if (!newVoucherGenerated)
                   {
-                    log.info("After " + HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE + " tries, unable to generate a new voucher code with pattern " + pattern);
+                    log.info("GUIManager.processGenerateVouchers- After " + HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE + " tries, unable to generate a new voucher code with pattern " + pattern);
                     break;
                   }
               }

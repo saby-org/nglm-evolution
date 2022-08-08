@@ -698,6 +698,109 @@ public class TokenUtils
     return selectedScoringSegment;
   }
   
+  //
+  // getMaxOccurencesFromRegex -- max number of occurrences possible from regex
+  //
+  
+  public static int getMaxOccurrencesFromRegex(String regex)
+  {
+    StringBuilder output = new StringBuilder();
+    StringBuilder chooseFrom = new StringBuilder();
+    StringBuilder numOccurences = new StringBuilder();
+    State currentState = State.REGULAR_CHAR;
+
+    for (char c : regex.toCharArray())
+      {
+        switch (currentState)
+        {
+          case REGULAR_CHAR:
+            if (c == '[')
+              {
+                currentState = State.LEFT_BRACKET;
+              } 
+            else if (c == '{')
+              {
+                currentState = State.LEFT_BRACE;
+              } 
+            else
+              {
+                output.append(String.valueOf(c)); // Regular char goes to output string
+              }
+            break;
+
+          case REGULAR_CHAR_AFTER_BRACKET:
+            if (c == '{')
+              {
+                currentState = State.LEFT_BRACE;
+              } 
+            else
+              {
+                chooseFrom = new StringBuilder();
+                if (c == '[')
+                  {
+                    currentState = State.LEFT_BRACKET;
+                  } 
+                else
+                  {
+                    output.append(String.valueOf(c));
+                    currentState = State.REGULAR_CHAR;
+                  }
+              }
+            break;
+
+          case LEFT_BRACKET:
+            if (c == ']')
+              {
+                currentState = State.REGULAR_CHAR_AFTER_BRACKET;
+              } 
+            else if (c == '{')
+              {
+                output.append("-INVALID cannot have '{' inside brackets");
+                currentState = State.ERROR;
+              } 
+            else
+              {
+                chooseFrom.append(String.valueOf(c));
+              }
+            break;
+
+          case LEFT_BRACE:
+            if (c == '}')
+              {
+                if (numOccurences.length() == 0)
+                  {
+                    output.append("-INVALID cannot have '{}'");
+                    currentState = State.ERROR;
+                  } 
+                else if (chooseFrom.length() == 0)
+                  {
+                    output.append("-INVALID cannot have []{n}");
+                    currentState = State.ERROR;
+                  } 
+                else
+                  {
+                    currentState = State.REGULAR_CHAR;
+                  }
+              } 
+            else if (c == '[')
+              {
+                output.append("-INVALID cannot have '[' inside braces");
+                currentState = State.ERROR;
+              } 
+            else
+              {
+                numOccurences.append(String.valueOf(c));
+              }
+            break;
+
+          case ERROR:
+            return (int) Math.pow(chooseFrom.length(), Integer.parseInt(numOccurences.toString()));
+        }
+      }
+
+    return (int) Math.pow(chooseFrom.length(), Integer.parseInt(numOccurences.toString()));
+  }
+  
 
   /*****************************************
    *
