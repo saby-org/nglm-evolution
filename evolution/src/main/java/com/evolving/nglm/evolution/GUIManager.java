@@ -3759,9 +3759,9 @@ public class GUIManager
                   jsonResponse = guiManagerGeneral.processGetVoucherCodePatternList(userID, jsonRoot, tenantID);
                   break;
                   
-                case generateVouchers:
+              /*case generateVouchers:
                   jsonResponse = guiManagerGeneral.processGenerateVouchers(userID, jsonRoot, tenantID);
-                  break;
+                  break;*/
                   
                 case getVoucherTypeList:
                   jsonResponse = processGetVoucherTypeList(userID, jsonRoot, true, includeArchived, tenantID);
