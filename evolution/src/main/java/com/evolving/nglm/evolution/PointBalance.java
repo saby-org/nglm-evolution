@@ -266,6 +266,7 @@ public class PointBalance
     
     Date expirationDateFrom = pointFulfillmentResponse != null ? pointFulfillmentResponse.getExpirationDateFrom() : null;
     Date expirationDateTo = pointFulfillmentResponse != null ? pointFulfillmentResponse.getExpirationDateTo() : null;
+    log.info("RAJ K operation {}, amount {}, expirationDateTo {}", operation, amount, expirationDateTo);
     
     switch (operation)
       {
@@ -366,7 +367,16 @@ public class PointBalance
             //  expiration date
             //
 
-            Date expirationDate = EvolutionUtilities.addTime(evaluationDate, point.getValidity().getPeriodQuantity(), point.getValidity().getPeriodType(), Deployment.getDeployment(tenantID).getTimeZone(), point.getValidity().getRoundDown() ? RoundingSelection.RoundDown : RoundingSelection.NoRound);
+            Date expirationDate = null;
+            if (expirationDateTo != null)
+              {
+                expirationDate = expirationDateTo;
+              }
+            else
+              {
+                expirationDate = EvolutionUtilities.addTime(evaluationDate, point.getValidity().getPeriodQuantity(), point.getValidity().getPeriodType(), Deployment.getDeployment(tenantID).getTimeZone(), point.getValidity().getRoundDown() ? RoundingSelection.RoundDown : RoundingSelection.NoRound);
+              }
+            
             if(pointFulfillmentResponse != null){ pointFulfillmentResponse.setDeliverableExpirationDate(expirationDate); }
 
             //
