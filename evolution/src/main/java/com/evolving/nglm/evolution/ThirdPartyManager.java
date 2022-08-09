@@ -5187,6 +5187,7 @@ public class ThirdPartyManager
     
     List<QueryBuilder> filters = new ArrayList<QueryBuilder>();
     filters.add(QueryBuilders.matchQuery("deliveryRequestID", deliveryRequestID));
+    filters.add(QueryBuilders.matchQuery("returnCode", PurchaseFulfillmentStatus.PURCHASED.getReturnCode()));
     
     //
     //  get from elasticsearch
