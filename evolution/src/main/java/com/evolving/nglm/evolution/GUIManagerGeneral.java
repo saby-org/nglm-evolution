@@ -4662,7 +4662,6 @@ public class GUIManagerGeneral extends GUIManager
     
     List<String> existingVoucherCodes = new ArrayList<>();
     Collection<GUIManagedObject> uploadedFileObjects = uploadedFileService.getStoredGUIManagedObjects(true, tenantID);
-    log.info("uploadedFileObjects size: {}", uploadedFileObjects.size());
 
     String supplierID = JSONUtilities.decodeString(jsonRoot, "supplierID", true);
 
@@ -4671,7 +4670,6 @@ public class GUIManagerGeneral extends GUIManager
     for (GUIManagedObject uploaded : uploadedFileObjects)
       {
         String fileApplicationID = JSONUtilities.decodeString(uploaded.getJSONRepresentation(), "applicationID", false);
-        log.info("[PRJT] applicationID: {}, uploadedJson: {}", applicationID, uploaded.getJSONRepresentation());
         if (Objects.equals(applicationID, fileApplicationID))
           {
             if (uploaded instanceof UploadedFile)
@@ -4679,7 +4677,6 @@ public class GUIManagerGeneral extends GUIManager
                 UploadedFile uploadedFile = (UploadedFile) uploaded;
                 BufferedReader reader = null;
                 String filename = UploadedFile.OUTPUT_FOLDER + uploadedFile.getDestinationFilename();
-                log.info("filename: {}", filename);
                 try
                 {
                   reader = new BufferedReader(new FileReader(filename));
