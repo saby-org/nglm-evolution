@@ -50,7 +50,7 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
   private static final String statusPointsBalance = "statusPointsBalance";
   private static final String rewardPointsName = "rewardPointsName";
   private static final String rewardPointsBalance = "rewardPointsBalance";
-  
+  private static final String programExitDate = "programExitDate";
   
   
   static List<String> headerFieldsOrder = new ArrayList<String>();
@@ -71,6 +71,7 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
     headerFieldsOrder.add(statusPointsBalance);
     headerFieldsOrder.add(rewardPointsName);
     headerFieldsOrder.add(rewardPointsBalance);
+    headerFieldsOrder.add(programExitDate);
   }
   
   private LoyaltyProgramService loyaltyProgramService;
@@ -198,7 +199,7 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
                                 fullFields.put(rewardPointsBalance, "");
                               }
                             
-                            fullFields.put("programExitDate", getReportFormattedDate(loyaltyProgramExitDate));
+                            fullFields.put(programExitDate, getReportFormattedDate(loyaltyProgramExitDate));
                           }
                       }
                     records.add(fullFields);
