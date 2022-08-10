@@ -200,7 +200,7 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
                                 fullFields.put(rewardPointsBalance, "");
                               }
                             
-                            fullFields.put("programExitDate", getReportFormattedDate(loyaltyProgramExitDate));
+                            fullFields.put(programExitDate, getReportFormattedDate(loyaltyProgramExitDate));
                           }
                       }
                     records.add(fullFields);
