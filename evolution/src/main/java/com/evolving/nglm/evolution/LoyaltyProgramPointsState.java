@@ -222,39 +222,39 @@ public class LoyaltyProgramPointsState extends LoyaltyProgramState
         tierChangeType = Tier.changeFromTierToTier(previousTier, tier);
         }
     }
-    switch (operation) {
+  switch (operation)
+  {
     case Optin:
 
       //
-      //  update current state
+      // update current state
       //
-      
+
       this.loyaltyProgramEpoch = loyaltyProgramEpoch;
-      this.loyaltyProgramName = loyaltyProgramName; 
-      this.loyaltyProgramEnrollmentDate = enrollmentDate;
-      if(this.loyaltyProgramExitDate != null){ this.loyaltyProgramExitDate = null; }
-      
+      this.loyaltyProgramName = loyaltyProgramName;
+      if (this.loyaltyProgramEnrollmentDate == null || loyaltyProgramExitDate != null) this.loyaltyProgramEnrollmentDate = enrollmentDate;  //loyaltyProgramEnrollmentDate==null in first opt-in and loyaltyProgramExitDate != null in reopt-in
+      if (this.loyaltyProgramExitDate != null) this.loyaltyProgramExitDate = null;
       this.previousTierName = fromTier;
       this.tierName = toTier;
       this.tierEnrollmentDate = enrollmentDate;
 
       //
-      //  update history
+      // update history
       //
-      
+
       loyaltyProgramHistory.addTierHistory(fromTier, toTier, enrollmentDate, deliveryRequestID, tierChangeType);
-      
+
       break;
 
     case Optout:
-      
+
       //
-      //  update current state
+      // update current state
       //
-      
+
       this.loyaltyProgramEpoch = loyaltyProgramEpoch;
       this.loyaltyProgramName = loyaltyProgramName;
-      if(this.loyaltyProgramEnrollmentDate == null){ this.loyaltyProgramEnrollmentDate = enrollmentDate; }
+      if (this.loyaltyProgramEnrollmentDate == null) this.loyaltyProgramEnrollmentDate = enrollmentDate;
       this.loyaltyProgramExitDate = enrollmentDate;
 
       this.previousTierName = fromTier;
@@ -262,16 +262,16 @@ public class LoyaltyProgramPointsState extends LoyaltyProgramState
       this.tierEnrollmentDate = enrollmentDate;
 
       //
-      //  update history
+      // update history
       //
-      
-      loyaltyProgramHistory.addTierHistory(fromTier, toTier, enrollmentDate, deliveryRequestID,tierChangeType);
-      
+
+      loyaltyProgramHistory.addTierHistory(fromTier, toTier, enrollmentDate, deliveryRequestID, tierChangeType);
+
       break;
 
     default:
       break;
-    }
+  }
     
     return tierChangeType;
     
