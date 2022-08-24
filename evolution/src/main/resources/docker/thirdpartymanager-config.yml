@@ -1,3 +1,3 @@
 configs:
   thirdparty_pem_file:
-    file: <_NGLM_THIRDPARTY_RUNTIME_>/certificates/thirdpartymanager.pem
+    file: <_DEPLOY_ROOT_>/config/resources/thirdpartymanager.pem
