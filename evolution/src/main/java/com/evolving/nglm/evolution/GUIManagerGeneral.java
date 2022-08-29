@@ -4657,19 +4657,23 @@ public class GUIManagerGeneral extends GUIManager
     ****************************************/
     String pattern = JSONUtilities.decodeString(jsonRoot, "pattern", true);
     int quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
+    log.info("RAJ K processGenerateVouchers pattern {}, quantity {}", pattern, quantity);    
     
     // find existing vouchers
     
     List<String> existingVoucherCodes = new ArrayList<>();
     Collection<GUIManagedObject> uploadedFileObjects = uploadedFileService.getStoredGUIManagedObjects(true, tenantID);
+    log.info("RAJ K processGenerateVouchers uploadedFileObjects {}, ", uploadedFileObjects);
 
     String supplierID = JSONUtilities.decodeString(jsonRoot, "supplierID", true);
 
     String applicationID = "vouchers_" + supplierID; // TODO CHECK THIS MK
+    log.info("RAJ K processGenerateVouchers supplierID {}, applicationID {}", supplierID, applicationID);
     
     for (GUIManagedObject uploaded : uploadedFileObjects)
       {
         String fileApplicationID = JSONUtilities.decodeString(uploaded.getJSONRepresentation(), "applicationID", false);
+        log.info("RAJ K processGenerateVouchers uploadedFileObjects - fileApplicationID {}", fileApplicationID);
         if (Objects.equals(applicationID, fileApplicationID))
           {
             if (uploaded instanceof UploadedFile)
