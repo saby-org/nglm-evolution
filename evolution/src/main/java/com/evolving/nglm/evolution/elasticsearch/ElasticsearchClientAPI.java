@@ -52,6 +52,8 @@ import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.client.indices.GetIndexResponse;
 import org.elasticsearch.client.indices.GetMappingsRequest;
 import org.elasticsearch.client.indices.GetMappingsResponse;
+import org.elasticsearch.client.sniff.ElasticsearchNodesSniffer;
+import org.elasticsearch.client.sniff.NodesSniffer;
 import org.elasticsearch.client.sniff.Sniffer;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.BoolQueryBuilder;
@@ -167,6 +169,9 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
   public static final String WORKFLOWARCHIVE_JOURNEYID_FIELD = "journeyID";
   public static final String WORKFLOWARCHIVE_NODEID_FIELD = "nodeID";
   public static final String WORKFLOWARCHIVE_COUNT_FIELD = "count";
+  
+  private static RestClientBuilder restClientBuilder_main = null;
+  
   public static String getJourneyIndex(String journeyID) {
     if(journeyID == null) {
       return "";
@@ -218,7 +223,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
         return requestConfigBuilder.setConnectTimeout(elasticsearchConnectionSettings.getConnectTimeout()).setSocketTimeout(elasticsearchConnectionSettings.getQueryTimeout());
       }
     });
-    
+    restClientBuilder_main=restClientBuilder;
     return restClientBuilder;
   }
 
@@ -249,8 +254,13 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
     this(connectionSettingsConfigName,false);
   }
   public ElasticsearchClientAPI(String connectionSettingsConfigName, boolean forConnect/*this as a special default*/) throws ElasticsearchStatusException, ElasticsearchException {
-    super(initRestClientBuilder(Deployment.getElasticsearchConnectionSettings(connectionSettingsConfigName, forConnect)));
-    if(Deployment.getElasticsearchConnectionSettings(connectionSettingsConfigName, forConnect).getHosts().length>1) sniffer = Sniffer.builder(this.getLowLevelClient()).build();//if only 1 host provided, we do not put Sniffer (to keep the previous behavior ESRouter only)
+    	  super(initRestClientBuilder(Deployment.getElasticsearchConnectionSettings(connectionSettingsConfigName, forConnect)));
+          boolean useSsl=true;
+    	  NodesSniffer nodesSniffer = new ElasticsearchNodesSniffer(this.getLowLevelClient(),
+            ElasticsearchNodesSniffer.DEFAULT_SNIFF_REQUEST_TIMEOUT,
+            useSsl ? ElasticsearchNodesSniffer.Scheme.HTTPS : ElasticsearchNodesSniffer.Scheme.HTTP);
+
+    if(Deployment.getElasticsearchConnectionSettings(connectionSettingsConfigName, forConnect).getHosts().length>1) sniffer = Sniffer.builder(this.restClientBuilder_main.build()).setNodesSniffer(nodesSniffer).build();//if only 1 host provided, we do not put Sniffer (to keep the previous behavior ESRouter only)
     log.info("new ElasticsearchClientAPI created from elasticsearchConnectionSetting "+connectionSettingsConfigName);
   }
 
