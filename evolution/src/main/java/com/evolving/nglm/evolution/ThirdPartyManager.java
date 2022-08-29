@@ -1138,7 +1138,12 @@ public class ThirdPartyManager
           headerValue = 404;
           result = "<h1>404 Not Found</h1>No context found for request";
         }
-
+      
+      if (ex.getResponseCode() == -405)
+      {
+    	  headerValue = 405;
+    	  result = "<h1>405 Method Not Allowed</h1>";
+      }
       //
       // headers
       //
@@ -1282,7 +1287,7 @@ public class ThirdPartyManager
     if (thirdPartyMethodTypes!=null && thirdPartyMethodTypes.size()>0 && !thirdPartyMethodTypes.contains(exchange.getRequestMethod()))
       {
         log.warn("invalid thirdPartyMethodTypes {} ", thirdPartyMethodTypes);
-        throw new ThirdPartyManagerException("invalid http Method Types", -404);
+        throw new ThirdPartyManagerException("invalid http Method Types", -405);
       }
     
   }
