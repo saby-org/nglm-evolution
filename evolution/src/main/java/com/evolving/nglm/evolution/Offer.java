@@ -764,6 +764,9 @@ public class Offer extends GUIManagedObject implements StockableItem
     this.stockRecurrence = JSONUtilities.decodeBoolean(jsonRoot, "stockRecurrence", Boolean.FALSE);
     this.stockRecurrenceBatch = JSONUtilities.decodeInteger(jsonRoot, "stockRecurrenceBatch", 0);
     this.stockAlertThreshold = JSONUtilities.decodeInteger(jsonRoot, "presentationStockAlertThreshold", 0);
+    log.info("[PRJT] Offer.stockAlertThreshold: {}", stockAlertThreshold);
+    log.info("[PRJT] offerJson: {}", jsonRoot);
+    
 
     /*****************************************
     *
@@ -917,6 +920,7 @@ public class Offer extends GUIManagedObject implements StockableItem
         epochChanged = epochChanged || ! Objects.equals(maximumAcceptancesPeriodDays, existingOffer.getMaximumAcceptancesPeriodDays());
         epochChanged = epochChanged || ! Objects.equals(stockRecurrence, existingOffer.getStockRecurrence());
         epochChanged = epochChanged || ! Objects.equals(stockRecurrenceBatch, existingOffer.getStockRecurrenceBatch());
+        epochChanged = epochChanged || ! Objects.equals(stockAlertThreshold, existingOffer.getStockAlertThreshold());
         return epochChanged;
       }
     else
