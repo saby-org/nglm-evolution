@@ -25255,10 +25255,10 @@ public class GUIManager
                 JSONObject offerJson = offer.getJSONRepresentation();
                 log.info("[PRJT] offerJson: {}", offerJson.toJSONString());
                 offerJson.replace("presentationStock", offer.getStock() + stockRecBatchCount);
-                offerJson.put("id", offer.getGUIManagedObjectID());
+                //offerJson.put("id", offer.getGUIManagedObjectID());
                 log.info("[PRJT] new offerJson: {}", offerJson.toJSONString());
                 
-                Offer newOffer = new Offer(jsonRoot, epochServer.getKey(), offer, catalogCharacteristicService, tenantID);
+                Offer newOffer = new Offer(offerJson, epochServer.getKey(), offer, catalogCharacteristicService, tenantID);
                 offerService.putOffer(newOffer, callingChannelService, salesChannelService, productService, voucherService, (offer == null), userID);
               }
           }
