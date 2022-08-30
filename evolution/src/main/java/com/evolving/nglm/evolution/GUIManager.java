@@ -9416,7 +9416,7 @@ public class GUIManager
     //
     
     jsonRoot.put("stockRecurrence", Boolean.TRUE);
-    jsonRoot.put("stockRecurrenceBatch", 11);
+    jsonRoot.put("stockRecurrenceBatch", 2);
     
     
     /*****************************************
@@ -25248,7 +25248,7 @@ public class GUIManager
         
         if (purchaseResponse.getDeliveryStatus() == DeliveryStatus.Delivered)
           {
-            if(offer.getStockRecurrence() && offer.getApproximateRemainingStock() <= 5) // 5 should be thresold 
+            if(offer.getStockRecurrence() && offer.getApproximateRemainingStock() <= 10) // 5 should be thresold 
               {
                 Integer stockRecBatchCount = offer.getStockRecurrenceBatch();
                 log.info("[PRJT] stockRecBatchCount[{}] to be added", stockRecBatchCount);
