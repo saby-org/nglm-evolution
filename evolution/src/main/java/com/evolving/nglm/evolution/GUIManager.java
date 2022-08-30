@@ -9411,7 +9411,14 @@ public class GUIManager
     HashMap<String,Object> response = new HashMap<String,Object>();
     Boolean dryRun = false;
     
-
+    //
+    // TEST - 1600
+    //
+    
+    jsonRoot.put("stockRecurrence", Boolean.TRUE);
+    jsonRoot.put("stockRecurrenceBatch", 11);
+    
+    
     /*****************************************
     *
     *  dryRun
