@@ -106,6 +106,7 @@ public class StockMonitor implements Runnable
 
   public StockMonitor(String stockMonitorKey, GUIService... stockItemServices)
   {
+    log.info("[PRJT] StockMonitor()...");
     //
     //  simple
     //
@@ -208,6 +209,7 @@ public class StockMonitor implements Runnable
 
   private synchronized void monitorStockableItem(StockableItem stockableItem)
   {
+    log.info("[PRJT] StockMonitor.monitorStockableItem()...");
     if (stockableItem.getStock() != null)
       {
         //
@@ -245,6 +247,7 @@ public class StockMonitor implements Runnable
 
   public synchronized boolean consume(StockableItem stockableItem, int quantity)
   {
+    log.info("[PRJT] StockMonitor.consume()...");
     boolean stockAvailable = reserve(stockableItem, quantity);
     if (stockAvailable) confirmReservation(stockableItem, quantity);
     return stockAvailable;
@@ -258,6 +261,7 @@ public class StockMonitor implements Runnable
 
   public synchronized boolean reserve(StockableItem stockableItem, int quantity)
   {
+    log.info("[PRJT] StockMonitor.reserve()...");
     //
     //  unlimited stock
     //
@@ -318,6 +322,7 @@ public class StockMonitor implements Runnable
 
   public synchronized void confirmReservation(StockableItem stockableItem, int quantity)
   {
+    log.info("[PRJT] StockMonitor.confirmReservation()...");
     LocalUncommitted uncommitted = localUncommitted.get(stockableItem.getStockableItemID());
     if (stockableItem.getStock() != null && uncommitted != null)
       {
@@ -333,6 +338,7 @@ public class StockMonitor implements Runnable
 
   public synchronized void voidReservation(StockableItem stockableItem, int quantity)
   {
+    log.info("[PRJT] StockMonitor.voidReservation()...");
     //
     //  stock
     //
@@ -354,6 +360,7 @@ public class StockMonitor implements Runnable
 
   public synchronized void voidConsumption(StockableItem stockableItem, int quantity)
   {
+    log.info("[PRJT] StockMonitor.voidConsumption()...");
     //
     //  stock
     //
@@ -379,6 +386,7 @@ public class StockMonitor implements Runnable
 
   @Override public void run()
   {
+    log.info("[PRJT] StockMonitor.run()...");
     /*****************************************
     *
     *  data
@@ -513,6 +521,7 @@ public class StockMonitor implements Runnable
 
   private void processStock(StockableItem stockableItem)
   {
+    log.info("[PRJT] StockMonitor.processStock()...");
     /****************************************
     *
     *  get/reset local uncommitted usage
@@ -798,6 +807,7 @@ public class StockMonitor implements Runnable
 
   private int adjustAllocation(StockableItem stockableItem, Stock stock, String stockMonitorKey, List<String> stockMonitorKeys)
   {
+    log.info("[PRJT] StockMonitor.adjustAllocation()...");
     //
     //  determine ideal allocation
     //
@@ -1044,6 +1054,7 @@ public class StockMonitor implements Runnable
 
     public Stock(String stockableItemID)
     {
+      log.info("[PRJT] StockMonitor.Stock()...");
       this.stockableItemID = stockableItemID;
       this.stockAllocated = new HashMap<String,Integer>();
       this.stockReserved = 0;
@@ -1081,6 +1092,7 @@ public class StockMonitor implements Runnable
 
     public int getTotalAllocated()
     {
+      log.info("[PRJT] StockMonitor.Stock.getTotalAllocated()...");
       int totalAllocated = 0;
       for (Integer allocatedForStockMonitor : stockAllocated.values())
         {
@@ -1097,6 +1109,7 @@ public class StockMonitor implements Runnable
 
     public Stock(JSONObject jsonRoot, int zookeeperVersion)
     {
+      log.info("[PRJT] StockMonitor.Stock().json...");
       //
       //  stockableItem
       //
@@ -1280,6 +1293,7 @@ public class StockMonitor implements Runnable
 
     void reserve(int quantity)
     {
+      log.info("[PRJT] StockMonitor.LocalAllocation.reserve()...");
       allocated -= quantity;
     }
     
@@ -1291,6 +1305,7 @@ public class StockMonitor implements Runnable
 
     void voidReservation(int quantity)
     {
+      log.info("[PRJT] StockMonitor.LocalAllocation.voidReservation()...");
       allocated += quantity;
     }
 
@@ -1353,6 +1368,7 @@ public class StockMonitor implements Runnable
 
     void reserve(int quantity)
     {
+      log.info("[PRJT] StockMonitor.LocalUncommitted.reserve()...");
       reserved += quantity;
     }
 
@@ -1364,6 +1380,7 @@ public class StockMonitor implements Runnable
 
     void confirmReservation(int quantity)
     {
+      log.info("[PRJT] StockMonitor.LocalUncommitted.confirmReservation()...");
       reserved -= quantity;
       consumed += quantity;
     }
@@ -1376,11 +1393,13 @@ public class StockMonitor implements Runnable
 
     void voidReservation(int quantity)
     {
+      log.info("[PRJT] StockMonitor.LocalUncommitted.voidReservation()...");
       reserved -= quantity;
     }
     
     void voidConsumption(int quantity)
     {
+      log.info("[PRJT] StockMonitor.LocalUncommitted.voidConsumption()...");
       consumed -= quantity;
     }
 
