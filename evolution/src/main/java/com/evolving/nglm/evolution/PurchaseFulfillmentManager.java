@@ -2119,6 +2119,9 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
               {
                 Integer stockRecBatchCount = offer.getStockRecurrenceBatch();
                 log.info("[PRJT] stockRecBatchCount[{}] to be added", stockRecBatchCount);
+                JSONObject offerJson = offer.getJSONRepresentation();
+                log.info("[PRJT] offerJson: {}", offerJson.toJSONString());
+                
               }
             
           }else{
