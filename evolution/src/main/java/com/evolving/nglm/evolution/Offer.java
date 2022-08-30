@@ -328,6 +328,30 @@ public class Offer extends GUIManagedObject implements StockableItem
     this.stockRecurrenceBatch = stockRecurrenceBatch;
   }
 
+  public Offer(String guiManagedObjectID, int tenantID, double initialPropensity, Integer stock, int unitaryCost, List<EvaluationCriterion> profileCriteria, Set<OfferObjectiveInstance> offerOfferObjectives, Set<OfferSalesChannelsAndPrice> offerSalesChannelsAndPrices, Set<OfferProduct> offerProducts, Set<OfferVoucher> offerVouchers, Set<OfferTranslation> offerTranslations, OfferCharacteristics offerCharacteristics, String description, boolean simpleOffer, Integer maximumAcceptances, Integer maximumAcceptancesPeriodDays, Integer maximumAcceptancesPeriodMonths, String notEligibilityReason, String limitsReachedReason, boolean stockRecurrence, Integer stockRecurrenceBatch, String stockableItemID)
+  {
+    super(guiManagedObjectID, tenantID);
+    this.initialPropensity = initialPropensity;
+    this.stock = stock;
+    this.unitaryCost = unitaryCost;
+    this.profileCriteria = profileCriteria;
+    this.offerOfferObjectives = offerOfferObjectives;
+    this.offerSalesChannelsAndPrices = offerSalesChannelsAndPrices;
+    this.offerProducts = offerProducts;
+    this.offerVouchers = offerVouchers;
+    this.offerTranslations = offerTranslations;
+    this.offerCharacteristics = offerCharacteristics;
+    this.description = description;
+    this.simpleOffer = simpleOffer;
+    this.maximumAcceptances = maximumAcceptances;
+    this.maximumAcceptancesPeriodDays = maximumAcceptancesPeriodDays;
+    this.maximumAcceptancesPeriodMonths = maximumAcceptancesPeriodMonths;
+    this.notEligibilityReason = notEligibilityReason;
+    this.limitsReachedReason = limitsReachedReason;
+    this.stockRecurrence = stockRecurrence;
+    this.stockRecurrenceBatch = stockRecurrenceBatch;
+    this.stockableItemID = stockableItemID;
+  }
   /*****************************************
   *
   *  pack

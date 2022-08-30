@@ -25156,7 +25156,6 @@ public class GUIManager
 
  private JSONObject processPurchaseOffer(String userID, JSONObject jsonRoot, int tenantID) throws GUIManagerException
  {
-   
    boolean sync = true; // always sync today
    /****************************************
    *
@@ -25241,6 +25240,26 @@ public class GUIManager
           {
             purchaseResponse = purchaseOffer(subscriberProfile,true,subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, origin, resellerID, kafkaProducer, zuks.getStringKey(), false, null);
             response.put("offer",purchaseResponse.getGUIPresentationMap(subscriberMessageTemplateService,salesChannelService,journeyService,offerService,loyaltyProgramService,productService,voucherService,deliverableService,paymentMeanService, resellerService, tenantID));
+          }
+        
+        //
+        // stock recurrence scheduling
+        //
+        
+        if (purchaseResponse.getDeliveryStatus() == DeliveryStatus.Delivered)
+          {
+            if(offer.getStockRecurrence() && offer.getApproximateRemainingStock() <= 5) // 5 should be thresold 
+              {
+                Integer stockRecBatchCount = offer.getStockRecurrenceBatch();
+                log.info("[PRJT] stockRecBatchCount[{}] to be added", stockRecBatchCount);
+                JSONObject offerJson = offer.getJSONRepresentation();
+                log.info("[PRJT] offerJson: {}", offerJson.toJSONString());
+                offerJson.replace("presentationStock", offer.getStock() + stockRecBatchCount);
+                log.info("[PRJT] new offerJson: {}", offerJson.toJSONString());
+                
+                Offer newOffer = new Offer(jsonRoot, epochServer.getKey(), offer, catalogCharacteristicService, tenantID);
+                offerService.putOffer(newOffer, callingChannelService, salesChannelService, productService, voucherService, (offer == null), userID);
+              }
           }
       }
    }

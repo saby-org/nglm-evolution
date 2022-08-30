@@ -2110,20 +2110,6 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           if(approved){
             purchaseStatus.addOfferStockDebited(purchaseStatus.getOfferStockBeingDebited());
             purchaseStatus.setOfferStockBeingDebited(null);
-            
-            //
-            // stock recurrence scheduling
-            //
-            
-            if(offer.getStockRecurrence() && offer.getApproximateRemainingStock() <= 5) // 5 should be thresold 
-              {
-                Integer stockRecBatchCount = offer.getStockRecurrenceBatch();
-                log.info("[PRJT] stockRecBatchCount[{}] to be added", stockRecBatchCount);
-                JSONObject offerJson = offer.getJSONRepresentation();
-                log.info("[PRJT] offerJson: {}", offerJson.toJSONString());
-                
-              }
-            
           }else{
             purchaseStatus.setOfferStockDebitFailed(purchaseStatus.getOfferStockBeingDebited());
             purchaseStatus.setOfferStockBeingDebited(null);
