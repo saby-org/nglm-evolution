@@ -25248,7 +25248,7 @@ public class GUIManager
         
         if (purchaseResponse.getDeliveryStatus() == DeliveryStatus.Delivered)
           {
-            if(offer.getStockRecurrence() && offer.getApproximateRemainingStock() <= 10) // 5 should be thresold 
+            if(offer.getStockRecurrence() && offer.getApproximateRemainingStock() <= offer.getStockAlertThreshold())
               {
                 Integer stockRecBatchCount = offer.getStockRecurrenceBatch();
                 log.info("[PRJT] stockRecBatchCount[{}] to be added", stockRecBatchCount);
