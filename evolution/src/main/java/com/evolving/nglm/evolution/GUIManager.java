@@ -25255,6 +25255,7 @@ public class GUIManager
                 JSONObject offerJson = offer.getJSONRepresentation();
                 log.info("[PRJT] offerJson: {}", offerJson.toJSONString());
                 offerJson.replace("presentationStock", offer.getStock() + stockRecBatchCount);
+                offerJson.put("id", offer.getGUIManagedObjectID());
                 log.info("[PRJT] new offerJson: {}", offerJson.toJSONString());
                 
                 Offer newOffer = new Offer(jsonRoot, epochServer.getKey(), offer, catalogCharacteristicService, tenantID);
