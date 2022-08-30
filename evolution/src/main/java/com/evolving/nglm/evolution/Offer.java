@@ -763,7 +763,7 @@ public class Offer extends GUIManagedObject implements StockableItem
     }
     this.stockRecurrence = JSONUtilities.decodeBoolean(jsonRoot, "stockRecurrence", Boolean.FALSE);
     this.stockRecurrenceBatch = JSONUtilities.decodeInteger(jsonRoot, "stockRecurrenceBatch", 0);
-    this.stockAlertThreshold = JSONUtilities.decodeInteger(jsonRoot, "stockAlertThreshold", 0);
+    this.stockAlertThreshold = JSONUtilities.decodeInteger(jsonRoot, "presentationStockAlertThreshold", 0);
 
     /*****************************************
     *
