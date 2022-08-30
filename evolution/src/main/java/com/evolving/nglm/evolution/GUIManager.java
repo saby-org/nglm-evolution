@@ -25261,6 +25261,10 @@ public class GUIManager
                 Offer newOffer = new Offer(offerJson, epochServer.getKey(), offer, catalogCharacteristicService, tenantID);
                 offerService.putOffer(newOffer, callingChannelService, salesChannelService, productService, voucherService, (offer == null), userID);
               }
+            else
+              {
+                log.info("[PRJT] no recurrence needed -- remaingin[{}], thresold[{}]", offer.getApproximateRemainingStock(), offer.getStockAlertThreshold());              
+              }
           }
       }
    }
