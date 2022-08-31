@@ -101,9 +101,9 @@ public class Offer extends GUIManagedObject implements StockableItem
     schemaBuilder.field("maximumAcceptances", Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("maximumAcceptancesPeriodDays", Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("maximumAcceptancesPeriodMonths", Schema.OPTIONAL_INT32_SCHEMA);
-    schemaBuilder.field("stockRecurrence", Schema.OPTIONAL_BOOLEAN_SCHEMA); //v5
+    schemaBuilder.field("stockRecurrence", Schema.OPTIONAL_BOOLEAN_SCHEMA);    //v5
     schemaBuilder.field("stockRecurrenceBatch", Schema.OPTIONAL_INT32_SCHEMA); //v5
-    schemaBuilder.field("stockAlertThreshold", Schema.OPTIONAL_INT32_SCHEMA); //v5
+    schemaBuilder.field("stockAlertThreshold", Schema.OPTIONAL_INT32_SCHEMA);  //v5
     schema = schemaBuilder.build();
   };
 
@@ -764,9 +764,6 @@ public class Offer extends GUIManagedObject implements StockableItem
     this.stockRecurrence = JSONUtilities.decodeBoolean(jsonRoot, "stockRecurrence", Boolean.FALSE);
     this.stockRecurrenceBatch = JSONUtilities.decodeInteger(jsonRoot, "stockRecurrenceBatch", 0);
     this.stockAlertThreshold = JSONUtilities.decodeInteger(jsonRoot, "presentationStockAlertThreshold", 0);
-    log.info("[PRJT] Offer.stockAlertThreshold: {}", stockAlertThreshold);
-    log.info("[PRJT] offerJson: {}", jsonRoot);
-    
 
     /*****************************************
     *

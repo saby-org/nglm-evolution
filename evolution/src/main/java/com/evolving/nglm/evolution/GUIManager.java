@@ -25248,22 +25248,17 @@ public class GUIManager
         
         if (purchaseResponse.getDeliveryStatus() == DeliveryStatus.Delivered)
           {
-            if(offer.getStockRecurrence() && offer.getApproximateRemainingStock() <= offer.getStockAlertThreshold())
+            if(offer.getStockRecurrence() && (offer.getApproximateRemainingStock() <= offer.getStockAlertThreshold() + 1)) // add 1 for last remaining stock, i.e., before the last possible purchase
               {
-                Integer stockRecBatchCount = offer.getStockRecurrenceBatch();
-                log.info("[PRJT] stockRecBatchCount[{}] to be added", stockRecBatchCount);
                 JSONObject offerJson = offer.getJSONRepresentation();
-                log.info("[PRJT] offerJson: {}", offerJson.toJSONString());
-                offerJson.replace("presentationStock", offer.getStock() + stockRecBatchCount);
-                //offerJson.put("id", offer.getGUIManagedObjectID());
-                log.info("[PRJT] new offerJson: {}", offerJson.toJSONString());
+                offerJson.replace("presentationStock", offer.getStock() + offer.getStockRecurrenceBatch());
                 
                 Offer newOffer = new Offer(offerJson, epochServer.getKey(), offer, catalogCharacteristicService, tenantID);
                 offerService.putOffer(newOffer, callingChannelService, salesChannelService, productService, voucherService, (offer == null), userID);
               }
             else
               {
-                log.info("[PRJT] no recurrence needed -- remaingin[{}], thresold[{}]", offer.getApproximateRemainingStock(), offer.getStockAlertThreshold());              
+                log.debug("stock recurrence scheduling not needed -- remaingin stock[{}], thresold limit[{}]", offer.getApproximateRemainingStock(), offer.getStockAlertThreshold());              
               }
           }
       }
