@@ -7863,6 +7863,7 @@ public class EvolutionEngine
                             }
                           else {
                             log.info("[PRJT] StatusConverted block for campaign");
+                            log.info("[PRJT] getJourneyParameters: {}", journeyState.getJourneyParameters().toString());
                             // any other kind of journey
                             boolean original = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) : Boolean.FALSE;
                             boolean newValue = (Boolean)current.getValue();
