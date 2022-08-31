@@ -7869,6 +7869,7 @@ public class EvolutionEngine
                                 // this journey (not workflow) changed to notified
                                 journeyState.setConvertedThisEvent(true);
                                 journeyState.getJourneyHistory().incrementConversions(SystemTime.getCurrentTime());
+                                log.info("[PRJT] after incrementing conversionCount:[{}]", journeyState.getJourneyHistory().getConversionCount());
                                 journeyState.getJourneyParameters().put(current.getKey(), current.getValue());
                                 // retrieve the main campaign (if exist) that triggered this workflow
                                 for(JourneyState existing : subscriberState.getJourneyStates())
@@ -7876,7 +7877,10 @@ public class EvolutionEngine
                                     if(Module.Journey_Manager.getExternalRepresentation().equals(existing.getSourceModuleID()) && journeyState.getJourneyID().equals(existing.getsourceFeatureID())){
                                       // this is a workflow of the given journey
                                       existing.getJourneyParameters().put(current.getKey(), current.getValue());
+                                      
+                                      log.info("[PRJT] before set conversionCount:[{}]", journeyState.getJourneyHistory().getConversionCount());
                                       existing.getJourneyHistory().setConversionsCount(journeyState.getJourneyHistory().getConversionCount(), SystemTime.getCurrentTime());
+                                      log.info("[PRJT] after set conversionCount:[{}]", journeyState.getJourneyHistory().getConversionCount());
                                     }
                                   }
                               }
