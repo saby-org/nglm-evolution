@@ -7865,6 +7865,7 @@ public class EvolutionEngine
                             boolean original = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) : Boolean.FALSE;
                             //boolean original = false; // working incrementConversion count -- EVPRO-1631
                             boolean newValue = (Boolean)current.getValue();
+                            log.info("[PRJT] original({}), newValue({})", original, newValue);
                             if(!original && newValue)
                               {
                                 // this journey (not workflow) changed to notified
