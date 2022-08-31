@@ -7839,6 +7839,7 @@ public class EvolutionEngine
                         }
                       else if(current.getKey().equals(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()))
                         {
+                          log.info("[PRJT] StatusConverted block");
                           if(journey.isWorkflow())
                             {
                               boolean original = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) : Boolean.FALSE;
@@ -7861,9 +7862,11 @@ public class EvolutionEngine
                                 }
                             }
                           else {
+                            log.info("[PRJT] StatusConverted block for campaign");
                             // any other kind of journey
                             boolean original = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) : Boolean.FALSE;
                             boolean newValue = (Boolean)current.getValue();
+                            log.info("[PRJT] StatusConverted: original({}), newValue({})", original, newValue);
                             if(!original && newValue)
                               {
                                 // this journey (not workflow) changed to notified
