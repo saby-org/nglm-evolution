@@ -7839,7 +7839,6 @@ public class EvolutionEngine
                         }
                       else if(current.getKey().equals(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()))
                         {
-                          log.info("[PRJT] StatusConverted block");
                           if(journey.isWorkflow())
                             {
                               boolean original = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) : Boolean.FALSE;
@@ -7862,19 +7861,16 @@ public class EvolutionEngine
                                 }
                             }
                           else {
-                            log.info("[PRJT] before journeyState.getJourneyParameters: {}", journeyState.getJourneyParameters().toString());
                             // any other kind of journey
-                            //boolean original = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) : Boolean.FALSE;
-                            boolean original = false;
+                            boolean original = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) : Boolean.FALSE;
+                            //boolean original = false; // working incrementConversion count -- EVPRO-1631
                             boolean newValue = (Boolean)current.getValue();
-                            log.info("[PRJT] StatusConverted: original({}), newValue({})", original, newValue);
                             if(!original && newValue)
                               {
                                 // this journey (not workflow) changed to notified
                                 journeyState.setConvertedThisEvent(true);
                                 journeyState.getJourneyHistory().incrementConversions(SystemTime.getCurrentTime());
                                 journeyState.getJourneyParameters().put(current.getKey(), current.getValue());
-                                log.info("[PRJT] journeyState.getJourneyParameters: {}", journeyState.getJourneyParameters().toString());
                                 // retrieve the main campaign (if exist) that triggered this workflow
                                 for(JourneyState existing : subscriberState.getJourneyStates())
                                   {
@@ -7882,9 +7878,6 @@ public class EvolutionEngine
                                       // this is a workflow of the given journey
                                       existing.getJourneyParameters().put(current.getKey(), current.getValue());
                                       existing.getJourneyHistory().setConversionsCount(journeyState.getJourneyHistory().getConversionCount(), SystemTime.getCurrentTime());
-                                      
-                                      log.info("[PRJT] after set conversionCount:[{}]", existing.getJourneyHistory().getConversionCount());
-                                      log.info("[PRJT] existing.getJourneyParameters: {}", existing.getJourneyParameters().toString());
                                     }
                                   }
                               }
