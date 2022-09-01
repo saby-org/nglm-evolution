@@ -4657,6 +4657,8 @@ public class GUIManagerGeneral extends GUIManager
     ****************************************/
     String pattern = JSONUtilities.decodeString(jsonRoot, "pattern", true);
     int quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
+    String supplierID = JSONUtilities.decodeString(jsonRoot, "supplierID", true);
+    String voucherID = JSONUtilities.decodeString(jsonRoot, "voucherID", false);
     log.info("RAJ K processGenerateVouchers pattern {}, quantity {}", pattern, quantity);    
     
     // find existing vouchers
@@ -4665,10 +4667,12 @@ public class GUIManagerGeneral extends GUIManager
     Collection<GUIManagedObject> uploadedFileObjects = uploadedFileService.getStoredGUIManagedObjects(true, tenantID);
     log.info("RAJ K processGenerateVouchers uploadedFileObjects {}, ", uploadedFileObjects);
 
-    String supplierID = JSONUtilities.decodeString(jsonRoot, "supplierID", true);
-
     String applicationID = "vouchers_" + supplierID; // TODO CHECK THIS MK
     log.info("RAJ K processGenerateVouchers supplierID {}, applicationID {}", supplierID, applicationID);
+    
+    //
+    //  unsaved voucher files
+    //
     
     for (GUIManagedObject uploaded : uploadedFileObjects)
       {
@@ -4682,26 +4686,79 @@ public class GUIManagerGeneral extends GUIManager
                 BufferedReader reader = null;
                 String filename = UploadedFile.OUTPUT_FOLDER + uploadedFile.getDestinationFilename();
                 try
-                {
-                  reader = new BufferedReader(new FileReader(filename));
-                  for (String line; (line = reader.readLine()) != null;)
-                    {
-                      if (line.trim().isEmpty()) continue;
-                      existingVoucherCodes.add(line.trim());
-                    }
-                }
+                  {
+                    reader = new BufferedReader(new FileReader(filename));
+                    for (String line; (line = reader.readLine()) != null;)
+                      {
+                        if (line.trim().isEmpty())
+                          continue;
+                        existingVoucherCodes.add(line.trim());
+                      }
+                  } 
                 catch (IOException e)
-                {
-                  log.info("Unable to read voucher file " + filename);
-                } finally {
-                  try {
-                    if (reader != null) reader.close();
-                  }
-                  catch (IOException e)
                   {
                     log.info("Unable to read voucher file " + filename);
+                  } 
+                finally
+                  {
+                    try
+                      {
+                        if (reader != null)
+                          reader.close();
+                      } 
+                    catch (IOException e)
+                      {
+                        log.info("Unable to read voucher file " + filename);
+                      }
                   }
-                }
+              }
+          }
+      }
+    
+    //
+    //  saved voucher files
+    //
+    
+    if (voucherID != null)
+      {
+        GUIManagedObject voucher = voucherService.getStoredVoucher(voucherID);
+        log.info("RAJ K processGenerateVouchers for voucher {}", voucher.getGUIManagedObjectDisplay());
+        if (voucher instanceof VoucherPersonal)
+          {
+            for (VoucherFile file : ((VoucherPersonal) voucher).getVoucherFiles())
+              {
+                GUIManagedObject uploadedFile = uploadedFileService.getStoredUploadedFile(file.getFileId());
+                if (uploadedFile instanceof UploadedFile)
+                  {
+                    log.info("RAJ K processGenerateVouchers file {}", uploadedFile.getJSONRepresentation());
+                    UploadedFile uploadedUsedFile = (UploadedFile) uploadedFile;
+                    BufferedReader reader = null;
+                    String filename = UploadedFile.OUTPUT_FOLDER + uploadedUsedFile.getDestinationFilename();
+                    try
+                      {
+                        reader = new BufferedReader(new FileReader(filename));
+                        for (String line; (line = reader.readLine()) != null;)
+                          {
+                            if (line.trim().isEmpty()) continue;
+                            existingVoucherCodes.add(line.trim());
+                          }
+                      } 
+                    catch (IOException e)
+                      {
+                        log.info("Unable to read voucher file " + filename);
+                      } 
+                    finally
+                      {
+                        try
+                          {
+                            if (reader != null) reader.close();
+                          } 
+                        catch (IOException e)
+                          {
+                            log.info("Unable to read voucher file " + filename);
+                          }
+                      }
+                  }
               }
           }
       }
