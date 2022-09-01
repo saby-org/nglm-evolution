@@ -4659,7 +4659,7 @@ public class GUIManagerGeneral extends GUIManager
     int quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
     String supplierID = JSONUtilities.decodeString(jsonRoot, "supplierID", true);
     String voucherID = JSONUtilities.decodeString(jsonRoot, "voucherID", false);
-    log.info("RAJ K processGenerateVouchers pattern {}, quantity {}", pattern, quantity);    
+    log.info("RAJ K processGenerateVouchers pattern {}, quantity {}, voucherID {}", pattern, quantity, voucherID);    
     
     // find existing vouchers
     
