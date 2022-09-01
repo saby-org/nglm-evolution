@@ -2581,7 +2581,7 @@ public class GUIManager
     
     JobScheduler guiManagerJobScheduler = new JobScheduler("GUIManager");
     String periodicGenerationCronEntry = "5 1,6,11,16,21 * * *";
-    String qaCronEntry = "5,10,15,30,45,59 * * * *";
+    String qaCronEntry = "4,9,14,19,24,29,34,39,44,49,54,59 * * * *";
     ScheduledJob recurrnetCampaignCreationJob = new RecurrentCampaignCreationJob("Recurrent Campaign(create)", periodicGenerationCronEntry, Deployment.getDefault().getTimeZone(), false); // TODO EVPRO-99 i used systemTimeZone instead of BaseTimeZone pet tenant, check if correct
     ScheduledJob challengesOccurrenceJob = new ChallengesOccurrenceJob("Challenges Occurrence", periodicGenerationCronEntry, Deployment.getDefault().getTimeZone(), false);
     ScheduledJob stockRecurrenceJob = new StockRecurrenceJob("Offer Stocks Recurrence", qaCronEntry, Deployment.getDefault().getTimeZone(), false);
@@ -31558,6 +31558,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     public StockRecurrenceJob(String jobName, String periodicGenerationCronEntry, String baseTimeZone, boolean scheduleAtStart)
     {
       super(jobName, periodicGenerationCronEntry, baseTimeZone, scheduleAtStart); 
+      log.info("[PRJT] StockRecurrenceJob initiated.");
     }
 
     @Override
@@ -31572,6 +31573,8 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
       for (Tenant tenant: Deployment.getTenants())
         {
           Collection<Offer> activeOffers = offerService.getActiveOffers(now, tenant.getTenantID());
+          log.info("[PRJT] found active offers: count[{}] in tenant[{}]", activeOffers.size(), tenant.getTenantID());
+          
           for (Offer activeOffer: activeOffers)
             {
               Offer offer = (Offer) offerService.getStoredOfferWithCurrentStocks(activeOffer.getGUIManagedObjectID(), true);
@@ -31593,7 +31596,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                 }
               else
                 {
-                  log.info("stock recurrence scheduling not needed -- remaingin stock[{}], thresold limit[{}]", offer.getApproximateRemainingStock(), offer.getStockAlertThreshold());              
+                  log.info("stock recurrence scheduling not needed for offer[{}]-- remaingin stock[{}], thresold limit[{}]", offer.getOfferID(), offer.getApproximateRemainingStock(), offer.getStockAlertThreshold());              
                 }
               
             }
