@@ -2584,15 +2584,17 @@ public class GUIManager
     String qaCronEntry = "5,10,15,30,45,59 * * * *";
     ScheduledJob recurrnetCampaignCreationJob = new RecurrentCampaignCreationJob("Recurrent Campaign(create)", periodicGenerationCronEntry, Deployment.getDefault().getTimeZone(), false); // TODO EVPRO-99 i used systemTimeZone instead of BaseTimeZone pet tenant, check if correct
     ScheduledJob challengesOccurrenceJob = new ChallengesOccurrenceJob("Challenges Occurrence", periodicGenerationCronEntry, Deployment.getDefault().getTimeZone(), false);
-    if(recurrnetCampaignCreationJob.isProperlyConfigured() && challengesOccurrenceJob.isProperlyConfigured())
+    ScheduledJob stockRecurrenceJob = new StockRecurrenceJob("Offer Stocks Recurrence", qaCronEntry, Deployment.getDefault().getTimeZone(), false);
+    if(recurrnetCampaignCreationJob.isProperlyConfigured() && challengesOccurrenceJob.isProperlyConfigured() && stockRecurrenceJob.isProperlyConfigured())
       {
         guiManagerJobScheduler.schedule(recurrnetCampaignCreationJob);
         guiManagerJobScheduler.schedule(challengesOccurrenceJob);
+        guiManagerJobScheduler.schedule(stockRecurrenceJob);
         new Thread(guiManagerJobScheduler::runScheduler, "guiManagerJobScheduler").start();
       }
     else
       {
-        if (log.isErrorEnabled()) log.error("invalid recurrnetCampaignCreationJob or ChallengesOccurrenceJob cron");
+        if (log.isErrorEnabled()) log.error("invalid recurrnetCampaignCreationJob or ChallengesOccurrenceJob or StockRecurrenceJob cron");
       }
     
     /*****************************************
@@ -25241,26 +25243,6 @@ public class GUIManager
             purchaseResponse = purchaseOffer(subscriberProfile,true,subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, origin, resellerID, kafkaProducer, zuks.getStringKey(), false, null);
             response.put("offer",purchaseResponse.getGUIPresentationMap(subscriberMessageTemplateService,salesChannelService,journeyService,offerService,loyaltyProgramService,productService,voucherService,deliverableService,paymentMeanService, resellerService, tenantID));
           }
-        
-        //
-        // stock recurrence scheduling
-        //
-        
-        if (purchaseResponse.getDeliveryStatus() == DeliveryStatus.Delivered)
-          {
-            if(offer.getStockRecurrence() && (offer.getApproximateRemainingStock() <= offer.getStockAlertThreshold() + 1)) // add 1 for last remaining stock, i.e., before the last possible purchase
-              {
-                JSONObject offerJson = offer.getJSONRepresentation();
-                offerJson.replace("presentationStock", offer.getStock() + offer.getStockRecurrenceBatch());
-                
-                Offer newOffer = new Offer(offerJson, epochServer.getKey(), offer, catalogCharacteristicService, tenantID);
-                offerService.putOffer(newOffer, callingChannelService, salesChannelService, productService, voucherService, (offer == null), userID);
-              }
-            else
-              {
-                log.debug("stock recurrence scheduling not needed -- remaingin stock[{}], thresold limit[{}]", offer.getApproximateRemainingStock(), offer.getStockAlertThreshold());              
-              }
-          }
       }
    }
 
@@ -31562,6 +31544,59 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           Date firstDate = RLMDateUtils.addDays(now, -dayOfMonth+1, tz);
           Date lastDate = RLMDateUtils.addDays(firstDate, toalNoOfDays-1, tz);
           return lastDate;
+        }
+    }
+    
+  }
+  
+  //
+  // StockRecurrenceJob
+  //
+  
+  public class StockRecurrenceJob extends ScheduledJob 
+  {
+    public StockRecurrenceJob(String jobName, String periodicGenerationCronEntry, String baseTimeZone, boolean scheduleAtStart)
+    {
+      super(jobName, periodicGenerationCronEntry, baseTimeZone, scheduleAtStart); 
+    }
+
+    @Override
+    protected void run()
+    {
+      log.info("[PRJT] StockRecurrenceJob running...");
+      
+      Date now = SystemTime.getCurrentTime();
+      List<JSONObject> offers = new ArrayList<JSONObject>();
+      Collection <GUIManagedObject> offerObjects = new ArrayList<GUIManagedObject>();
+      
+      for (Tenant tenant: Deployment.getTenants())
+        {
+          Collection<Offer> activeOffers = offerService.getActiveOffers(now, tenant.getTenantID());
+          for (Offer activeOffer: activeOffers)
+            {
+              Offer offer = (Offer) offerService.getStoredOfferWithCurrentStocks(activeOffer.getGUIManagedObjectID(), true);
+              if(offer.getStockRecurrence() && (offer.getApproximateRemainingStock() <= offer.getStockAlertThreshold()))
+                {
+                  JSONObject offerJson = offer.getJSONRepresentation();
+                  offerJson.replace("presentationStock", offer.getStock() + offer.getStockRecurrenceBatch());
+                  try
+                    {
+                      Offer newOffer = new Offer(offerJson, epochServer.getKey(), offer, catalogCharacteristicService, tenant.getTenantID());
+                      offerService.putOffer(newOffer, callingChannelService, salesChannelService, productService, voucherService, (offer == null), "StockRecurrenceJob");
+                      
+                      log.info("[PRJT] stock recurrence scheduling done for offerID[{}] -- newStock[{}]", newOffer.getOfferID(), newOffer.getStock());
+                    } 
+                  catch (GUIManagerException e)
+                    {
+                      e.printStackTrace();
+                    }
+                }
+              else
+                {
+                  log.info("stock recurrence scheduling not needed -- remaingin stock[{}], thresold limit[{}]", offer.getApproximateRemainingStock(), offer.getStockAlertThreshold());              
+                }
+              
+            }
         }
     }
     
