@@ -31564,38 +31564,35 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     protected void run()
     {
       log.info("[PRJT] StockRecurrenceJob running...");
-      
+
       Date now = SystemTime.getCurrentTime();
-      for (Tenant tenant: Deployment.getTenants())
+      Collection<Offer> activeOffers = offerService.getActiveOffers(now, 0);
+      log.info("[PRJT] found active offers: count[{}]", activeOffers.size());
+
+      for (Offer offer : activeOffers)
         {
-          Collection<Offer> activeOffers = offerService.getActiveOffers(now, tenant.getTenantID());
-          log.info("[PRJT] found active offers: count[{}] in tenant[{}]", activeOffers.size(), tenant.getTenantID());
-          
-          for (Offer offer: activeOffers)
+          // Offer offer = (Offer)
+          // offerService.getStoredOfferWithCurrentStocks(activeOffer.getGUIManagedObjectID(),
+          // true);
+          if (offer.getStockRecurrence() && (offer.getApproximateRemainingStock() <= offer.getStockAlertThreshold()))
             {
-              //Offer offer = (Offer) offerService.getStoredOfferWithCurrentStocks(activeOffer.getGUIManagedObjectID(), true);
-              if(offer.getStockRecurrence() && (offer.getApproximateRemainingStock() <= offer.getStockAlertThreshold()))
+              JSONObject offerJson = offer.getJSONRepresentation();
+              offerJson.replace("presentationStock", offer.getStock() + offer.getStockRecurrenceBatch());
+              try
                 {
-                  JSONObject offerJson = offer.getJSONRepresentation();
-                  offerJson.replace("presentationStock", offer.getStock() + offer.getStockRecurrenceBatch());
-                  try
-                    {
-                      Offer newOffer = new Offer(offerJson, epochServer.getKey(), offer, catalogCharacteristicService, tenant.getTenantID());
-                      offerService.putOffer(newOffer, callingChannelService, salesChannelService, productService, voucherService, (offer == null), "StockRecurrenceJob");
-                      
-                      log.info("[PRJT] stock recurrence scheduling done for offerID[{}] -- newStock[{}]", newOffer.getOfferID(), newOffer.getStock());
-                    } 
-                  catch (GUIManagerException e)
-                    {
-                      e.printStackTrace();
-                    }
-                }
-              else
+                  Offer newOffer = new Offer(offerJson, epochServer.getKey(), offer, catalogCharacteristicService, 0);
+                  offerService.putOffer(newOffer, callingChannelService, salesChannelService, productService, voucherService, (offer == null), "StockRecurrenceJob");
+
+                  log.info("[PRJT] stock recurrence scheduling done for offerID[{}] -- newStock[{}]", newOffer.getOfferID(), newOffer.getStock());
+                } catch (GUIManagerException e)
                 {
-                  log.info("stock recurrence scheduling not needed for offer[{}]-- remaingin stock[{}], thresold limit[{}]", offer.getOfferID(), offer.getApproximateRemainingStock(), offer.getStockAlertThreshold());              
+                  e.printStackTrace();
                 }
-              
+            } else
+            {
+              log.info("stock recurrence scheduling not needed for offer[{}]-- remaingin stock[{}], thresold limit[{}]", offer.getOfferID(), offer.getApproximateRemainingStock(), offer.getStockAlertThreshold());
             }
+
         }
     }
     
