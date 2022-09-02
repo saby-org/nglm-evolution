@@ -9414,7 +9414,7 @@ public class GUIManager
     Boolean dryRun = false;
     
     //
-    // TEST - 1600
+    // TEST - 1600 -- TO BE REMOVED
     //
     
     jsonRoot.put("stockRecurrence", Boolean.TRUE);
@@ -31563,17 +31563,10 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     @Override
     protected void run()
     {
-      log.info("[PRJT] StockRecurrenceJob running...");
-
       Date now = SystemTime.getCurrentTime();
       Collection<Offer> activeOffers = offerService.getActiveOffers(now, 0);
-      log.info("[PRJT] found active offers: count[{}]", activeOffers.size());
-
       for (Offer offer : activeOffers)
         {
-          // Offer offer = (Offer)
-          // offerService.getStoredOfferWithCurrentStocks(activeOffer.getGUIManagedObjectID(),
-          // true);
           if (offer.getStockRecurrence() && (offer.getApproximateRemainingStock() <= offer.getStockAlertThreshold()))
             {
               JSONObject offerJson = offer.getJSONRepresentation();
@@ -31582,20 +31575,17 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                 {
                   Offer newOffer = new Offer(offerJson, epochServer.getKey(), offer, catalogCharacteristicService, offer.getTenantID());
                   offerService.putOffer(newOffer, callingChannelService, salesChannelService, productService, voucherService, (offer == null), "StockRecurrenceJob");
-
-                  log.info("[PRJT] stock recurrence scheduling done for offerID[{}] -- newStock[{}]", newOffer.getOfferID(), newOffer.getStock());
-                } catch (GUIManagerException e)
+                } 
+              catch (GUIManagerException e)
                 {
                   e.printStackTrace();
                 }
             } else
             {
-              log.info("stock recurrence scheduling not needed for offer[{}]-- remaingin stock[{}], thresold limit[{}]", offer.getOfferID(), offer.getApproximateRemainingStock(), offer.getStockAlertThreshold());
+              log.debug("stock recurrence scheduling not required for offer[{}]-- remaingin stock[{}], thresold limit[{}]", offer.getOfferID(), offer.getApproximateRemainingStock(), offer.getStockAlertThreshold());
             }
-
         }
     }
-    
   }
   
   /*****************************************
