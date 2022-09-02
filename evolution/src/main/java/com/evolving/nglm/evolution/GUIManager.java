@@ -31558,7 +31558,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     public StockRecurrenceJob(String jobName, String periodicGenerationCronEntry, String baseTimeZone, boolean scheduleAtStart)
     {
       super(jobName, periodicGenerationCronEntry, baseTimeZone, scheduleAtStart); 
-      log.info("[PRJT] StockRecurrenceJob initiated.");
     }
 
     @Override
@@ -31567,17 +31566,14 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
       log.info("[PRJT] StockRecurrenceJob running...");
       
       Date now = SystemTime.getCurrentTime();
-      List<JSONObject> offers = new ArrayList<JSONObject>();
-      Collection <GUIManagedObject> offerObjects = new ArrayList<GUIManagedObject>();
-      
       for (Tenant tenant: Deployment.getTenants())
         {
           Collection<Offer> activeOffers = offerService.getActiveOffers(now, tenant.getTenantID());
           log.info("[PRJT] found active offers: count[{}] in tenant[{}]", activeOffers.size(), tenant.getTenantID());
           
-          for (Offer activeOffer: activeOffers)
+          for (Offer offer: activeOffers)
             {
-              Offer offer = (Offer) offerService.getStoredOfferWithCurrentStocks(activeOffer.getGUIManagedObjectID(), true);
+              //Offer offer = (Offer) offerService.getStoredOfferWithCurrentStocks(activeOffer.getGUIManagedObjectID(), true);
               if(offer.getStockRecurrence() && (offer.getApproximateRemainingStock() <= offer.getStockAlertThreshold()))
                 {
                   JSONObject offerJson = offer.getJSONRepresentation();
