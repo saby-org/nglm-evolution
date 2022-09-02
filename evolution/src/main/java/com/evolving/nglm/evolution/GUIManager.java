@@ -31580,7 +31580,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
               offerJson.replace("presentationStock", offer.getStock() + offer.getStockRecurrenceBatch());
               try
                 {
-                  Offer newOffer = new Offer(offerJson, epochServer.getKey(), offer, catalogCharacteristicService, 0);
+                  Offer newOffer = new Offer(offerJson, epochServer.getKey(), offer, catalogCharacteristicService, offer.getTenantID());
                   offerService.putOffer(newOffer, callingChannelService, salesChannelService, productService, voucherService, (offer == null), "StockRecurrenceJob");
 
                   log.info("[PRJT] stock recurrence scheduling done for offerID[{}] -- newStock[{}]", newOffer.getOfferID(), newOffer.getStock());
