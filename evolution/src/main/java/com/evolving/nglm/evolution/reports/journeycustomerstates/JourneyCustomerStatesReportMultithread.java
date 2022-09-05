@@ -56,6 +56,7 @@ public class JourneyCustomerStatesReportMultithread implements ReportCsvFactory
   private static final String endDate = "endDate";
   private static final String rewards = "rewards";
   private static final String journeyExitDate = "journeyExitDate";
+  private static final String conversionCount = "conversionCount";
   
   
   
@@ -71,6 +72,7 @@ public class JourneyCustomerStatesReportMultithread implements ReportCsvFactory
     headerFieldsOrder.add(journeyName);
     headerFieldsOrder.add(journeyType);
     headerFieldsOrder.add(customerStatus);
+    headerFieldsOrder.add(conversionCount);
     headerFieldsOrder.add(customerStates);
     headerFieldsOrder.add(customerStatuses);
     headerFieldsOrder.add(dateTime);
@@ -155,6 +157,9 @@ public class JourneyCustomerStatesReportMultithread implements ReportCsvFactory
         //            else   
         journeyInfo.put(customerStatus, getSubscriberJourneyStatus(journeyComplete, statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup).getDisplay());
 
+        // conversionCount
+        journeyInfo.put(conversionCount, journeyStats.get("conversionCount") != null ? journeyStats.get("conversionCount") : 0);
+        
         List<String> nodeHistory = (List<String>) journeyStats.get("nodeHistory");
         StringBuilder sbStatus = new StringBuilder();
         if (nodeHistory != null && !nodeHistory.isEmpty())

@@ -7859,16 +7859,17 @@ public class EvolutionEngine
                                       }
                                     }
                                 }
+                              else if(newValue) // EVPRO-1631 -- added a new block just to update conversioncount, without interrupting prev code
+                                {
+                                  journeyState.getJourneyHistory().incrementConversions(SystemTime.getCurrentTime());
+                                }
                             }
                           else {
                             // any other kind of journey
                             boolean original = journeyState.getJourneyParameters().containsKey(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) ? (Boolean) journeyState.getJourneyParameters().get(SubscriberJourneyStatusField.StatusConverted.getJourneyParameterName()) : Boolean.FALSE;
-                            //boolean original = false; // working incrementConversion count -- EVPRO-1631
                             boolean newValue = (Boolean)current.getValue();
-                            log.info("[PRJT] original({}), newValue({})", original, newValue);
                             if(!original && newValue)
                               {
-                                log.info("old block....");
                                 // this journey (not workflow) changed to notified
                                 journeyState.setConvertedThisEvent(true);
                                 journeyState.getJourneyHistory().incrementConversions(SystemTime.getCurrentTime());
@@ -7883,9 +7884,8 @@ public class EvolutionEngine
                                     }
                                   }
                               }
-                            else if(newValue)
+                            else if(newValue)   // EVPRO-1631 -- added a new block just to update conversioncount, without interrupting prev code
                               {
-                                log.info("new block...");
                                 journeyState.getJourneyHistory().incrementConversions(SystemTime.getCurrentTime());
                               }
                           }
