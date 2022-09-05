@@ -7868,6 +7868,7 @@ public class EvolutionEngine
                             log.info("[PRJT] original({}), newValue({})", original, newValue);
                             if(!original && newValue)
                               {
+                                log.info("old block....");
                                 // this journey (not workflow) changed to notified
                                 journeyState.setConvertedThisEvent(true);
                                 journeyState.getJourneyHistory().incrementConversions(SystemTime.getCurrentTime());
@@ -7881,6 +7882,11 @@ public class EvolutionEngine
                                       existing.getJourneyHistory().setConversionsCount(journeyState.getJourneyHistory().getConversionCount(), SystemTime.getCurrentTime());
                                     }
                                   }
+                              }
+                            else if(newValue)
+                              {
+                                log.info("new block...");
+                                journeyState.getJourneyHistory().incrementConversions(SystemTime.getCurrentTime());
                               }
                           }
                         }
