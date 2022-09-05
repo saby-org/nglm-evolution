@@ -4574,7 +4574,6 @@ public class GUIManagerGeneral extends GUIManager
   *****************************************/
   JSONObject processGetTokenCodesFormats(String userID, JSONObject jsonRoot, int tenantID)
   {
-
     /*****************************************
     *
     *  retrieve tokenCodesFormats
@@ -4659,16 +4658,13 @@ public class GUIManagerGeneral extends GUIManager
     int quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
     String supplierID = JSONUtilities.decodeString(jsonRoot, "supplierID", true);
     String voucherID = JSONUtilities.decodeString(jsonRoot, "voucherID", false);
-    log.info("RAJ K processGenerateVouchers pattern {}, quantity {}, voucherID {}", pattern, quantity, voucherID);    
     
     // find existing vouchers
     
     List<String> existingVoucherCodes = new ArrayList<>();
     Collection<GUIManagedObject> uploadedFileObjects = uploadedFileService.getStoredGUIManagedObjects(true, tenantID);
-    log.info("RAJ K processGenerateVouchers uploadedFileObjects {}, ", uploadedFileObjects);
 
     String applicationID = "vouchers_" + supplierID; // TODO CHECK THIS MK
-    log.info("RAJ K processGenerateVouchers supplierID {}, applicationID {}", supplierID, applicationID);
     
     //
     //  unsaved voucher files
@@ -4677,7 +4673,7 @@ public class GUIManagerGeneral extends GUIManager
     for (GUIManagedObject uploaded : uploadedFileObjects)
       {
         String fileApplicationID = JSONUtilities.decodeString(uploaded.getJSONRepresentation(), "applicationID", false);
-        log.info("RAJ K processGenerateVouchers uploadedFileObjects - fileApplicationID {}", fileApplicationID);
+        log.info("processGenerateVouchers processing unsaved files");
         if (Objects.equals(applicationID, fileApplicationID))
           {
             if (uploaded instanceof UploadedFile)
@@ -4722,7 +4718,7 @@ public class GUIManagerGeneral extends GUIManager
     if (voucherID != null)
       {
         GUIManagedObject voucher = voucherService.getStoredVoucher(voucherID);
-        log.info("RAJ K processGenerateVouchers for voucher {}", voucher.getGUIManagedObjectDisplay());
+        log.info("processGenerateVouchers processing saved files");
         if (voucher instanceof VoucherPersonal)
           {
             for (VoucherFile file : ((VoucherPersonal) voucher).getVoucherFiles())
@@ -4730,7 +4726,6 @@ public class GUIManagerGeneral extends GUIManager
                 GUIManagedObject uploadedFile = uploadedFileService.getStoredUploadedFile(file.getFileId());
                 if (uploadedFile instanceof UploadedFile)
                   {
-                    log.info("RAJ K processGenerateVouchers file {}", uploadedFile.getJSONRepresentation());
                     UploadedFile uploadedUsedFile = (UploadedFile) uploadedFile;
                     BufferedReader reader = null;
                     String filename = UploadedFile.OUTPUT_FOLDER + uploadedUsedFile.getDestinationFilename();
@@ -4763,13 +4758,9 @@ public class GUIManagerGeneral extends GUIManager
           }
       }
         
-    //
-    // EVPRO-1576 & 1577 - start
-    //
-    
     log.info("GUIManager.processGenerateVouchers- Existing Vouchers count [{}]", existingVoucherCodes.size());
     
-    Set<String> currentVoucherCodes = ConcurrentHashMap.newKeySet();
+    Set<String> currentVoucherCodes = ConcurrentHashMap.newKeySet(existingVoucherCodes.size()+quantity);
     currentVoucherCodes.addAll(existingVoucherCodes);
     
     ExecutorService es = Executors.newCachedThreadPool();
