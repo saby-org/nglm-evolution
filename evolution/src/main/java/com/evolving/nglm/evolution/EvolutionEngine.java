@@ -7845,7 +7845,8 @@ public class EvolutionEngine
                               boolean newValue = (Boolean)current.getValue();
                               if(!original && newValue)
                                 {
-                                  // this workflow changed to notified
+                                  log.info("[PRJT] enter workflow - original[{}]", original);
+                                  // this workflow changed to converted
                                   journeyState.setConvertedThisEvent(true);
                                   journeyState.getJourneyHistory().incrementConversions(SystemTime.getCurrentTime());
                                   journeyState.getJourneyParameters().put(current.getKey(), current.getValue());
@@ -7861,7 +7862,18 @@ public class EvolutionEngine
                                 }
                               else if(newValue) // EVPRO-1631 -- added a new block just to update conversioncount, without interrupting prev code
                                 {
+                                  log.info("[PRJT] enter workflow - original[{}]", original);
+                                  journeyState.setConvertedThisEvent(true);
                                   journeyState.getJourneyHistory().incrementConversions(SystemTime.getCurrentTime());
+                                  journeyState.getJourneyParameters().put(current.getKey(), current.getValue());
+                                  for(JourneyState existing : subscriberState.getJourneyStates())
+                                    {
+                                      if(Module.Journey_Manager.getExternalRepresentation().equals(journeyState.getSourceModuleID()) && existing.getJourneyID().equals(journeyState.getsourceFeatureID())){
+                                        existing.getJourneyParameters().put(current.getKey(), current.getValue());
+                                        existing.getJourneyHistory().setConversionsCount(journeyState.getJourneyHistory().getConversionCount(), SystemTime.getCurrentTime());
+                                        break;
+                                      }
+                                    }
                                 }
                             }
                           else {
@@ -7870,7 +7882,8 @@ public class EvolutionEngine
                             boolean newValue = (Boolean)current.getValue();
                             if(!original && newValue)
                               {
-                                // this journey (not workflow) changed to notified
+                                log.info("[PRJT] enter campaign - original[{}]", original);
+                                // this journey (not workflow) changed to converted
                                 journeyState.setConvertedThisEvent(true);
                                 journeyState.getJourneyHistory().incrementConversions(SystemTime.getCurrentTime());
                                 journeyState.getJourneyParameters().put(current.getKey(), current.getValue());
@@ -7886,6 +7899,7 @@ public class EvolutionEngine
                               }
                             else if(newValue)   // EVPRO-1631 -- added a new block just to update conversioncount, without interrupting prev code
                               {
+                                log.info("[PRJT] enter campaign - original[{}]", original);
                                 journeyState.getJourneyHistory().incrementConversions(SystemTime.getCurrentTime());
                               }
                           }
