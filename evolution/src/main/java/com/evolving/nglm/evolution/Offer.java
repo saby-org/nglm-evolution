@@ -85,7 +85,7 @@ public class Offer extends GUIManagedObject implements StockableItem
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("offer");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),4));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),5));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("initialPropensity", Schema.FLOAT64_SCHEMA);
     schemaBuilder.field("stock", Schema.OPTIONAL_INT32_SCHEMA);
@@ -101,6 +101,9 @@ public class Offer extends GUIManagedObject implements StockableItem
     schemaBuilder.field("maximumAcceptances", Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("maximumAcceptancesPeriodDays", Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("maximumAcceptancesPeriodMonths", Schema.OPTIONAL_INT32_SCHEMA);
+    schemaBuilder.field("stockRecurrence", Schema.OPTIONAL_BOOLEAN_SCHEMA);    //v5
+    schemaBuilder.field("stockRecurrenceBatch", Schema.OPTIONAL_INT32_SCHEMA); //v5
+    schemaBuilder.field("stockAlertThreshold", Schema.OPTIONAL_INT32_SCHEMA);  //v5
     schema = schemaBuilder.build();
   };
 
@@ -140,7 +143,10 @@ public class Offer extends GUIManagedObject implements StockableItem
   private Integer maximumAcceptancesPeriodMonths;
   private String notEligibilityReason;
   private String limitsReachedReason;
-
+  private boolean stockRecurrence;
+  private Integer stockRecurrenceBatch;
+  private Integer stockAlertThreshold;
+  
   //
   //  derived
   //
@@ -177,6 +183,9 @@ public class Offer extends GUIManagedObject implements StockableItem
   public Integer getMaximumAcceptancesPeriodMonths() { return maximumAcceptancesPeriodMonths; }
   public String getNotEligibilityReason() { return notEligibilityReason; }
   public String getLimitsReachedReason() {	return limitsReachedReason; }
+  public boolean getStockRecurrence() { return stockRecurrence; }
+  public Integer getStockRecurrenceBatch() { return stockRecurrenceBatch; }
+  public Integer getStockAlertThreshold() { return stockAlertThreshold; }
   
   /*****************************************
   *
@@ -300,7 +309,7 @@ public class Offer extends GUIManagedObject implements StockableItem
   *
   *****************************************/
 
-  public Offer(SchemaAndValue schemaAndValue, double initialPropensity, Integer stock, int unitaryCost, List<EvaluationCriterion> profileCriteria, Set<OfferObjectiveInstance> offerObjectives, Set<OfferSalesChannelsAndPrice> offerSalesChannelsAndPrices, Set<OfferProduct> offerProducts, Set<OfferVoucher> offerVouchers, OfferCharacteristics offerCharacteristics, Set<OfferTranslation> offerTranslations, boolean simpleOffer, Integer maximumAcceptances, Integer maximumAcceptancesPeriodDays, Integer maximumAcceptancesPeriodMonths)
+  public Offer(SchemaAndValue schemaAndValue, double initialPropensity, Integer stock, int unitaryCost, List<EvaluationCriterion> profileCriteria, Set<OfferObjectiveInstance> offerObjectives, Set<OfferSalesChannelsAndPrice> offerSalesChannelsAndPrices, Set<OfferProduct> offerProducts, Set<OfferVoucher> offerVouchers, OfferCharacteristics offerCharacteristics, Set<OfferTranslation> offerTranslations, boolean simpleOffer, Integer maximumAcceptances, Integer maximumAcceptancesPeriodDays, Integer maximumAcceptancesPeriodMonths, boolean stockRecurrence, Integer stockRecurrenceBatch, Integer stockAlertThreshold)
   {
     super(schemaAndValue);
     this.initialPropensity = getValidPropensity(initialPropensity);
@@ -318,6 +327,9 @@ public class Offer extends GUIManagedObject implements StockableItem
     this.maximumAcceptances = maximumAcceptances;
     this.maximumAcceptancesPeriodDays = maximumAcceptancesPeriodDays;
     this.maximumAcceptancesPeriodMonths = maximumAcceptancesPeriodMonths;
+    this.stockRecurrence = stockRecurrence;
+    this.stockRecurrenceBatch = stockRecurrenceBatch;
+    this.stockAlertThreshold = stockAlertThreshold;
   }
 
   /*****************************************
@@ -345,6 +357,9 @@ public class Offer extends GUIManagedObject implements StockableItem
     struct.put("maximumAcceptances", offer.getMaximumAcceptances());
     struct.put("maximumAcceptancesPeriodDays", offer.getMaximumAcceptancesPeriodDays());
     struct.put("maximumAcceptancesPeriodMonths", offer.getMaximumAcceptancesPeriodMonths());
+    struct.put("stockRecurrence", offer.getStockRecurrence());
+    struct.put("stockRecurrenceBatch", offer.getStockRecurrenceBatch());
+    struct.put("stockAlertThreshold", offer.getStockAlertThreshold());
     return struct;
   }
 
@@ -479,12 +494,14 @@ public class Offer extends GUIManagedObject implements StockableItem
     Integer maximumAcceptances = (schemaVersion >= 3) ? valueStruct.getInt32("maximumAcceptances") : Integer.MAX_VALUE;
     Integer maximumAcceptancesPeriodDays = (schemaVersion >= 3) ? valueStruct.getInt32("maximumAcceptancesPeriodDays") : 1;
     Integer maximumAcceptancesPeriodMonths = (schema.field("maximumAcceptancesPeriodMonths")!= null) ? valueStruct.getInt32("maximumAcceptancesPeriodMonths") : 1;
-    
+    boolean stockRecurrence = (schemaVersion >= 5) ? valueStruct.getBoolean("stockRecurrence") : false;
+    Integer stockRecurrenceBatch = (schemaVersion >= 5) ? valueStruct.getInt32("stockRecurrenceBatch") : 0;
+    Integer stockAlertThreshold = (schemaVersion >= 5) ? valueStruct.getInt32("stockAlertThreshold") : 0;
     //
     //  return
     //
 
-    return new Offer(schemaAndValue, initialPropensity, stock, unitaryCost, profileCriteria, offerObjectives, offerSalesChannelsAndPrices, offerProducts, offerVouchers, offerCharacteristics, offerTranslations, simpleOffer, maximumAcceptances, maximumAcceptancesPeriodDays, maximumAcceptancesPeriodMonths);
+    return new Offer(schemaAndValue, initialPropensity, stock, unitaryCost, profileCriteria, offerObjectives, offerSalesChannelsAndPrices, offerProducts, offerVouchers, offerCharacteristics, offerTranslations, simpleOffer, maximumAcceptances, maximumAcceptancesPeriodDays, maximumAcceptancesPeriodMonths, stockRecurrence, stockRecurrenceBatch, stockAlertThreshold);
   }
   
   /*****************************************
@@ -744,6 +761,9 @@ public class Offer extends GUIManagedObject implements StockableItem
     } else { // old version
       this.maximumAcceptancesPeriodDays = JSONUtilities.decodeInteger(jsonRoot, "maximumAcceptancesPeriodDays", 1);
     }
+    this.stockRecurrence = JSONUtilities.decodeBoolean(jsonRoot, "stockRecurrence", Boolean.FALSE);
+    this.stockRecurrenceBatch = JSONUtilities.decodeInteger(jsonRoot, "stockRecurrenceBatch", 0);
+    this.stockAlertThreshold = JSONUtilities.decodeInteger(jsonRoot, "presentationStockAlertThreshold", 0);
 
     /*****************************************
     *
@@ -895,6 +915,9 @@ public class Offer extends GUIManagedObject implements StockableItem
         epochChanged = epochChanged || ! Objects.equals(simpleOffer, existingOffer.getSimpleOffer());
         epochChanged = epochChanged || ! Objects.equals(maximumAcceptances, existingOffer.getMaximumAcceptances());
         epochChanged = epochChanged || ! Objects.equals(maximumAcceptancesPeriodDays, existingOffer.getMaximumAcceptancesPeriodDays());
+        epochChanged = epochChanged || ! Objects.equals(stockRecurrence, existingOffer.getStockRecurrence());
+        epochChanged = epochChanged || ! Objects.equals(stockRecurrenceBatch, existingOffer.getStockRecurrenceBatch());
+        epochChanged = epochChanged || ! Objects.equals(stockAlertThreshold, existingOffer.getStockAlertThreshold());
         return epochChanged;
       }
     else

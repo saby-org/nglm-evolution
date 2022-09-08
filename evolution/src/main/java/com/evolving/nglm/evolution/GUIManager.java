@@ -2581,18 +2581,20 @@ public class GUIManager
     
     JobScheduler guiManagerJobScheduler = new JobScheduler("GUIManager");
     String periodicGenerationCronEntry = "5 1,6,11,16,21 * * *";
-    String qaCronEntry = "5,10,15,30,45,59 * * * *";
+    String qaCronEntry = "4,9,14,19,24,29,34,39,44,49,54,59 * * * *";
     ScheduledJob recurrnetCampaignCreationJob = new RecurrentCampaignCreationJob("Recurrent Campaign(create)", periodicGenerationCronEntry, Deployment.getDefault().getTimeZone(), false); // TODO EVPRO-99 i used systemTimeZone instead of BaseTimeZone pet tenant, check if correct
     ScheduledJob challengesOccurrenceJob = new ChallengesOccurrenceJob("Challenges Occurrence", periodicGenerationCronEntry, Deployment.getDefault().getTimeZone(), false);
-    if(recurrnetCampaignCreationJob.isProperlyConfigured() && challengesOccurrenceJob.isProperlyConfigured())
+    ScheduledJob stockRecurrenceJob = new StockRecurrenceJob("Offer Stocks Recurrence", qaCronEntry, Deployment.getDefault().getTimeZone(), false);
+    if(recurrnetCampaignCreationJob.isProperlyConfigured() && challengesOccurrenceJob.isProperlyConfigured() && stockRecurrenceJob.isProperlyConfigured())
       {
         guiManagerJobScheduler.schedule(recurrnetCampaignCreationJob);
         guiManagerJobScheduler.schedule(challengesOccurrenceJob);
+        guiManagerJobScheduler.schedule(stockRecurrenceJob);
         new Thread(guiManagerJobScheduler::runScheduler, "guiManagerJobScheduler").start();
       }
     else
       {
-        if (log.isErrorEnabled()) log.error("invalid recurrnetCampaignCreationJob or ChallengesOccurrenceJob cron");
+        if (log.isErrorEnabled()) log.error("invalid recurrnetCampaignCreationJob or ChallengesOccurrenceJob or StockRecurrenceJob cron");
       }
     
     /*****************************************
@@ -9411,7 +9413,14 @@ public class GUIManager
     HashMap<String,Object> response = new HashMap<String,Object>();
     Boolean dryRun = false;
     
-
+    //
+    // TEST - 1600 -- TO BE REMOVED
+    //
+    
+    jsonRoot.put("stockRecurrence", Boolean.TRUE);
+    jsonRoot.put("stockRecurrenceBatch", 2);
+    
+    
     /*****************************************
     *
     *  dryRun
@@ -25149,7 +25158,6 @@ public class GUIManager
 
  private JSONObject processPurchaseOffer(String userID, JSONObject jsonRoot, int tenantID) throws GUIManagerException
  {
-   
    boolean sync = true; // always sync today
    /****************************************
    *
@@ -31540,6 +31548,45 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
         }
     }
     
+  }
+  
+  //
+  // StockRecurrenceJob
+  //
+  
+  public class StockRecurrenceJob extends ScheduledJob 
+  {
+    public StockRecurrenceJob(String jobName, String periodicGenerationCronEntry, String baseTimeZone, boolean scheduleAtStart)
+    {
+      super(jobName, periodicGenerationCronEntry, baseTimeZone, scheduleAtStart); 
+    }
+
+    @Override
+    protected void run()
+    {
+      Date now = SystemTime.getCurrentTime();
+      Collection<Offer> activeOffers = offerService.getActiveOffers(now, 0);
+      for (Offer offer : activeOffers)
+        {
+          if (offer.getStockRecurrence() && (offer.getApproximateRemainingStock() <= offer.getStockAlertThreshold()))
+            {
+              JSONObject offerJson = offer.getJSONRepresentation();
+              offerJson.replace("presentationStock", offer.getStock() + offer.getStockRecurrenceBatch());
+              try
+                {
+                  Offer newOffer = new Offer(offerJson, epochServer.getKey(), offer, catalogCharacteristicService, offer.getTenantID());
+                  offerService.putOffer(newOffer, callingChannelService, salesChannelService, productService, voucherService, (offer == null), "StockRecurrenceJob");
+                } 
+              catch (GUIManagerException e)
+                {
+                  e.printStackTrace();
+                }
+            } else
+            {
+              log.debug("stock recurrence scheduling not required for offer[{}]-- remaingin stock[{}], thresold limit[{}]", offer.getOfferID(), offer.getApproximateRemainingStock(), offer.getStockAlertThreshold());
+            }
+        }
+    }
   }
   
   /*****************************************
