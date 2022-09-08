@@ -9413,14 +9413,6 @@ public class GUIManager
     HashMap<String,Object> response = new HashMap<String,Object>();
     Boolean dryRun = false;
     
-    //
-    // TEST - 1600 -- TO BE REMOVED
-    //
-    
-    //jsonRoot.put("stockRecurrence", Boolean.TRUE);
-    //jsonRoot.put("stockRecurrenceBatch", 2);
-    
-    
     /*****************************************
     *
     *  dryRun
@@ -31576,7 +31568,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                   Offer newOffer = new Offer(offerJson, epochServer.getKey(), offer, catalogCharacteristicService, offer.getTenantID());
                   offerService.putOffer(newOffer, callingChannelService, salesChannelService, productService, voucherService, (offer == null), "StockRecurrenceJob");
                   
-                  log.info("stock added for offer[{}]-- remaingin stock[{}], thresold limit[{}]", offer.getOfferID(), offer.getApproximateRemainingStock(), offer.getStockAlertThreshold());
+                  log.info("[StockRecurrenceJob] Stock replenished[{}] for offerID[{}]-- ApproximateRemainingStock[{}], StockAlertThreshold[{}]", newOffer.getStockRecurrenceBatch(), newOffer.getOfferID(), newOffer.getApproximateRemainingStock(), newOffer.getStockAlertThreshold());
                 } 
               catch (GUIManagerException e)
                 {
@@ -31584,7 +31576,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                 }
             } else
             {
-              log.info("stock recurrence scheduling not required for offer[{}]-- remaingin stock[{}], thresold limit[{}]", offer.getOfferID(), offer.getApproximateRemainingStock(), offer.getStockAlertThreshold());
+              log.debug("[StockRecurrenceJob] Stock recurrence scheduling not required for offerID[{}]-- ApproximateRemainingStock[{}], StockAlertThreshold[{}]", offer.getOfferID(), offer.getApproximateRemainingStock(), offer.getStockAlertThreshold());
             }
         }
     }
