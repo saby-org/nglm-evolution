@@ -9417,8 +9417,8 @@ public class GUIManager
     // TEST - 1600 -- TO BE REMOVED
     //
     
-    jsonRoot.put("stockRecurrence", Boolean.TRUE);
-    jsonRoot.put("stockRecurrenceBatch", 2);
+    //jsonRoot.put("stockRecurrence", Boolean.TRUE);
+    //jsonRoot.put("stockRecurrenceBatch", 2);
     
     
     /*****************************************
