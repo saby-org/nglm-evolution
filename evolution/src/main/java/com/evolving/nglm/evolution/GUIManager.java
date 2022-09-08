@@ -31575,6 +31575,8 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                 {
                   Offer newOffer = new Offer(offerJson, epochServer.getKey(), offer, catalogCharacteristicService, offer.getTenantID());
                   offerService.putOffer(newOffer, callingChannelService, salesChannelService, productService, voucherService, (offer == null), "StockRecurrenceJob");
+                  
+                  log.info("stock added for offer[{}]-- remaingin stock[{}], thresold limit[{}]", offer.getOfferID(), offer.getApproximateRemainingStock(), offer.getStockAlertThreshold());
                 } 
               catch (GUIManagerException e)
                 {
@@ -31582,7 +31584,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                 }
             } else
             {
-              log.debug("stock recurrence scheduling not required for offer[{}]-- remaingin stock[{}], thresold limit[{}]", offer.getOfferID(), offer.getApproximateRemainingStock(), offer.getStockAlertThreshold());
+              log.info("stock recurrence scheduling not required for offer[{}]-- remaingin stock[{}], thresold limit[{}]", offer.getOfferID(), offer.getApproximateRemainingStock(), offer.getStockAlertThreshold());
             }
         }
     }
