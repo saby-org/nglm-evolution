@@ -31567,8 +31567,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                 {
                   Offer newOffer = new Offer(offerJson, epochServer.getKey(), offer, catalogCharacteristicService, offer.getTenantID());
                   offerService.putOffer(newOffer, callingChannelService, salesChannelService, productService, voucherService, (offer == null), "StockRecurrenceJob");
-                  
-                  log.info("[StockRecurrenceJob] Stock replenished[{}] for offerID[{}]-- ApproximateRemainingStock[{}], StockAlertThreshold[{}]", newOffer.getStockRecurrenceBatch(), newOffer.getOfferID(), newOffer.getApproximateRemainingStock(), newOffer.getStockAlertThreshold());
+                  log.debug("[StockRecurrenceJob] Stock replenished[{}] for offerID[{}]-- ApproximateRemainingStock[{}], StockAlertThreshold[{}]", newOffer.getStockRecurrenceBatch(), newOffer.getOfferID(), newOffer.getApproximateRemainingStock(), newOffer.getStockAlertThreshold());
                 } 
               catch (GUIManagerException e)
                 {
