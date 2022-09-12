@@ -2584,7 +2584,7 @@ public class GUIManager
     String qaCronEntry = "4,9,14,19,24,29,34,39,44,49,54,59 * * * *";
     ScheduledJob recurrnetCampaignCreationJob = new RecurrentCampaignCreationJob("Recurrent Campaign(create)", periodicGenerationCronEntry, Deployment.getDefault().getTimeZone(), false); // TODO EVPRO-99 i used systemTimeZone instead of BaseTimeZone pet tenant, check if correct
     ScheduledJob challengesOccurrenceJob = new ChallengesOccurrenceJob("Challenges Occurrence", periodicGenerationCronEntry, Deployment.getDefault().getTimeZone(), false);
-    ScheduledJob stockRecurrenceJob = new StockRecurrenceJob("Offer Stocks Recurrence", qaCronEntry, Deployment.getDefault().getTimeZone(), false);
+    ScheduledJob stockRecurrenceJob = new StockRecurrenceJob("Stocks Recurrence", qaCronEntry, Deployment.getDefault().getTimeZone(), false);
     if(recurrnetCampaignCreationJob.isProperlyConfigured() && challengesOccurrenceJob.isProperlyConfigured() && stockRecurrenceJob.isProperlyConfigured())
       {
         guiManagerJobScheduler.schedule(recurrnetCampaignCreationJob);
@@ -31568,22 +31568,40 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
       Collection<Offer> activeOffers = offerService.getActiveOffers(now, 0);
       for (Offer offer : activeOffers)
         {
-          if (offer.getStockRecurrence() && (offer.getApproximateRemainingStock() <= offer.getStockAlertThreshold()))
+          boolean stockThersoldBreached = offer.getApproximateRemainingStock() != null && (offer.getApproximateRemainingStock() <= offer.getStockAlertThreshold());
+          if (stockThersoldBreached)
             {
-              JSONObject offerJson = offer.getJSONRepresentation();
-              offerJson.replace("presentationStock", offer.getStock() + offer.getStockRecurrenceBatch());
-              try
+              //
+              //  send notification
+              //
+              
+              if (offer.getStockAlert())
                 {
-                  Offer newOffer = new Offer(offerJson, epochServer.getKey(), offer, catalogCharacteristicService, offer.getTenantID());
-                  offerService.putOffer(newOffer, callingChannelService, salesChannelService, productService, voucherService, (offer == null), "StockRecurrenceJob");
-                } 
-              catch (GUIManagerException e)
-                {
-                  e.printStackTrace();
+                  // send stock notification RAJ K (EVPRO-1601)
                 }
-            } else
-            {
-              log.debug("stock recurrence scheduling not required for offer[{}]-- remaingin stock[{}], thresold limit[{}]", offer.getOfferID(), offer.getApproximateRemainingStock(), offer.getStockAlertThreshold());
+              
+              //
+              // auto increment stock (EVPRO-1600)
+              //
+              
+              if (offer.getStockRecurrence())
+                {
+                  JSONObject offerJson = offer.getJSONRepresentation();
+                  offerJson.replace("presentationStock", offer.getStock() + offer.getStockRecurrenceBatch());
+                  try
+                    {
+                      Offer newOffer = new Offer(offerJson, epochServer.getKey(), offer, catalogCharacteristicService, offer.getTenantID());
+                      offerService.putOffer(newOffer, callingChannelService, salesChannelService, productService, voucherService, (offer == null), "StockRecurrenceJob");
+                    } 
+                  catch (GUIManagerException e)
+                    {
+                      e.printStackTrace();
+                    }
+                } 
+              else
+                {
+                  log.debug("stock recurrence scheduling not required for offer[{}]-- remaingin stock[{}], thresold limit[{}]", offer.getOfferID(), offer.getApproximateRemainingStock(), offer.getStockAlertThreshold());
+                }
             }
         }
     }
