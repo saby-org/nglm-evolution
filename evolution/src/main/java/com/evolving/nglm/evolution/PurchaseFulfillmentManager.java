@@ -827,6 +827,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       this.resellerID = (String) esFields.get("resellerID");
       this.quantity = (Integer) esFields.get("offerQty");
       this.returnCode = (Integer) esFields.get("returnCode");
+      this.status = PurchaseFulfillmentStatus.fromReturnCode(returnCode);
       
       //
       // derived
@@ -1252,8 +1253,17 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           thirdPartyPresentationMap.put(ORIGIN, getOrigin());
           thirdPartyPresentationMap.put(RESELLERDISPLAY, getResellerDisplay());
           thirdPartyPresentationMap.put(SUPPLIERDISPLAY, getSupplierDisplay());
-          thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
-          thirdPartyPresentationMap.put(RETURNCODEDESCRIPTION, RESTAPIGenericReturnCodes.fromGenericResponseCode(getReturnCode()).getGenericResponseMessage());
+          log.info("RAJ K getStatus() {}", getStatus());
+          if (PurchaseFulfillmentStatus.PURCHASED_AND_CANCELLED == getStatus())
+            {
+              thirdPartyPresentationMap.put(RETURNCODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
+              thirdPartyPresentationMap.put(RETURNCODEDESCRIPTION, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
+            }
+          else
+            {
+              thirdPartyPresentationMap.put(RETURNCODE, getReturnCode());
+              thirdPartyPresentationMap.put(RETURNCODEDESCRIPTION, RESTAPIGenericReturnCodes.fromGenericResponseCode(getReturnCode()).getGenericResponseMessage());
+            }
           thirdPartyPresentationMap.put(RETURNCODEDETAILS, getOfferDeliveryReturnCodeDetails());
           thirdPartyPresentationMap.put(VOUCHERCODE, getOfferDeliveryVoucherCode());
           thirdPartyPresentationMap.put(VOUCHEREXPIRYDATE, getOfferDeliveryVoucherExpiryDate());
