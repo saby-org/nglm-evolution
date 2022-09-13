@@ -1253,7 +1253,6 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           thirdPartyPresentationMap.put(ORIGIN, getOrigin());
           thirdPartyPresentationMap.put(RESELLERDISPLAY, getResellerDisplay());
           thirdPartyPresentationMap.put(SUPPLIERDISPLAY, getSupplierDisplay());
-          log.info("RAJ K getStatus() {}", getStatus());
           if (PurchaseFulfillmentStatus.PURCHASED_AND_CANCELLED == getStatus())
             {
               thirdPartyPresentationMap.put(RETURNCODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
