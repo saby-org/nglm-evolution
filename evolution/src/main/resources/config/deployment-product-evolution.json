@@ -160,6 +160,8 @@
   
   "periodicEvaluationCronEntry" : "0 2 * * *",
   "ucgEvaluationCronEntry" : "0 4 * * *",
+  
+  "stockRecurrenceCronEntry" : "0 0 * * *",
 
   "minExpiryDelayForVoucherDeliveryInHours" : 4,
   "importVoucherFileBulkSize" : 5000,

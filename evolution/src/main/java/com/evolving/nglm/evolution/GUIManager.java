@@ -2582,9 +2582,11 @@ public class GUIManager
     JobScheduler guiManagerJobScheduler = new JobScheduler("GUIManager");
     String periodicGenerationCronEntry = "5 1,6,11,16,21 * * *";
     String qaCronEntry = "4,9,14,19,24,29,34,39,44,49,54,59 * * * *";
+    
     ScheduledJob recurrnetCampaignCreationJob = new RecurrentCampaignCreationJob("Recurrent Campaign(create)", periodicGenerationCronEntry, Deployment.getDefault().getTimeZone(), false); // TODO EVPRO-99 i used systemTimeZone instead of BaseTimeZone pet tenant, check if correct
     ScheduledJob challengesOccurrenceJob = new ChallengesOccurrenceJob("Challenges Occurrence", periodicGenerationCronEntry, Deployment.getDefault().getTimeZone(), false);
-    ScheduledJob stockRecurrenceJob = new StockRecurrenceJob("Offer Stocks Recurrence", qaCronEntry, Deployment.getDefault().getTimeZone(), false);
+    ScheduledJob stockRecurrenceJob = new StockRecurrenceJob("Offer Stocks Recurrence", Deployment.getStockRecurrenceCronEntry(), Deployment.getDefault().getTimeZone(), false);
+    
     if(recurrnetCampaignCreationJob.isProperlyConfigured() && challengesOccurrenceJob.isProperlyConfigured() && stockRecurrenceJob.isProperlyConfigured())
       {
         guiManagerJobScheduler.schedule(recurrnetCampaignCreationJob);
