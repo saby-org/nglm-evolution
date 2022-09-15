@@ -513,6 +513,18 @@ public class TokenUtils
         offerAvailabilityFromPropensityAlgoAfterMatrixFilter = offerAvailabilityFromPropensityAlgo;
       }
     
+    if (matrixAvailable && offerFromMatrix != null)
+      {
+        for (ProposedOfferDetails offerMatrix : offerFromMatrix)
+          {
+            if (offerIDsAvailable.contains(offerMatrix.getOfferId()))
+              {
+                offerAvailabilityFromPropensityAlgoAfterMatrixFilter.add(offerMatrix);
+              }
+          }
+        log.info("[PRJT] getOffersWithScoringStrategy.offerAvailabilityFromPropensityAlgoAfterMatrixFilter.size: {}", offerAvailabilityFromPropensityAlgoAfterMatrixFilter.size());
+      }
+
     //
     // Now add some predefined offers based on alwaysAppendOfferObjectiveIDs of ScoringSplit
     //
@@ -774,7 +786,7 @@ public class TokenUtils
       {
         log.debug("DNBOProxy.getScoringSegment Retrieved matching matrixSegment " + (selectedmatrixSegment != null ? selectedmatrixSegment : null));
       }
-    log.info("DNBOProxy.getScoringSegment Retrieved matching matrixSegment " + (selectedmatrixSegment != null ? selectedmatrixSegment : null));
+    log.info("DNBOProxy.getScoringSegment Retrieved matching matrixSegment size " + (selectedmatrixSegment != null ? selectedmatrixSegment.size() : null));
 
     if (selectedmatrixSegment == null)
       {
