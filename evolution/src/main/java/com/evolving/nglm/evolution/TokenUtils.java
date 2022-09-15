@@ -517,6 +517,7 @@ public class TokenUtils
           {
             if (offerIDsAvailable.contains(offerMatrix.getOfferId()))
               {
+                log.info("[PRJT] offerMatrix: {}", offerMatrix.toString());
                 offerAvailabilityFromPropensityAlgoAfterMatrixFilter.add(offerMatrix);
               }
           }
