@@ -482,19 +482,14 @@ public class TokenUtils
                       {
                         if (offerIDsAvailable.contains(offer.getOfferId()) && !(segmentOfferIDs.contains(offer.getOfferId())))
                           {
-                            Offer offerObject = offerService.getActiveOffer(offer.getOfferId(), eventDate);
-                            if (offerObject != null)
+                            for (ProposedOfferDetails offerAvailable : offerAvailabilityFromPropensityAlgo)
                               {
-                                for (OfferSalesChannelsAndPrice offerSalesChannelAndPrice : offerObject.getOfferSalesChannelsAndPrices())
+                                if (offerAvailable.getOfferId().equals(offer.getOfferId()))
                                   {
-                                    for (String OfferSalesChannelID : offerSalesChannelAndPrice.getSalesChannelIDs())
-                                      {
-                                        ProposedOfferDetails matrixOfferDetails = new ProposedOfferDetails(offer.getOfferId(), OfferSalesChannelID, 0);
-                                        offerFromMatrix.add(matrixOfferDetails);
-                                        segmentOfferIDs.add(offer.getOfferId());
-                                      }
+                                    offerFromMatrix.add(offerAvailable);
                                   }
                               }
+                            segmentOfferIDs.add(offer.getOfferId());
                           }
                       }
                   }
@@ -510,12 +505,24 @@ public class TokenUtils
         offerAvailabilityFromPropensityAlgoAfterMatrixFilter = offerAvailabilityFromPropensityAlgo;
       }
     
-    if (matrixAvailable && offerFromMatrix != null)
+    /*if (matrixAvailable && offerFromMatrix != null)
       {
         offerAvailabilityFromPropensityAlgoAfterMatrixFilter = offerAvailabilityFromPropensityAlgo.stream().filter(po -> offerFromMatrix.contains(po.getOfferId())).collect(Collectors.toList());
         log.info("[PRJT] getOffersWithScoringStrategy.offerAvailabilityFromPropensityAlgoAfterMatrixFilter.size: {}", offerAvailabilityFromPropensityAlgoAfterMatrixFilter.size());
-      }
+      }*/
 
+    if (matrixAvailable && offerFromMatrix != null)
+      {
+        for (ProposedOfferDetails offerMatrix : offerFromMatrix)
+          {
+            if (offerIDsAvailable.contains(offerMatrix.getOfferId()))
+              {
+                offerAvailabilityFromPropensityAlgoAfterMatrixFilter.add(offerMatrix);
+              }
+          }
+        log.info("[PRJT] getOffersWithScoringStrategy.offerAvailabilityFromPropensityAlgoAfterMatrixFilter.size: {}", offerAvailabilityFromPropensityAlgoAfterMatrixFilter.size());
+      }
+    
     //
     // Now add some predefined offers based on alwaysAppendOfferObjectiveIDs of ScoringSplit
     //
