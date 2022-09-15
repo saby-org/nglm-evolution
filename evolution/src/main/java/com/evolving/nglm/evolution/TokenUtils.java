@@ -475,8 +475,7 @@ public class TokenUtils
             DNBOMatrix dnboMatrix = dnboMatrixService.getActiveDNBOMatrix(matrixID, eventDate);
             if (dnboMatrix != null && dnboMatrix instanceof DNBOMatrix)
               {
-                List<DNBOMatrixSegment> dnboSegments = getDNBOMatrixSegment(dnboMatrix, subscriberProfile,
-                    subscriberGroupEpochReader, tenantID);
+                List<DNBOMatrixSegment> dnboSegments = getDNBOMatrixSegment(dnboMatrix, subscriberProfile,subscriberGroupEpochReader, tenantID);
                 for (DNBOMatrixSegment seg : dnboSegments)
                   {
                     for (DNBOMatrixOffer offer : seg.getOffers())
@@ -513,13 +512,7 @@ public class TokenUtils
     
     if (matrixAvailable && offerFromMatrix != null)
       {
-        for (ProposedOfferDetails offerMatrix : offerFromMatrix)
-          {
-            if (offerIDsAvailable.contains(offerMatrix.getOfferId()))
-              {
-                offerAvailabilityFromPropensityAlgoAfterMatrixFilter.add(offerMatrix);
-              }
-          }
+        offerAvailabilityFromPropensityAlgoAfterMatrixFilter = offerAvailabilityFromPropensityAlgo.stream().filter(po -> offerFromMatrix.contains(po.getOfferId())).collect(Collectors.toList());
         log.info("[PRJT] getOffersWithScoringStrategy.offerAvailabilityFromPropensityAlgoAfterMatrixFilter.size: {}", offerAvailabilityFromPropensityAlgoAfterMatrixFilter.size());
       }
 
