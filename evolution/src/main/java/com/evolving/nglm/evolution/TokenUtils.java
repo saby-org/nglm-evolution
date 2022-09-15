@@ -486,13 +486,11 @@ public class TokenUtils
                             Offer offerObject = offerService.getActiveOffer(offer.getOfferId(), eventDate);
                             if (offerObject != null)
                               {
-                                for (OfferSalesChannelsAndPrice offerSalesChannelAndPrice : offerObject
-                                    .getOfferSalesChannelsAndPrices())
+                                for (OfferSalesChannelsAndPrice offerSalesChannelAndPrice : offerObject.getOfferSalesChannelsAndPrices())
                                   {
                                     for (String OfferSalesChannelID : offerSalesChannelAndPrice.getSalesChannelIDs())
                                       {
-                                        ProposedOfferDetails matrixOfferDetails = new ProposedOfferDetails(
-                                            offer.getOfferId(), OfferSalesChannelID, 0);
+                                        ProposedOfferDetails matrixOfferDetails = new ProposedOfferDetails(offer.getOfferId(), OfferSalesChannelID, 0);
                                         offerFromMatrix.add(matrixOfferDetails);
                                         segmentOfferIDs.add(offer.getOfferId());
                                       }
