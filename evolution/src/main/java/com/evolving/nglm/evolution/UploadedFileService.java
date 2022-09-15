@@ -689,16 +689,19 @@ public class UploadedFileService extends GUIService
   public void changeFileApplicationId(String fileID, String newApplicationID)
   {
     UploadedFile file = (UploadedFile) getStoredUploadedFile(fileID);
-    if(file!=null){
-      // "change" applicationId, not "set"
-      if(file.getApplicationID()!=null) file.setApplicationID(newApplicationID);
-      // as any GUIManagedObject, same information is duplicated, and we use this following one seems to return GUIManager calls...
-      if(file.getJSONRepresentation().get("applicationID")!=null) file.getJSONRepresentation().put("applicationID",newApplicationID);
-      file.setEpoch(file.getEpoch()+1);//trigger "changes happened"
-      putGUIManagedObject(file,file.getUpdatedDate(),false,null);
-    }else{
-      log.warn("UploadedFileService.changeFileApplicationId: File does not exist");
-    }
+    if (file != null)
+      {
+        // "change" applicationId, not "set"
+        if (file.getApplicationID() != null) file.setApplicationID(newApplicationID);
+        // as any GUIManagedObject, same information is duplicated, and we use this
+        // following one seems to return GUIManager calls...
+        if (file.getJSONRepresentation().get("applicationID") != null) file.getJSONRepresentation().put("applicationID", newApplicationID);
+        file.setEpoch(file.getEpoch() + 1);// trigger "changes happened"
+        putGUIManagedObject(file, file.getUpdatedDate(), false, null);
+      } else
+      {
+        log.warn("UploadedFileService.changeFileApplicationId: File does not exist");
+      }
   }
   
  /*****************************************

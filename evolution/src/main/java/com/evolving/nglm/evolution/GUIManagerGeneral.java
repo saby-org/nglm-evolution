@@ -4574,7 +4574,6 @@ public class GUIManagerGeneral extends GUIManager
   *****************************************/
   JSONObject processGetTokenCodesFormats(String userID, JSONObject jsonRoot, int tenantID)
   {
-
     /*****************************************
     *
     *  retrieve tokenCodesFormats
@@ -4657,19 +4656,24 @@ public class GUIManagerGeneral extends GUIManager
     ****************************************/
     String pattern = JSONUtilities.decodeString(jsonRoot, "pattern", true);
     int quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
+    String supplierID = JSONUtilities.decodeString(jsonRoot, "supplierID", true);
+    String voucherID = JSONUtilities.decodeString(jsonRoot, "voucherID", false);
     
     // find existing vouchers
     
     List<String> existingVoucherCodes = new ArrayList<>();
     Collection<GUIManagedObject> uploadedFileObjects = uploadedFileService.getStoredGUIManagedObjects(true, tenantID);
 
-    String supplierID = JSONUtilities.decodeString(jsonRoot, "supplierID", true);
-
     String applicationID = "vouchers_" + supplierID; // TODO CHECK THIS MK
+    
+    //
+    //  unsaved voucher files
+    //
     
     for (GUIManagedObject uploaded : uploadedFileObjects)
       {
         String fileApplicationID = JSONUtilities.decodeString(uploaded.getJSONRepresentation(), "applicationID", false);
+        log.info("processGenerateVouchers processing unsaved files");
         if (Objects.equals(applicationID, fileApplicationID))
           {
             if (uploaded instanceof UploadedFile)
@@ -4678,39 +4682,86 @@ public class GUIManagerGeneral extends GUIManager
                 BufferedReader reader = null;
                 String filename = UploadedFile.OUTPUT_FOLDER + uploadedFile.getDestinationFilename();
                 try
-                {
-                  reader = new BufferedReader(new FileReader(filename));
-                  for (String line; (line = reader.readLine()) != null;)
-                    {
-                      if (line.trim().isEmpty()) continue;
-                      existingVoucherCodes.add(line.trim());
-                    }
-                }
+                  {
+                    reader = new BufferedReader(new FileReader(filename));
+                    for (String line; (line = reader.readLine()) != null;)
+                      {
+                        if (line.trim().isEmpty())
+                          continue;
+                        existingVoucherCodes.add(line.trim());
+                      }
+                  } 
                 catch (IOException e)
-                {
-                  log.info("Unable to read voucher file " + filename);
-                } finally {
-                  try {
-                    if (reader != null) reader.close();
-                  }
-                  catch (IOException e)
                   {
                     log.info("Unable to read voucher file " + filename);
+                  } 
+                finally
+                  {
+                    try
+                      {
+                        if (reader != null)
+                          reader.close();
+                      } 
+                    catch (IOException e)
+                      {
+                        log.info("Unable to read voucher file " + filename);
+                      }
                   }
-                }
+              }
+          }
+      }
+    
+    //
+    //  saved voucher files
+    //
+    
+    if (voucherID != null)
+      {
+        GUIManagedObject voucher = voucherService.getStoredVoucher(voucherID);
+        log.info("processGenerateVouchers processing saved files");
+        if (voucher instanceof VoucherPersonal)
+          {
+            for (VoucherFile file : ((VoucherPersonal) voucher).getVoucherFiles())
+              {
+                GUIManagedObject uploadedFile = uploadedFileService.getStoredUploadedFile(file.getFileId());
+                if (uploadedFile instanceof UploadedFile)
+                  {
+                    UploadedFile uploadedUsedFile = (UploadedFile) uploadedFile;
+                    BufferedReader reader = null;
+                    String filename = UploadedFile.OUTPUT_FOLDER + uploadedUsedFile.getDestinationFilename();
+                    try
+                      {
+                        reader = new BufferedReader(new FileReader(filename));
+                        for (String line; (line = reader.readLine()) != null;)
+                          {
+                            if (line.trim().isEmpty()) continue;
+                            existingVoucherCodes.add(line.trim());
+                          }
+                      } 
+                    catch (IOException e)
+                      {
+                        log.info("Unable to read voucher file " + filename);
+                      } 
+                    finally
+                      {
+                        try
+                          {
+                            if (reader != null) reader.close();
+                          } 
+                        catch (IOException e)
+                          {
+                            log.info("Unable to read voucher file " + filename);
+                          }
+                      }
+                  }
               }
           }
       }
         
-    //
-    // EVPRO-1576 - start
-    //
-    
     log.info("GUIManager.processGenerateVouchers- Existing Vouchers count [{}]", existingVoucherCodes.size());
     
-    Set<String> currentVoucherCodes = ConcurrentHashMap.newKeySet(); // store distinct voucher codes - skip for now
+    Set<String> currentVoucherCodes = ConcurrentHashMap.newKeySet(existingVoucherCodes.size()+quantity);
     currentVoucherCodes.addAll(existingVoucherCodes);
-    //List<String> currentVoucherCodes = new ArrayList<>(); // may generate and store duplicate vouchers 
     
     ExecutorService es = Executors.newCachedThreadPool();
     int minPerThreadCount = 1000; 
@@ -4737,7 +4788,7 @@ public class GUIManagerGeneral extends GUIManager
                   }
                 if (!newVoucherGenerated)
                   {
-                    log.info("After " + HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE + " tries, unable to generate a new voucher code with pattern " + pattern);
+                    log.info("GUIManager.processGenerateVouchers- After " + HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE + " tries, unable to generate a new voucher code with pattern " + pattern);
                     break;
                   }
               }
@@ -4759,38 +4810,11 @@ public class GUIManagerGeneral extends GUIManager
         log.error("Issue when finishing ExecutorService threads for voucher generation : " + ex.getMessage());
       }
     
-    currentVoucherCodes.removeAll(existingVoucherCodes);
     // remove extra vouchers - in case
+    currentVoucherCodes.removeAll(existingVoucherCodes);
     Set<String> generatedVoucherCodes = currentVoucherCodes.stream().limit(quantity).collect(Collectors.toSet());
     
     log.info("GUIManager.processGenerateVouchers- new vouchers[{}] generation completed [{}s]", generatedVoucherCodes.size(), (SystemTime.getCurrentTime().getTime() - startDate.getTime())/1000.0);
-    
-    //
-    // EVPRO-1576 - end
-    //
-    
-    /*List<String> currentVoucherCodes = new ArrayList<>();
-    for (int q=0; q<quantity; q++)
-      {
-        String voucherCode = null; 
-        boolean newVoucherGenerated = false;
-        for (int i=0; i<HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE; i++)
-          {
-            voucherCode = TokenUtils.generateFromRegex(pattern);
-            if (!currentVoucherCodes.contains(voucherCode) && !existingVoucherCodes.contains(voucherCode))
-              {
-                newVoucherGenerated = true;
-                break;
-              }
-          }
-        if (!newVoucherGenerated)
-          {
-            log.info("After " + HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE + " tries, unable to generate a new voucher code with pattern " + pattern);
-            break;
-          }
-        log.debug("voucherCode  generated : " + voucherCode);
-        currentVoucherCodes.add(voucherCode);
-      }*/
     
     // convert list to InputStream
     

@@ -162,22 +162,26 @@ public class VoucherService extends GUIService {
 
   public VoucherPersonalESService getVoucherPersonalESService() {return voucherPersonalESService;}
 
-  public void putVoucher(GUIManagedObject voucher, boolean newObject, String userID) {
+  public void putVoucher(GUIManagedObject voucher, boolean newObject, String userID)
+  {
     Date now = SystemTime.getCurrentTime();
-    //save conf
+    // save conf
     putGUIManagedObject(voucher, now, newObject, userID);
-    //send process files order if voucher OK
-    if(isActiveVoucher(voucher,now) && voucher instanceof VoucherPersonal){
-      //changed the applicationId of the files, to make it unavailable to use any longer
-      for(VoucherFile file:((VoucherPersonal) voucher).getVoucherFiles()){
-        UploadedFile uploadedFile=(UploadedFile)uploadedFileService.getStoredUploadedFile(file.getFileId());
-        if(uploadedFile!=null && uploadedFile.getApplicationID()!=null && !uploadedFile.getApplicationID().equals(usedVoucherFileApplicationId)){
-          uploadedFileService.changeFileApplicationId(file.getFileId(),usedVoucherFileApplicationId);
-        }
+    // send process files order if voucher OK
+    if (isActiveVoucher(voucher, now) && voucher instanceof VoucherPersonal)
+      {
+        // changed the applicationId of the files, to make it unavailable to use any longer
+        for (VoucherFile file : ((VoucherPersonal) voucher).getVoucherFiles())
+          {
+            UploadedFile uploadedFile = (UploadedFile) uploadedFileService.getStoredUploadedFile(file.getFileId());
+            if (uploadedFile != null && uploadedFile.getApplicationID() != null && !uploadedFile.getApplicationID().equals(usedVoucherFileApplicationId))
+              {
+                uploadedFileService.changeFileApplicationId(file.getFileId(), usedVoucherFileApplicationId);
+              }
+          }
+        voucherPersonalESService.createSupplierVoucherIndexIfNotExist(((VoucherPersonal) voucher).getSupplierID());
+        checkForVoucherModificationToApplyOnVoucherPersonalStore((VoucherPersonal) voucher);
       }
-      voucherPersonalESService.createSupplierVoucherIndexIfNotExist(((VoucherPersonal)voucher).getSupplierID());
-      checkForVoucherModificationToApplyOnVoucherPersonalStore((VoucherPersonal)voucher);
-    }
   }
 
   public void removeVoucher(String voucherID, String userID, UploadedFileService uploadedFileService, int tenantID) {
