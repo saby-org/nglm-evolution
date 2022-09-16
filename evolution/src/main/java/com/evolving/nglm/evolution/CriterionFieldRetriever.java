@@ -1927,7 +1927,7 @@ public abstract class CriterionFieldRetriever
   
   public static Object getNumberOfChildrenForRelation(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
   {
-    long result = 0;
+    Long result = null;
     SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
     String relationshipID = subcriteriaVal.get(0)==null?null:(String) subcriteriaVal.get(0);
    
@@ -1939,9 +1939,10 @@ public abstract class CriterionFieldRetriever
       {
         if (subscriberProfile.getRelations().get(relationshipID) != null) 
         	{SubscriberRelatives relatives = subscriberProfile.getRelations().get(relationshipID);
-        	if(relatives.getChildrenSubscriberIDs()!=null)
-        	result=relatives.getChildrenSubscriberIDs().size();
+        	if(relatives!=null && relatives.getChildrenSubscriberIDs()!=null && relatives.getChildrenSubscriberIDs().size()>0)
+        	result=new Long(relatives.getChildrenSubscriberIDs().size());
         	} 
+        		
         }
     else
       {
