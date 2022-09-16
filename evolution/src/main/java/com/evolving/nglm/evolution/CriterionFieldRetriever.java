@@ -1939,7 +1939,7 @@ public abstract class CriterionFieldRetriever
       {
         if (subscriberProfile.getRelations().get(relationshipID) != null) 
         	{SubscriberRelatives relatives = subscriberProfile.getRelations().get(relationshipID);
-        	if(relatives!=null && relatives.getChildrenSubscriberIDs()!=null && relatives.getChildrenSubscriberIDs().size()>0)
+        	if(relatives!=null && relatives.getChildrenSubscriberIDs()!=null)
         	result=new Long(relatives.getChildrenSubscriberIDs().size());
         	} 
         		
