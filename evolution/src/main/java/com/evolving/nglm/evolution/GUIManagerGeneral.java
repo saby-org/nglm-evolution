@@ -4768,7 +4768,7 @@ public class GUIManagerGeneral extends GUIManager
     int threadCount = quantity > minPerThreadCount ? Math.min(quantity/minPerThreadCount, 5) : 1; // max 5 thread will work
     Date startDate = SystemTime.getCurrentTime();
     int threadCurrentTry = 0;
-    while (GENERATE_A_VOUCHER_CODE_THREAD_GROUP_RETRY_COUNT > threadCurrentTry && quantity > currentVoucherCodes.size())
+    while (GENERATE_A_VOUCHER_CODE_THREAD_GROUP_RETRY_COUNT > threadCurrentTry && quantity > (currentVoucherCodes.size() - existingVoucherCodes.size()))
       {
         threadCurrentTry++;
         ExecutorService es = Executors.newCachedThreadPool();
