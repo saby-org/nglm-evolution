@@ -101,7 +101,8 @@ public class GUIManagerGeneral extends GUIManager
   
   private static final Logger log = LoggerFactory.getLogger(GUIManagerGeneral.class);
 
-  private static final int HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE = 100;
+  private static final int HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE = 50000;
+  private static final int GENERATE_A_VOUCHER_CODE_THREAD_GROUP_RETRY_COUNT = 40;
   
   //
   //  data
@@ -4763,52 +4764,62 @@ public class GUIManagerGeneral extends GUIManager
     Set<String> currentVoucherCodes = ConcurrentHashMap.newKeySet(existingVoucherCodes.size()+quantity);
     currentVoucherCodes.addAll(existingVoucherCodes);
     
-    ExecutorService es = Executors.newCachedThreadPool();
     int minPerThreadCount = 1000; 
     int threadCount = quantity > minPerThreadCount ? Math.min(quantity/minPerThreadCount, 5) : 1; // max 5 thread will work
-    
     Date startDate = SystemTime.getCurrentTime();
-    for(int i=0; i<threadCount; i++)
+    int threadCurrentTry = 0;
+    while (GENERATE_A_VOUCHER_CODE_THREAD_GROUP_RETRY_COUNT > threadCurrentTry && quantity > currentVoucherCodes.size())
       {
-        es.execute(new Runnable() {
-          @Override
-          public void run()
+        threadCurrentTry++;
+        ExecutorService es = Executors.newCachedThreadPool();
+        for(int i=0; i<threadCount; i++)
           {
-            while(quantity > (currentVoucherCodes.size() - existingVoucherCodes.size()))
+            es.execute(new Runnable() {
+              @Override
+              public void run()
               {
-                boolean newVoucherGenerated = false;
-                for (int i=1; i<=HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE; i++)
+                while(quantity > (currentVoucherCodes.size() - existingVoucherCodes.size()))
                   {
-                    String voucherCode = TokenUtils.generateFromRegex(pattern);
-                    if (currentVoucherCodes.add(voucherCode))
+                    boolean newVoucherGenerated = false;
+                    for (int i=1; i<=HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE; i++)
                       {
-                        newVoucherGenerated = true;
+                        String voucherCode = TokenUtils.generateFromRegex(pattern);
+                        if (currentVoucherCodes.add(voucherCode))
+                          {
+                            newVoucherGenerated = true;
+                            break;
+                          }
+                      }
+                    if (!newVoucherGenerated)
+                      {
+                        log.info("GUIManager.processGenerateVouchers- After " + HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE + " tries, unable to generate a new voucher code with pattern " + pattern);
                         break;
                       }
                   }
-                if (!newVoucherGenerated)
-                  {
-                    log.info("GUIManager.processGenerateVouchers- After " + HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE + " tries, unable to generate a new voucher code with pattern " + pattern);
-                    break;
-                  }
               }
+            });
           }
-        });
-      }
-    es.shutdownNow();
-    
-    // waiting to complete all threads
-    try
-      {
-        while(!es.awaitTermination(2, TimeUnit.SECONDS))
+        es.shutdownNow();
+        
+        //ensure threads are done
+        
+        try
           {
-            log.info("GUIManager.processGenerateVouchers- taking more time to generate vocuhers");  
+            while(!es.awaitTermination(2, TimeUnit.SECONDS))
+              {
+                log.info("GUIManager.processGenerateVouchers- taking more time to generate vocuhers");  
+              }
+          } 
+        catch (InterruptedException ex)
+          {
+            log.error("Issue when finishing ExecutorService threads for voucher generation : " + ex.getMessage());
           }
-      } 
-    catch (InterruptedException ex)
-      {
-        log.error("Issue when finishing ExecutorService threads for voucher generation : " + ex.getMessage());
+        if (GENERATE_A_VOUCHER_CODE_THREAD_GROUP_RETRY_COUNT > threadCurrentTry)
+          {
+            log.warn("thread group failed to create huge number of vouchers will try again - left {} vouchers to generate", quantity - currentVoucherCodes.size());
+          }
       }
+    
     
     // remove extra vouchers - in case
     currentVoucherCodes.removeAll(existingVoucherCodes);
