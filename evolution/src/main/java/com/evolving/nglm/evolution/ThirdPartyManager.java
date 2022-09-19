@@ -5246,7 +5246,7 @@ public class ThirdPartyManager
     // cancelledDeliveryRequest
     //
     
-    String cancelledDeliveryRequestID = deliveryRequestID.concat("_cancel_purchase");
+    String cancelledDeliveryRequestID = deliveryRequestID.concat(EvolutionEngine.CANCEL_PURCHASE_POSTFIX);
     boolean cancelledDeliveryRequest = subscriberProfile.getLimitedCancelPurchases().contains(deliveryRequestID);
     if (!cancelledDeliveryRequest)
       {
@@ -5301,22 +5301,6 @@ public class ThirdPartyManager
       {
         purchaseResponse = purchaseOffer(subscriberProfile, sync, subscriberID, purchaseFulfillmentRequest.getOfferID(), purchaseFulfillmentRequest.getSalesChannelID(), purchaseFulfillmentRequest.getQuantity(), moduleID, featureID, origin, purchaseFulfillmentRequest.getResellerID(), kafkaProducer, tenantID, cancelledDeliveryRequestID, true, purchaseFulfillmentRequest.getCreationDate());
         response.put("offer", purchaseResponse.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, tenantID));
-        if (purchaseResponse.getStatus() == PurchaseFulfillmentStatus.PURCHASED_AND_CANCELLED)
-          {
-
-            //
-            // SubscriberProfileForceUpdate
-            //
-            
-            SubscriberProfileForceUpdate subscriberProfileForceUpdate = new SubscriberProfileForceUpdate(subscriberID, new ParameterMap(), null);
-            subscriberProfileForceUpdate.getParameterMap().put("limitedCancelPurchase", deliveryRequestID);
-            
-            //
-            //  send
-            //
-            
-            kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(subscriberProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), subscriberProfileForceUpdate)));
-          }
       }
 
     return JSONUtilities.encodeObject(response);
