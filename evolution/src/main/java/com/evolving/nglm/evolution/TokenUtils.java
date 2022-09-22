@@ -410,15 +410,19 @@ public class TokenUtils
     String logFragment;
     boolean matrixAvailable = false;
     ScoringSegment selectedScoringSegment = getScoringSegment(scoringStrategy, subscriberProfile, subscriberGroupEpochReader, tenantID);
+    
     logFragment = "getOffers " + scoringStrategy.getScoringStrategyID() + " Selected ScoringSegment for " + msisdn + " " + selectedScoringSegment;
     returnedLog.append(logFragment+", ");
     if (log.isDebugEnabled())
     {
       log.debug(logFragment);
     }
+    log.info("[PRJT] logFragment: {}",logFragment);
 
     Set<Offer> offersForAlgo = getOffersToOptimize(processingDate, eventDate, selectedScoringSegment.getOfferObjectiveIDs(), subscriberProfile, offerService, supplierService, subscriberGroupEpochReader, supplier, productService, voucherService, tenantID);
-
+    
+    // TO DO -- for matrix and imported
+    
     OfferOptimizationAlgorithm algo = selectedScoringSegment.getOfferOptimizationAlgorithm();
     if (algo == null)
     {
@@ -762,10 +766,12 @@ public class TokenUtils
     Date now = SystemTime.getCurrentTime();
     SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, now, tenantID);
     ScoringSegment selectedScoringSegment = strategy.evaluateScoringSegments(evaluationRequest);
+    log.info("[PRJT] selectedScoringSegment: {}", selectedScoringSegment);
     if (log.isDebugEnabled())
       {
         log.debug("DNBOProxy.getScoringSegment Retrieved matching scoringSegment " + (selectedScoringSegment != null ? selectedScoringSegment : null));
       }
+    log.info("DNBOProxy.getScoringSegment Retrieved matching scoringSegment " + (selectedScoringSegment != null ? selectedScoringSegment : null));
 
     if (selectedScoringSegment == null)
       {
