@@ -402,11 +402,7 @@ public class TokenUtils
     OfferService offerService, SupplierService supplierService, DNBOMatrixService dnboMatrixService, StringBuffer returnedLog, String msisdn, Supplier supplier, int tenantID) throws GetOfferException
   {
     String logFragment;
-    boolean matrixAvailable = false;
     ScoringSegment selectedScoringSegment = getScoringSegment(scoringStrategy, subscriberProfile, subscriberGroupEpochReader, tenantID);
-    log.info("[PRJT] selectedScoringSegment ID: {}", selectedScoringSegment.getOfferOptimizationAlgorithm().getID());
-    log.info("[PRJT] selectedScoringSegment INFO: {}", selectedScoringSegment.getOfferOptimizationAlgorithm().getJSONRepresentation());
-    
     logFragment = "getOffers " + scoringStrategy.getScoringStrategyID() + " Selected ScoringSegment for " + msisdn + " " + selectedScoringSegment;
     returnedLog.append(logFragment+", ");
     if (log.isDebugEnabled())
@@ -415,18 +411,14 @@ public class TokenUtils
     }
     
     Set<Offer> offersForAlgo = new HashSet<>();
-    
-    // TO DO -- for matrix and imported
-    if (selectedScoringSegment.getOfferOptimizationAlgorithm().getID().equals("matrix-algorithm"))
+    if (selectedScoringSegment.getOfferOptimizationAlgorithm().getID().equals("matrix-algorithm")) // for matrix
       {
-        matrixAvailable = true;
         offersForAlgo = getOffersFromMatrix(subscriberGroupEpochReader, subscriberProfile, dnboMatrixService, scoringStrategy, offerService, salesChannelID, eventDate, tenantID);
       }
     else
       {
         offersForAlgo = getOffersToOptimize(processingDate, eventDate, selectedScoringSegment.getOfferObjectiveIDs(), subscriberProfile, offerService, supplierService, subscriberGroupEpochReader, supplier, productService, voucherService, tenantID);
       }
-    log.info("[PRJT] matrixAvailable: {}", matrixAvailable);
     
     OfferOptimizationAlgorithm algo = selectedScoringSegment.getOfferOptimizationAlgorithm();
     if (algo == null)
@@ -538,9 +530,7 @@ public class TokenUtils
         for (Object scoringSegment : scoringSegments)
           {
             JSONObject Segment = (JSONObject) scoringSegment;
-            log.info("[PRJT] SegmentJSON: {}", Segment.toJSONString());
             String offerOptimizationAlgorithmID = JSONUtilities.decodeString(Segment, "offerOptimizationAlgorithmID", false);
-            log.info("[PRJT] getOffersWithScoringStrategy.offerOptimizationAlgorithmID: [{}]", offerOptimizationAlgorithmID);
             if (offerOptimizationAlgorithmID != null && offerOptimizationAlgorithmID.startsWith("DNBO"))
               {
                 String matrixID = offerOptimizationAlgorithmID.substring(4);
@@ -566,11 +556,10 @@ public class TokenUtils
 
         log.info("[PRJT] getOffersFromMatrix.segmentOfferIDs: {}", segmentOfferIDs);
         log.info("[PRJT] getOffersFromMatrix.offersFromMatrix.size: {}", offersFromMatrix.size());
-        offersFromMatrix.stream().forEach(o -> log.info("[PRJT] from offersFromMatrix set : {}", o.getOfferID()));
       }
     catch (GetOfferException e)
       {
-        log.error("Exception in getOffersFromMatrix(): " + e.getLocalizedMessage());
+        log.error("Exception in generating Offers From Matrix: " + e.getLocalizedMessage());
       }
     return offersFromMatrix;
   }
