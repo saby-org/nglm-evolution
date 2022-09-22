@@ -348,7 +348,6 @@ public class DNBOMatrix extends GUIManagedObject
         }
       }
     }
-    log.info("[PRJT] DNBOMatrix.evaluateDNBOMatrixSegments.size: {}", result.size());
     return result;
   }
   

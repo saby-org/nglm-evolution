@@ -737,7 +737,6 @@ public class TokenUtils
     Date now = SystemTime.getCurrentTime();
     SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, now, tenantID);
     ScoringSegment selectedScoringSegment = strategy.evaluateScoringSegments(evaluationRequest);
-    log.info("[PRJT] selectedScoringSegment: {}", selectedScoringSegment);
     if (log.isDebugEnabled())
       {
         log.debug("DNBOProxy.getScoringSegment Retrieved matching scoringSegment " + (selectedScoringSegment != null ? selectedScoringSegment : null));
