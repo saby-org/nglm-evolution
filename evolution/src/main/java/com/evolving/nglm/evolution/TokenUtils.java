@@ -59,6 +59,12 @@ public class TokenUtils
     LEFT_BRACE,
     ERROR;
   }
+  
+  private enum ScoringMethods
+  {
+    SCORING_STRATEGY,
+    MATRIX;
+  }
 
   /*****************************************
    *
