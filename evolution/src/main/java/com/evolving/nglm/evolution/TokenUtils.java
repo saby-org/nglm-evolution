@@ -60,12 +60,6 @@ public class TokenUtils
     ERROR;
   }
   
-  private enum ScoringMethods
-  {
-    SCORING_STRATEGY,
-    MATRIX;
-  }
-
   /*****************************************
    *
    *  generateFromRegex
@@ -419,10 +413,20 @@ public class TokenUtils
     {
       log.debug(logFragment);
     }
-
-    Set<Offer> offersForAlgo = getOffersToOptimize(processingDate, eventDate, selectedScoringSegment.getOfferObjectiveIDs(), subscriberProfile, offerService, supplierService, subscriberGroupEpochReader, supplier, productService, voucherService, tenantID);
+    
+    Set<Offer> offersForAlgo = new HashSet<>();
     
     // TO DO -- for matrix and imported
+    if (selectedScoringSegment.getOfferOptimizationAlgorithm().getID().equals("matrix-algorithm"))
+      {
+        matrixAvailable = true;
+        offersForAlgo = getOffersFromMatrix(subscriberGroupEpochReader, subscriberProfile, dnboMatrixService, scoringStrategy, offerService, salesChannelID, eventDate, tenantID);
+      }
+    else
+      {
+        offersForAlgo = getOffersToOptimize(processingDate, eventDate, selectedScoringSegment.getOfferObjectiveIDs(), subscriberProfile, offerService, supplierService, subscriberGroupEpochReader, supplier, productService, voucherService, tenantID);
+      }
+    log.info("[PRJT] matrixAvailable: {}", matrixAvailable);
     
     OfferOptimizationAlgorithm algo = selectedScoringSegment.getOfferOptimizationAlgorithm();
     if (algo == null)
@@ -434,7 +438,6 @@ public class TokenUtils
     }
 
     OfferOptimizationAlgorithmParameter thresholdParameter = new OfferOptimizationAlgorithmParameter("thresholdValue");
-
     Map<OfferOptimizationAlgorithmParameter, String> algoParameters = selectedScoringSegment.getParameters(); 
 
     double threshold = 0;
@@ -450,85 +453,14 @@ public class TokenUtils
       log.debug(logFragment);
     }
     
+    Collection<ProposedOfferDetails> offerAvailabilityFromPropensityAlgo = new ArrayList<>();
     // This returns an ordered Collection (and sorted by offerScore)
-    Collection<ProposedOfferDetails> offerAvailabilityFromPropensityAlgo =
+    offerAvailabilityFromPropensityAlgo =
         OfferOptimizerAlgoManager.getInstance().applyScoreAndSort(
             algo, algoParameters, offersForAlgo, subscriberProfile, threshold, salesChannelID,
             productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService,
             subscriberGroupEpochReader,
             segmentationDimensionService, dnboMatrixAlgorithmParameters, returnedLog, tenantID);
-
-    Collection<ProposedOfferDetails> offerAvailabilityFromPropensityAlgoAfterMatrixFilter = new ArrayList();
-    
-    if (offerAvailabilityFromPropensityAlgo == null)
-      {
-        offerAvailabilityFromPropensityAlgo = new ArrayList<>();
-      }
-
-    List<String> offerIDsAvailable = new ArrayList<>();
-    for (ProposedOfferDetails offerAvailable : offerAvailabilityFromPropensityAlgo)
-      {
-        offerIDsAvailable.add(offerAvailable.getOfferId());
-      }
-
-    JSONArray scoringSegments = (JSONArray) scoringStrategy.getJSONRepresentation().get("scoringSegments");
-    Collection<ProposedOfferDetails> offerFromMatrix = new ArrayList<>();
-    List <String> segmentOfferIDs = new ArrayList<>();
-    for (Object scoringSegment : scoringSegments)
-      {
-        JSONObject Segment = (JSONObject) scoringSegment;
-        log.info("[PRJT] SegmentJSON: {}", Segment.toJSONString());
-        String offerOptimizationAlgorithmID = JSONUtilities.decodeString(Segment, "offerOptimizationAlgorithmID", false);
-        log.info("[PRJT] getOffersWithScoringStrategy.offerOptimizationAlgorithmID: [{}]", offerOptimizationAlgorithmID);
-        if (offerOptimizationAlgorithmID != null && offerOptimizationAlgorithmID.startsWith("DNBO"))
-          {
-            matrixAvailable = true;
-            String matrixID = offerOptimizationAlgorithmID.substring(4);
-            DNBOMatrix dnboMatrix = dnboMatrixService.getActiveDNBOMatrix(matrixID, eventDate);
-            if (dnboMatrix != null && dnboMatrix instanceof DNBOMatrix)
-              {
-                List<DNBOMatrixSegment> dnboSegments = getDNBOMatrixSegment(dnboMatrix, subscriberProfile,subscriberGroupEpochReader, tenantID);
-                for (DNBOMatrixSegment seg : dnboSegments)
-                  {
-                    for (DNBOMatrixOffer offer : seg.getOffers())
-                      {
-                        if (offerIDsAvailable.contains(offer.getOfferId()) && !(segmentOfferIDs.contains(offer.getOfferId())))
-                          {
-                            for (ProposedOfferDetails offerAvailable : offerAvailabilityFromPropensityAlgo)
-                              {
-                                if (offerAvailable.getOfferId().equals(offer.getOfferId()))
-                                  {
-                                    offerFromMatrix.add(offerAvailable);
-                                  }
-                              }
-                            segmentOfferIDs.add(offer.getOfferId());
-                          }
-                      }
-                  }
-              }
-          }
-      }
-  
-    log.info("[PRJT] getOffersWithScoringStrategy.offerFromMatrix: {}", offerFromMatrix);
-    log.info("[PRJT] getOffersWithScoringStrategy.segmentOfferIDs: {}", segmentOfferIDs);
-    
-    if (!matrixAvailable && (offerFromMatrix == null || offerFromMatrix.isEmpty()))
-      {
-        offerAvailabilityFromPropensityAlgoAfterMatrixFilter = offerAvailabilityFromPropensityAlgo;
-      }
-    
-    if (matrixAvailable && offerFromMatrix != null)
-      {
-        for (ProposedOfferDetails offerMatrix : offerFromMatrix)
-          {
-            if (offerIDsAvailable.contains(offerMatrix.getOfferId()))
-              {
-                log.info("[PRJT] offerMatrix: {}", offerMatrix.toString());
-                offerAvailabilityFromPropensityAlgoAfterMatrixFilter.add(offerMatrix);
-              }
-          }
-        log.info("[PRJT] getOffersWithScoringStrategy.offerAvailabilityFromPropensityAlgoAfterMatrixFilter.size: {}", offerAvailabilityFromPropensityAlgoAfterMatrixFilter.size());
-      }
     
     //
     // Now add some predefined offers based on alwaysAppendOfferObjectiveIDs of ScoringSplit
@@ -561,7 +493,7 @@ public class TokenUtils
                  {
                     String offerId = offer.getOfferID();
                     boolean offerIsAlreadyInList = false;
-                    for (ProposedOfferDetails offerAvail : offerAvailabilityFromPropensityAlgoAfterMatrixFilter)
+                    for (ProposedOfferDetails offerAvail : offerAvailabilityFromPropensityAlgo)
                       {
                         if (offerAvail.getOfferId().equals(offerId))
                           {
@@ -574,25 +506,73 @@ public class TokenUtils
                       {
                         if (log.isTraceEnabled()) log.trace("DNBOProxy.getOffers offer "+offerId+" added to the list because its objective is in alwaysAppendOfferObjectiveIDs of ScoringStrategy");
                         ProposedOfferDetails additionalDetails = new ProposedOfferDetails(offerId, salesChannelID, 0);
-                        offerAvailabilityFromPropensityAlgoAfterMatrixFilter.add(additionalDetails);
+                        offerAvailabilityFromPropensityAlgo.add(additionalDetails);
                       }
                   }
               }
           }
       }
 
-    if (offerAvailabilityFromPropensityAlgoAfterMatrixFilter.isEmpty())
+    if (offerAvailabilityFromPropensityAlgo.isEmpty())
       {
         log.warn("DNBOProxy.getOffers Return empty list of offers");
       }
     
     int index = 1;
-    for (ProposedOfferDetails current : offerAvailabilityFromPropensityAlgoAfterMatrixFilter)
+    for (ProposedOfferDetails current : offerAvailabilityFromPropensityAlgo)
     {
       current.setOfferRank(index);
       index++;
     }
-    return offerAvailabilityFromPropensityAlgoAfterMatrixFilter;
+    return offerAvailabilityFromPropensityAlgo;
+  }
+  
+  private static Set<Offer> getOffersFromMatrix(ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader, SubscriberProfile subscriberProfile, DNBOMatrixService dnboMatrixService, ScoringStrategy scoringStrategy, OfferService offerService, String salesChannelID, Date eventDate, int tenantID) 
+  {
+    Set<Offer> offersFromMatrix = new HashSet<>();
+    SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, eventDate, tenantID);
+    try
+      {
+        JSONArray scoringSegments = (JSONArray) scoringStrategy.getJSONRepresentation().get("scoringSegments");
+        List<String> segmentOfferIDs = new ArrayList<>();
+        for (Object scoringSegment : scoringSegments)
+          {
+            JSONObject Segment = (JSONObject) scoringSegment;
+            log.info("[PRJT] SegmentJSON: {}", Segment.toJSONString());
+            String offerOptimizationAlgorithmID = JSONUtilities.decodeString(Segment, "offerOptimizationAlgorithmID", false);
+            log.info("[PRJT] getOffersWithScoringStrategy.offerOptimizationAlgorithmID: [{}]", offerOptimizationAlgorithmID);
+            if (offerOptimizationAlgorithmID != null && offerOptimizationAlgorithmID.startsWith("DNBO"))
+              {
+                String matrixID = offerOptimizationAlgorithmID.substring(4);
+                DNBOMatrix dnboMatrix = dnboMatrixService.getActiveDNBOMatrix(matrixID, eventDate);
+                if (dnboMatrix != null && dnboMatrix instanceof DNBOMatrix)
+                  {
+                    List<DNBOMatrixSegment> dnboSegments = getDNBOMatrixSegment(dnboMatrix, subscriberProfile, subscriberGroupEpochReader, tenantID);
+                    for (DNBOMatrixSegment seg : dnboSegments)
+                      {
+                        for (DNBOMatrixOffer offer : seg.getOffers())
+                          {
+                            Offer o = offerService.getActiveOffer(offer.getOfferId(), eventDate);
+                            if (o.evaluateProfileCriteria(evaluationRequest) && !(segmentOfferIDs.contains(offer.getOfferId())))
+                              {
+                                offersFromMatrix.add(o);
+                              }
+                            segmentOfferIDs.add(offer.getOfferId());
+                          }
+                      }
+                  }
+              }
+          }
+
+        log.info("[PRJT] getOffersFromMatrix.segmentOfferIDs: {}", segmentOfferIDs);
+        log.info("[PRJT] getOffersFromMatrix.offersFromMatrix.size: {}", offersFromMatrix.size());
+        offersFromMatrix.stream().forEach(o -> log.info("[PRJT] from offersFromMatrix set : {}", o.getOfferID()));
+      }
+    catch (GetOfferException e)
+      {
+        log.error("Exception in getOffersFromMatrix(): " + e.getLocalizedMessage());
+      }
+    return offersFromMatrix;
   }
   
   private static Set<Offer> getOffersToOptimize(Date processingDate, Date eventDate, Set<String> catalogObjectiveIDs,
@@ -792,7 +772,6 @@ public class TokenUtils
       {
         log.debug("DNBOProxy.getScoringSegment Retrieved matching matrixSegment " + (selectedmatrixSegment != null ? selectedmatrixSegment : null));
       }
-    log.info("DNBOProxy.getScoringSegment Retrieved matching matrixSegment size " + (selectedmatrixSegment != null ? selectedmatrixSegment.size() : null));
 
     if (selectedmatrixSegment == null)
       {
