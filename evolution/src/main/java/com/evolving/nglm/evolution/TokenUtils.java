@@ -410,6 +410,8 @@ public class TokenUtils
     String logFragment;
     boolean matrixAvailable = false;
     ScoringSegment selectedScoringSegment = getScoringSegment(scoringStrategy, subscriberProfile, subscriberGroupEpochReader, tenantID);
+    log.info("[PRJT] selectedScoringSegment ID: {}", selectedScoringSegment.getOfferOptimizationAlgorithm().getID());
+    log.info("[PRJT] selectedScoringSegment INFO: {}", selectedScoringSegment.getOfferOptimizationAlgorithm().getJSONRepresentation());
     
     logFragment = "getOffers " + scoringStrategy.getScoringStrategyID() + " Selected ScoringSegment for " + msisdn + " " + selectedScoringSegment;
     returnedLog.append(logFragment+", ");
@@ -417,7 +419,6 @@ public class TokenUtils
     {
       log.debug(logFragment);
     }
-    log.info("[PRJT] logFragment: {}",logFragment);
 
     Set<Offer> offersForAlgo = getOffersToOptimize(processingDate, eventDate, selectedScoringSegment.getOfferObjectiveIDs(), subscriberProfile, offerService, supplierService, subscriberGroupEpochReader, supplier, productService, voucherService, tenantID);
     
@@ -476,6 +477,7 @@ public class TokenUtils
     for (Object scoringSegment : scoringSegments)
       {
         JSONObject Segment = (JSONObject) scoringSegment;
+        log.info("[PRJT] SegmentJSON: {}", Segment.toJSONString());
         String offerOptimizationAlgorithmID = JSONUtilities.decodeString(Segment, "offerOptimizationAlgorithmID", false);
         log.info("[PRJT] getOffersWithScoringStrategy.offerOptimizationAlgorithmID: [{}]", offerOptimizationAlgorithmID);
         if (offerOptimizationAlgorithmID != null && offerOptimizationAlgorithmID.startsWith("DNBO"))
@@ -771,7 +773,6 @@ public class TokenUtils
       {
         log.debug("DNBOProxy.getScoringSegment Retrieved matching scoringSegment " + (selectedScoringSegment != null ? selectedScoringSegment : null));
       }
-    log.info("DNBOProxy.getScoringSegment Retrieved matching scoringSegment " + (selectedScoringSegment != null ? selectedScoringSegment : null));
 
     if (selectedScoringSegment == null)
       {
