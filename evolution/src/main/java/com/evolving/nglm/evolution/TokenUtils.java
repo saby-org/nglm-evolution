@@ -505,12 +505,6 @@ public class TokenUtils
         offerAvailabilityFromPropensityAlgoAfterMatrixFilter = offerAvailabilityFromPropensityAlgo;
       }
     
-    /*if (matrixAvailable && offerFromMatrix != null)
-      {
-        offerAvailabilityFromPropensityAlgoAfterMatrixFilter = offerAvailabilityFromPropensityAlgo.stream().filter(po -> offerFromMatrix.contains(po.getOfferId())).collect(Collectors.toList());
-        log.info("[PRJT] getOffersWithScoringStrategy.offerAvailabilityFromPropensityAlgoAfterMatrixFilter.size: {}", offerAvailabilityFromPropensityAlgoAfterMatrixFilter.size());
-      }*/
-
     if (matrixAvailable && offerFromMatrix != null)
       {
         for (ProposedOfferDetails offerMatrix : offerFromMatrix)
