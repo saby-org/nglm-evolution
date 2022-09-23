@@ -48,7 +48,7 @@
     <gui-itm.version>2.1.2_4</gui-itm.version>
     <gui-jmr.version>2.1.2_4</gui-jmr.version>
     <gui-iar.version>2.1.2_5</gui-iar.version>
-    <gui-opc.version>2.1.2_4</gui-opc.version>
+    <gui-opc.version>2.1.2_4r</gui-opc.version>
     <gui-opr.version>2.1.2_4</gui-opr.version>
     <gui-sbm.version>2.1.2_4</gui-sbm.version>
     <gui-lpm.version>2.1.2_4</gui-lpm.version>
