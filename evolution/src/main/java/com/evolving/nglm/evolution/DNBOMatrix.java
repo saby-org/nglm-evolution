@@ -329,6 +329,30 @@ public class DNBOMatrix extends GUIManagedObject
 
   /*****************************************
   *
+  *  evaluateDNBOMatrixSegment
+  *
+  *****************************************/
+  
+  public List<DNBOMatrixSegment> evaluateDNBOMatrixSegments(SubscriberEvaluationRequest evaluationRequest)
+  {
+    List<DNBOMatrixSegment> result = new ArrayList<>();
+    SubscriberProfile sp = evaluationRequest.getSubscriberProfile();
+    Map<String, String> segments = sp.getSegmentsMap(evaluationRequest.getSubscriberGroupEpochReader());
+    String segment = segments.get(dimensionId);
+    for (DNBOMatrixRange range : ranges) {
+      List<DNBOMatrixSegment> matrixSegments = range.getSegments();
+      for (DNBOMatrixSegment matrixSegment : matrixSegments) {
+        if (matrixSegment.getSegmentId() != null && matrixSegment.getSegmentId().equals(segment)) {
+          result.add(matrixSegment);
+          break;
+        }
+      }
+    }
+    return result;
+  }
+  
+  /*****************************************
+  *
   *  validate
   *
   *****************************************/

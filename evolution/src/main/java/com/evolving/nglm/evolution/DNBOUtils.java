@@ -264,7 +264,7 @@ public class DNBOUtils
       Collection<ProposedOfferDetails> presentedOffers;
       try
         {
-          presentedOffers = TokenUtils.getOffers(processingDate, token, subscriberEvaluationRequest, subscriberProfile, strategy, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, scoringStrategyService, subscriberGroupEpochReader, segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, supplierService, returnedLog, subscriberID, supplier, subscriberEvaluationRequest.getTenantID());
+          presentedOffers = TokenUtils.getOffers(processingDate, token, subscriberEvaluationRequest, subscriberProfile, strategy, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, scoringStrategyService, subscriberGroupEpochReader, segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, supplierService, dnboMatrixService, returnedLog, subscriberID, supplier, subscriberEvaluationRequest.getTenantID());
         }
       catch (GetOfferException e)
         {

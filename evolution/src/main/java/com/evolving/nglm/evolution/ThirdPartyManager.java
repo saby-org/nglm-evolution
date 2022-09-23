@@ -4531,7 +4531,7 @@ public class ThirdPartyManager
         catalogCharacteristicService,
         scoringStrategyService,
         subscriberGroupEpochReader,
-        segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, supplierService, returnedLog, subscriberID, supplierFilter, tenantID
+        segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, supplierService, dnboMatrixService, returnedLog, subscriberID, supplierFilter, tenantID
         );
 
     if (presentedOffers.isEmpty())
