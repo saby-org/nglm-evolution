@@ -415,6 +415,13 @@ public class TokenUtils
       {
         offersForAlgo = getOffersFromMatrix(subscriberGroupEpochReader, subscriberProfile, dnboMatrixService, scoringStrategy, offerService, salesChannelID, eventDate, tenantID);
       }
+    else if (selectedScoringSegment.getOfferOptimizationAlgorithm().getID().equals("imported")) // for imported offers list
+      {
+        SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, eventDate, tenantID);
+        Collection<Offer> offers = offerService.getActiveOffers(eventDate, tenantID);
+        offersForAlgo = offers.stream().filter(offer -> offer.evaluateProfileCriteria(evaluationRequest)).collect(Collectors.toSet());
+        log.info("[PRJT] Imported offersList[{}]: {}", offersForAlgo.size(), offersForAlgo);
+      }
     else
       {
         offersForAlgo = getOffersToOptimize(processingDate, eventDate, selectedScoringSegment.getOfferObjectiveIDs(), subscriberProfile, offerService, supplierService, subscriberGroupEpochReader, supplier, productService, voucherService, tenantID);

@@ -1307,6 +1307,14 @@
 	    "description": "DNBO Scoring Engine",
 	    "active": true,
 	    "readOnly": true
+      },
+      {
+        "id": "2",
+	    "name": "Imported",
+	    "display": "Imported",
+	    "description": "Imported Scoring Engine",
+	    "active": true,
+	    "readOnly": true
       }
     ],
 
