@@ -51,7 +51,7 @@ public class Product extends GUIManagedObject implements StockableItem
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("product");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),4));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(), 5));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("supplierID", Schema.STRING_SCHEMA);
     schemaBuilder.field("deliverableID", Schema.STRING_SCHEMA);
@@ -61,6 +61,8 @@ public class Product extends GUIManagedObject implements StockableItem
     schemaBuilder.field("workflowID", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("deliverableQuantity", Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("deliverableValidity", ProductValidity.schema());
+    schemaBuilder.field("stockAlertThreshold", Schema.OPTIONAL_INT32_SCHEMA);
+    schemaBuilder.field("stockAlert", Schema.BOOLEAN_SCHEMA); 
     schema = schemaBuilder.build();
   };
 
@@ -91,6 +93,8 @@ public class Product extends GUIManagedObject implements StockableItem
   private String workflowID;
   private int deliverableQuantity;
   private ProductValidity deliverableValidity;
+  private int stockAlertThreshold;
+  private boolean stockAlert;
 
   //
   //  derived
@@ -114,7 +118,9 @@ public class Product extends GUIManagedObject implements StockableItem
   public boolean getSimpleOffer() { return simpleOffer; }
   public String getWorkflowID() { return workflowID; }
   public int getDeliverableQuantity() { return deliverableQuantity; }
+  public int getStockAlertThreshold() { return stockAlertThreshold; }
   public ProductValidity getDeliverableValidity(){ return deliverableValidity; }
+  public boolean getStockAlert() { return stockAlert; } 
 
   /*****************************************
   *
@@ -122,7 +128,7 @@ public class Product extends GUIManagedObject implements StockableItem
   *
   *****************************************/
 
-  public Product(SchemaAndValue schemaAndValue, String supplierID, String deliverableID, Integer stock, Set<ProductTypeInstance> productTypes, boolean simpleOffer, String workflowID, int deliverableQuantity, ProductValidity deliverableValidity)
+  public Product(SchemaAndValue schemaAndValue, String supplierID, String deliverableID, Integer stock, Set<ProductTypeInstance> productTypes, boolean simpleOffer, String workflowID, int deliverableQuantity, ProductValidity deliverableValidity, int stockAlertThreshold, boolean stockAlert)
   {
     super(schemaAndValue);
     this.supplierID = supplierID;
@@ -134,6 +140,8 @@ public class Product extends GUIManagedObject implements StockableItem
     this.workflowID = workflowID;
     this.deliverableQuantity = deliverableQuantity;
     this.deliverableValidity = deliverableValidity;
+    this.stockAlertThreshold = stockAlertThreshold;
+    this.stockAlert = stockAlert;
   }
 
   /*****************************************
@@ -155,6 +163,8 @@ public class Product extends GUIManagedObject implements StockableItem
     struct.put("workflowID", product.getWorkflowID());
     struct.put("deliverableQuantity", product.getDeliverableQuantity());
     struct.put("deliverableValidity", ProductValidity.pack(product.getDeliverableValidity()));
+    struct.put("stockAlertThreshold", product.getStockAlertThreshold());
+    struct.put("stockAlert", product.getStockAlert());
     return struct;
   }
   
@@ -203,12 +213,14 @@ public class Product extends GUIManagedObject implements StockableItem
     String workflowID = (schema.field("workflowID") != null) ? valueStruct.getString("workflowID") : null;
     int deliverableQuantity = (schema.field("deliverableQuantity")!= null) ? valueStruct.getInt32("deliverableQuantity") : 0;
     ProductValidity deliverableValidity = (schema.field("deliverableValidity")!= null) ? ProductValidity.unpack(new SchemaAndValue(schema.field("deliverableValidity").schema(), valueStruct.get("deliverableValidity"))) : null;
+    int stockAlertThreshold = (schema.field("stockAlertThreshold")!= null) ? valueStruct.getInt32("stockAlertThreshold") : 0;
+    boolean stockAlert = (schema.field("stockAlert")!= null) ? valueStruct.getBoolean("stockAlert") : false;
     
     //
     //  return
     //
 
-    return new Product(schemaAndValue, supplierID, deliverableID, stock, productTypes, simpleOffer, workflowID, deliverableQuantity, deliverableValidity);
+    return new Product(schemaAndValue, supplierID, deliverableID, stock, productTypes, simpleOffer, workflowID, deliverableQuantity, deliverableValidity, stockAlertThreshold, stockAlert);
   }
   
   /*****************************************
@@ -296,6 +308,8 @@ public class Product extends GUIManagedObject implements StockableItem
     this.deliverableQuantity = JSONUtilities.decodeInteger(jsonRoot, "deliverableQuantity", 1);
     JSONObject jsonValue = JSONUtilities.decodeJSONObject(jsonRoot, "deliverableValidity", false);
     this.deliverableValidity = (jsonValue != null) ? new ProductValidity(JSONUtilities.decodeJSONObject(jsonRoot, "deliverableValidity", false)) : null;
+    this.stockAlertThreshold = JSONUtilities.decodeInteger(jsonRoot, "stockAlertThreshold", 0);
+    this.stockAlert = JSONUtilities.decodeBoolean(jsonRoot, "stockAlert", Boolean.FALSE);
 
     /*****************************************
     *
@@ -329,6 +343,8 @@ public class Product extends GUIManagedObject implements StockableItem
         epochChanged = epochChanged || ! Objects.equals(workflowID, existingProduct.getWorkflowID());
         epochChanged = epochChanged || ! Objects.equals(deliverableQuantity, existingProduct.getDeliverableQuantity());
         epochChanged = epochChanged || ! Objects.equals(deliverableValidity, existingProduct.getDeliverableValidity());
+        epochChanged = epochChanged || ! Objects.equals(stockAlertThreshold, existingProduct.getStockAlertThreshold());
+        epochChanged = epochChanged || ! Objects.equals(stockAlert, existingProduct.getStockAlert());
         return epochChanged;
       }
     else

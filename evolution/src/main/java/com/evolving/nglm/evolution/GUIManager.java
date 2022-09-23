@@ -9403,6 +9403,7 @@ public class GUIManager
 
   private JSONObject processPutOffer(String userID, JSONObject jsonRoot, int tenantID)
   {
+    log.info("RAJ K processPutOffer jsonRoot {}", jsonRoot);
     /****************************************
     *
     *  response
@@ -13432,6 +13433,7 @@ public class GUIManager
 
   private JSONObject processPutProduct(String userID, JSONObject jsonRoot, int tenantID)
   {
+    log.info("RAJ K processPutProduct jsonRoot {}", jsonRoot);
     /****************************************
     *
     *  response
@@ -31577,6 +31579,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
               
               if (offer.getStockAlert())
                 {
+                  log.info("RAJ K ready to send alert notification for offer {}", offer.getGUIManagedObjectDisplay());
                   // send stock notification RAJ K (EVPRO-1601)
                 }
               
@@ -31601,6 +31604,24 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
               else
                 {
                   log.debug("stock recurrence scheduling not required for offer[{}]-- remaingin stock[{}], thresold limit[{}]", offer.getOfferID(), offer.getApproximateRemainingStock(), offer.getStockAlertThreshold());
+                }
+            }
+        }
+      
+      Collection<Product> activeProducts = productService.getActiveProducts(now, 0);
+      for (Product product : activeProducts)
+        {
+          boolean stockThersoldBreached = product.getApproximateRemainingStock() != null && (product.getApproximateRemainingStock() <= product.getStockAlertThreshold());
+          if (stockThersoldBreached)
+            {
+              //
+              //  send notification
+              //
+              
+              if (product.getStockAlert())
+                {
+                  log.info("RAJ K ready to send alert notification for product {}", product.getGUIManagedObjectDisplay());
+                  // send stock notification RAJ K (EVPRO-1601)
                 }
             }
         }
