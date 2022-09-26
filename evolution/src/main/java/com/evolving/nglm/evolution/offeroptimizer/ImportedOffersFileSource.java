@@ -3,24 +3,18 @@ package com.evolving.nglm.evolution.offeroptimizer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.kafka.connect.connector.Task;
+import org.apache.kafka.connect.data.Schema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.FileSourceConnector;
 import com.evolving.nglm.core.FileSourceTask;
-import com.evolving.nglm.evolution.SubscriberProfile;
-import com.evolving.nglm.evolution.SubscriberProfileService;
-import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
-import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
 
 public class ImportedOffersFileSource extends FileSourceConnector 
 {
   private static final Logger log = LoggerFactory.getLogger(ImportedOffersFileSource.class);
-  
-  private static SubscriberProfileService subscriberProfileService;
   
   @Override
   public Class<? extends Task> taskClass()
@@ -30,18 +24,6 @@ public class ImportedOffersFileSource extends FileSourceConnector
   
   public static class ImportedOffersFileSourceTask extends FileSourceTask 
   {
-    @Override
-    public void start(Map<String, String> taskConfig)
-    {
-      super.start(taskConfig);
-     
-      //
-      // subscriberProfileService
-      //
-      
-      subscriberProfileService = new EngineSubscriberProfileService(com.evolving.nglm.core.Deployment.getSubscriberProfileEndpoints(), 1);
-    }
-
     @Override
     protected List<KeyValue> processRecord(String record) throws FileSourceTaskException, InterruptedException
     {
@@ -70,7 +52,6 @@ public class ImportedOffersFileSource extends FileSourceConnector
             throw new FileSourceTaskException("empty externalSubsID");
           }
         String subscriberID = resolveSubscriberID("msisdn", msisdn);
-        SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID);
         
         //
         // imported offers list
@@ -82,14 +63,13 @@ public class ImportedOffersFileSource extends FileSourceConnector
             offerIDs.add(tokens[i]);
           }
         
-        //
-        // update profile directly
-        //
-        subscriberProfile.setImportedOffersDNBO("imported-1", offerIDs); // static imported id
-        subscriberProfile.getImportedOffersDNBO().entrySet().forEach(entry -> { log.info("[PRJT] "+ entry.getKey() + " " + entry.getValue()); });
-        
+        ImportedOffersScoring imported = new ImportedOffersScoring("imported-1", subscriberID, offerIDs);
+        if (!getStopRequested())
+          {
+            return Collections.<KeyValue>singletonList(new KeyValue("importedoffersdnbo", Schema.STRING_SCHEMA, subscriberID, ImportedOffersScoring.schema(), ImportedOffersScoring.pack(imported)));
+          }  
       }
-      catch (FileSourceTaskException | RuntimeException | SubscriberProfileServiceException e)
+      catch (FileSourceTaskException | RuntimeException e)
       {
         log.error("Exception: {}", e.getMessage());
         return Collections.<KeyValue>emptyList();
