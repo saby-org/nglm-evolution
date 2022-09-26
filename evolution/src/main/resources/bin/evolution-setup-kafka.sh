@@ -105,6 +105,9 @@ echo create_topic ${topic.productexternalevent.response}                        
 echo create_topic ${topic.loopback}                                                 $KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
 echo create_topic ${topic.evolution.job}                                            $KAFKA_REPLICATION_FACTOR               1                                       "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
 
+echo create_topic importedoffersdnbo                                              	$KAFKA_REPLICATION_FACTOR               $SUBSCRIBER_PARTITIONS                  "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
+echo create_topic importedoffersdnbo_fileconnector                            		$KAFKA_REPLICATION_FACTOR               $FILECONNECTOR_PARTITIONS_SMALL         "$TOPIC_DATA_TWO_DAYS"   >> /app/setup/topics-evolution
+
 #
 #  regression topics  
 #
