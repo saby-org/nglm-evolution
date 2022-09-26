@@ -10,10 +10,11 @@ import org.apache.kafka.connect.data.Struct;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.SchemaUtilities;
+import com.evolving.nglm.core.SubscriberStreamEvent;
 import com.evolving.nglm.evolution.DeliveryRequest.DeliveryPriority;
 import com.evolving.nglm.evolution.EvolutionEngineEvent;
 
-public class ImportedOffersScoring implements EvolutionEngineEvent
+public class ImportedOffersScoring implements EvolutionEngineEvent, SubscriberStreamEvent
 {
   //
   // schema
