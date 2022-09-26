@@ -1,10 +1,6 @@
 package com.evolving.nglm.evolution;
 
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 import org.apache.kafka.connect.data.Field;
@@ -16,30 +12,31 @@ import org.json.simple.JSONObject;
 
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
-import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
-public abstract class Voucher extends GUIManagedObject {
+public abstract class Voucher extends GUIManagedObject 
+{
 
   private static Schema commonSchema = null;
-  static {
-    SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-    schemaBuilder.name("voucher");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(GUIManagedObject.commonSchema().version(),3));
-    for (Field field : GUIManagedObject.commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
-    schemaBuilder.field("supplierID", Schema.STRING_SCHEMA);
-    schemaBuilder.field("voucherTypeId", Schema.STRING_SCHEMA);
-    schemaBuilder.field("unitaryCost", Schema.OPTIONAL_INT32_SCHEMA);
-    schemaBuilder.field("recommendedPrice", Schema.OPTIONAL_INT32_SCHEMA);
-    schemaBuilder.field("simpleOffer", Schema.OPTIONAL_BOOLEAN_SCHEMA);
-    schemaBuilder.field("workflowID", Schema.OPTIONAL_STRING_SCHEMA);
-    schemaBuilder.field("stockAlertThreshold", Schema.OPTIONAL_INT32_SCHEMA);
-    schemaBuilder.field("stockAlert", Schema.BOOLEAN_SCHEMA); 
-    commonSchema = schemaBuilder.build();
-  }
+  static
+    {
+      SchemaBuilder schemaBuilder = SchemaBuilder.struct();
+      schemaBuilder.name("voucher");
+      schemaBuilder.version(SchemaUtilities.packSchemaVersion(GUIManagedObject.commonSchema().version(), 3));
+      for (Field field : GUIManagedObject.commonSchema().fields())
+        schemaBuilder.field(field.name(), field.schema());
+      schemaBuilder.field("supplierID", Schema.STRING_SCHEMA);
+      schemaBuilder.field("voucherTypeId", Schema.STRING_SCHEMA);
+      schemaBuilder.field("unitaryCost", Schema.OPTIONAL_INT32_SCHEMA);
+      schemaBuilder.field("recommendedPrice", Schema.OPTIONAL_INT32_SCHEMA);
+      schemaBuilder.field("simpleOffer", Schema.OPTIONAL_BOOLEAN_SCHEMA);
+      schemaBuilder.field("workflowID", Schema.OPTIONAL_STRING_SCHEMA);
+      schemaBuilder.field("stockAlertThreshold", Schema.OPTIONAL_INT32_SCHEMA);
+      schemaBuilder.field("stockAlert", Schema.BOOLEAN_SCHEMA);
+      commonSchema = schemaBuilder.build();
+    }
 
   public static Schema commonSchema() { return commonSchema; }
-
 
   private String supplierID;
   private String voucherTypeId;
@@ -98,9 +95,7 @@ public abstract class Voucher extends GUIManagedObject {
   {
 
     super(jsonRoot, objectType, (existingVoucherUnchecked != null) ? existingVoucherUnchecked.getEpoch() : epoch, tenantID);
-
     Voucher existingVoucher = (existingVoucherUnchecked != null && existingVoucherUnchecked instanceof Voucher) ? (Voucher) existingVoucherUnchecked : null;
-
     this.supplierID = JSONUtilities.decodeString(jsonRoot, "supplierID", true);
     this.voucherTypeId = JSONUtilities.decodeString(jsonRoot, "voucherTypeId", true);
     this.unitaryCost = JSONUtilities.decodeInteger(jsonRoot, "unitaryCost", false);
@@ -116,35 +111,42 @@ public abstract class Voucher extends GUIManagedObject {
       }
   }
 
-  private boolean epochChanged(Voucher existingVoucher) {
-    if (existingVoucher != null && existingVoucher.getAccepted()) {
-      boolean epochChanged = false;
-      epochChanged = epochChanged || ! Objects.equals(getGUIManagedObjectID(), existingVoucher.getGUIManagedObjectID());
-      epochChanged = epochChanged || ! Objects.equals(supplierID, existingVoucher.getSupplierID());
-      epochChanged = epochChanged || ! Objects.equals(voucherTypeId, existingVoucher.getVoucherTypeId());
-      epochChanged = epochChanged || ! Objects.equals(unitaryCost, existingVoucher.getUnitaryCost());
-      epochChanged = epochChanged || ! Objects.equals(recommendedPrice, existingVoucher.getRecommendedPrice());
-      epochChanged = epochChanged || ! Objects.equals(simpleOffer, existingVoucher.getSimpleOffer());
-      epochChanged = epochChanged || ! Objects.equals(workflowID, existingVoucher.getWorkflowID());
-      epochChanged = epochChanged || !Objects.equals(stockAlertThreshold, existingVoucher.getStockAlertThreshold());
-      epochChanged = epochChanged || !Objects.equals(stockAlert, existingVoucher.getStockAlert());
-      return epochChanged;
-    }else{
-      return true;
-    }
+  private boolean epochChanged(Voucher existingVoucher)
+  {
+    if (existingVoucher != null && existingVoucher.getAccepted())
+      {
+        boolean epochChanged = false;
+        epochChanged = epochChanged || !Objects.equals(getGUIManagedObjectID(), existingVoucher.getGUIManagedObjectID());
+        epochChanged = epochChanged || !Objects.equals(supplierID, existingVoucher.getSupplierID());
+        epochChanged = epochChanged || !Objects.equals(voucherTypeId, existingVoucher.getVoucherTypeId());
+        epochChanged = epochChanged || !Objects.equals(unitaryCost, existingVoucher.getUnitaryCost());
+        epochChanged = epochChanged || !Objects.equals(recommendedPrice, existingVoucher.getRecommendedPrice());
+        epochChanged = epochChanged || !Objects.equals(simpleOffer, existingVoucher.getSimpleOffer());
+        epochChanged = epochChanged || !Objects.equals(workflowID, existingVoucher.getWorkflowID());
+        epochChanged = epochChanged || !Objects.equals(stockAlertThreshold, existingVoucher.getStockAlertThreshold());
+        epochChanged = epochChanged || !Objects.equals(stockAlert, existingVoucher.getStockAlert());
+        return epochChanged;
+      } 
+    else
+      {
+        return true;
+      }
   }
 
-  // trying to enforce commonValidate usage in subclasses, no perfect way Im aware of...
+  // trying to enforce commonValidate usage in subclasses, no perfect way Im aware
+  // of...
   abstract void validate(VoucherTypeService voucherService, UploadedFileService uploadedFileService, Date now) throws GUIManagerException;
-  public void commonValidate(VoucherTypeService voucherTypeService, Date date) throws GUIManagerException {
+  public void commonValidate(VoucherTypeService voucherTypeService, Date date) throws GUIManagerException
+  {
     VoucherType voucherType = voucherTypeService.getActiveVoucherType(getVoucherTypeId(), date);
-    if(voucherType==null || voucherType.getCodeType().equals(VoucherType.CodeType.Unknown)) throw new GUIManagerException("unknown voucherType", getVoucherTypeId());
+    if (voucherType == null || voucherType.getCodeType().equals(VoucherType.CodeType.Unknown)) throw new GUIManagerException("unknown voucherType", getVoucherTypeId());
   }
   
   
   @Override
-  public String toString() {
-    return "supplierID:"+getSupplierID()+", voucherTypeId:"+getVoucherTypeId()+", unitaryCost:"+getUnitaryCost()+", recommendedPrice:"+getRecommendedPrice();
+  public String toString()
+  {
+    return "supplierID:" + getSupplierID() + ", voucherTypeId:" + getVoucherTypeId() + ", unitaryCost:" + getUnitaryCost() + ", recommendedPrice:" + getRecommendedPrice();
   }
 
 }

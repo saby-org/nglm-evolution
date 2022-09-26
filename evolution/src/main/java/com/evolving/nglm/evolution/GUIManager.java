@@ -775,6 +775,12 @@ public class GUIManager
   private GUIManagerGeneral guiManagerGeneral;
   
   //
+  //  fwkServer
+  //
+  
+  private String fwkServer = null;
+  
+  //
   //  properties
   //
   
@@ -816,6 +822,7 @@ public class GUIManager
     *****************************************/
 
     int apiRestPort = Integer.parseInt(args[0]);
+    String fwkServer = args[1];
     
     String nodeID = System.getProperty("nglm.license.nodeid");
 
@@ -870,12 +877,13 @@ public class GUIManager
     String customCriteriaTopic = Deployment.getCustomCriteriaTopic();
     
     this.getCustomerAlternateID = Deployment.getGetCustomerAlternateID();
+    this.fwkServer = fwkServer;
 
     //
     //  log
     //
 
-    log.info("main START: on port {}", apiRestPort);
+    log.info("main START: on port {}, fwkServer {}", apiRestPort, fwkServer);
 
     //
     //  license
@@ -2584,7 +2592,7 @@ public class GUIManager
     String qaCronEntry = "4,9,14,19,24,29,34,39,44,49,54,59 * * * *";
     ScheduledJob recurrnetCampaignCreationJob = new RecurrentCampaignCreationJob("Recurrent Campaign(create)", periodicGenerationCronEntry, Deployment.getDefault().getTimeZone(), false); // TODO EVPRO-99 i used systemTimeZone instead of BaseTimeZone pet tenant, check if correct
     ScheduledJob challengesOccurrenceJob = new ChallengesOccurrenceJob("Challenges Occurrence", periodicGenerationCronEntry, Deployment.getDefault().getTimeZone(), false);
-    StockRecurrenceAndNotificationJob stockRecurrenceJobAndNotificationJob = new StockRecurrenceAndNotificationJob("Stock Recurrence Notification", qaCronEntry, Deployment.getDefault().getTimeZone(), false, offerService, productService, voucherService, callingChannelService, catalogCharacteristicService, salesChannelService);
+    StockRecurrenceAndNotificationJob stockRecurrenceJobAndNotificationJob = new StockRecurrenceAndNotificationJob("Stock Recurrence And Notification", qaCronEntry, Deployment.getDefault().getTimeZone(), false, offerService, productService, voucherService, callingChannelService, catalogCharacteristicService, salesChannelService, supplierService, fwkServer);
     //ScheduledJob stockRecurrenceJob = new StockRecurrenceJob("Stocks Recurrence", qaCronEntry, Deployment.getDefault().getTimeZone(), false);
     if(recurrnetCampaignCreationJob.isProperlyConfigured() && challengesOccurrenceJob.isProperlyConfigured() && stockRecurrenceJobAndNotificationJob.isProperlyConfigured())
       {
@@ -2595,7 +2603,7 @@ public class GUIManager
       }
     else
       {
-        if (log.isErrorEnabled()) log.error("invalid recurrnetCampaignCreationJob or ChallengesOccurrenceJob or StockRecurrenceJob cron");
+        if (log.isErrorEnabled()) log.error("invalid recurrnetCampaignCreationJob or ChallengesOccurrenceJob or StockRecurrenceAndNotificationJob cron");
       }
     
     /*****************************************
@@ -16612,6 +16620,7 @@ public class GUIManager
 
   private JSONObject processPutVoucher(String userID, JSONObject jsonRoot, int tenantID)
   {
+    log.info("RAJ K processPutVoucher jsonRoot {}", jsonRoot);
     /****************************************
     *
     *  response
@@ -31544,105 +31553,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     }
     
   }
-  
-  //
-  // StockRecurrenceJob
-  //
-  /*
-  public class StockRecurrenceJob extends ScheduledJob 
-  {
-    public StockRecurrenceJob(String jobName, String periodicGenerationCronEntry, String baseTimeZone, boolean scheduleAtStart)
-    {
-      super(jobName, periodicGenerationCronEntry, baseTimeZone, scheduleAtStart); 
-    }
-
-    @Override
-    protected void run()
-    {
-      Date now = SystemTime.getCurrentTime();
-      Collection<Offer> activeOffers = offerService.getActiveOffers(now, 0);
-      for (Offer offer : activeOffers)
-        {
-          boolean stockThersoldBreached = offer.getApproximateRemainingStock() != null && (offer.getApproximateRemainingStock() <= offer.getStockAlertThreshold());
-          if (stockThersoldBreached)
-            {
-              //
-              //  send notification
-              //
-              
-              if (offer.getStockAlert())
-                {
-                  log.info("RAJ K ready to send alert notification for offer {}", offer.getGUIManagedObjectDisplay());
-                  // send stock notification RAJ K (EVPRO-1601)
-                }
-              
-              //
-              // auto increment stock (EVPRO-1600)
-              //
-              
-              if (offer.getStockRecurrence())
-                {
-                  JSONObject offerJson = offer.getJSONRepresentation();
-                  offerJson.replace("presentationStock", offer.getStock() + offer.getStockRecurrenceBatch());
-                  try
-                    {
-                      Offer newOffer = new Offer(offerJson, epochServer.getKey(), offer, catalogCharacteristicService, offer.getTenantID());
-                      offerService.putOffer(newOffer, callingChannelService, salesChannelService, productService, voucherService, (offer == null), "StockRecurrenceJob");
-                    } 
-                  catch (GUIManagerException e)
-                    {
-                      e.printStackTrace();
-                    }
-                } 
-              else
-                {
-                  log.debug("stock recurrence scheduling not required for offer[{}]-- remaingin stock[{}], thresold limit[{}]", offer.getOfferID(), offer.getApproximateRemainingStock(), offer.getStockAlertThreshold());
-                }
-            }
-        }
-      
-      Collection<Product> activeProducts = productService.getActiveProducts(now, 0);
-      for (Product product : activeProducts)
-        {
-          boolean stockThersoldBreached = product.getApproximateRemainingStock() != null && (product.getApproximateRemainingStock() <= product.getStockAlertThreshold());
-          if (stockThersoldBreached)
-            {
-              //
-              //  send notification
-              //
-              
-              if (product.getStockAlert())
-                {
-                  log.info("RAJ K ready to send alert notification for product {}", product.getGUIManagedObjectDisplay());
-                  // send stock notification RAJ K (EVPRO-1601)
-                }
-            }
-        }
-      
-      Collection<Voucher> activeVouchers = voucherService.getActiveVouchers(now, 0);
-      for (Voucher voucher : activeVouchers)
-        {
-          if (voucher instanceof VoucherShared)
-            {
-              VoucherShared voucherShared = (VoucherShared) voucher;
-              boolean stockThersoldBreached = voucherShared.getApproximateRemainingStock() != null && (voucherShared.getApproximateRemainingStock() <= voucherShared.getStockAlertThreshold());
-              if (stockThersoldBreached)
-                {
-                  //
-                  //  send notification
-                  //
-                  
-                  if (voucherShared.getStockAlert())
-                    {
-                      log.info("RAJ K ready to send alert notification for voucherShared {}", voucherShared.getGUIManagedObjectDisplay());
-                      // send stock notification RAJ K (EVPRO-1601)
-                    }
-                }
-            }
-          
-        }
-    }
-  }*/
   
   /*****************************************
   *

@@ -124,7 +124,6 @@ public class VoucherService extends GUIService {
   //this call trigger stock count, this for stock information for GUI, so DO NOT USE it for traffic calls
   public GUIManagedObject getStoredVoucherWithCurrentStocks(String voucherID, boolean includeArchived)
   {
-    log.info("RAJ K getStoredVoucherWithCurrentStocks voucherID {}", voucherID);
     GUIManagedObject uncheckedVoucher = getStoredVoucher(voucherID, includeArchived);
     if (!(uncheckedVoucher instanceof VoucherPersonal) && !(uncheckedVoucher instanceof VoucherShared))
       return uncheckedVoucher;// cant do more than normal one
@@ -156,7 +155,6 @@ public class VoucherService extends GUIService {
       {
         uncheckedVoucher.getJSONRepresentation().put("remainingStock", ((VoucherShared) uncheckedVoucher).getApproximateRemainingStock());
       }
-    log.info("RAJ K getStoredVoucherWithCurrentStocks returns uncheckedVoucher {}", uncheckedVoucher);
     return uncheckedVoucher;
   }
   //this call trigger stock count, this for stock information for GUI, so DO NOT USE it for traffic calls
