@@ -12,6 +12,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -411,7 +412,7 @@ public class TokenUtils
     }
     
     boolean isSorted = false;
-    Set<Offer> offersForAlgo = new HashSet<>();
+    LinkedHashSet<Offer> offersForAlgo = new LinkedHashSet<Offer>();
     String scoringAlgorithmId = selectedScoringSegment.getOfferOptimizationAlgorithm().getID();
     if (scoringAlgorithmId.startsWith("matrix")) // for matrix
       {
@@ -540,9 +541,9 @@ public class TokenUtils
     return offerAvailabilityFromPropensityAlgo;
   }
   
-  private static Set<Offer> getOffersFromMatrix(ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader, SubscriberProfile subscriberProfile, DNBOMatrixService dnboMatrixService, ScoringStrategy scoringStrategy, OfferService offerService, String salesChannelID, Date eventDate, int tenantID) 
+  private static LinkedHashSet<Offer> getOffersFromMatrix(ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader, SubscriberProfile subscriberProfile, DNBOMatrixService dnboMatrixService, ScoringStrategy scoringStrategy, OfferService offerService, String salesChannelID, Date eventDate, int tenantID) 
   {
-    Set<Offer> offersFromMatrix = new HashSet<>();
+    LinkedHashSet<Offer> offersFromMatrix = new LinkedHashSet<>();
     SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, eventDate, tenantID);
     try
       {
@@ -585,7 +586,7 @@ public class TokenUtils
     return offersFromMatrix;
   }
   
-  private static Set<Offer> getOffersToOptimize(Date processingDate, Date eventDate, Set<String> catalogObjectiveIDs,
+  private static LinkedHashSet<Offer> getOffersToOptimize(Date processingDate, Date eventDate, Set<String> catalogObjectiveIDs,
       SubscriberProfile subscriberProfile, OfferService offerService, SupplierService supplierService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader, Supplier supplier, ProductService productService, VoucherService voucherService, int tenantID)
   {
     // Browse all offers:
@@ -593,7 +594,7 @@ public class TokenUtils
     // - filter by profile of subscriber
     // Return a set of offers that can be optimised
     Collection<Offer> offers = offerService.getActiveOffers(SystemTime.getCurrentTime(), tenantID);
-    Set<Offer> result = new HashSet<>();
+    LinkedHashSet<Offer> result = new LinkedHashSet<>();
     List<Token> tokens = subscriberProfile.getTokens();
     Collection<Offer>filteredOffers = new ArrayList<>(); 
     /**
