@@ -410,6 +410,7 @@ public class TokenUtils
       log.debug(logFragment);
     }
     
+    boolean isSorted = false;
     Set<Offer> offersForAlgo = new HashSet<>();
     String scoringAlgorithmId = selectedScoringSegment.getOfferOptimizationAlgorithm().getID();
     if (scoringAlgorithmId.startsWith("matrix")) // for matrix
@@ -433,6 +434,7 @@ public class TokenUtils
              }
           }
         log.info("[PRJT] Imported offersList[{}]: {}", offersForAlgo.size(), offersForAlgo);
+        isSorted = true;
       }
     else
       {
@@ -467,7 +469,7 @@ public class TokenUtils
     Collection<ProposedOfferDetails> offerAvailabilityFromPropensityAlgo = new ArrayList<>();
     // This returns an ordered Collection (and sorted by offerScore)
     offerAvailabilityFromPropensityAlgo =
-        OfferOptimizerAlgoManager.getInstance().applyScoreAndSort(
+        OfferOptimizerAlgoManager.getInstance().applyScoreAndSort(isSorted, 
             algo, algoParameters, offersForAlgo, subscriberProfile, threshold, salesChannelID,
             productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService,
             subscriberGroupEpochReader,

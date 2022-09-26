@@ -50,7 +50,7 @@ public class OfferOptimizerAlgoManager {
     return instance;
   }
 
-  public Collection<ProposedOfferDetails> applyScoreAndSort(OfferOptimizationAlgorithm algoDefinitions,
+  public Collection<ProposedOfferDetails> applyScoreAndSort(boolean isSorted, OfferOptimizationAlgorithm algoDefinitions,
       Map<OfferOptimizationAlgorithmParameter, String> algoParameters, Set<Offer> offers, SubscriberProfile subscriberProfile, double minScoreThreshold,
       String requestedSalesChannelId, ProductService productService, ProductTypeService productTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService,
       CatalogCharacteristicService catalogCharacteristicService,
@@ -207,7 +207,7 @@ public class OfferOptimizerAlgoManager {
           }
       }
     // now sort it...
-    if(result.size() > 0)
+    if(!isSorted && result.size() > 0)
       {
         Collections.sort(result);
         OfferOptimizationAlgorithmParameter reversedParameter = new OfferOptimizationAlgorithmParameter("reversed");
