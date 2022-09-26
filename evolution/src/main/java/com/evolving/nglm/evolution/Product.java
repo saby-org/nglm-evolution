@@ -118,8 +118,8 @@ public class Product extends GUIManagedObject implements StockableItem
   public boolean getSimpleOffer() { return simpleOffer; }
   public String getWorkflowID() { return workflowID; }
   public int getDeliverableQuantity() { return deliverableQuantity; }
-  public int getStockAlertThreshold() { return stockAlertThreshold; }
   public ProductValidity getDeliverableValidity(){ return deliverableValidity; }
+  public int getStockAlertThreshold() { return stockAlertThreshold; }
   public boolean getStockAlert() { return stockAlert; } 
 
   /*****************************************

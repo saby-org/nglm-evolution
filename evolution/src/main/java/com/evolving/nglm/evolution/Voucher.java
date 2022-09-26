@@ -33,6 +33,8 @@ public abstract class Voucher extends GUIManagedObject {
     schemaBuilder.field("recommendedPrice", Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("simpleOffer", Schema.OPTIONAL_BOOLEAN_SCHEMA);
     schemaBuilder.field("workflowID", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("stockAlertThreshold", Schema.OPTIONAL_INT32_SCHEMA);
+    schemaBuilder.field("stockAlert", Schema.BOOLEAN_SCHEMA); 
     commonSchema = schemaBuilder.build();
   }
 
@@ -45,6 +47,8 @@ public abstract class Voucher extends GUIManagedObject {
   private Integer recommendedPrice;
   private boolean simpleOffer;
   private String workflowID;
+  private int stockAlertThreshold;
+  private boolean stockAlert;
 
   public String getVoucherID() { return getGUIManagedObjectID(); }
   public String getVoucherName() { return getGUIManagedObjectName(); }
@@ -55,9 +59,12 @@ public abstract class Voucher extends GUIManagedObject {
   public Integer getRecommendedPrice() { return recommendedPrice; }
   public boolean getSimpleOffer() { return simpleOffer; }
   public String getWorkflowID() { return workflowID; }
+  public int getStockAlertThreshold() { return stockAlertThreshold; }
+  public boolean getStockAlert() { return stockAlert; } 
 
 
-  public static Object packCommon(Struct struct, Voucher voucher) {
+  public static Object packCommon(Struct struct, Voucher voucher)
+  {
     GUIManagedObject.packCommon(struct, voucher);
     struct.put("supplierID", voucher.getSupplierID());
     struct.put("voucherTypeId", voucher.getVoucherTypeId());
@@ -65,10 +72,13 @@ public abstract class Voucher extends GUIManagedObject {
     struct.put("recommendedPrice", voucher.getRecommendedPrice());
     struct.put("simpleOffer", voucher.getSimpleOffer());
     struct.put("workflowID", voucher.getWorkflowID());
+    struct.put("stockAlertThreshold", voucher.getStockAlertThreshold());
+    struct.put("stockAlert", voucher.getStockAlert());
     return struct;
   }
 
-  public Voucher(SchemaAndValue schemaAndValue) {
+  public Voucher(SchemaAndValue schemaAndValue)
+  {
     super(schemaAndValue);
     Object value = schemaAndValue.value();
     Schema schema = schemaAndValue.schema();
@@ -80,9 +90,12 @@ public abstract class Voucher extends GUIManagedObject {
     this.recommendedPrice = valueStruct.getInt32("recommendedPrice");
     this.simpleOffer = (schemaVersion >= 2) ? valueStruct.getBoolean("simpleOffer") : false;
     this.workflowID = (schema.field("workflowID") != null) ? valueStruct.getString("workflowID") : null;
+    this.stockAlertThreshold = (schema.field("stockAlertThreshold") != null) ? valueStruct.getInt32("stockAlertThreshold") : 0;
+    this.stockAlert = (schema.field("stockAlert") != null) ? valueStruct.getBoolean("stockAlert") : false;
   }
 
-  public Voucher(JSONObject jsonRoot, GUIManagedObjectType objectType, long epoch, GUIManagedObject existingVoucherUnchecked, int tenantID) throws GUIManagerException {
+  public Voucher(JSONObject jsonRoot, GUIManagedObjectType objectType, long epoch, GUIManagedObject existingVoucherUnchecked, int tenantID) throws GUIManagerException
+  {
 
     super(jsonRoot, objectType, (existingVoucherUnchecked != null) ? existingVoucherUnchecked.getEpoch() : epoch, tenantID);
 
@@ -94,10 +107,13 @@ public abstract class Voucher extends GUIManagedObject {
     this.recommendedPrice = JSONUtilities.decodeInteger(jsonRoot, "recommendedPrice", false);
     this.simpleOffer = JSONUtilities.decodeBoolean(jsonRoot, "simpleOffer", Boolean.FALSE);
     this.workflowID = JSONUtilities.decodeString(jsonRoot, "workflowId", false);
+    this.stockAlertThreshold = JSONUtilities.decodeInteger(jsonRoot, "stockAlertThreshold", 0);
+    this.stockAlert = JSONUtilities.decodeBoolean(jsonRoot, "stockAlert", Boolean.FALSE);
 
-    if (epochChanged(existingVoucher)) {
-      this.setEpoch(epoch);
-    }
+    if (epochChanged(existingVoucher))
+      {
+        this.setEpoch(epoch);
+      }
   }
 
   private boolean epochChanged(Voucher existingVoucher) {
@@ -110,6 +126,8 @@ public abstract class Voucher extends GUIManagedObject {
       epochChanged = epochChanged || ! Objects.equals(recommendedPrice, existingVoucher.getRecommendedPrice());
       epochChanged = epochChanged || ! Objects.equals(simpleOffer, existingVoucher.getSimpleOffer());
       epochChanged = epochChanged || ! Objects.equals(workflowID, existingVoucher.getWorkflowID());
+      epochChanged = epochChanged || !Objects.equals(stockAlertThreshold, existingVoucher.getStockAlertThreshold());
+      epochChanged = epochChanged || !Objects.equals(stockAlert, existingVoucher.getStockAlert());
       return epochChanged;
     }else{
       return true;

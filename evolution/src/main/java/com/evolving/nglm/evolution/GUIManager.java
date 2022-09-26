@@ -2584,12 +2584,13 @@ public class GUIManager
     String qaCronEntry = "4,9,14,19,24,29,34,39,44,49,54,59 * * * *";
     ScheduledJob recurrnetCampaignCreationJob = new RecurrentCampaignCreationJob("Recurrent Campaign(create)", periodicGenerationCronEntry, Deployment.getDefault().getTimeZone(), false); // TODO EVPRO-99 i used systemTimeZone instead of BaseTimeZone pet tenant, check if correct
     ScheduledJob challengesOccurrenceJob = new ChallengesOccurrenceJob("Challenges Occurrence", periodicGenerationCronEntry, Deployment.getDefault().getTimeZone(), false);
-    ScheduledJob stockRecurrenceJob = new StockRecurrenceJob("Stocks Recurrence", qaCronEntry, Deployment.getDefault().getTimeZone(), false);
-    if(recurrnetCampaignCreationJob.isProperlyConfigured() && challengesOccurrenceJob.isProperlyConfigured() && stockRecurrenceJob.isProperlyConfigured())
+    StockRecurrenceAndNotificationJob stockRecurrenceJobAndNotificationJob = new StockRecurrenceAndNotificationJob("Stock Recurrence Notification", qaCronEntry, Deployment.getDefault().getTimeZone(), false, offerService, productService, voucherService, callingChannelService, catalogCharacteristicService, salesChannelService);
+    //ScheduledJob stockRecurrenceJob = new StockRecurrenceJob("Stocks Recurrence", qaCronEntry, Deployment.getDefault().getTimeZone(), false);
+    if(recurrnetCampaignCreationJob.isProperlyConfigured() && challengesOccurrenceJob.isProperlyConfigured() && stockRecurrenceJobAndNotificationJob.isProperlyConfigured())
       {
         guiManagerJobScheduler.schedule(recurrnetCampaignCreationJob);
         guiManagerJobScheduler.schedule(challengesOccurrenceJob);
-        guiManagerJobScheduler.schedule(stockRecurrenceJob);
+        guiManagerJobScheduler.schedule(stockRecurrenceJobAndNotificationJob);
         new Thread(guiManagerJobScheduler::runScheduler, "guiManagerJobScheduler").start();
       }
     else
@@ -9413,14 +9414,6 @@ public class GUIManager
     Date now = SystemTime.getCurrentTime();
     HashMap<String,Object> response = new HashMap<String,Object>();
     Boolean dryRun = false;
-    
-    //
-    // TEST - 1600 -- TO BE REMOVED
-    //
-    
-    jsonRoot.put("stockRecurrence", Boolean.TRUE);
-    jsonRoot.put("stockRecurrenceBatch", 2);
-    
     
     /*****************************************
     *
@@ -31555,7 +31548,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
   //
   // StockRecurrenceJob
   //
-  
+  /*
   public class StockRecurrenceJob extends ScheduledJob 
   {
     public StockRecurrenceJob(String jobName, String periodicGenerationCronEntry, String baseTimeZone, boolean scheduleAtStart)
@@ -31625,8 +31618,31 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                 }
             }
         }
+      
+      Collection<Voucher> activeVouchers = voucherService.getActiveVouchers(now, 0);
+      for (Voucher voucher : activeVouchers)
+        {
+          if (voucher instanceof VoucherShared)
+            {
+              VoucherShared voucherShared = (VoucherShared) voucher;
+              boolean stockThersoldBreached = voucherShared.getApproximateRemainingStock() != null && (voucherShared.getApproximateRemainingStock() <= voucherShared.getStockAlertThreshold());
+              if (stockThersoldBreached)
+                {
+                  //
+                  //  send notification
+                  //
+                  
+                  if (voucherShared.getStockAlert())
+                    {
+                      log.info("RAJ K ready to send alert notification for voucherShared {}", voucherShared.getGUIManagedObjectDisplay());
+                      // send stock notification RAJ K (EVPRO-1601)
+                    }
+                }
+            }
+          
+        }
     }
-  }
+  }*/
   
   /*****************************************
   *
