@@ -152,7 +152,7 @@ public abstract class SubscriberProfile
     //
 
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(15));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(16));
     schemaBuilder.field("subscriberID", Schema.STRING_SCHEMA);
     schemaBuilder.field("subscriberTraceEnabled", Schema.BOOLEAN_SCHEMA);
     schemaBuilder.field("evolutionSubscriberStatus", Schema.OPTIONAL_STRING_SCHEMA);
@@ -184,6 +184,7 @@ public abstract class SubscriberProfile
     schemaBuilder.field("badges", SchemaBuilder.array(BadgeState.schema()).name("subscriber_profile_badges").optional().schema());
     schemaBuilder.field("universalControlGroupHistoryAuditInfo",SchemaBuilder.array(Schema.STRING_SCHEMA).defaultValue(new ArrayList<String>()).schema());
     schemaBuilder.field("limitedCancelPurchases",SchemaBuilder.array(Schema.STRING_SCHEMA).defaultValue(new ArrayList<String>()).schema());
+    schemaBuilder.field("importedOffersDNBO",SchemaBuilder.map(Schema.STRING_SCHEMA, SchemaBuilder.array(Schema.STRING_SCHEMA)).name("subscriber_imported_offers_dnbo").schema()); // v16
 
     commonSchema = schemaBuilder.build();
   };
@@ -277,7 +278,7 @@ public abstract class SubscriberProfile
   private List<BadgeState> badges;
   private List<String> universalControlGroupHistoryAuditInfo;
   private List<String> limitedCancelPurchases;
-  
+  private Map<String, List<String>> importedOffersDNBO;
  
 
   /****************************************
@@ -345,6 +346,7 @@ public abstract class SubscriberProfile
       }
     getLimitedCancelPurchases().add(deliveryRequestedID);
   }
+  public Map<String, List<String>> getImportedOffersDNBO() { return importedOffersDNBO; }
   
   //
   //  temporary (until we can update nglm-kazakhstan)
@@ -1853,6 +1855,15 @@ public abstract class SubscriberProfile
     universalControlGroupHistoryAuditInfo.add(ucgAuditInfo);
   }
 
+  //
+  //  importedOffersDNBO
+  //
+  
+  public void setImportedOffersDNBO(String importedTypeID, List<String> importedOffersList) 
+  { 
+    this.importedOffersDNBO.put(importedTypeID, importedOffersList); 
+  }
+  
   /*****************************************
   *
   *  constructor (simple)
@@ -1891,6 +1902,7 @@ public abstract class SubscriberProfile
     this.badges = new LinkedList<BadgeState>();
     this.universalControlGroupHistoryAuditInfo = new ArrayList<>();
     this.limitedCancelPurchases = new ArrayList<>();
+    this.importedOffersDNBO = new HashMap<>();
   }
 
   /*****************************************
@@ -1946,6 +1958,7 @@ public abstract class SubscriberProfile
     List<BadgeState> badges = schema.field("badges") != null ? unpackBadges(schema.field("badges").schema(), valueStruct.get("badges")) : new LinkedList<BadgeState>();
     List<String> universalControlGroupHistoryAuditInfo = schema.field("universalControlGroupHistoryAuditInfo") != null ? valueStruct.getArray("universalControlGroupHistoryAuditInfo") : null;
     List<String> limitedCancelPurchases = schema.field("limitedCancelPurchases") != null ? valueStruct.getArray("limitedCancelPurchases") : new ArrayList<String>();
+    Map<String, List<String>> importedOffersDNBO = (schemaVersion >= 16) ? (Map<String, List<String>>) valueStruct.get("importedOffersDNBO") : new HashMap<>();
 
     //
     //  return
@@ -1982,6 +1995,7 @@ public abstract class SubscriberProfile
     this.badges = badges;
     this.universalControlGroupHistoryAuditInfo = universalControlGroupHistoryAuditInfo;
     this.limitedCancelPurchases = limitedCancelPurchases;
+    this.importedOffersDNBO = importedOffersDNBO;
   }
 
   /*****************************************
@@ -2463,6 +2477,7 @@ public abstract class SubscriberProfile
     this.badges = new LinkedList<BadgeState>(subscriberProfile.getBadges());
     this.universalControlGroupHistoryAuditInfo = subscriberProfile.getUniversalControlGroupHistoryAuditInfo();
     this.limitedCancelPurchases = subscriberProfile.getLimitedCancelPurchases();
+    this.importedOffersDNBO = subscriberProfile.getImportedOffersDNBO();
   }
 
   /*****************************************
@@ -2504,6 +2519,7 @@ public abstract class SubscriberProfile
     struct.put("badges", packBadges(subscriberProfile.getBadges()));
     struct.put("universalControlGroupHistoryAuditInfo",subscriberProfile.getUniversalControlGroupHistoryAuditInfo());
     struct.put("limitedCancelPurchases",subscriberProfile.getLimitedCancelPurchases());
+    struct.put("importedOffersDNBO",subscriberProfile.getImportedOffersDNBO());
   }
 
   /*****************************************

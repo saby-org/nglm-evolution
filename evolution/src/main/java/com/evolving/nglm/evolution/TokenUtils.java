@@ -411,15 +411,27 @@ public class TokenUtils
     }
     
     Set<Offer> offersForAlgo = new HashSet<>();
-    if (selectedScoringSegment.getOfferOptimizationAlgorithm().getID().equals("matrix-algorithm")) // for matrix
+    String scoringAlgorithmId = selectedScoringSegment.getOfferOptimizationAlgorithm().getID();
+    if (scoringAlgorithmId.startsWith("matrix")) // for matrix
       {
         offersForAlgo = getOffersFromMatrix(subscriberGroupEpochReader, subscriberProfile, dnboMatrixService, scoringStrategy, offerService, salesChannelID, eventDate, tenantID);
       }
-    else if (selectedScoringSegment.getOfferOptimizationAlgorithm().getID().equals("imported")) // for imported offers list
+    else if (scoringAlgorithmId.startsWith("imported")) // for imported offers list
       {
+        subscriberProfile.getImportedOffersDNBO().entrySet().forEach(entry -> {
+          log.info("[PRJT] "+ entry.getKey() + " " + entry.getValue());
+        });
+        
         SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, eventDate, tenantID);
-        Collection<Offer> offers = offerService.getActiveOffers(eventDate, tenantID);
-        offersForAlgo = offers.stream().filter(offer -> offer.evaluateProfileCriteria(evaluationRequest)).collect(Collectors.toSet());
+        List<String> importedOffers = subscriberProfile.getImportedOffersDNBO().get(scoringAlgorithmId);
+        for (String offerID : importedOffers)
+          {
+           Offer offer = offerService.getActiveOffer(offerID, eventDate);
+           if (offer.evaluateProfileCriteria(evaluationRequest))
+             {
+               offersForAlgo.add(offer);
+             }
+          }
         log.info("[PRJT] Imported offersList[{}]: {}", offersForAlgo.size(), offersForAlgo);
       }
     else

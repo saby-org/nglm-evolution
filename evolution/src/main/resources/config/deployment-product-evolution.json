@@ -622,7 +622,8 @@
                 ]
             }
           ],
-        "javaClass": "com.evolving.nglm.evolution.offeroptimizer.RandomAlgo"
+        "javaClass": "com.evolving.nglm.evolution.offeroptimizer.RandomAlgo",
+        "scoringEngineID": 1
       },
       {
         "id": "M-Price",
@@ -648,7 +649,16 @@
                "name":"thresholdValue"
             }
           ],
-        "javaClass": "com.evolving.nglm.evolution.offeroptimizer.PriceAlgo"
+        "javaClass": "com.evolving.nglm.evolution.offeroptimizer.PriceAlgo",
+        "scoringEngineID": 1
+      },
+      {
+        "id": "imported-1",
+        "name": "imported-1",
+        "display": "Imported DNBO Offers",
+        "parameters": [],
+        "javaClass": "com.evolving.nglm.evolution.offeroptimizer.DNBOMatrixOfferOptimizerAlgo",
+        "scoringEngineID": 2
       }
     ],
 
