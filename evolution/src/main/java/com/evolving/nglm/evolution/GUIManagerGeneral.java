@@ -4671,10 +4671,10 @@ public class GUIManagerGeneral extends GUIManager
     //  unsaved voucher files
     //
     
+    log.info("processGenerateVouchers processing unsaved files");
     for (GUIManagedObject uploaded : uploadedFileObjects)
       {
         String fileApplicationID = JSONUtilities.decodeString(uploaded.getJSONRepresentation(), "applicationID", false);
-        log.info("processGenerateVouchers processing unsaved files");
         if (Objects.equals(applicationID, fileApplicationID))
           {
             if (uploaded instanceof UploadedFile)
@@ -4716,13 +4716,15 @@ public class GUIManagerGeneral extends GUIManager
     //  saved voucher files
     //
     
-    if (voucherID != null)
+    log.info("processGenerateVouchers processing saved files");
+    Collection<GUIManagedObject> vouchers = voucherService.getStoredVouchers(tenantID);
+    for (GUIManagedObject uncheckedVoucher : vouchers)
       {
-        GUIManagedObject voucher = voucherService.getStoredVoucher(voucherID);
-        log.info("processGenerateVouchers processing saved files");
-        if (voucher instanceof VoucherPersonal)
+        if (uncheckedVoucher instanceof VoucherPersonal && ((VoucherPersonal) uncheckedVoucher).getSupplierID().equals(supplierID))
           {
-            for (VoucherFile file : ((VoucherPersonal) voucher).getVoucherFiles())
+            VoucherPersonal voucher = (VoucherPersonal) uncheckedVoucher;
+            log.info("already found a saved voucher for supplierID {} - voucher is {} - will consider all the files for this voucher as well", supplierID, voucher.getGUIManagedObjectDisplay());
+            for (VoucherFile file : voucher.getVoucherFiles())
               {
                 GUIManagedObject uploadedFile = uploadedFileService.getStoredUploadedFile(file.getFileId());
                 if (uploadedFile instanceof UploadedFile)
