@@ -662,10 +662,10 @@
         "scoringEngineID": 1
       },
       {
-        "id": "imported-<_IMPORTED_TEMPLATE_01_>",
-        "name": "imported-<_IMPORTED_TEMPLATE_01_>",
-        "display": "Imported <_IMPORTED_TEMPLATE_01_>",
-        "fileTemplate":"<_IMPORTED_TEMPLATE_01_>",
+        "id": "imported-template-01",
+        "name": "imported-template-01",
+        "display": "Imported Template-01",
+        "fileTemplate":"imported-template-01",
         "parameters": [],
         "javaClass": "com.evolving.nglm.evolution.offeroptimizer.DNBOMatrixOfferOptimizerAlgo",
         "scoringEngineID": 2
