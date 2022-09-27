@@ -662,15 +662,16 @@
         "scoringEngineID": 1
       },
       {
-        "id": "imported-1",
-        "name": "imported-1",
-        "display": "Imported DNBO Offers",
+        "id": "imported-<_IMPORTED_TEMPLATE_01_>",
+        "name": "imported-<_IMPORTED_TEMPLATE_01_>",
+        "display": "Imported <_IMPORTED_TEMPLATE_01_>",
+        "fileTemplate":"<_IMPORTED_TEMPLATE_01_>",
         "parameters": [],
         "javaClass": "com.evolving.nglm.evolution.offeroptimizer.DNBOMatrixOfferOptimizerAlgo",
         "scoringEngineID": 2
       }
     ],
-
+  
   "propensityRule"                                       :
   {
     "selectedDimensions": [],
