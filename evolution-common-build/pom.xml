@@ -171,7 +171,7 @@
     <topic.productexternalevent.response>productexternalevent-response</topic.productexternalevent.response>
     <topic.loopback>loopback-event</topic.loopback>
     <topic.evolution.job>evolution-job</topic.evolution.job>
-    
+	
     <topic.tenant>tenant</topic.tenant>
     <topic.edrdetails>edrdetails</topic.edrdetails>
     <topic.workflowEvent>workflowEvent</topic.workflowEvent>
@@ -179,6 +179,10 @@
     <topic.notificationEvent>notificationEvent</topic.notificationEvent>
     <topic.customcriteria>customcriteria</topic.customcriteria>
 
+	<!-- imported dnbo -->
+	<topic.importedoffers.dnbo>importedoffersdnbo</topic.importedoffers.dnbo>
+	<topic.importedoffers.dnbo_fileconnector>importedoffersdnbo_fileconnector</topic.importedoffers.dnbo_fileconnector>
+    
     <!-- evolutionengine -->
     <changelog.evolutionengine.subscriberstate>subscriberstate</changelog.evolutionengine.subscriberstate>
     <changelog.evolutionengine.subscriberstate.topic>streams-evolutionengine-${changelog.evolutionengine.subscriberstate}-changelog</changelog.evolutionengine.subscriberstate.topic>

@@ -9,6 +9,7 @@ import org.apache.kafka.connect.data.Schema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.FileSourceConnector;
 import com.evolving.nglm.core.FileSourceTask;
 
@@ -66,7 +67,7 @@ public class ImportedOffersFileSource extends FileSourceConnector
         ImportedOffersScoring imported = new ImportedOffersScoring("imported-1", subscriberID, offerIDs);
         if (!getStopRequested())
           {
-            return Collections.<KeyValue>singletonList(new KeyValue("importedoffersdnbo", Schema.STRING_SCHEMA, subscriberID, ImportedOffersScoring.schema(), ImportedOffersScoring.pack(imported)));
+            return Collections.<KeyValue>singletonList(new KeyValue(Deployment.getImportedOffersDNBOTopic(), Schema.STRING_SCHEMA, subscriberID, ImportedOffersScoring.schema(), ImportedOffersScoring.pack(imported)));
           }  
       }
       catch (FileSourceTaskException | RuntimeException e)

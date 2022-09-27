@@ -229,7 +229,7 @@
   "cleanupSubscriberTopic"                               : "${topic.cleanupsubscriber}",
   "subscriberProfileForceUpdateTopic"                    : "${topic.subscriberprofileforceupdate}",
   "executeActionOtherSubscriberTopic"                    : "${topic.executeactionothersubscriber}",
-  "voucherActionTopic"                               	   : "${topic.voucheraction}",
+  "voucherActionTopic"                               	 : "${topic.voucheraction}",
   "tokenRedeemedTopic"                                   : "${topic.tokenredeemed}",
   "subscriberStateChangeLog"                             : "${changelog.evolutionengine.subscriberstate}",
   "subscriberStateChangeLogTopic"                        : "${changelog.evolutionengine.subscriberstate.topic}",
@@ -269,7 +269,7 @@
   "sourceAddressTopic"                                   : "${topic.sourceaddress}",
   "voucherChangeRequestTopic"                            : "${topic.voucherchange.request}",
   "voucherChangeResponseTopic"                           : "${topic.voucherchange.response}",
-  "edrDetailsTopic"                           			     : "${topic.edrdetails}",
+  "edrDetailsTopic"                           			 : "${topic.edrdetails}",
   "fileWithVariableEventTopic"                           : "${topic.filewithvariableevent}",
   "workflowEventTopic"                                   : "${topic.workflowEvent}",
   "subscriberProfileForceUpdateResponseTopic"            : "${topic.subscriberProfileForceUpdateResponse}",
@@ -281,6 +281,8 @@
   "productExternalEventResponseTopic"                    : "${topic.productexternalevent.response}",
   "loopbackTopic"                                        : "${topic.loopback}",
   "evolutionJobTopic"                                    : "${topic.evolution.job}",
+  "importedOffersDNBOTopic"						 		 : "${topic.importedoffers.dnbo}",
+
 
   "supportedDataTypes" :
     [
@@ -565,7 +567,7 @@
         { 
           "name" : "importedScoring",
           "eventClass" : "com.evolving.nglm.evolution.offeroptimizer.ImportedOffersScoring",
-          "eventTopic" : "importedoffersdnbo",
+          "eventTopic" : "${topic.importedoffers.dnbo}",
           "eventRule"  : "standard",
           "eventCriterionFields" : []
         }

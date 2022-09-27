@@ -449,9 +449,9 @@ prepare-curl -XPOST $CONNECT_URL_PRESENTATIONLOG/connectors -H "Content-Type: ap
       "pollMaxRecords" : 5,
       "pollingInterval" : 2,
       "verifySizeInterval" : 0,
-      "topic" : "importedoffersdnbo:importedoffersdnbo",
+      "topic" : "importedoffersdnbo:${topic.importedoffers.dnbo}",
       "bootstrapServers" : "'$BROKER_SERVERS'",
-      "internalTopic" : "importedoffersdnbo_fileconnector",
+      "internalTopic" : "${topic.importedoffers.dnbo_fileconnector}",
       "archiveDirectory" : "/app/data/importedoffersdnboarchive"
       }
   }' 
