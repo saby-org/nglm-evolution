@@ -48,6 +48,7 @@ public class ImportedOffersFileSource extends FileSourceConnector
           {
             if(offerOptimizationAlgorithm.getID().startsWith("imported"))
             {
+              log.info("[PRJT] JSON: {}",offerOptimizationAlgorithm.getJSONRepresentation());
               JSONObject offerOptimizationAlgorithmJSON = offerOptimizationAlgorithm.getJSONRepresentation();
               fileTemplate = JSONUtilities.decodeString(offerOptimizationAlgorithmJSON, "fileTemplate");
               if (currentFileName.startsWith(fileTemplate))
