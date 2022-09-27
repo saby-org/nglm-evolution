@@ -1,6 +1,8 @@
 package com.evolving.nglm.evolution;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Objects;
 
 import org.apache.kafka.connect.data.Field;
@@ -8,6 +10,7 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import com.evolving.nglm.core.JSONUtilities;
@@ -33,6 +36,7 @@ public abstract class Voucher extends GUIManagedObject
       schemaBuilder.field("workflowID", Schema.OPTIONAL_STRING_SCHEMA);
       schemaBuilder.field("stockAlertThreshold", Schema.OPTIONAL_INT32_SCHEMA);
       schemaBuilder.field("stockAlert", Schema.BOOLEAN_SCHEMA);
+      schemaBuilder.field("notificationEmails", SchemaBuilder.array(Schema.STRING_SCHEMA).defaultValue(new ArrayList<String>()).schema());
       commonSchema = schemaBuilder.build();
     }
 
@@ -46,6 +50,7 @@ public abstract class Voucher extends GUIManagedObject
   private String workflowID;
   private int stockAlertThreshold;
   private boolean stockAlert;
+  private List<String> notificationEmails;
 
   public String getVoucherID() { return getGUIManagedObjectID(); }
   public String getVoucherName() { return getGUIManagedObjectName(); }
@@ -58,6 +63,7 @@ public abstract class Voucher extends GUIManagedObject
   public String getWorkflowID() { return workflowID; }
   public int getStockAlertThreshold() { return stockAlertThreshold; }
   public boolean getStockAlert() { return stockAlert; } 
+  public List<String> getNotificationEmails() { return notificationEmails; }
 
 
   public static Object packCommon(Struct struct, Voucher voucher)
@@ -71,6 +77,7 @@ public abstract class Voucher extends GUIManagedObject
     struct.put("workflowID", voucher.getWorkflowID());
     struct.put("stockAlertThreshold", voucher.getStockAlertThreshold());
     struct.put("stockAlert", voucher.getStockAlert());
+    struct.put("notificationEmails", voucher.getNotificationEmails());
     return struct;
   }
 
@@ -89,6 +96,7 @@ public abstract class Voucher extends GUIManagedObject
     this.workflowID = (schema.field("workflowID") != null) ? valueStruct.getString("workflowID") : null;
     this.stockAlertThreshold = (schema.field("stockAlertThreshold") != null) ? valueStruct.getInt32("stockAlertThreshold") : 0;
     this.stockAlert = (schema.field("stockAlert") != null) ? valueStruct.getBoolean("stockAlert") : false;
+    this.notificationEmails = schema.field("notificationEmails") != null ? valueStruct.getArray("notificationEmails") : new ArrayList<String>();
   }
 
   public Voucher(JSONObject jsonRoot, GUIManagedObjectType objectType, long epoch, GUIManagedObject existingVoucherUnchecked, int tenantID) throws GUIManagerException
@@ -104,6 +112,12 @@ public abstract class Voucher extends GUIManagedObject
     this.workflowID = JSONUtilities.decodeString(jsonRoot, "workflowId", false);
     this.stockAlertThreshold = JSONUtilities.decodeInteger(jsonRoot, "stockAlertThreshold", 0);
     this.stockAlert = JSONUtilities.decodeBoolean(jsonRoot, "stockAlert", Boolean.FALSE);
+    this.notificationEmails = new ArrayList<String>();
+    JSONArray notificationArray = JSONUtilities.decodeJSONArray(jsonRoot, "notificationEmails", new JSONArray());
+    for (int i=0; i<notificationArray.size(); i++)
+      {
+        this.notificationEmails.add((String) notificationArray.get(i));
+      }
 
     if (epochChanged(existingVoucher))
       {
@@ -125,6 +139,7 @@ public abstract class Voucher extends GUIManagedObject
         epochChanged = epochChanged || !Objects.equals(workflowID, existingVoucher.getWorkflowID());
         epochChanged = epochChanged || !Objects.equals(stockAlertThreshold, existingVoucher.getStockAlertThreshold());
         epochChanged = epochChanged || !Objects.equals(stockAlert, existingVoucher.getStockAlert());
+        epochChanged = epochChanged || !Objects.equals(notificationEmails, existingVoucher.getNotificationEmails());
         return epochChanged;
       } 
     else

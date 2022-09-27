@@ -62,7 +62,8 @@ public class Product extends GUIManagedObject implements StockableItem
     schemaBuilder.field("deliverableQuantity", Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("deliverableValidity", ProductValidity.schema());
     schemaBuilder.field("stockAlertThreshold", Schema.OPTIONAL_INT32_SCHEMA);
-    schemaBuilder.field("stockAlert", Schema.BOOLEAN_SCHEMA); 
+    schemaBuilder.field("stockAlert", Schema.BOOLEAN_SCHEMA);
+    schemaBuilder.field("notificationEmails", SchemaBuilder.array(Schema.STRING_SCHEMA).defaultValue(new ArrayList<String>()).schema());
     schema = schemaBuilder.build();
   };
 
@@ -95,6 +96,7 @@ public class Product extends GUIManagedObject implements StockableItem
   private ProductValidity deliverableValidity;
   private int stockAlertThreshold;
   private boolean stockAlert;
+  private List<String> notificationEmails;
 
   //
   //  derived
@@ -121,6 +123,7 @@ public class Product extends GUIManagedObject implements StockableItem
   public ProductValidity getDeliverableValidity(){ return deliverableValidity; }
   public int getStockAlertThreshold() { return stockAlertThreshold; }
   public boolean getStockAlert() { return stockAlert; } 
+  public List<String> getNotificationEmails() { return notificationEmails; }
 
   /*****************************************
   *
@@ -128,7 +131,7 @@ public class Product extends GUIManagedObject implements StockableItem
   *
   *****************************************/
 
-  public Product(SchemaAndValue schemaAndValue, String supplierID, String deliverableID, Integer stock, Set<ProductTypeInstance> productTypes, boolean simpleOffer, String workflowID, int deliverableQuantity, ProductValidity deliverableValidity, int stockAlertThreshold, boolean stockAlert)
+  public Product(SchemaAndValue schemaAndValue, String supplierID, String deliverableID, Integer stock, Set<ProductTypeInstance> productTypes, boolean simpleOffer, String workflowID, int deliverableQuantity, ProductValidity deliverableValidity, int stockAlertThreshold, boolean stockAlert, List<String> notificationEmails)
   {
     super(schemaAndValue);
     this.supplierID = supplierID;
@@ -142,6 +145,7 @@ public class Product extends GUIManagedObject implements StockableItem
     this.deliverableValidity = deliverableValidity;
     this.stockAlertThreshold = stockAlertThreshold;
     this.stockAlert = stockAlert;
+    this.notificationEmails = notificationEmails;
   }
 
   /*****************************************
@@ -165,6 +169,7 @@ public class Product extends GUIManagedObject implements StockableItem
     struct.put("deliverableValidity", ProductValidity.pack(product.getDeliverableValidity()));
     struct.put("stockAlertThreshold", product.getStockAlertThreshold());
     struct.put("stockAlert", product.getStockAlert());
+    struct.put("notificationEmails", product.getNotificationEmails());
     return struct;
   }
   
@@ -215,12 +220,13 @@ public class Product extends GUIManagedObject implements StockableItem
     ProductValidity deliverableValidity = (schema.field("deliverableValidity")!= null) ? ProductValidity.unpack(new SchemaAndValue(schema.field("deliverableValidity").schema(), valueStruct.get("deliverableValidity"))) : null;
     int stockAlertThreshold = (schema.field("stockAlertThreshold")!= null) ? valueStruct.getInt32("stockAlertThreshold") : 0;
     boolean stockAlert = (schema.field("stockAlert")!= null) ? valueStruct.getBoolean("stockAlert") : false;
+    List<String> notificationEmails = schema.field("notificationEmails") != null ? valueStruct.getArray("notificationEmails") : new ArrayList<String>();
     
     //
     //  return
     //
 
-    return new Product(schemaAndValue, supplierID, deliverableID, stock, productTypes, simpleOffer, workflowID, deliverableQuantity, deliverableValidity, stockAlertThreshold, stockAlert);
+    return new Product(schemaAndValue, supplierID, deliverableID, stock, productTypes, simpleOffer, workflowID, deliverableQuantity, deliverableValidity, stockAlertThreshold, stockAlert, notificationEmails);
   }
   
   /*****************************************
@@ -310,6 +316,12 @@ public class Product extends GUIManagedObject implements StockableItem
     this.deliverableValidity = (jsonValue != null) ? new ProductValidity(JSONUtilities.decodeJSONObject(jsonRoot, "deliverableValidity", false)) : null;
     this.stockAlertThreshold = JSONUtilities.decodeInteger(jsonRoot, "stockAlertThreshold", 0);
     this.stockAlert = JSONUtilities.decodeBoolean(jsonRoot, "stockAlert", Boolean.FALSE);
+    this.notificationEmails = new ArrayList<String>();
+    JSONArray notificationArray = JSONUtilities.decodeJSONArray(jsonRoot, "notificationEmails", new JSONArray());
+    for (int i=0; i<notificationArray.size(); i++)
+      {
+        this.notificationEmails.add((String) notificationArray.get(i));
+      }
 
     /*****************************************
     *
@@ -345,6 +357,7 @@ public class Product extends GUIManagedObject implements StockableItem
         epochChanged = epochChanged || ! Objects.equals(deliverableValidity, existingProduct.getDeliverableValidity());
         epochChanged = epochChanged || ! Objects.equals(stockAlertThreshold, existingProduct.getStockAlertThreshold());
         epochChanged = epochChanged || ! Objects.equals(stockAlert, existingProduct.getStockAlert());
+        epochChanged = epochChanged || ! Objects.equals(notificationEmails, existingProduct.getNotificationEmails());
         return epochChanged;
       }
     else

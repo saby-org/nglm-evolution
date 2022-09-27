@@ -7,9 +7,11 @@
 package com.evolving.nglm.evolution;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.http.client.config.RequestConfig;
@@ -170,22 +172,26 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
     CloseableHttpResponse httpResponse = null;
     try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultRequestConfig(requestConfig).build())
     {
+      List<String> receipientList = new ArrayList<String>();
       Map<String, Object> communicationMap = new HashMap<String, Object>();
       if (guiManagedObject instanceof Offer)
         {
-          
+          Offer offer = (Offer) guiManagedObject;
+          if (!offer.getNotificationEmails().isEmpty()) receipientList.addAll(offer.getNotificationEmails());
         }
       else if (guiManagedObject instanceof Product)
         {
-          
+          Product product = (Product) guiManagedObject;
+          if (!product.getNotificationEmails().isEmpty()) receipientList.addAll(product.getNotificationEmails());
         }
       else if (guiManagedObject instanceof Voucher)
         {
-          
+          Voucher voucher = (Voucher) guiManagedObject;
+          if (!voucher.getNotificationEmails().isEmpty()) receipientList.addAll(voucher.getNotificationEmails());
         }
       communicationMap.put("UserId", "");
       communicationMap.put("From", "");
-      communicationMap.put("To", "");
+      communicationMap.put("To", JSONUtilities.encodeArray(receipientList));
       communicationMap.put("Cc", "");
       communicationMap.put("Subject", "");
       communicationMap.put("Body", "");
