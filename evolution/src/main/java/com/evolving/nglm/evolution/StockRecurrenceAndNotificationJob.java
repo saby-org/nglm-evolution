@@ -190,7 +190,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
           Offer offer = (Offer) guiManagedObject;
           if (!offer.getNotificationEmails().isEmpty()) receipientList.addAll(offer.getNotificationEmails());
           Object[] bodyTags = {"offer", offer.getGUIManagedObjectDisplay(), remainingStock};
-          Object[] subjectTags = {"offer", offer.getGUIManagedObjectDisplay(), remainingStock};
+          Object[] subjectTags = {"offer", offer.getGUIManagedObjectDisplay()};
           subject = resolveTags(Deployment.getStockAlertEmailSubject(), subjectTags);
           body = resolveTags(Deployment.getStockAlertEmailBody(), bodyTags);
           
@@ -200,7 +200,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
           Product product = (Product) guiManagedObject;
           if (!product.getNotificationEmails().isEmpty()) receipientList.addAll(product.getNotificationEmails());
           Object[] bodyTags = {"product", product.getGUIManagedObjectDisplay(), remainingStock};
-          Object[] subjectTags = {"product", product.getGUIManagedObjectDisplay(), remainingStock};
+          Object[] subjectTags = {"product", product.getGUIManagedObjectDisplay()};
           subject = resolveTags(Deployment.getStockAlertEmailSubject(), subjectTags);
           body = resolveTags(Deployment.getStockAlertEmailBody(), bodyTags);
         }
@@ -209,7 +209,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
           Voucher voucher = (Voucher) guiManagedObject;
           if (!voucher.getNotificationEmails().isEmpty()) receipientList.addAll(voucher.getNotificationEmails());
           Object[] bodyTags = {"voucher", voucher.getGUIManagedObjectDisplay(), remainingStock};
-          Object[] subjectTags = {"voucher", voucher.getGUIManagedObjectDisplay(), remainingStock};
+          Object[] subjectTags = {"voucher", voucher.getGUIManagedObjectDisplay()};
           subject = resolveTags(Deployment.getStockAlertEmailSubject(), subjectTags);
           body = resolveTags(Deployment.getStockAlertEmailBody(), bodyTags);
         }
@@ -234,8 +234,6 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
       communicationMap.put("CallBackURL", "");
       String payload = JSONUtilities.encodeObject(communicationMap).toJSONString();
       log.info("RAJ K payload {}", payload);
-      log.info("RAJ K Body {}", body);
-      log.info("RAJ K Body {}", subject);
       if (true)
         {
           return;
@@ -309,9 +307,8 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
 
   private String resolveTags(final String unformattedText, Object[] tagArgs)
   {
-    Object[] testArgs = {"product", "5GBFreeData", 10};
     MessageFormat form = new MessageFormat(unformattedText);
-    System.out.println(form.format(testArgs));
-    return form.format(testArgs);
+    System.out.println(form.format(tagArgs));
+    return form.format(tagArgs);
   }
 }
