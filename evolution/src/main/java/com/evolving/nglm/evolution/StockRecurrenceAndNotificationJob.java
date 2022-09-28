@@ -94,9 +94,8 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
             
             if (offer.getStockAlert())
               {
-                log.info("RAJ K ready to send alert notification for offer {}", offer.getGUIManagedObjectDisplay());
+                log.info("ready to send alert notification for offer {}", offer.getGUIManagedObjectDisplay());
                 sendNotification(offer, remainingStock);
-                // send stock notification RAJ K (EVPRO-1601)
               }
             
             //
@@ -137,9 +136,8 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
             
             if (product.getStockAlert())
               {
-                log.info("RAJ K ready to send alert notification for product {}", product.getGUIManagedObjectDisplay());
+                log.info("ready to send alert notification for product {}", product.getGUIManagedObjectDisplay());
                 sendNotification(product, remainingStock);
-                // send stock notification RAJ K (EVPRO-1601)
               }
           }
       }
@@ -160,9 +158,8 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                 
                 if (voucher.getStockAlert())
                   {
-                    log.info("RAJ K ready to send alert notification for voucherShared {}", voucher.getGUIManagedObjectDisplay());
+                    log.info("ready to send alert notification for voucher {}", voucher.getGUIManagedObjectDisplay());
                     sendNotification(voucherwithStock, remainingStock);
-                    // send stock notification RAJ K (EVPRO-1601)
                   }
               }
           }
@@ -221,8 +218,8 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
       communicationMap.put("Body", body);
       communicationMap.put("ObjectShortDescription", "");
       communicationMap.put("IsBodyHtml", true);
-      communicationMap.put("AreRecepientsApprovalManagers", true);
-      communicationMap.put("AreRecepientsAllUsersWithPermission", true);
+      communicationMap.put("AreRecepientsApprovalManagers", false);
+      communicationMap.put("AreRecepientsAllUsersWithPermission", false);
       communicationMap.put("PermissionKeyWhichRecipientsMustHave", "");
       communicationMap.put("AreMacrosAvailable", true);
       communicationMap.put("Macros", "");
@@ -233,11 +230,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
       communicationMap.put("ObjectId", "");
       communicationMap.put("CallBackURL", "");
       String payload = JSONUtilities.encodeObject(communicationMap).toJSONString();
-      log.info("RAJ K payload {}", payload);
-      if (true)
-        {
-          return;
-        }
+      log.debug("sendNotification - FWK API Call payload {}", payload);
       
       //
       // create request
