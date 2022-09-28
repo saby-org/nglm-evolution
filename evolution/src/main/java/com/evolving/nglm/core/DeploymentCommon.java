@@ -518,10 +518,9 @@ public class DeploymentCommon
   //Third Party Manager
   private static List<String> thirdPartyMethodTypes;
   private static Map<String,String> thirdPartyAPIHeaders;
+  private static String stockRecurrenceAndNotificationCronEntry;
   private static String stockAlertEmailSubject;
   private static String stockAlertEmailBody;
-  private static String stockAlertEmailFrom;
-
   
   /*****************************************
   *
@@ -876,9 +875,9 @@ public class DeploymentCommon
   
   public static List<String> getThirdPartyMethodTypes() { return thirdPartyMethodTypes; }
   public static Map<String, String> getThirdPartyAPIHeaders() { return thirdPartyAPIHeaders; }
+  public static String getStockRecurrenceAndNotificationCronEntry() { return stockRecurrenceAndNotificationCronEntry; }
   public static String getStockAlertEmailSubject() { return stockAlertEmailSubject; }
   public static String getStockAlertEmailBody() { return stockAlertEmailBody; }
-  public static String getStockAlertEmailFrom() { return stockAlertEmailFrom; }
 
   
   /****************************************
@@ -1621,9 +1620,9 @@ public class DeploymentCommon
       {
         thirdPartyAPIHeaders.put((String) key, (String) thirdPartyAPIHeadersOBJ.get(key));
       }
+    stockRecurrenceAndNotificationCronEntry = jsonReader.decodeString("stockRecurrenceAndNotificationCronEntry");
     stockAlertEmailSubject = jsonReader.decodeString("stockAlertEmailSubject");
     stockAlertEmailBody = jsonReader.decodeString("stockAlertEmailBody");
-    stockAlertEmailFrom = jsonReader.decodeString("stockAlertEmailFrom");
   }
 
   

@@ -823,6 +823,7 @@ public class GUIManager
 
     int apiRestPort = Integer.parseInt(args[0]);
     String fwkServer = args[1];
+    String fwkEmailSMTPUserName = args[2];
     
     String nodeID = System.getProperty("nglm.license.nodeid");
 
@@ -883,7 +884,7 @@ public class GUIManager
     //  log
     //
 
-    log.info("main START: on port {}, fwkServer {}", apiRestPort, fwkServer);
+    log.info("main START: on port {}, fwkServer {}, fwkEmailSMTPUserName {}", apiRestPort, fwkServer, fwkEmailSMTPUserName);
 
     //
     //  license
@@ -2590,9 +2591,10 @@ public class GUIManager
     JobScheduler guiManagerJobScheduler = new JobScheduler("GUIManager");
     String periodicGenerationCronEntry = "5 1,6,11,16,21 * * *";
     String qaCronEntry = "4,9,14,19,24,29,34,39,44,49,54,59 * * * *";
+    String stockRecurrenceAndNotificationCronEntry = DeploymentCommon.getStockRecurrenceAndNotificationCronEntry();
     ScheduledJob recurrnetCampaignCreationJob = new RecurrentCampaignCreationJob("Recurrent Campaign(create)", periodicGenerationCronEntry, Deployment.getDefault().getTimeZone(), false); // TODO EVPRO-99 i used systemTimeZone instead of BaseTimeZone pet tenant, check if correct
     ScheduledJob challengesOccurrenceJob = new ChallengesOccurrenceJob("Challenges Occurrence", periodicGenerationCronEntry, Deployment.getDefault().getTimeZone(), false);
-    StockRecurrenceAndNotificationJob stockRecurrenceJobAndNotificationJob = new StockRecurrenceAndNotificationJob("Stock Recurrence And Notification", qaCronEntry, Deployment.getDefault().getTimeZone(), false, offerService, productService, voucherService, callingChannelService, catalogCharacteristicService, salesChannelService, supplierService, fwkServer);
+    StockRecurrenceAndNotificationJob stockRecurrenceJobAndNotificationJob = new StockRecurrenceAndNotificationJob("Stock Recurrence And Notification", qaCronEntry, Deployment.getDefault().getTimeZone(), false, offerService, productService, voucherService, callingChannelService, catalogCharacteristicService, salesChannelService, supplierService, fwkServer, fwkEmailSMTPUserName);
     //ScheduledJob stockRecurrenceJob = new StockRecurrenceJob("Stocks Recurrence", qaCronEntry, Deployment.getDefault().getTimeZone(), false);
     if(recurrnetCampaignCreationJob.isProperlyConfigured() && challengesOccurrenceJob.isProperlyConfigured() && stockRecurrenceJobAndNotificationJob.isProperlyConfigured())
       {

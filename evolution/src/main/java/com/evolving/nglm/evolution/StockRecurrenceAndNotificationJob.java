@@ -48,10 +48,9 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
   private SalesChannelService salesChannelService;
   private SupplierService supplierService;
   private String fwkServer;
+  private String fwkEmailSMTPUserName;
   int httpTimeout = 10000;
   RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(httpTimeout).setSocketTimeout(httpTimeout).setConnectionRequestTimeout(httpTimeout).build();
-  private String unformattedEmailBody = "";
-  private String unformattedEmailSubject = "";
   
   /*****************************************
   *
@@ -59,7 +58,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
   *
   *****************************************/
   
-  public StockRecurrenceAndNotificationJob(String jobName, String periodicGenerationCronEntry, String baseTimeZone, boolean scheduleAtStart, OfferService offerService, ProductService productService, VoucherService voucherService, CallingChannelService callingChannelService, CatalogCharacteristicService catalogCharacteristicService, SalesChannelService salesChannelService, SupplierService supplierService, String fwkServer)
+  public StockRecurrenceAndNotificationJob(String jobName, String periodicGenerationCronEntry, String baseTimeZone, boolean scheduleAtStart, OfferService offerService, ProductService productService, VoucherService voucherService, CallingChannelService callingChannelService, CatalogCharacteristicService catalogCharacteristicService, SalesChannelService salesChannelService, SupplierService supplierService, String fwkServer, String fwkEmailSMTPUserName)
   {
     super(jobName, periodicGenerationCronEntry, baseTimeZone, scheduleAtStart); 
     this.offerService = offerService;
@@ -70,6 +69,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
     this.salesChannelService = salesChannelService;
     this.supplierService = supplierService;
     this.fwkServer = fwkServer;
+    this.fwkEmailSMTPUserName = fwkEmailSMTPUserName;
   }
 
   /*****************************************
@@ -214,7 +214,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
           body = resolveTags(Deployment.getStockAlertEmailBody(), bodyTags);
         }
       communicationMap.put("UserId", "");
-      communicationMap.put("From", Deployment.getStockAlertEmailFrom());
+      communicationMap.put("From", fwkEmailSMTPUserName);
       communicationMap.put("To", JSONUtilities.encodeArray(receipientList));
       communicationMap.put("Cc", "");
       communicationMap.put("Subject", subject);
