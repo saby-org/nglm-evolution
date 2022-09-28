@@ -1381,6 +1381,9 @@
   "thirdPartyAPIHeaders" : {
     "Access-Control-Allow-Origin":"*",
     "Content-Type":"application/json"
-	}
+	},
+	"stockAlertEmailSubject" : "Stock alert notification of - {0} - {1}",
+	"stockAlertEmailBody" : "Dear User,\n The remaining stock of the {0} - ''{1}'' reaches at {2}. Please refill the stock or do the needful from the RTOM GUI.\n\n\nThanks,\nThis is a system generated automatic email. Please don't reply to this.",
+	"stockAlertEmailFrom" : "<_FWKSETTINGS_EMAIL_SMTP_USERNAME_>" 
   
 }

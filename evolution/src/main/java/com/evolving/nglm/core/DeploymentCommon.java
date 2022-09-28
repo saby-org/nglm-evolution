@@ -518,6 +518,9 @@ public class DeploymentCommon
   //Third Party Manager
   private static List<String> thirdPartyMethodTypes;
   private static Map<String,String> thirdPartyAPIHeaders;
+  private static String stockAlertEmailSubject;
+  private static String stockAlertEmailBody;
+  private static String stockAlertEmailFrom;
 
   
   /*****************************************
@@ -873,6 +876,9 @@ public class DeploymentCommon
   
   public static List<String> getThirdPartyMethodTypes() { return thirdPartyMethodTypes; }
   public static Map<String, String> getThirdPartyAPIHeaders() { return thirdPartyAPIHeaders; }
+  public static String getStockAlertEmailSubject() { return stockAlertEmailSubject; }
+  public static String getStockAlertEmailBody() { return stockAlertEmailBody; }
+  public static String getStockAlertEmailFrom() { return stockAlertEmailFrom; }
 
   
   /****************************************
@@ -1601,19 +1607,23 @@ public class DeploymentCommon
     minDaysInUCGForQuickRemoval = jsonReader.decodeInteger("minDaysInUCGForQuickRemoval");
     ucgQuickOverloadRemoval = jsonReader.decodeBoolean("ucgQuickOverloadRemoval");
     
-    //thirdParty api conf
+    // thirdParty api conf
     thirdPartyMethodTypes = new ArrayList<>();
     JSONArray methods = jsonReader.decodeJSONArray("thirdPartyMethodTypes");
-    for (int i = 0; i < methods.size(); i++) {
-      String data = methods.get(i).toString();
-      thirdPartyMethodTypes.add(data);
-    }
+    for (int i = 0; i < methods.size(); i++)
+      {
+        String data = methods.get(i).toString();
+        thirdPartyMethodTypes.add(data);
+      }
     JSONObject thirdPartyAPIHeadersOBJ = jsonReader.decodeJSONObject("thirdPartyAPIHeaders");
     thirdPartyAPIHeaders = new LinkedHashMap<String, String>();
-    for (Object key : thirdPartyAPIHeadersOBJ.keySet()) {
-    	thirdPartyAPIHeaders.put((String) key, (String) thirdPartyAPIHeadersOBJ.get(key));
-    }
-    
+    for (Object key : thirdPartyAPIHeadersOBJ.keySet())
+      {
+        thirdPartyAPIHeaders.put((String) key, (String) thirdPartyAPIHeadersOBJ.get(key));
+      }
+    stockAlertEmailSubject = jsonReader.decodeString("stockAlertEmailSubject");
+    stockAlertEmailBody = jsonReader.decodeString("stockAlertEmailBody");
+    stockAlertEmailFrom = jsonReader.decodeString("stockAlertEmailFrom");
   }
 
   

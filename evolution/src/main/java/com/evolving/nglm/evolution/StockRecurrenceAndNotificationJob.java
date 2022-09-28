@@ -7,6 +7,7 @@
 package com.evolving.nglm.evolution;
 
 import java.io.IOException;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -26,6 +27,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
@@ -48,6 +50,8 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
   private String fwkServer;
   int httpTimeout = 10000;
   RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(httpTimeout).setSocketTimeout(httpTimeout).setConnectionRequestTimeout(httpTimeout).build();
+  private String unformattedEmailBody = "";
+  private String unformattedEmailSubject = "";
   
   /*****************************************
   *
@@ -80,7 +84,8 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
     Collection<Offer> activeOffers = offerService.getActiveOffers(now, 0);
     for (Offer offer : activeOffers)
       {
-        boolean stockThersoldBreached = offer.getApproximateRemainingStock() != null && (offer.getApproximateRemainingStock() <= offer.getStockAlertThreshold());
+        Integer remainingStock = offer.getApproximateRemainingStock();
+        boolean stockThersoldBreached = remainingStock != null && (remainingStock <= offer.getStockAlertThreshold());
         if (stockThersoldBreached)
           {
             //
@@ -121,7 +126,8 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
     Collection<Product> activeProducts = productService.getActiveProducts(now, 0);
     for (Product product : activeProducts)
       {
-        boolean stockThersoldBreached = product.getApproximateRemainingStock() != null && (product.getApproximateRemainingStock() <= product.getStockAlertThreshold());
+        Integer remainingStock = product.getApproximateRemainingStock();
+        boolean stockThersoldBreached = remainingStock != null && (remainingStock <= product.getStockAlertThreshold());
         if (stockThersoldBreached)
           {
             //
@@ -167,34 +173,49 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
   *
   *****************************************/
   
-  public void sendNotification(GUIManagedObject guiManagedObject)
+  public void sendNotification(GUIManagedObject guiManagedObject, final Integer remainingStock)
   {
     CloseableHttpResponse httpResponse = null;
     try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultRequestConfig(requestConfig).build())
     {
       List<String> receipientList = new ArrayList<String>();
+      String subject = null;
+      String body = null;
       Map<String, Object> communicationMap = new HashMap<String, Object>();
       if (guiManagedObject instanceof Offer)
         {
           Offer offer = (Offer) guiManagedObject;
           if (!offer.getNotificationEmails().isEmpty()) receipientList.addAll(offer.getNotificationEmails());
+          Object[] bodyTags = {"offer", offer.getGUIManagedObjectDisplay(), remainingStock};
+          Object[] subjectTags = {"offer", offer.getGUIManagedObjectDisplay(), remainingStock};
+          subject = resolveTags(Deployment.getStockAlertEmailSubject(), subjectTags);
+          body = resolveTags(Deployment.getStockAlertEmailBody(), bodyTags);
+          
         }
       else if (guiManagedObject instanceof Product)
         {
           Product product = (Product) guiManagedObject;
           if (!product.getNotificationEmails().isEmpty()) receipientList.addAll(product.getNotificationEmails());
+          Object[] bodyTags = {"product", product.getGUIManagedObjectDisplay(), remainingStock};
+          Object[] subjectTags = {"product", product.getGUIManagedObjectDisplay(), remainingStock};
+          subject = resolveTags(Deployment.getStockAlertEmailSubject(), subjectTags);
+          body = resolveTags(Deployment.getStockAlertEmailBody(), bodyTags);
         }
       else if (guiManagedObject instanceof Voucher)
         {
           Voucher voucher = (Voucher) guiManagedObject;
           if (!voucher.getNotificationEmails().isEmpty()) receipientList.addAll(voucher.getNotificationEmails());
+          Object[] bodyTags = {"voucher", voucher.getGUIManagedObjectDisplay(), remainingStock};
+          Object[] subjectTags = {"voucher", voucher.getGUIManagedObjectDisplay(), remainingStock};
+          subject = resolveTags(Deployment.getStockAlertEmailSubject(), subjectTags);
+          body = resolveTags(Deployment.getStockAlertEmailBody(), bodyTags);
         }
       communicationMap.put("UserId", "");
-      communicationMap.put("From", "");
+      communicationMap.put("From", Deployment.getStockAlertEmailFrom());
       communicationMap.put("To", JSONUtilities.encodeArray(receipientList));
       communicationMap.put("Cc", "");
-      communicationMap.put("Subject", "");
-      communicationMap.put("Body", "");
+      communicationMap.put("Subject", subject);
+      communicationMap.put("Body", body);
       communicationMap.put("ObjectShortDescription", "");
       communicationMap.put("IsBodyHtml", true);
       communicationMap.put("AreRecepientsApprovalManagers", true);
@@ -210,6 +231,12 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
       communicationMap.put("CallBackURL", "");
       String payload = JSONUtilities.encodeObject(communicationMap).toJSONString();
       log.info("RAJ K payload {}", payload);
+      log.info("RAJ K Body {}", body);
+      log.info("RAJ K Body {}", subject);
+      if (true)
+        {
+          return;
+        }
       
       //
       // create request
@@ -275,5 +302,13 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
           }
     }
   
+  }
+
+  private String resolveTags(final String unformattedText, Object[] tagArgs)
+  {
+    Object[] testArgs = {"product", "5GBFreeData", 10};
+    MessageFormat form = new MessageFormat(unformattedText);
+    System.out.println(form.format(testArgs));
+    return form.format(testArgs);
   }
 }
