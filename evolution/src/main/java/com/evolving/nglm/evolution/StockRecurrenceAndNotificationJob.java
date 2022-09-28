@@ -95,6 +95,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
             if (offer.getStockAlert())
               {
                 log.info("RAJ K ready to send alert notification for offer {}", offer.getGUIManagedObjectDisplay());
+                sendNotification(offer, remainingStock);
                 // send stock notification RAJ K (EVPRO-1601)
               }
             
@@ -137,6 +138,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
             if (product.getStockAlert())
               {
                 log.info("RAJ K ready to send alert notification for product {}", product.getGUIManagedObjectDisplay());
+                sendNotification(product, remainingStock);
                 // send stock notification RAJ K (EVPRO-1601)
               }
           }
@@ -159,6 +161,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                 if (voucher.getStockAlert())
                   {
                     log.info("RAJ K ready to send alert notification for voucherShared {}", voucher.getGUIManagedObjectDisplay());
+                    sendNotification(voucherwithStock, remainingStock);
                     // send stock notification RAJ K (EVPRO-1601)
                   }
               }
