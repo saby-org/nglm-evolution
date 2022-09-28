@@ -57,7 +57,7 @@ public class ScoringStrategy extends GUIManagedObject
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(commonSchema().version(),2));
     for (Field field : commonSchema().fields()) schemaBuilder.field(field.name(), field.schema());
     schemaBuilder.field("scoringEngineID", SchemaBuilder.string().defaultValue("").schema());
-    schemaBuilder.field("dimensionID", Schema.STRING_SCHEMA);
+    schemaBuilder.field("dimensionID", Schema.OPTIONAL_STRING_SCHEMA); // HACK
     schemaBuilder.field("scoringSegments", SchemaBuilder.array(ScoringSegment.schema()).schema());
     schema = schemaBuilder.build();
   };
@@ -111,10 +111,10 @@ public class ScoringStrategy extends GUIManagedObject
     ScoringSegment result = null;
     SubscriberProfile sp = evaluationRequest.getSubscriberProfile();
     Map<String, String> segments = sp.getSegmentsMap(evaluationRequest.getSubscriberGroupEpochReader());
-    String segment = segments.get(dimensionID);
     for (ScoringSegment scoringSegment : scoringSegments)
       {
-        if (scoringSegment.getSegmentIDs().contains(segment)
+        String segment = (dimensionID != null) ? segments.get(dimensionID) : null;
+        if ((segment != null && scoringSegment.getSegmentIDs().contains(segment))
             || scoringSegment.getSegmentIDs().isEmpty()) // Case of the last segment : matches everyone
           {
             result = scoringSegment;
@@ -275,7 +275,7 @@ public class ScoringStrategy extends GUIManagedObject
     //
     
     this.scoringEngine = Deployment.getDeployment(tenantID).getScoringEngines().get(JSONUtilities.decodeString(jsonRoot, "scoringEngineID", true));
-    this.dimensionID = JSONUtilities.decodeString(jsonRoot, "dimensionID", true);
+    this.dimensionID = JSONUtilities.decodeString(jsonRoot, "dimensionID", false); // HACK
 
     //
     //  scoring segments
