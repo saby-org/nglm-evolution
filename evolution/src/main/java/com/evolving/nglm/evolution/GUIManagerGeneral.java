@@ -85,10 +85,12 @@ import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
+import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectType;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectTypeService;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 import com.evolving.nglm.evolution.offeroptimizer.OfferOptimizerAlgoManager;
+import com.evolving.nglm.evolution.offeroptimizer.ProposedOfferDetails;
 import com.evolving.nglm.evolution.propensity.PropensityService;
 import com.evolving.nglm.evolution.tenancy.Tenant;
 import com.sun.net.httpserver.HttpExchange;
@@ -6087,6 +6089,94 @@ public class GUIManagerGeneral extends GUIManager
     
     return JSONUtilities.encodeObject(response);
   }
+  
+  /****************************************
+  *
+  *  processGetCustomerTokenAndNBO
+  *
+  ****************************************/
+  
+  public JSONObject processGetCustomerTokenAndNBO(String userID, JSONObject jsonRoot, int tenantID)
+  {
+    Map<String, Object> response = new LinkedHashMap<String, Object>();
+    Date now = SystemTime.getCurrentTime();
+
+    /****************************************
+     *
+     * argument
+     *
+     ****************************************/
+
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+    String presentationStrategyID = JSONUtilities.decodeString(jsonRoot, "presentationStrategyID", true);
+    String tokenTypeID = JSONUtilities.decodeString(jsonRoot, "tokenTypeID", true);
+    boolean allowMultipleToken = JSONUtilities.decodeBoolean(jsonRoot, "allowMultipleToken", Boolean.FALSE);
+    Supplier supplier = null;
+    
+    PresentationStrategy presentationStrategy = presentationStrategyService.getActivePresentationStrategy(presentationStrategyID, now);
+    if (presentationStrategy == null)
+      {
+        log.error("no active presentationStrategy for ID {}", presentationStrategy);
+        response.put("responseCode", "presentationStrategyNotFound");
+        return JSONUtilities.encodeObject(response);          
+      }
+    TokenType tokenType = tokenTypeService.getActiveTokenType(tokenTypeID, now);
+    if (tokenType == null)
+      {
+        log.error("no active tokenType for ID {}", tokenType);
+        response.put("responseCode", "tokenTypeNotFound");
+        return JSONUtilities.encodeObject(response);    
+      }
+    
+    String subscriberID = resolveSubscriberID(customerID, tenantID);
+    if (subscriberID == null)
+      {
+        log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID {}", getCustomerAlternateID, customerID);
+        response.put("responseCode", "CustomerNotFound");
+      }
+    else
+      {
+        
+        try
+          {
+            SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
+            DNBOToken newToken = TokenUtils.generateTokenCode(subscriberProfile, tokenType);
+            if (newToken == null)
+              {
+                response.put("responseCode", "tokenCodeNotGenerated");
+                return JSONUtilities.encodeObject(response);
+              }
+            else
+              {
+                newToken.setModuleID(DeliveryRequest.Module.Customer_Care.getExternalRepresentation());
+                newToken.setFeatureID(userID);
+                newToken.setPresentationStrategyID(presentationStrategy.getPresentationStrategyID());
+                // TODO : which sales channel to use ?
+                newToken.setPresentedOffersSalesChannel(presentationStrategy.getSalesChannelIDs().iterator().next());
+                newToken.setCreationDate(now);
+                Collection<ProposedOfferDetails> presentedOffers = ThirdPartyManager.allocateAndSendPresentationLog(jsonRoot, subscriberID, newToken.getTokenCode(), now, supplier, subscriberProfile, (DNBOToken) newToken, presentationStrategyID, presentationStrategy, kafkaProducer, offerService, segmentationDimensionService, productService, voucherService, scoringStrategyService, productTypeService, voucherTypeService, catalogCharacteristicService, dnboMatrixService, supplierService, subscriberGroupEpochReader, tenantID);
+                if (presentedOffers.isEmpty())
+                  {
+                    //generateTokenChange(subscriberProfile, now, newToken.getTokenCode(), TokenChange.ALLOCATE, RESTAPIGenericReturnCodes.NO_OFFER_ALLOCATED.getGenericResponseCode() + "", API.getCustomerTokenAndNBO, jsonRoot, tenantID);
+                  }
+                response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(newToken, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService, callingChannel, presentedOffers, paymentMeanService, tenantID);
+              }
+          } 
+        catch (SubscriberProfileServiceException e)
+          {
+            e.printStackTrace();
+          }
+      }
+
+
+
+    //
+    // return
+    //
+
+    return JSONUtilities.encodeObject(response);
+  }
+  
   
   /****************************************
   *
