@@ -9,11 +9,14 @@ package com.evolving.nglm.evolution;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
+import java.util.stream.Collectors;
 
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -29,6 +32,7 @@ import org.json.simple.parser.ParseException;
 
 import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
@@ -97,29 +101,41 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                 log.info("ready to send alert notification for offer {}", offer.getGUIManagedObjectDisplay());
                 sendNotification(offer, remainingStock);
               }
-            
-            //
-            // auto increment stock (EVPRO-1600)
-            //
-            
-            if (offer.getStockRecurrence())
+          }
+        
+        //
+        // auto increment stock (EVPRO-1600)
+        //
+        
+        if (offer.getStockRecurrence())
+          {
+            String tz = Deployment.getDeployment(offer.getTenantID()).getTimeZone();
+            final Date time = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, tz);
+            List<Date> stockReplanishDates = getExpectedStockReplanishDates(offer);
+            if(stockReplanishDates.contains(time) && offer.getLastStockRecurrenceDate() != time)
               {
+                log.info("[PRJT] offer[{}] next stock replanish date[{}] is today[{}]", offer.getOfferID(), stockReplanishDates.get(0), time);
                 JSONObject offerJson = offer.getJSONRepresentation();
                 offerJson.replace("presentationStock", offer.getStock() + offer.getStockRecurrenceBatch());
                 try
                   {
                     Offer newOffer = new Offer(offerJson, GUIManager.epochServer.getKey(), offer, catalogCharacteristicService, offer.getTenantID());
+                    newOffer.setLastStockRecurrenceDate(time);
                     offerService.putOffer(newOffer, callingChannelService, salesChannelService, productService, voucherService, (offer == null), "StockRecurrenceAndNotificationJob");
                   } 
                 catch (GUIManagerException e)
                   {
-                    e.printStackTrace();
+                    log.error("Stock Recurrence Exception: {}", e.getMessage());
                   }
-              } 
+              }
             else
               {
-                log.debug("stock recurrence scheduling not required for offer[{}]-- remaingin stock[{}], thresold limit[{}]", offer.getOfferID(), offer.getApproximateRemainingStock(), offer.getStockAlertThreshold());
+                log.info("[PRJT] offer[{}] next stock replanish date[{}] is NOT today[{}]", offer.getOfferID(), stockReplanishDates.get(0), time);
               }
+          } 
+        else
+          {
+            log.info("[PRJT] stock recurrence scheduling not required for offer[{}]-- remaingin stock[{}], thresold limit[{}]", offer.getOfferID(), offer.getApproximateRemainingStock(), offer.getStockAlertThreshold());
           }
       }
     
@@ -167,6 +183,121 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
       }
   }
   
+  private List<Date> getExpectedStockReplanishDates(Offer offer)
+  {
+    Date now = SystemTime.getCurrentTime();
+    String tz = Deployment.getDeployment(offer.getTenantID()).getTimeZone();
+    Date offerStartDate = offer.getEffectiveStartDate();
+    Date offerEndDate = offer.getEffectiveEndDate();
+    JourneyScheduler stockScheduler = offer.getStockScheduler();
+    
+    String scheduling = stockScheduler.getRunEveryUnit().toLowerCase();
+    Integer scheduligInterval = stockScheduler.getRunEveryDuration();
+    List<Date> tmpJourneyCreationDates = new ArrayList<Date>();
+    if ("week".equalsIgnoreCase(scheduling))
+      {
+        Date lastDateOfThisWk = getLastDate(now, Calendar.DAY_OF_WEEK, offer.getTenantID());
+        Date firstDateOfStartDateWk = getFirstDate(offerStartDate, Calendar.DAY_OF_WEEK, offer.getTenantID());
+        Date lastDateOfStartDateWk = getLastDate(offerStartDate, Calendar.DAY_OF_WEEK, offer.getTenantID());
+        while(lastDateOfThisWk.compareTo(lastDateOfStartDateWk) >= 0)
+          {
+            tmpJourneyCreationDates.addAll(getExpectedCreationDates(firstDateOfStartDateWk, lastDateOfStartDateWk, scheduling, stockScheduler.getRunEveryWeekDay(), offer.getTenantID()));
+            offerStartDate = RLMDateUtils.addWeeks(offerStartDate, scheduligInterval, tz);
+            lastDateOfStartDateWk = getLastDate(offerStartDate, Calendar.DAY_OF_WEEK, offer.getTenantID());
+            firstDateOfStartDateWk = getFirstDate(offerStartDate, Calendar.DAY_OF_WEEK, offer.getTenantID());
+          }
+        
+        //
+        // handle the edge (if start day of next wk)
+        //
+        
+        tmpJourneyCreationDates.addAll(getExpectedCreationDates(firstDateOfStartDateWk, lastDateOfStartDateWk, scheduling, stockScheduler.getRunEveryWeekDay(), offer.getTenantID()));
+      } 
+    else if ("month".equalsIgnoreCase(scheduling))
+      {
+        Date lastDateOfThisMonth = getLastDate(now, Calendar.DAY_OF_MONTH, offer.getTenantID());
+        Date firstDateOfStartDateMonth = getFirstDate(offerStartDate, Calendar.DAY_OF_MONTH, offer.getTenantID());
+        Date lastDateOfStartDateMonth = getLastDate(offerStartDate, Calendar.DAY_OF_MONTH, offer.getTenantID());
+        while(lastDateOfThisMonth.compareTo(lastDateOfStartDateMonth) >= 0)
+          {
+            tmpJourneyCreationDates.addAll(getExpectedCreationDates(firstDateOfStartDateMonth, lastDateOfStartDateMonth, scheduling, stockScheduler.getRunEveryMonthDay(), offer.getTenantID()));
+            offerStartDate = RLMDateUtils.addMonths(offerStartDate, scheduligInterval, tz);
+            firstDateOfStartDateMonth = getFirstDate(offerStartDate, Calendar.DAY_OF_MONTH, offer.getTenantID());
+            lastDateOfStartDateMonth = getLastDate(offerStartDate, Calendar.DAY_OF_MONTH, offer.getTenantID());
+          }
+        
+        //
+        // handle the edge (if 1st day of next month)
+        //
+        
+        tmpJourneyCreationDates.addAll(getExpectedCreationDates(firstDateOfStartDateMonth, lastDateOfStartDateMonth, scheduling, stockScheduler.getRunEveryMonthDay(), offer.getTenantID()));
+      }
+    else if ("day".equalsIgnoreCase(scheduling))
+      {
+        //Date lastDate = filterEndDate;
+        while(offerEndDate.compareTo(offerStartDate) >= 0)
+          {
+            tmpJourneyCreationDates.add(new Date(offerStartDate.getTime()));
+            offerStartDate = RLMDateUtils.addDays(offerStartDate, scheduligInterval, tz);
+          }
+      }
+    else
+      {
+        if (log.isInfoEnabled()) log.info("invalid scheduling {}", scheduling);
+      }
+    
+    //
+    // filter out if before start date and recurrentCampaignCreationDaysRange (before / after)
+    //
+
+    if(log.isInfoEnabled()) log.info("[PRJT] before filter tmpJourneyCreationDates {}", tmpJourneyCreationDates);
+    tmpJourneyCreationDates = tmpJourneyCreationDates.stream().filter(date -> date.after(offer.getEffectiveStartDate()) && date.compareTo(offer.getEffectiveStartDate()) >= 0 && offerEndDate.compareTo(date) >= 0 ).collect(Collectors.toList());
+    if(log.isInfoEnabled()) log.info("[PRJT] after filter tmpJourneyCreationDates {}", tmpJourneyCreationDates);
+    
+    return tmpJourneyCreationDates;
+  }
+  
+  private List<Date> getExpectedCreationDates(Date firstDate, Date lastDate, String scheduling, List<String> runEveryDay, int tenantID)
+  {
+    List<Date> result = new ArrayList<Date>();
+    while (firstDate.before(lastDate) || firstDate.compareTo(lastDate) == 0)
+      {
+        int day = -1;
+        switch (scheduling)
+          {
+            case "week":
+              day = RLMDateUtils.getField(firstDate, Calendar.DAY_OF_WEEK, Deployment.getDeployment(tenantID).getTimeZone());
+              break;
+
+            case "month":
+              day = RLMDateUtils.getField(firstDate, Calendar.DAY_OF_MONTH, Deployment.getDeployment(tenantID).getTimeZone());
+              break;
+
+            default:
+              break;
+        }
+        String dayOf = String.valueOf(day);
+        if (runEveryDay.contains(dayOf)) result.add(new Date(firstDate.getTime()));
+        firstDate = RLMDateUtils.addDays(firstDate, 1, Deployment.getDeployment(tenantID).getTimeZone());
+      }
+
+    //
+    //  handle last date of month
+    //
+
+    if ("month".equalsIgnoreCase(scheduling))
+      {
+        int lastDayOfMonth = RLMDateUtils.getField(lastDate, Calendar.DAY_OF_MONTH, Deployment.getDeployment(tenantID).getTimeZone());
+        for (String day : runEveryDay)
+          {
+            if (Integer.parseInt(day) > lastDayOfMonth) result.add(new Date(lastDate.getTime()));
+          }
+      }
+    
+    log.info("[PRJT] getExpectedCreationDates(): {}", result);
+    return result;
+  }
+
   /*****************************************
   *
   *  sendNotification - FWK API Call
@@ -303,5 +434,50 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
     MessageFormat form = new MessageFormat(unformattedText);
     System.out.println(form.format(tagArgs));
     return form.format(tagArgs);
+  }
+  
+  //
+  //  getFirstDate
+  //
+
+  private Date getFirstDate(Date now, int dayOf, int tenantID)
+  {
+    if (Calendar.DAY_OF_WEEK == dayOf)
+      {
+        Date firstDateOfNext = RLMDateUtils.ceiling(now, dayOf, Deployment.getDeployment(tenantID).getTimeZone());
+        return RLMDateUtils.addDays(firstDateOfNext, -7, Deployment.getDeployment(tenantID).getTimeZone());
+      }
+    else
+      {
+        Calendar c = Calendar.getInstance(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getTimeZone()));
+        c.setTime(now);
+        int dayOfMonth = RLMDateUtils.getField(now, Calendar.DAY_OF_MONTH, Deployment.getDeployment(tenantID).getTimeZone());
+        Date firstDate = RLMDateUtils.addDays(now, -dayOfMonth+1, Deployment.getDeployment(tenantID).getTimeZone());
+        return firstDate;
+      }
+  }
+
+  //
+  //  getLastDate
+  //
+
+  private Date getLastDate(Date now, int dayOf, int tenantID)
+  {
+    Date firstDateOfNext = RLMDateUtils.ceiling(now, dayOf, Deployment.getDeployment(tenantID).getTimeZone());
+    if (Calendar.DAY_OF_WEEK == dayOf)
+      {
+        Date firstDateOfthisWk = RLMDateUtils.addDays(firstDateOfNext, -7, Deployment.getDeployment(tenantID).getTimeZone());
+        return RLMDateUtils.addDays(firstDateOfthisWk, 6, Deployment.getDeployment(tenantID).getTimeZone());
+      }
+    else
+      {
+        Calendar c = Calendar.getInstance(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getTimeZone()));
+        c.setTime(now);
+        int toalNoOfDays = c.getActualMaximum(Calendar.DAY_OF_MONTH);
+        int dayOfMonth = RLMDateUtils.getField(now, Calendar.DAY_OF_MONTH, Deployment.getDeployment(tenantID).getTimeZone());
+        Date firstDate = RLMDateUtils.addDays(now, -dayOfMonth+1, Deployment.getDeployment(tenantID).getTimeZone());
+        Date lastDate = RLMDateUtils.addDays(firstDate, toalNoOfDays-1, Deployment.getDeployment(tenantID).getTimeZone());
+        return lastDate;
+      }
   }
 }

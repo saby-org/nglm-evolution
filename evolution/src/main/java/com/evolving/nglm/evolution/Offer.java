@@ -25,6 +25,7 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
+import org.apache.kafka.connect.data.Timestamp;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
@@ -103,6 +104,8 @@ public class Offer extends GUIManagedObject implements StockableItem
     schemaBuilder.field("maximumAcceptancesPeriodMonths", Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("stockRecurrence", Schema.OPTIONAL_BOOLEAN_SCHEMA);    //v5
     schemaBuilder.field("stockRecurrenceBatch", Schema.OPTIONAL_INT32_SCHEMA); //v5
+    schemaBuilder.field("stockScheduler", JourneyScheduler.serde().optionalSchema()); //v5
+    schemaBuilder.field("lastStockRecurrenceDate", Timestamp.builder().optional().schema()); //v5
     schemaBuilder.field("stockAlertThreshold", Schema.OPTIONAL_INT32_SCHEMA);  //v5
     schemaBuilder.field("stockAlert", Schema.BOOLEAN_SCHEMA);  //v5
     schemaBuilder.field("notificationEmails", SchemaBuilder.array(Schema.STRING_SCHEMA).defaultValue(new ArrayList<String>()).schema());
@@ -150,6 +153,8 @@ public class Offer extends GUIManagedObject implements StockableItem
   private Integer stockAlertThreshold;
   private boolean stockAlert;
   private List<String> notificationEmails;
+  private JourneyScheduler stockScheduler;
+  private Date lastStockRecurrenceDate;
   
   //
   //  derived
@@ -192,6 +197,8 @@ public class Offer extends GUIManagedObject implements StockableItem
   public Integer getStockAlertThreshold() { return stockAlertThreshold; }
   public boolean getStockAlert() { return stockAlert; }
   public List<String> getNotificationEmails() { return notificationEmails; }
+  public JourneyScheduler getStockScheduler() { return stockScheduler; }
+  public Date getLastStockRecurrenceDate() { return lastStockRecurrenceDate; }
   
   /*****************************************
   *
@@ -315,7 +322,7 @@ public class Offer extends GUIManagedObject implements StockableItem
   *
   *****************************************/
 
-  public Offer(SchemaAndValue schemaAndValue, double initialPropensity, Integer stock, int unitaryCost, List<EvaluationCriterion> profileCriteria, Set<OfferObjectiveInstance> offerObjectives, Set<OfferSalesChannelsAndPrice> offerSalesChannelsAndPrices, Set<OfferProduct> offerProducts, Set<OfferVoucher> offerVouchers, OfferCharacteristics offerCharacteristics, Set<OfferTranslation> offerTranslations, boolean simpleOffer, Integer maximumAcceptances, Integer maximumAcceptancesPeriodDays, Integer maximumAcceptancesPeriodMonths, boolean stockRecurrence, Integer stockRecurrenceBatch, Integer stockAlertThreshold, boolean stockAlert, List<String> notificationEmails)
+  public Offer(SchemaAndValue schemaAndValue, double initialPropensity, Integer stock, int unitaryCost, List<EvaluationCriterion> profileCriteria, Set<OfferObjectiveInstance> offerObjectives, Set<OfferSalesChannelsAndPrice> offerSalesChannelsAndPrices, Set<OfferProduct> offerProducts, Set<OfferVoucher> offerVouchers, OfferCharacteristics offerCharacteristics, Set<OfferTranslation> offerTranslations, boolean simpleOffer, Integer maximumAcceptances, Integer maximumAcceptancesPeriodDays, Integer maximumAcceptancesPeriodMonths, boolean stockRecurrence, Integer stockRecurrenceBatch, Integer stockAlertThreshold, boolean stockAlert, List<String> notificationEmails, JourneyScheduler stockScheduler, Date lastStockRecurrenceDate)
   {
     super(schemaAndValue);
     this.initialPropensity = getValidPropensity(initialPropensity);
@@ -338,6 +345,8 @@ public class Offer extends GUIManagedObject implements StockableItem
     this.stockAlertThreshold = stockAlertThreshold;
     this.stockAlert = stockAlert;
     this.notificationEmails = notificationEmails;
+    this.stockScheduler = stockScheduler;
+    this.lastStockRecurrenceDate = lastStockRecurrenceDate;
   }
 
   /*****************************************
@@ -370,6 +379,8 @@ public class Offer extends GUIManagedObject implements StockableItem
     struct.put("stockAlertThreshold", offer.getStockAlertThreshold());
     struct.put("stockAlert", offer.getStockAlert());
     struct.put("notificationEmails", offer.getNotificationEmails());
+    struct.put("stockScheduler", JourneyScheduler.serde().packOptional(offer.getStockScheduler()));
+    struct.put("lastStockRecurrenceDate", offer.getLastStockRecurrenceDate());
     return struct;
   }
 
@@ -509,12 +520,14 @@ public class Offer extends GUIManagedObject implements StockableItem
     Integer stockAlertThreshold = (schemaVersion >= 5) ? valueStruct.getInt32("stockAlertThreshold") : 0;
     boolean stockAlert = (schemaVersion >= 5) ? valueStruct.getBoolean("stockAlert") : false;
     List<String> notificationEmails = schema.field("notificationEmails") != null ? valueStruct.getArray("notificationEmails") : new ArrayList<String>();
+    JourneyScheduler stockScheduler = (schema.field("stockScheduler")!= null) ? JourneyScheduler.serde().unpackOptional(new SchemaAndValue(schema.field("stockScheduler").schema(),valueStruct.get("stockScheduler"))) : null;
+    Date lastStockRecurrenceDate = schema.field("lastStockRecurrenceDate") != null ? (Date) valueStruct.get("lastStockRecurrenceDate") : null;
     
     //
     //  return
     //
 
-    return new Offer(schemaAndValue, initialPropensity, stock, unitaryCost, profileCriteria, offerObjectives, offerSalesChannelsAndPrices, offerProducts, offerVouchers, offerCharacteristics, offerTranslations, simpleOffer, maximumAcceptances, maximumAcceptancesPeriodDays, maximumAcceptancesPeriodMonths, stockRecurrence, stockRecurrenceBatch, stockAlertThreshold, stockAlert, notificationEmails);
+    return new Offer(schemaAndValue, initialPropensity, stock, unitaryCost, profileCriteria, offerObjectives, offerSalesChannelsAndPrices, offerProducts, offerVouchers, offerCharacteristics, offerTranslations, simpleOffer, maximumAcceptances, maximumAcceptancesPeriodDays, maximumAcceptancesPeriodMonths, stockRecurrence, stockRecurrenceBatch, stockAlertThreshold, stockAlert, notificationEmails, stockScheduler, lastStockRecurrenceDate);
   }
   
   /*****************************************
@@ -776,6 +789,7 @@ public class Offer extends GUIManagedObject implements StockableItem
     }
     this.stockRecurrence = JSONUtilities.decodeBoolean(jsonRoot, "stockRecurrence", Boolean.FALSE);
     this.stockRecurrenceBatch = JSONUtilities.decodeInteger(jsonRoot, "stockRecurrenceBatch", 0);
+    if (stockRecurrence) this.stockScheduler = new JourneyScheduler(JSONUtilities.decodeJSONObject(jsonRoot, "stockScheduler", stockRecurrence));
     this.stockAlertThreshold = JSONUtilities.decodeInteger(jsonRoot, "presentationStockAlertThreshold", 0);
     this.stockAlert = JSONUtilities.decodeBoolean(jsonRoot, "stockAlert", Boolean.FALSE);
     this.notificationEmails = new ArrayList<String>();
@@ -784,6 +798,7 @@ public class Offer extends GUIManagedObject implements StockableItem
       {
         this.notificationEmails.add((String) notificationArray.get(i));
       }
+    //this.lastStockRecurrenceDate = JSONUtilities.decodeDate(jsonRoot, "lastStockRecurrenceDate", Boolean.FALSE);
 
     /*****************************************
     *
@@ -1372,4 +1387,8 @@ public class Offer extends GUIManagedObject implements StockableItem
   public void setLimitsReachedReason(String limitsReachedReason) {
 		this.limitsReachedReason = limitsReachedReason;
 	}
+  
+  public void setLastStockRecurrenceDate(Date lastStockRecurrenceDate) {
+    this.lastStockRecurrenceDate = lastStockRecurrenceDate;
+}
 }
