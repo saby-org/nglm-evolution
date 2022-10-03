@@ -9425,6 +9425,19 @@ public class GUIManager
     HashMap<String,Object> response = new HashMap<String,Object>();
     Boolean dryRun = false;
     
+    //
+    // EVPRO-1600 -- TO BE REMOVED
+    //
+    
+    JSONObject stockScheduler = new JSONObject();
+    stockScheduler.put("numberOfOccurrences", 1); // NA
+    stockScheduler.put("runEveryDuration", 1);
+    stockScheduler.put("runEveryUnit", "day"); // "day", "week", "month"
+    //stockScheduler.put("runEveryWeekDay", new JSONArray());   
+    //stockScheduler.put("runEveryMonthDay", new JSONArray());
+    
+    jsonRoot.put("stockScheduler", stockScheduler);
+    
     /*****************************************
     *
     *  dryRun
