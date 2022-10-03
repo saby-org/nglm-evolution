@@ -118,7 +118,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                 log.info("[PRJT] offer[{}] next stock replanish date[{}] is today[{}]", offer.getOfferID(), stockReplanishDates.get(0), time);
                 JSONObject offerJson = offer.getJSONRepresentation();
                 offerJson.replace("presentationStock", offer.getStock() + offer.getStockRecurrenceBatch());
-                offerJson.replace("lastStockRecurrenceDate", time);
+                offerJson.put("lastStockRecurrenceDate", time);
                 try
                   {
                     //offer.setLastStockRecurrenceDate(time);
