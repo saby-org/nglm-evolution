@@ -798,7 +798,7 @@ public class Offer extends GUIManagedObject implements StockableItem
       {
         this.notificationEmails.add((String) notificationArray.get(i));
       }
-    //this.lastStockRecurrenceDate = JSONUtilities.decodeDate(jsonRoot, "lastStockRecurrenceDate", Boolean.FALSE);
+    this.lastStockRecurrenceDate = JSONUtilities.decodeDate(jsonRoot, "lastStockRecurrenceDate", Boolean.FALSE);
 
     /*****************************************
     *
@@ -952,6 +952,7 @@ public class Offer extends GUIManagedObject implements StockableItem
         epochChanged = epochChanged || ! Objects.equals(maximumAcceptancesPeriodDays, existingOffer.getMaximumAcceptancesPeriodDays());
         epochChanged = epochChanged || ! Objects.equals(stockRecurrence, existingOffer.getStockRecurrence());
         epochChanged = epochChanged || ! Objects.equals(stockRecurrenceBatch, existingOffer.getStockRecurrenceBatch());
+        epochChanged = epochChanged || ! Objects.equals(lastStockRecurrenceDate, existingOffer.getLastStockRecurrenceDate());
         epochChanged = epochChanged || ! Objects.equals(stockAlertThreshold, existingOffer.getStockAlertThreshold());
         epochChanged = epochChanged || ! Objects.equals(stockAlert, existingOffer.getStockAlert());
         epochChanged = epochChanged || ! Objects.equals(notificationEmails, existingOffer.getNotificationEmails());
