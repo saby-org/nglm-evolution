@@ -380,7 +380,7 @@ public class Offer extends GUIManagedObject implements StockableItem
     struct.put("stockAlert", offer.getStockAlert());
     struct.put("notificationEmails", offer.getNotificationEmails());
     struct.put("stockScheduler", JourneyScheduler.serde().packOptional(offer.getStockScheduler()));
-    struct.put("lastStockRecurrenceDate", offer.getLastStockRecurrenceDate());
+    struct.put("lastStockRecurrenceDate", offer.getLastStockRecurrenceDate() != null ? offer.getLastStockRecurrenceDate() : offer.getEffectiveStartDate());
     return struct;
   }
 
@@ -1389,7 +1389,4 @@ public class Offer extends GUIManagedObject implements StockableItem
 		this.limitsReachedReason = limitsReachedReason;
 	}
   
-  public void setLastStockRecurrenceDate(Date lastStockRecurrenceDate) {
-    this.lastStockRecurrenceDate = lastStockRecurrenceDate;
-}
 }
