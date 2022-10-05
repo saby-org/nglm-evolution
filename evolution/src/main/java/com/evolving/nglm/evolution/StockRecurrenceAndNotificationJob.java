@@ -36,6 +36,7 @@ import org.json.simple.parser.ParseException;
 import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.RLMDateUtils;
+import com.evolving.nglm.core.RLMDateUtils.DatePattern;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 
@@ -112,7 +113,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
         
         if (offer.getStockRecurrence())
           {
-            String datePattern = "yyyy-MM-dd";
+            String datePattern = DatePattern.LOCAL_DAY.get();
             String tz = Deployment.getDeployment(offer.getTenantID()).getTimeZone();
             final Date time = formattedDate(RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, tz), datePattern);
             List<Date> stockReplanishDates = getExpectedStockReplanishDates(offer, datePattern);

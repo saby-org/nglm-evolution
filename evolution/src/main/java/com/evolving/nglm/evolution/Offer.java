@@ -6,6 +6,7 @@
 
 package com.evolving.nglm.evolution;
 
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -32,11 +33,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.ConnectSerde;
+import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.Pair;
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionOperator;
 import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.Expression.ConstantExpression;
@@ -799,7 +803,7 @@ public class Offer extends GUIManagedObject implements StockableItem
       {
         this.notificationEmails.add((String) notificationArray.get(i));
       }
-    this.lastStockRecurrenceDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "lastStockRecurrenceDate", Boolean.FALSE));
+    this.lastStockRecurrenceDate = parseOfferDateField(JSONUtilities.decodeString(jsonRoot, "lastStockRecurrenceDate", Boolean.FALSE), Deployment.getDeployment(getTenantID()).getTimeZone());
 
     /*****************************************
     *
@@ -810,6 +814,18 @@ public class Offer extends GUIManagedObject implements StockableItem
     if (epochChanged(existingOffer))
       {
         this.setEpoch(epoch);
+      }
+  }
+  
+  public static Date parseOfferDateField(String stringDate, String timezone) throws JSONUtilitiesException
+  {
+    try
+      {
+        return RLMDateUtils.parseDateFromDay(stringDate, timezone);
+      } 
+    catch (ParseException e)
+      {
+        throw new JSONUtilitiesException("parseDateField", e);
       }
   }
   
