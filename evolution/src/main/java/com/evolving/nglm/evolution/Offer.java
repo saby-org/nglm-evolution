@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.NGLMRuntime;
 import com.evolving.nglm.core.Pair;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
@@ -198,7 +199,7 @@ public class Offer extends GUIManagedObject implements StockableItem
   public boolean getStockAlert() { return stockAlert; }
   public List<String> getNotificationEmails() { return notificationEmails; }
   public JourneyScheduler getStockScheduler() { return stockScheduler; }
-  public Date getLastStockRecurrenceDate() { return lastStockRecurrenceDate; }
+  public Date getLastStockRecurrenceDate() { return (lastStockRecurrenceDate != null) ? lastStockRecurrenceDate : getEffectiveStartDate(); }
   
   /*****************************************
   *
@@ -380,7 +381,7 @@ public class Offer extends GUIManagedObject implements StockableItem
     struct.put("stockAlert", offer.getStockAlert());
     struct.put("notificationEmails", offer.getNotificationEmails());
     struct.put("stockScheduler", JourneyScheduler.serde().packOptional(offer.getStockScheduler()));
-    struct.put("lastStockRecurrenceDate", offer.getLastStockRecurrenceDate() != null ? offer.getLastStockRecurrenceDate() : offer.getEffectiveStartDate());
+    struct.put("lastStockRecurrenceDate", offer.getLastStockRecurrenceDate());
     return struct;
   }
 
