@@ -798,7 +798,7 @@ public class Offer extends GUIManagedObject implements StockableItem
       {
         this.notificationEmails.add((String) notificationArray.get(i));
       }
-    this.lastStockRecurrenceDate = JSONUtilities.decodeDate(jsonRoot, "lastStockRecurrenceDate", Boolean.FALSE);
+    this.lastStockRecurrenceDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "lastStockRecurrenceDate", Boolean.FALSE));
 
     /*****************************************
     *

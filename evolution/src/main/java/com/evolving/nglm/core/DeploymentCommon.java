@@ -522,6 +522,7 @@ public class DeploymentCommon
   private static String stockRecurrenceAndNotificationCronEntry;
   private static String stockAlertEmailSubject;
   private static String stockAlertEmailBody;
+  private static int stockReplanishDaysRange;
   
   /*****************************************
   *
@@ -880,6 +881,7 @@ public class DeploymentCommon
   public static String getStockRecurrenceAndNotificationCronEntry() { return stockRecurrenceAndNotificationCronEntry; }
   public static String getStockAlertEmailSubject() { return stockAlertEmailSubject; }
   public static String getStockAlertEmailBody() { return stockAlertEmailBody; }
+  public static int getStockReplanishDaysRange() { return stockReplanishDaysRange; }
 
   
   /****************************************
@@ -1626,6 +1628,7 @@ public class DeploymentCommon
     stockRecurrenceAndNotificationCronEntry = jsonReader.decodeString("stockRecurrenceAndNotificationCronEntry");
     stockAlertEmailSubject = jsonReader.decodeString("stockAlertEmailSubject");
     stockAlertEmailBody = jsonReader.decodeString("stockAlertEmailBody");
+    stockReplanishDaysRange = jsonReader.decodeInteger("stockReplanishDaysRange");
   }
 
   

@@ -7,7 +7,9 @@
 package com.evolving.nglm.evolution;
 
 import java.io.IOException;
+import java.text.DateFormat;
 import java.text.MessageFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
@@ -109,16 +111,18 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
         
         if (offer.getStockRecurrence())
           {
+            String datePattern = "yyyy-MM-dd";
             String tz = Deployment.getDeployment(offer.getTenantID()).getTimeZone();
-            final Date time = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, tz);
-            List<Date> stockReplanishDates = getExpectedStockReplanishDates(offer);
-            if(stockReplanishDates.contains(time) && offer.getLastStockRecurrenceDate() != time)
+            final Date time = formattedDate(RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, tz), datePattern);
+            List<Date> stockReplanishDates = getExpectedStockReplanishDates(offer, datePattern);
+            
+            if(stockReplanishDates.contains(time) && offer.getLastStockRecurrenceDate().compareTo(time) < 0)
               {
                 log.info("[PRJT] offer[{}] LastStockRecurrenceDate: {}", offer.getOfferID(), offer.getLastStockRecurrenceDate());
-                log.info("[PRJT] offer[{}] next stock replanish date[{}] is today[{}]", offer.getOfferID(), stockReplanishDates.get(0), time);
+                log.info("[PRJT] offer[{}] next stock replanish date[{}] is today[{}]", offer.getOfferID(), stockReplanishDates.stream().filter(date -> date.compareTo(time) > 0).findFirst(), time);
                 JSONObject offerJson = offer.getJSONRepresentation();
                 offerJson.replace("presentationStock", offer.getStock() + offer.getStockRecurrenceBatch());
-                offerJson.put("lastStockRecurrenceDate", time.getTime());
+                offerJson.put("lastStockRecurrenceDate", new SimpleDateFormat(datePattern).format(time)); // string
                 try
                   {
                     //offer.setLastStockRecurrenceDate(time);
@@ -132,7 +136,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
               }
             else
               {
-                log.info("[PRJT] offer[{}] next stock replanish date[{}] is NOT today[{}]", offer.getOfferID(), stockReplanishDates.get(0), time);
+                log.info("[PRJT] offer[{}] next stock replanish date[{}] is NOT today[{}]", offer.getOfferID(), stockReplanishDates.stream().filter(date -> date.compareTo(time) > 0).findFirst(), time);
               }
           } 
         else
@@ -185,12 +189,31 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
       }
   }
   
-  private List<Date> getExpectedStockReplanishDates(Offer offer)
+  public Date formattedDate(Date date, String pattern)
+  {
+    DateFormat formatter = new SimpleDateFormat(pattern);
+    try
+      {
+        return formatter.parse(formatter.format(date));
+      } 
+    catch (java.text.ParseException e)
+      {
+        e.printStackTrace();
+      }
+    return date;
+  }
+  
+  private List<Date> getExpectedStockReplanishDates(Offer offer, String datePattern)
   {
     Date now = SystemTime.getCurrentTime();
     String tz = Deployment.getDeployment(offer.getTenantID()).getTimeZone();
+    
     Date offerStartDate = offer.getEffectiveStartDate();
-    Date offerEndDate = offer.getEffectiveEndDate();
+    //Date offerEndDate = offer.getEffectiveEndDate();
+    int stockReplanishDaysRange = Deployment.getStockReplanishDaysRange();
+    Date filterStartDate = RLMDateUtils.addDays(now, -1*stockReplanishDaysRange, tz);
+    Date filterEndDate = RLMDateUtils.addDays(now, stockReplanishDaysRange, tz);
+    
     JourneyScheduler stockScheduler = offer.getStockScheduler();
     
     String scheduling = stockScheduler.getRunEveryUnit().toLowerCase();
@@ -236,8 +259,8 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
       }
     else if ("day".equalsIgnoreCase(scheduling))
       {
-        //Date lastDate = filterEndDate;
-        while(offerEndDate.compareTo(offerStartDate) >= 0)
+        Date lastDate = filterEndDate;
+        while(lastDate.compareTo(offerStartDate) >= 0)
           {
             tmpJourneyCreationDates.add(new Date(offerStartDate.getTime()));
             offerStartDate = RLMDateUtils.addDays(offerStartDate, scheduligInterval, tz);
@@ -253,10 +276,13 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
     //
 
     if(log.isInfoEnabled()) log.info("[PRJT] before filter tmpJourneyCreationDates {}", tmpJourneyCreationDates);
-    tmpJourneyCreationDates = tmpJourneyCreationDates.stream().filter(date -> date.after(offer.getEffectiveStartDate()) && date.compareTo(offer.getEffectiveStartDate()) >= 0 && offerEndDate.compareTo(date) >= 0 ).collect(Collectors.toList());
+    tmpJourneyCreationDates = tmpJourneyCreationDates.stream().filter(date -> date.after(offer.getEffectiveStartDate()) && date.compareTo(filterStartDate) >= 0 && filterEndDate.compareTo(date) >= 0 ).collect(Collectors.toList());
     if(log.isInfoEnabled()) log.info("[PRJT] after filter tmpJourneyCreationDates {}", tmpJourneyCreationDates);
-    
-    return tmpJourneyCreationDates;
+
+    //
+    // return with format
+    //
+    return tmpJourneyCreationDates.stream().map(date -> formattedDate(date, datePattern)).collect(Collectors.toList());
   }
   
   private List<Date> getExpectedCreationDates(Date firstDate, Date lastDate, String scheduling, List<String> runEveryDay, int tenantID)
