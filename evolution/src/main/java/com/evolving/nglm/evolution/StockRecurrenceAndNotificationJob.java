@@ -115,16 +115,17 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
           {
             String datePattern = DatePattern.LOCAL_DAY.get();
             String tz = Deployment.getDeployment(offer.getTenantID()).getTimeZone();
-            final Date time = formattedDate(RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, tz), datePattern);
+            final Date time = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, tz);
+            final Date formattedTime = formattedDate(time, datePattern);
             List<Date> stockReplanishDates = getExpectedStockReplanishDates(offer, datePattern);
             
-            log.info("[PRJT] offer[{}] LastStockRecurrenceDate: {}", offer.getOfferID(), offer.getLastStockRecurrenceDate());
-            if(stockReplanishDates.contains(time) && offer.getLastStockRecurrenceDate().compareTo(time) < 0)
+            log.info("[PRJT] offer[{}] Last Stock Replanish Date: {}", offer.getOfferID(), offer.getLastStockRecurrenceDate());
+            if(stockReplanishDates.contains(formattedTime) && formattedDate(offer.getLastStockRecurrenceDate(), datePattern).compareTo(formattedTime) < 0)
               {
-                log.info("[PRJT] offer[{}] next stock replanish date[{}] is today[{}]", offer.getOfferID(), stockReplanishDates.stream().filter(date -> date.compareTo(time) > 0).findFirst(), time);
+                log.info("[PRJT] offer[{}] next stock replanish date[{}] is today[{}]", offer.getOfferID(), stockReplanishDates.stream().filter(date -> date.compareTo(formattedTime) >= 0).findFirst(), formattedTime);
                 JSONObject offerJson = offer.getJSONRepresentation();
                 offerJson.replace("presentationStock", offer.getStock() + offer.getStockRecurrenceBatch());
-                offerJson.put("lastStockRecurrenceDate", new SimpleDateFormat(datePattern).format(time)); // string
+                offerJson.put("lastStockRecurrenceDate", new SimpleDateFormat(DatePattern.REST_UNIVERSAL_TIMESTAMP_DEFAULT.get()).format(time)); // string
                 try
                   {
                     //offer.setLastStockRecurrenceDate(time);
@@ -138,7 +139,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
               }
             else
               {
-                log.info("[PRJT] offer[{}] next stock replanish date[{}] is NOT today[{}]", offer.getOfferID(), stockReplanishDates.stream().filter(date -> date.compareTo(time) > 0).findFirst(), time);
+                log.info("[PRJT] offer[{}] next stock replanish date[{}] is NOT today[{}]", offer.getOfferID(), stockReplanishDates.stream().filter(date -> date.compareTo(formattedTime) > 0).findFirst(), formattedTime);
               }
           } 
         else
@@ -277,7 +278,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
     // filter out if before start date and recurrentCampaignCreationDaysRange (before / after)
     //
 
-    if(log.isInfoEnabled()) log.info("[PRJT] before filter tmpJourneyCreationDates {}", tmpJourneyCreationDates);
+    //if(log.isInfoEnabled()) log.info("[PRJT] before filter tmpJourneyCreationDates {}", tmpJourneyCreationDates);
     tmpJourneyCreationDates = tmpJourneyCreationDates.stream().filter(date -> date.after(offer.getEffectiveStartDate()) && date.compareTo(filterStartDate) >= 0 && filterEndDate.compareTo(date) >= 0 ).collect(Collectors.toList());
     if(log.isInfoEnabled()) log.info("[PRJT] after filter tmpJourneyCreationDates {}", tmpJourneyCreationDates);
 

@@ -803,7 +803,7 @@ public class Offer extends GUIManagedObject implements StockableItem
       {
         this.notificationEmails.add((String) notificationArray.get(i));
       }
-    this.lastStockRecurrenceDate = parseOfferDateField(JSONUtilities.decodeString(jsonRoot, "lastStockRecurrenceDate", Boolean.FALSE), Deployment.getDeployment(getTenantID()).getTimeZone());
+    this.lastStockRecurrenceDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "lastStockRecurrenceDate", Boolean.FALSE));
 
     /*****************************************
     *
@@ -814,18 +814,6 @@ public class Offer extends GUIManagedObject implements StockableItem
     if (epochChanged(existingOffer))
       {
         this.setEpoch(epoch);
-      }
-  }
-  
-  public static Date parseOfferDateField(String stringDate, String timezone) throws JSONUtilitiesException
-  {
-    try
-      {
-        return RLMDateUtils.parseDateFromDay(stringDate, timezone);
-      } 
-    catch (ParseException e)
-      {
-        throw new JSONUtilitiesException("parseDateField", e);
       }
   }
   
