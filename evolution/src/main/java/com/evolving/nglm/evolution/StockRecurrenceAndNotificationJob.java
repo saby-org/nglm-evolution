@@ -117,9 +117,9 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
             final Date time = formattedDate(RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, tz), datePattern);
             List<Date> stockReplanishDates = getExpectedStockReplanishDates(offer, datePattern);
             
+            log.info("[PRJT] offer[{}] LastStockRecurrenceDate: {}", offer.getOfferID(), offer.getLastStockRecurrenceDate());
             if(stockReplanishDates.contains(time) && offer.getLastStockRecurrenceDate().compareTo(time) < 0)
               {
-                log.info("[PRJT] offer[{}] LastStockRecurrenceDate: {}", offer.getOfferID(), offer.getLastStockRecurrenceDate());
                 log.info("[PRJT] offer[{}] next stock replanish date[{}] is today[{}]", offer.getOfferID(), stockReplanishDates.stream().filter(date -> date.compareTo(time) > 0).findFirst(), time);
                 JSONObject offerJson = offer.getJSONRepresentation();
                 offerJson.replace("presentationStock", offer.getStock() + offer.getStockRecurrenceBatch());
