@@ -803,7 +803,7 @@ public class Offer extends GUIManagedObject implements StockableItem
       {
         this.notificationEmails.add((String) notificationArray.get(i));
       }
-    this.lastStockRecurrenceDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "lastStockRecurrenceDate", Boolean.FALSE));
+    //this.lastStockRecurrenceDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "lastStockRecurrenceDate", Boolean.FALSE));
 
     /*****************************************
     *
@@ -1393,5 +1393,9 @@ public class Offer extends GUIManagedObject implements StockableItem
   public void setLimitsReachedReason(String limitsReachedReason) {
 		this.limitsReachedReason = limitsReachedReason;
 	}
+  
+  public void setLastStockRecurrenceDate(Date lastStockRecurrenceDate) {
+        this.lastStockRecurrenceDate = lastStockRecurrenceDate;
+    }
   
 }

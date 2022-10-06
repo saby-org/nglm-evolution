@@ -114,8 +114,6 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
         if (offer.getStockRecurrence())
           {
             String datePattern = DatePattern.LOCAL_DAY.get();
-            //String tz = Deployment.getDeployment(offer.getTenantID()).getTimeZone();
-            //Date time = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, tz);
             Date formattedTime = formattedDate(now, datePattern);
             List<Date> stockReplanishDates = getExpectedStockReplanishDates(offer, datePattern);
             
@@ -125,11 +123,11 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                 log.info("[PRJT] offer[{}] next stock replanish date[{}] is today[{}]", offer.getOfferID(), stockReplanishDates.stream().filter(date -> date.compareTo(formattedTime) >= 0).findFirst(), formattedTime);
                 JSONObject offerJson = offer.getJSONRepresentation();
                 offerJson.replace("presentationStock", offer.getStock() + offer.getStockRecurrenceBatch());
-                offerJson.put("lastStockRecurrenceDate", new SimpleDateFormat(DatePattern.REST_UNIVERSAL_TIMESTAMP_DEFAULT.get()).format(now)); // string
+                //offerJson.put("lastStockRecurrenceDate", new SimpleDateFormat(DatePattern.REST_UNIVERSAL_TIMESTAMP_DEFAULT.get()).format(now)); // string
                 try
                   {
-                    //offer.setLastStockRecurrenceDate(time);
                     Offer newOffer = new Offer(offerJson, GUIManager.epochServer.getKey(), offer, catalogCharacteristicService, offer.getTenantID());
+                    newOffer.setLastStockRecurrenceDate(now);
                     offerService.putOffer(newOffer, callingChannelService, salesChannelService, productService, voucherService, (offer == null), "StockRecurrenceAndNotificationJob");
                   } 
                 catch (GUIManagerException e)
