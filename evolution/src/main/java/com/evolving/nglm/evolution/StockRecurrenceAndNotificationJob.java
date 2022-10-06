@@ -123,7 +123,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                 log.info("[PRJT] offer[{}] next stock replanish date[{}] is today[{}]", offer.getOfferID(), stockReplanishDates.stream().filter(date -> date.compareTo(formattedTime) >= 0).findFirst(), formattedTime);
                 JSONObject offerJson = offer.getJSONRepresentation();
                 offerJson.replace("presentationStock", offer.getStock() + offer.getStockRecurrenceBatch());
-                //offerJson.put("lastStockRecurrenceDate", new SimpleDateFormat(DatePattern.REST_UNIVERSAL_TIMESTAMP_DEFAULT.get()).format(now)); // string
+                //offerJson.put("lastStockRecurrenceDate", RLMDateUtils.formatDateForREST(now, Deployment.getDeployment(offer.getTenantID()).getTimeZone())); //new SimpleDateFormat(DatePattern.REST_UNIVERSAL_TIMESTAMP_DEFAULT.get()).format(now)); // string
                 try
                   {
                     Offer newOffer = new Offer(offerJson, GUIManager.epochServer.getKey(), offer, catalogCharacteristicService, offer.getTenantID());
