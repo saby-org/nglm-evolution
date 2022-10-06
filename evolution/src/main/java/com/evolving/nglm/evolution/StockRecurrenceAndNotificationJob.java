@@ -114,9 +114,9 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
         if (offer.getStockRecurrence())
           {
             String datePattern = DatePattern.LOCAL_DAY.get();
-            String tz = Deployment.getDeployment(offer.getTenantID()).getTimeZone();
-            Date time = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, tz);
-            Date formattedTime = formattedDate(time, datePattern);
+            //String tz = Deployment.getDeployment(offer.getTenantID()).getTimeZone();
+            //Date time = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, tz);
+            Date formattedTime = formattedDate(now, datePattern);
             List<Date> stockReplanishDates = getExpectedStockReplanishDates(offer, datePattern);
             
             log.info("[PRJT] offer[{}] Last Stock Replanish Date: {}", offer.getOfferID(), offer.getLastStockRecurrenceDate());
@@ -125,7 +125,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                 log.info("[PRJT] offer[{}] next stock replanish date[{}] is today[{}]", offer.getOfferID(), stockReplanishDates.stream().filter(date -> date.compareTo(formattedTime) >= 0).findFirst(), formattedTime);
                 JSONObject offerJson = offer.getJSONRepresentation();
                 offerJson.replace("presentationStock", offer.getStock() + offer.getStockRecurrenceBatch());
-                offerJson.put("lastStockRecurrenceDate", new SimpleDateFormat(DatePattern.REST_UNIVERSAL_TIMESTAMP_DEFAULT.get()).format(time)); // string
+                offerJson.put("lastStockRecurrenceDate", new SimpleDateFormat(DatePattern.REST_UNIVERSAL_TIMESTAMP_DEFAULT.get()).format(now)); // string
                 try
                   {
                     //offer.setLastStockRecurrenceDate(time);
