@@ -115,8 +115,8 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
           {
             String datePattern = DatePattern.LOCAL_DAY.get();
             String tz = Deployment.getDeployment(offer.getTenantID()).getTimeZone();
-            final Date time = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, tz);
-            final Date formattedTime = formattedDate(time, datePattern);
+            Date time = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, tz);
+            Date formattedTime = formattedDate(time, datePattern);
             List<Date> stockReplanishDates = getExpectedStockReplanishDates(offer, datePattern);
             
             log.info("[PRJT] offer[{}] Last Stock Replanish Date: {}", offer.getOfferID(), offer.getLastStockRecurrenceDate());
