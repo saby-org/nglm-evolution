@@ -304,7 +304,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
               break;
         }
         String dayOf = String.valueOf(day);
-        if (runEveryDay.contains(dayOf)) result.add(new Date(firstDate.getTime()));
+        if (runEveryDay.contains(dayOf)) result.add(firstDate); //result.add(new Date(firstDate.getTime()));
         firstDate = RLMDateUtils.addDays(firstDate, 1, Deployment.getDeployment(tenantID).getTimeZone());
       }
 
@@ -317,7 +317,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
         int lastDayOfMonth = RLMDateUtils.getField(lastDate, Calendar.DAY_OF_MONTH, Deployment.getDeployment(tenantID).getTimeZone());
         for (String day : runEveryDay)
           {
-            if (Integer.parseInt(day) > lastDayOfMonth) result.add(new Date(lastDate.getTime()));
+            if (Integer.parseInt(day) > lastDayOfMonth) result.add(lastDate); //result.add(new Date(lastDate.getTime()));
           }
       }
     
