@@ -9429,11 +9429,14 @@ public class GUIManager
     // EVPRO-1600 -- TO BE REMOVED
     //
     
+    JSONArray weekDays = new JSONArray();
+    weekDays.add("2");
+    
     JSONObject stockScheduler = new JSONObject();
     stockScheduler.put("numberOfOccurrences", 1); // NA
-    stockScheduler.put("runEveryDuration", 1);
-    stockScheduler.put("runEveryUnit", "day"); // "day", "week", "month"
-    //stockScheduler.put("runEveryWeekDay", new JSONArray());   
+    stockScheduler.put("runEveryDuration", 2);
+    stockScheduler.put("runEveryUnit", "week"); // "day", "week", "month"
+    stockScheduler.put("runEveryWeekDay", weekDays);   
     //stockScheduler.put("runEveryMonthDay", new JSONArray());
     
     jsonRoot.put("stockScheduler", stockScheduler);

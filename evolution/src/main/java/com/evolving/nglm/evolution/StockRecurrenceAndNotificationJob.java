@@ -117,17 +117,17 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
             Date formattedTime = formattedDate(now, datePattern);
             List<Date> stockReplanishDates = getExpectedStockReplanishDates(offer, datePattern);
             
-            log.info("[PRJT] offer[{}] Last Stock Replanish Date: {}", offer.getOfferID(), offer.getLastStockRecurrenceDate());
+            log.info("[PRJT] offer[{}] Last Stock Replanish Date: [{}]", offer.getOfferID(), offer.getLastStockRecurrenceDate());
             if(stockReplanishDates.contains(formattedTime) && formattedDate(offer.getLastStockRecurrenceDate(), datePattern).compareTo(formattedTime) < 0)
               {
-                log.info("[PRJT] offer[{}] next stock replanish date[{}] is today[{}]", offer.getOfferID(), stockReplanishDates.stream().filter(date -> date.compareTo(formattedTime) >= 0).findFirst(), formattedTime);
+                log.info("[PRJT] offer[{}] Next Stock Replanish Date: {} is TODAY:[{}]", offer.getOfferID(), stockReplanishDates.stream().filter(date -> date.compareTo(formattedTime) >= 0).findFirst(), formattedTime);
                 JSONObject offerJson = offer.getJSONRepresentation();
                 offerJson.replace("presentationStock", offer.getStock() + offer.getStockRecurrenceBatch());
-                //offerJson.put("lastStockRecurrenceDate", RLMDateUtils.formatDateForREST(now, Deployment.getDeployment(offer.getTenantID()).getTimeZone())); //new SimpleDateFormat(DatePattern.REST_UNIVERSAL_TIMESTAMP_DEFAULT.get()).format(now)); // string
                 try
                   {
                     Offer newOffer = new Offer(offerJson, GUIManager.epochServer.getKey(), offer, catalogCharacteristicService, offer.getTenantID());
                     newOffer.setLastStockRecurrenceDate(now);
+                    
                     offerService.putOffer(newOffer, callingChannelService, salesChannelService, productService, voucherService, (offer == null), "StockRecurrenceAndNotificationJob");
                   } 
                 catch (GUIManagerException e)
@@ -135,14 +135,12 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                     log.error("Stock Recurrence Exception: {}", e.getMessage());
                   }
               }
-            else
-              {
-                log.info("[PRJT] offer[{}] next stock replanish date[{}] is NOT today[{}]", offer.getOfferID(), stockReplanishDates.stream().filter(date -> date.compareTo(formattedTime) > 0).findFirst(), formattedTime);
+            else{
+                log.info("[PRJT] offer[{}] Next Stock Replanish Date: {} is NOT Today:[{}]", offer.getOfferID(), stockReplanishDates.stream().filter(date -> date.compareTo(formattedTime) > 0).findFirst(), formattedTime);
               }
           } 
-        else
-          {
-            log.info("[PRJT] stock recurrence scheduling not required for offer[{}]-- remaingin stock[{}], thresold limit[{}]", offer.getOfferID(), offer.getApproximateRemainingStock(), offer.getStockAlertThreshold());
+        else{
+            log.info("[PRJT] offer[{}] StockRecurrence[{}] - Stock Recurrence Scheduling not-configured.", offer.getOfferID(), offer.getStockRecurrence());
           }
       }
     
