@@ -4678,7 +4678,7 @@ public class EvolutionEngine
 
         // Enter tier workflow
         ChallengeLevel newLevel = loyaltyProgramChallenge.getLevel(newTierName);
-        log.info("[PRJT] launchChangeTierWorkflows -- newTierName:[{}], newLevel:[{}]", newTierName, newLevel); 
+        log.info("[PRJT] launchChangeTierWorkflows -- newTierName:[{}], newLevel:[{}]", newTierName, newLevel.toString()); 
         if (newLevel != null) triggerLoyaltyWorflow(event, subscriberState, newLevel.getWorkflowChange(), featureID, newLevel.getLevelName());
         break;
         
@@ -4714,7 +4714,9 @@ public class EvolutionEngine
     if(loyaltyWorflowID == null) { return false; }
     
     String toBeAdded = eventToTrigWorkflow.getClass().getName() + ":" + eventToTrigWorkflow.getEventDate().getTime() + ":" + loyaltyWorflowID + ":" + featureID + ":" + DeliveryRequest.Module.Loyalty_Program.getExternalRepresentation() + ":" + origin ;
+    log.info("[PRJT] toBeAdded: {}", toBeAdded);
     List<String> workflowTriggering = subscriberState.getWorkflowTriggering();
+    log.info("[PRJT] workflowTriggering: {}", workflowTriggering);
     if(workflowTriggering.contains(toBeAdded))
       {
         // there is a conflict, i.e. this has already be requested, which means the date is not enough to discriminate... will see

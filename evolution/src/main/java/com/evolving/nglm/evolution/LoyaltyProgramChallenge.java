@@ -696,6 +696,12 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
     {
       return this.scoreLevel - challengeLevel.getScoreLevel();
     }
+    
+    @Override
+    public String toString()
+    {
+      return "ChallengeLevel [levelName=" + levelName + ", scoreLevel=" + scoreLevel + ", scoreEventName=" + scoreEventName + ", numberOfscorePerEvent=" + numberOfscorePerEvent + ", workflowChange=" + workflowChange + ", workflowScore=" + workflowScore + ", workflowDaily=" + workflowDaily + "]";
+    }
    
   }
   
@@ -734,4 +740,6 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
     result.put("catalogcharacteristic", catalogcharacteristicIDs);
     return result;
   }
+  
+  
 }
