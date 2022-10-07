@@ -4651,7 +4651,7 @@ public class EvolutionEngine
   }
 
 
-  public static void launchChangeTierWorkflows(ProfileLoyaltyProgramChangeEvent event, SubscriberState subscriberState, LoyaltyProgram loyaltyProgram, String oldTierName, String newTierName, String featureID)
+  public static void launchChangeTierWorkflows(SubscriberStreamEvent evolutionEvent, SubscriberState subscriberState, LoyaltyProgram loyaltyProgram, String oldTierName, String newTierName, String featureID)
   {
     switch (loyaltyProgram.getLoyaltyProgramType())
     {
@@ -4665,7 +4665,7 @@ public class EvolutionEngine
 
         // Enter tier workflow
         Tier newTier = loyaltyProgramPoints.getTier(newTierName);
-        if (newTier != null) triggerLoyaltyWorflow(event, subscriberState, newTier.getWorkflowChange(), featureID, newTier.getTierName());
+        if (newTier != null) triggerLoyaltyWorflow(evolutionEvent, subscriberState, newTier.getWorkflowChange(), featureID, newTier.getTierName());
         break;
         
       case CHALLENGE:
@@ -4679,7 +4679,7 @@ public class EvolutionEngine
         // Enter tier workflow
         ChallengeLevel newLevel = loyaltyProgramChallenge.getLevel(newTierName);
         log.info("[PRJT] launchChangeTierWorkflows -- newTierName:[{}], newLevel:[{}]", newTierName, newLevel.toString()); 
-        if (newLevel != null) triggerLoyaltyWorflow(event, subscriberState, newLevel.getWorkflowChange(), featureID, newLevel.getLevelName());
+        if (newLevel != null) triggerLoyaltyWorflow(evolutionEvent, subscriberState, newLevel.getWorkflowChange(), featureID, newLevel.getLevelName());
         break;
         
       case MISSION:
@@ -4690,11 +4690,11 @@ public class EvolutionEngine
         
         if (previousStep != null) 
           {
-            triggerLoyaltyWorflow(event, subscriberState, previousStep.getWorkflowCompletion(), featureID, previousStep.getStepName());
+            triggerLoyaltyWorflow(evolutionEvent, subscriberState, previousStep.getWorkflowCompletion(), featureID, previousStep.getStepName());
           } 
         if (currentStep != null) 
           {
-            triggerLoyaltyWorflow(event, subscriberState, currentStep.getWorkflowStepUP(), featureID, currentStep.getStepName());
+            triggerLoyaltyWorflow(evolutionEvent, subscriberState, currentStep.getWorkflowStepUP(), featureID, currentStep.getStepName());
           } 
         break;
         
@@ -5593,7 +5593,7 @@ public class EvolutionEngine
                               info.put(LoyaltyProgramChallengeEventInfos.LEVEL_UPDATE_TYPE.getExternalRepresentation(), levelChangeType.getExternalRepresentation());
                               ProfileLoyaltyProgramChangeEvent profileLoyaltyProgramChangeEvent = new ProfileLoyaltyProgramChangeEvent(subscriberProfile.getSubscriberID(), loyaltyProgram.getLoyaltyProgramID(), loyaltyProgram.getLoyaltyProgramType(), info);
                               subscriberState.getProfileLoyaltyProgramChangeEvents().add(profileLoyaltyProgramChangeEvent);
-                              launchChangeTierWorkflows(profileLoyaltyProgramChangeEvent, subscriberState, loyaltyProgramChallenge, oldLevel, newLevel, loyaltyProgramState.getLoyaltyProgramID());
+                              launchChangeTierWorkflows(evolutionEvent, subscriberState, loyaltyProgramChallenge, oldLevel, newLevel, loyaltyProgramState.getLoyaltyProgramID());
                             }
                         }
                     }
