@@ -4678,7 +4678,7 @@ public class EvolutionEngine
 
         // Enter tier workflow
         ChallengeLevel newLevel = loyaltyProgramChallenge.getLevel(newTierName);
-        log.info("[PRJT] launchChangeTierWorkflows -- newTierName:[{}], newLevel:[{}]", newTierName, newLevel.toString()); 
+        log.info("[PRJT] launchChangeTierWorkflows -- newTierName:[{}], newLevel:[{}]", newTierName, newLevel !=null ? newLevel.toString() : newLevel); 
         if (newLevel != null) triggerLoyaltyWorflow(evolutionEvent, subscriberState, newLevel.getWorkflowChange(), featureID, newLevel.getLevelName());
         break;
         
