@@ -280,8 +280,8 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
     this.createLeaderBoard = JSONUtilities.decodeBoolean(jsonRoot, "createLeaderBoard", Boolean.FALSE);
     this.recurrence = JSONUtilities.decodeBoolean(jsonRoot, "recurrence", Boolean.FALSE);
     this.recurrenceId = JSONUtilities.decodeString(jsonRoot, "recurrenceId", recurrence);
-    this.occurrenceNumber = JSONUtilities.decodeInteger(jsonRoot, "occurrenceNumber", 1); // EVPRO-1603 -- to happy datacube
     //this.occurrenceNumber = JSONUtilities.decodeInteger(jsonRoot, "occurrenceNumber", recurrence);
+    this.occurrenceNumber = JSONUtilities.decodeInteger(jsonRoot, "occurrenceNumber", 1); // EVPRO-1603 -- to happy datacubemanager for non-recurrence type
     if (recurrence) this.journeyScheduler = new JourneyScheduler(JSONUtilities.decodeJSONObject(jsonRoot, "scheduler", recurrence));
     this.lastCreatedOccurrenceNumber = JSONUtilities.decodeInteger(jsonRoot, "lastCreatedOccurrenceNumber", false);
     this.lastOccurrenceCreateDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "lastOccurrenceCreateDate", false));

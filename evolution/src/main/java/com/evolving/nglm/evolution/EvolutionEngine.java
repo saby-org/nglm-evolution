@@ -4678,6 +4678,7 @@ public class EvolutionEngine
 
         // Enter tier workflow
         ChallengeLevel newLevel = loyaltyProgramChallenge.getLevel(newTierName);
+        log.info("[PRJT] launchChangeTierWorkflows -- newTierName:[{}], newLevel:[{}]", newTierName, newLevel); 
         if (newLevel != null) triggerLoyaltyWorflow(event, subscriberState, newLevel.getWorkflowChange(), featureID, newLevel.getLevelName());
         break;
         
@@ -4717,7 +4718,7 @@ public class EvolutionEngine
     if(workflowTriggering.contains(toBeAdded))
       {
         // there is a conflict, i.e. this has already be requested, which means the date is not enough to discriminate... will see
-        log.warn("triggerLoyaltyWorflow already has " + toBeAdded);
+        log.info("[PRJT] triggerLoyaltyWorflow already has " + toBeAdded);
         return false;
       }
     workflowTriggering.add(toBeAdded);
