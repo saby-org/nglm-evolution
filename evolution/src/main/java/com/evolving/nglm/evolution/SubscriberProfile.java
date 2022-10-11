@@ -968,19 +968,22 @@ public abstract class SubscriberProfile
             String relationshipDateStr = null;
             if (parentID != null && parentID.contains("@"))
               {
-                relationshipDateStr = parentID.split("@", -1)[1];
+                String[] temp = parentID.split("@", -1);
+                parentID = temp[0];
+                relationshipDateStr = temp[1];
+                try
+                  {
+                    relationshipDateStr = RLMDateUtils.formatDateForElasticsearchDefault(new SimpleDateFormat(Deployment.getAPIresponseDateFormat()).parse(relationshipDateStr));
+                  } catch (ParseException e)
+                  {
+                    e.printStackTrace();
+                  }
               }
+            log.info("[PRJT] relationshipDateStr: {}", relationshipDateStr);
             List<String> childrenIDs = relationship.getValue().getChildrenSubscriberIDs();
             obj.put("relationshipName", relationshipName);
             obj.put("parentCustomerID", parentID);
-            try
-              {
-                obj.put("relationshipDate", relationshipDateStr != null ? RLMDateUtils.formatDateForElasticsearchDefault(new SimpleDateFormat(Deployment.getAPIresponseDateFormat()).parse(relationshipDateStr)) : null);
-              } 
-            catch (ParseException e)
-              {
-                e.printStackTrace();
-              }
+            obj.put("relationshipDate", relationshipDateStr);
             obj.put("childrenCount", childrenIDs.size());
             relationships.add(obj);
           }
@@ -2056,7 +2059,7 @@ public abstract class SubscriberProfile
         for (Object packedGroupID : valueMap.keySet())
           {
             List<String> subscriberGroupIDs = (List<String>) ((Struct) packedGroupID).get("subscriberGroupIDs");
-            Pair<String,String> groupID = new Pair<String,String>(subscriberGroupIDs.get(0), subscriberGroupIDs.get(1));
+            Pair<String,String> groupID = new )Pair<String,String>(subscriberGroupIDs.get(0), subscriberGroupIDs.get(1));
             Integer epoch = valueMap.get(packedGroupID);
             result.put(groupID, epoch);
           }
