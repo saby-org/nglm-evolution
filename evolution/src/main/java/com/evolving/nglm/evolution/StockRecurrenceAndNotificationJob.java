@@ -301,7 +301,6 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
   private String resolveTags(final String unformattedText, Object[] tagArgs)
   {
     MessageFormat form = new MessageFormat(unformattedText);
-    System.out.println(form.format(tagArgs));
     return form.format(tagArgs);
   }
 }
