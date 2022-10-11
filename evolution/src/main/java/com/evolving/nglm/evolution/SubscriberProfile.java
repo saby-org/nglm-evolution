@@ -2059,7 +2059,7 @@ public abstract class SubscriberProfile
         for (Object packedGroupID : valueMap.keySet())
           {
             List<String> subscriberGroupIDs = (List<String>) ((Struct) packedGroupID).get("subscriberGroupIDs");
-            Pair<String,String> groupID = new )Pair<String,String>(subscriberGroupIDs.get(0), subscriberGroupIDs.get(1));
+            Pair<String,String> groupID = new Pair<String,String>(subscriberGroupIDs.get(0), subscriberGroupIDs.get(1));
             Integer epoch = valueMap.get(packedGroupID);
             result.put(groupID, epoch);
           }
