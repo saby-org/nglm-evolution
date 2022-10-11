@@ -237,7 +237,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
       //
 
       StringEntity stringEntity = new StringEntity(payload, ContentType.create("application/json"));
-      HttpPost httpPost = new HttpPost("http://" + fwkServer + "/fwkapi/api/communication/email");
+      HttpPost httpPost = new HttpPost("http://" + fwkServer + "/api/communication/email");
       httpPost.setEntity(stringEntity);
 
       //
