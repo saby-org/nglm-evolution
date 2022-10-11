@@ -979,7 +979,6 @@ public abstract class SubscriberProfile
                     e.printStackTrace();
                   }
               }
-            log.info("[PRJT] relationshipDateStr: {}", relationshipDateStr);
             List<String> childrenIDs = relationship.getValue().getChildrenSubscriberIDs();
             obj.put("relationshipName", relationshipName);
             obj.put("parentCustomerID", parentID);
