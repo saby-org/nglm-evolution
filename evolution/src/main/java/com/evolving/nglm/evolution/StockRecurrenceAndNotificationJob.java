@@ -229,6 +229,14 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
       communicationMap.put("ApplicationKey", "");
       communicationMap.put("ObjectId", "");
       communicationMap.put("CallBackURL", "");
+      
+      //
+      // auth
+      //
+      
+      //communicationMap.put("LoginName", loginName);
+      //communicationMap.put("Password", password);
+      
       String payload = JSONUtilities.encodeObject(communicationMap).toJSONString();
       log.debug("sendNotification - FWK API Call payload {}", payload);
       
