@@ -642,7 +642,7 @@ public class GUIManager
     
     // for GUIManagerExtension
     getAuthDetailsSOS("getAuthDetailsSOS"),
-    getCustomerTokenAndNBO("getCustomerTokenAndNBO"),
+    getCutomerPresentableOffers("getCustomerTokenAndNBO"),
     
     
     //
@@ -2557,7 +2557,7 @@ public class GUIManager
 
         // for GUIManagerExtension
         restServer.createContext("/nglm-guimanager/getAuthDetailsSOS", new APISimpleHandler(API.getAuthDetailsSOS));
-        restServer.createContext("/nglm-guimanager/getCustomerTokenAndNBO", new APISimpleHandler(API.getCustomerTokenAndNBO));
+        restServer.createContext("/nglm-guimanager/getCutomerPresentableOffers", new APISimpleHandler(API.getCutomerPresentableOffers));
         
         restServer.setExecutor(Executors.newFixedThreadPool(10));
         restServer.start();
@@ -4643,8 +4643,8 @@ public class GUIManager
                   jsonResponse = processGetAuthDetailsSOS(userID, jsonRoot, tenantID);
                   break;
                   
-                case getCustomerTokenAndNBO:
-                  jsonResponse = guiManagerGeneral.processGetCustomerTokenAndNBO(userID, jsonRoot, tenantID);
+                case getCutomerPresentableOffers:
+                  jsonResponse = guiManagerGeneral.processGetCutomerPresentableOffers(userID, jsonRoot, tenantID);
                   break;
                   
 

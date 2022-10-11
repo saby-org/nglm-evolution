@@ -89,6 +89,8 @@ import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileSer
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectType;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectTypeService;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
+import com.evolving.nglm.evolution.offeroptimizer.DNBOMatrixAlgorithmParameters;
+import com.evolving.nglm.evolution.offeroptimizer.GetOfferException;
 import com.evolving.nglm.evolution.offeroptimizer.OfferOptimizerAlgoManager;
 import com.evolving.nglm.evolution.offeroptimizer.ProposedOfferDetails;
 import com.evolving.nglm.evolution.propensity.PropensityService;
@@ -6092,11 +6094,11 @@ public class GUIManagerGeneral extends GUIManager
   
   /****************************************
   *
-  *  processGetCustomerTokenAndNBO
+  *  processGetCutomerPresentableOffers
   *
   ****************************************/
   
-  public JSONObject processGetCustomerTokenAndNBO(String userID, JSONObject jsonRoot, int tenantID)
+  public JSONObject processGetCutomerPresentableOffers(String userID, JSONObject jsonRoot, int tenantID)
   {
     Map<String, Object> response = new LinkedHashMap<String, Object>();
     Date now = SystemTime.getCurrentTime();
@@ -6109,9 +6111,10 @@ public class GUIManagerGeneral extends GUIManager
 
     String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
     String presentationStrategyID = JSONUtilities.decodeString(jsonRoot, "presentationStrategyID", true);
-    String tokenTypeID = JSONUtilities.decodeString(jsonRoot, "tokenTypeID", true);
-    boolean allowMultipleToken = JSONUtilities.decodeBoolean(jsonRoot, "allowMultipleToken", Boolean.FALSE);
-    Supplier supplier = null;
+    
+    //
+    //  presentationStrategy
+    //
     
     PresentationStrategy presentationStrategy = presentationStrategyService.getActivePresentationStrategy(presentationStrategyID, now);
     if (presentationStrategy == null)
@@ -6120,13 +6123,10 @@ public class GUIManagerGeneral extends GUIManager
         response.put("responseCode", "presentationStrategyNotFound");
         return JSONUtilities.encodeObject(response);          
       }
-    TokenType tokenType = tokenTypeService.getActiveTokenType(tokenTypeID, now);
-    if (tokenType == null)
-      {
-        log.error("no active tokenType for ID {}", tokenType);
-        response.put("responseCode", "tokenTypeNotFound");
-        return JSONUtilities.encodeObject(response);    
-      }
+    
+    //
+    //  subscriber
+    //
     
     String subscriberID = resolveSubscriberID(customerID, tenantID);
     if (subscriberID == null)
@@ -6140,35 +6140,152 @@ public class GUIManagerGeneral extends GUIManager
         try
           {
             SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
-            DNBOToken newToken = TokenUtils.generateTokenCode(subscriberProfile, tokenType);
-            if (newToken == null)
+            StringBuffer returnedLog = new StringBuffer();
+            double rangeValue = 0; // Not significant
+            DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameters = new DNBOMatrixAlgorithmParameters(dnboMatrixService, rangeValue);
+            DNBOToken token = null; // will not be bound
+            SubscriberEvaluationRequest request = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, now, tenantID);
+            Supplier supplierFilter = null;
+            try
               {
-                response.put("responseCode", "tokenCodeNotGenerated");
-                return JSONUtilities.encodeObject(response);
-              }
-            else
-              {
-                newToken.setModuleID(DeliveryRequest.Module.Customer_Care.getExternalRepresentation());
-                newToken.setFeatureID(userID);
-                newToken.setPresentationStrategyID(presentationStrategy.getPresentationStrategyID());
-                // TODO : which sales channel to use ?
-                newToken.setPresentedOffersSalesChannel(presentationStrategy.getSalesChannelIDs().iterator().next());
-                newToken.setCreationDate(now);
-                Collection<ProposedOfferDetails> presentedOffers = ThirdPartyManager.allocateAndSendPresentationLog(jsonRoot, subscriberID, newToken.getTokenCode(), now, supplier, subscriberProfile, (DNBOToken) newToken, presentationStrategyID, presentationStrategy, kafkaProducer, offerService, segmentationDimensionService, productService, voucherService, scoringStrategyService, productTypeService, voucherTypeService, catalogCharacteristicService, dnboMatrixService, supplierService, subscriberGroupEpochReader, tenantID);
-                if (presentedOffers.isEmpty())
+                //
+                //  presentedOffers
+                //
+                
+                Collection<ProposedOfferDetails> presentedOffers = TokenUtils.getOffers(now, token, request, subscriberProfile, presentationStrategy, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, scoringStrategyService, subscriberGroupEpochReader, segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, supplierService, returnedLog, subscriberID, supplierFilter, tenantID);
+                
+                //
+                //  decorate
+                //
+                
+                List<JSONObject> offersJson = new ArrayList<JSONObject>();
+                for (ProposedOfferDetails proposedOfferDetails : presentedOffers)
                   {
-                    //generateTokenChange(subscriberProfile, now, newToken.getTokenCode(), TokenChange.ALLOCATE, RESTAPIGenericReturnCodes.NO_OFFER_ALLOCATED.getGenericResponseCode() + "", API.getCustomerTokenAndNBO, jsonRoot, tenantID);
+                    offersJson.add(proposedOfferDetails.getJSONRepresentation());
                   }
-                response = ThirdPartyJSONGenerator.generateTokenJSONForThirdParty(newToken, journeyService, offerService, scoringStrategyService, presentationStrategyService, offerObjectiveService, loyaltyProgramService, tokenTypeService, callingChannel, presentedOffers, paymentMeanService, tenantID);
+                
+                //
+                //  response
+                //
+                
+                response.put("responseCode", "ok");
+                response.put("presentableOffers", JSONUtilities.encodeArray(offersJson));
+              } 
+            catch (GetOfferException e)
+              {
+                e.printStackTrace();
+                response.put("responseCode", e.getMessage());
               }
           } 
         catch (SubscriberProfileServiceException e)
           {
             e.printStackTrace();
+            response.put("responseCode", e.getMessage());
           }
       }
 
+    //
+    // return
+    //
 
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /****************************************
+  *
+  *  processPresentOfferAndBind
+  *
+  ****************************************/
+  
+  public JSONObject processPresentOfferAndBind(String userID, JSONObject jsonRoot, int tenantID)
+  {
+    Map<String, Object> response = new LinkedHashMap<String, Object>();
+    Date now = SystemTime.getCurrentTime();
+
+    /****************************************
+     *
+     * argument
+     *
+     ****************************************/
+
+    String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
+    String offerID = JSONUtilities.decodeString(jsonRoot, "offerID", true);
+    Double offerScore = JSONUtilities.decodeDouble(jsonRoot, "offerScore", true);
+    String tokenTypeID = JSONUtilities.decodeString(jsonRoot, "tokenTypeID", true);
+    
+    //
+    //  presentationStrategy
+    //
+    
+    TokenType tokenType = tokenTypeService.getActiveTokenType(tokenTypeID, now);
+    if (tokenType == null)
+      {
+        log.error("no active tokenType for ID {}", tokenType);
+        response.put("responseCode", "tokenType");
+        return JSONUtilities.encodeObject(response);          
+      }
+    
+    //
+    //  subscriber
+    //
+    
+    String subscriberID = resolveSubscriberID(customerID, tenantID);
+    if (subscriberID == null)
+      {
+        log.info("unable to resolve SubscriberID for getCustomerAlternateID {} and customerID {}", getCustomerAlternateID, customerID);
+        response.put("responseCode", "CustomerNotFound");
+      }
+    else
+      {
+        try
+          {
+            SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
+            DNBOToken newToken = TokenUtils.generateTokenCode(subscriberProfile, tokenType);
+            if (newToken == null)
+              {
+                log.error("unable to generate new token for token type", tokenType);
+                response.put("responseCode", "can not generate new token");
+                return JSONUtilities.encodeObject(response);
+              } 
+            try
+              {
+                List<ProposedOfferDetails> 
+                ProposedOfferDetails proposedOfferDetails = new ProposedOfferDetails(offerID, "salesChannelId", offerScore);
+                //
+                //  presentedOffers
+                //
+                
+                Collection<ProposedOfferDetails> presentedOffers = TokenUtils.getOffers(now, token, request, subscriberProfile, presentationStrategy, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, scoringStrategyService, subscriberGroupEpochReader, segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, supplierService, returnedLog, subscriberID, supplierFilter, tenantID);
+                
+                //
+                //  decorate
+                //
+                
+                List<JSONObject> offersJson = new ArrayList<JSONObject>();
+                for (ProposedOfferDetails proposedOfferDetails : presentedOffers)
+                  {
+                    offersJson.add(proposedOfferDetails.getJSONRepresentation());
+                  }
+                
+                //
+                //  response
+                //
+                
+                response.put("responseCode", "ok");
+                response.put("presentableOffers", JSONUtilities.encodeArray(offersJson));
+              } 
+            catch (GetOfferException e)
+              {
+                e.printStackTrace();
+                response.put("responseCode", e.getMessage());
+              }
+          } 
+        catch (SubscriberProfileServiceException e)
+          {
+            e.printStackTrace();
+            response.put("responseCode", e.getMessage());
+          }
+      }
 
     //
     // return
