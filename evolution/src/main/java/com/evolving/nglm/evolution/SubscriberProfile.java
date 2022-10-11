@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Map.Entry;
@@ -964,9 +965,22 @@ public abstract class SubscriberProfile
                 
               }
             String parentID = relationship.getValue().getParentSubscriberID();
+            String relationshipDateStr = null;
+            if (parentID != null && parentID.contains("@"))
+              {
+                relationshipDateStr = parentID.split("@", -1)[1];
+              }
             List<String> childrenIDs = relationship.getValue().getChildrenSubscriberIDs();
             obj.put("relationshipName", relationshipName);
             obj.put("parentCustomerID", parentID);
+            try
+              {
+                obj.put("relationshipDate", relationshipDateStr != null ? RLMDateUtils.formatDateForElasticsearchDefault(new SimpleDateFormat(Deployment.getAPIresponseDateFormat()).parse(relationshipDateStr)) : null);
+              } 
+            catch (ParseException e)
+              {
+                e.printStackTrace();
+              }
             obj.put("childrenCount", childrenIDs.size());
             relationships.add(obj);
           }
