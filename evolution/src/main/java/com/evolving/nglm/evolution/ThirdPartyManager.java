@@ -109,7 +109,7 @@ import javax.net.ssl.SSLParameters;
 
 public class ThirdPartyManager 
 {
-  private static final String DEFAULT_FEATURE_ID = "<anonymous>";
+  public static final String DEFAULT_FEATURE_ID = "<anonymous>";
   private static final String CUSTOMER_ID = "customerID";
   private static final String CUSTOMER_ID_TYPE = "customerIDType";
   private static final String CUSTOMER_ID_VALUE = "customerIDValue";

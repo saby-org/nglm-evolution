@@ -18,6 +18,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -34,7 +35,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import com.evolving.nglm.evolution.uniquekey.ZookeeperUniqueKeyServer;
@@ -44,6 +44,8 @@ import org.apache.commons.fileupload.FileUpload;
 import org.apache.commons.fileupload.RequestContext;
 import org.apache.commons.fileupload.util.Streams;
 import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.serialization.Serializer;
 import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
@@ -75,17 +77,20 @@ import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.DeploymentCommon;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.ServerRuntimeException;
 import com.evolving.nglm.core.StringKey;
 import com.evolving.nglm.core.SubscriberIDService;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionException;
+import com.evolving.nglm.evolution.EvolutionUtilities.TimeUnit;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIDependencyDef;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
 import com.evolving.nglm.evolution.PurchaseFulfillmentManager.PurchaseFulfillmentRequest;
 import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTargetingType;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
+import com.evolving.nglm.evolution.Token.TokenStatus;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectType;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectTypeService;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
@@ -4753,7 +4758,7 @@ public class GUIManagerGeneral extends GUIManager
     // waiting to complete all threads
     try
       {
-        while(!es.awaitTermination(2, TimeUnit.SECONDS))
+        while(!es.awaitTermination(2, java.util.concurrent.TimeUnit.SECONDS))
           {
             log.info("GUIManager.processGenerateVouchers- taking more time to generate vocuhers");  
           }
@@ -6212,6 +6217,7 @@ public class GUIManagerGeneral extends GUIManager
     String offerID = JSONUtilities.decodeString(jsonRoot, "offerID", true);
     Double offerScore = JSONUtilities.decodeDouble(jsonRoot, "offerScore", true);
     String tokenTypeID = JSONUtilities.decodeString(jsonRoot, "tokenTypeID", true);
+    String presentationStrategyID = JSONUtilities.decodeString(jsonRoot, "presentationStrategyID", true);
     
     //
     //  presentationStrategy
@@ -6247,37 +6253,142 @@ public class GUIManagerGeneral extends GUIManager
                 response.put("responseCode", "can not generate new token");
                 return JSONUtilities.encodeObject(response);
               } 
-            try
+            List<ProposedOfferDetails> presentedOffers = new ArrayList<ProposedOfferDetails>();
+            ProposedOfferDetails proposedOfferDetails = new ProposedOfferDetails(offerID, "salesChannelId", offerScore);
+            presentedOffers.add(proposedOfferDetails);
+            
+            if (presentedOffers.isEmpty())
               {
-                List<ProposedOfferDetails> 
-                ProposedOfferDetails proposedOfferDetails = new ProposedOfferDetails(offerID, "salesChannelId", offerScore);
-                //
-                //  presentedOffers
-                //
-                
-                Collection<ProposedOfferDetails> presentedOffers = TokenUtils.getOffers(now, token, request, subscriberProfile, presentationStrategy, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, scoringStrategyService, subscriberGroupEpochReader, segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, supplierService, returnedLog, subscriberID, supplierFilter, tenantID);
-                
-                //
-                //  decorate
-                //
-                
-                List<JSONObject> offersJson = new ArrayList<JSONObject>();
-                for (ProposedOfferDetails proposedOfferDetails : presentedOffers)
+                log.error("no presenteable offers"); // is not expected, trace errors
+                newToken.setPresentedOffers(new ArrayList<ProposedOfferDetails>());
+              } 
+            else
+              {
+                String channelID = "channelID";
+                String callUniqueIdentifier = "";
+                String controlGroupState = "controlGroupState";
+                String featureID = JSONUtilities.decodeString(jsonRoot, "loginName", ThirdPartyManager.DEFAULT_FEATURE_ID);
+                String moduleID = DeliveryRequest.Module.Customer_Care.getExternalRepresentation();
+                List<Integer> positions = new ArrayList<Integer>();
+                List<Double> presentedOfferScores = new ArrayList<Double>();
+                List<String> scoringStrategyIDs = new ArrayList<String>();
+                int position = 0;
+                ArrayList<String> presentedOfferIDs = new ArrayList<>();
+                for (ProposedOfferDetails presentedOffer : presentedOffers)
                   {
-                    offersJson.add(proposedOfferDetails.getJSONRepresentation());
+                    presentedOfferIDs.add(presentedOffer.getOfferId());
+                    positions.add(Integer.valueOf(position));
+                    position++;
+                    presentedOfferScores.add(presentedOffer.getOfferScore());
                   }
+                
+                presentedOfferIDs = (ArrayList<String>) presentedOfferIDs.stream().filter(offerId -> (ThirdPartyManager.offerValidation(offerId, offerService, segmentationDimensionService, productService, voucherService, scoringStrategyService, productTypeService, supplierService, tenantID))).collect(Collectors.toList());
+                String salesChannelID = presentedOffers.iterator().next().getSalesChannelId(); // They all have the same one, set by TokenUtils.getOffers()
+                Presentation presentation = new Presentation(now, presentedOfferIDs);
+                List<Presentation> currentPresentationHistory = newToken.getPresentationHistory();
+                currentPresentationHistory.add(presentation);
+                
+                if (log.isDebugEnabled()) log.debug("Added " + presentation + " to presentationHistory " + currentPresentationHistory + " size " + currentPresentationHistory.size());
+
+                // clean list by removing presentations older than oldest limit of all offers in
+                // the lists
+
+                Set<String> allOfferIDs = new HashSet<>();
+                for (Presentation pres : currentPresentationHistory)
+                  {
+                    for (String offer : pres.getOfferIDs())
+                      {
+                        allOfferIDs.add(offer);
+                      }
+                  }
+                Date earliestDateToKeep = now;
+                for (String offer : allOfferIDs)
+                  {
+                    Offer activeOffer = offerService.getActiveOffer(offerID, now);
+                    if (activeOffer != null)
+                      {
+                        Date offerEarliest = now;
+                        Long maximumPresentationsPeriod = (Long) activeOffer.getJSONRepresentation().get("maximumPresentationsPeriod");
+                        String maximumPresentationsUnitStr = (String) activeOffer.getJSONRepresentation().get("maximumPresentationsUnit");
+                        TimeUnit maximumPresentationsUnit = TimeUnit.fromExternalRepresentation(maximumPresentationsUnitStr);
+                        if (maximumPresentationsUnit.equals(TimeUnit.Day))
+                          {
+                            offerEarliest = RLMDateUtils.addDays(now, (int) (-maximumPresentationsPeriod), Deployment.getDeployment(tenantID).getTimeZone());
+                          } 
+                        else if (maximumPresentationsUnit.equals(TimeUnit.Month))
+                          {
+                            if (maximumPresentationsPeriod == 1)
+                              { // current month
+                                offerEarliest = RLMDateUtils.truncate(now, Calendar.MONTH, Deployment.getDeployment(tenantID).getTimeZone());
+                              } 
+                            else
+                              {
+                                offerEarliest = RLMDateUtils.addMonths(now, (int) (-maximumPresentationsPeriod), Deployment.getDeployment(tenantID).getTimeZone());
+                              }
+                          } 
+                        else
+                          {
+                            log.info("internal error : unknown maximumPresentationsUnit " + maximumPresentationsUnitStr + " in offer " + activeOffer.getOfferID() + " , using 1 day");
+                            offerEarliest = RLMDateUtils.addDays(now, -1, Deployment.getDeployment(tenantID).getTimeZone());
+                          }
+                        if (offerEarliest.before(earliestDateToKeep))
+                          {
+                            earliestDateToKeep = offerEarliest;
+                          }
+                      }
+                  }
+                // now we have earliestDateToKeep, cleanup
+                List<Presentation> newPresentationHistory = new ArrayList<>();
+                for (Presentation pres : currentPresentationHistory)
+                  {
+                    Date date = pres.getDate();
+                    if (date.after(earliestDateToKeep))
+                      {
+                        newPresentationHistory.add(pres);
+                      } 
+                    else
+                      {
+                        if (log.isDebugEnabled()) log.debug("Removed history because too old : " + pres);
+                      }
+                  }
+                newToken.setPresentationHistory(newPresentationHistory);
+                if (log.isDebugEnabled()) log.debug("Cleanup of presentation history moved list from " + currentPresentationHistory.size() + " to " + newPresentationHistory.size() + " elements, earliest date to keep : " + earliestDateToKeep);
+
+                PresentationLog presentationLog = new PresentationLog(subscriberID, subscriberID, now, callUniqueIdentifier, channelID, salesChannelID, userID, newToken.getTokenCode(), presentationStrategyID, 0, presentedOfferIDs, presentedOfferScores, positions, controlGroupState, scoringStrategyIDs, null, null, null, moduleID, featureID, newToken.getPresentationDates(), tokenTypeID, newToken, newPresentationHistory);
+
+                //
+                // submit to kafka
+                //
+
+                String topic = Deployment.getPresentationLogTopic();
+                Serializer<StringKey> keySerializer = StringKey.serde().serializer();
+                Serializer<PresentationLog> valueSerializer = PresentationLog.serde().serializer();
+                kafkaProducer.send(new ProducerRecord<byte[], byte[]>(topic, keySerializer.serialize(topic, new StringKey(subscriberID)), valueSerializer.serialize(topic, presentationLog)));
+                keySerializer.close();
+                valueSerializer.close(); // to make Eclipse happy
+
+                // Update token locally, so that it is correctly displayed in the response
+                // For the real token stored in Kafka, this is done offline in EnvolutionEngine.
+
+                // token.setPresentedOfferIDs(presentedOfferIDs);
+                List<ProposedOfferDetails> presentedOffersList = presentedOffers.stream().collect(Collectors.toList());
+                newToken.setPresentedOffers(presentedOffersList);
+                newToken.setPresentedOffersSalesChannel(salesChannelID);
+                newToken.setTokenStatus(TokenStatus.Bound);
+                if (newToken.getCreationDate() == null)
+                  {
+                    newToken.setCreationDate(now);
+                  }
+                newToken.setBoundDate(now);
+                newToken.setBoundCount(newToken.getBoundCount() + 1); // might not be accurate due to maxNumberofPlays
+                
                 
                 //
                 //  response
                 //
                 
                 response.put("responseCode", "ok");
-                response.put("presentableOffers", JSONUtilities.encodeArray(offersJson));
-              } 
-            catch (GetOfferException e)
-              {
-                e.printStackTrace();
-                response.put("responseCode", e.getMessage());
+                response.put("toekenDetails", newToken.getJSON());
               }
           } 
         catch (SubscriberProfileServiceException e)
