@@ -6105,6 +6105,7 @@ public class GUIManagerGeneral extends GUIManager
   
   public JSONObject processGetCutomerPresentableOffers(String userID, JSONObject jsonRoot, int tenantID)
   {
+    log.info("processGetCutomerPresentableOffers jsonRoot {}", jsonRoot);
     Map<String, Object> response = new LinkedHashMap<String, Object>();
     Date now = SystemTime.getCurrentTime();
 
@@ -6223,6 +6224,18 @@ public class GUIManagerGeneral extends GUIManager
     //  presentationStrategy
     //
     
+    PresentationStrategy presentationStrategy = presentationStrategyService.getActivePresentationStrategy(presentationStrategyID, now);
+    if (presentationStrategy == null)
+      {
+        log.error("no active presentationStrategy for ID {}", presentationStrategy);
+        response.put("responseCode", "presentationStrategyNotFound");
+        return JSONUtilities.encodeObject(response);          
+      }
+    
+    //
+    //  tokenType
+    //
+    
     TokenType tokenType = tokenTypeService.getActiveTokenType(tokenTypeID, now);
     if (tokenType == null)
       {
@@ -6254,7 +6267,7 @@ public class GUIManagerGeneral extends GUIManager
                 return JSONUtilities.encodeObject(response);
               } 
             List<ProposedOfferDetails> presentedOffers = new ArrayList<ProposedOfferDetails>();
-            ProposedOfferDetails proposedOfferDetails = new ProposedOfferDetails(offerID, "salesChannelId", offerScore);
+            ProposedOfferDetails proposedOfferDetails = new ProposedOfferDetails(offerID, presentationStrategy.getSalesChannelIDs().stream().findFirst().orElse(null), offerScore);
             presentedOffers.add(proposedOfferDetails);
             
             if (presentedOffers.isEmpty())

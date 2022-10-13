@@ -4078,6 +4078,7 @@ public class ThirdPartyManager
 
  private JSONObject processGetCustomerTokenAndNBO(JSONObject jsonRoot, int tenantID) throws ThirdPartyManagerException
  {
+   log.info("processGetCustomerTokenAndNBO jsonRoot {}", jsonRoot);
    /****************************************
     *
     *  response
