@@ -6142,7 +6142,6 @@ public class GUIManagerGeneral extends GUIManager
       }
     else
       {
-        
         try
           {
             SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID, false);
