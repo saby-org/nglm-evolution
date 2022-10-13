@@ -6167,7 +6167,24 @@ public class GUIManagerGeneral extends GUIManager
                 List<JSONObject> offersJson = new ArrayList<JSONObject>();
                 for (ProposedOfferDetails proposedOfferDetails : presentedOffers)
                   {
-                    offersJson.add(proposedOfferDetails.getJSONRepresentation());
+                    Offer propOffer = offerService.getActiveOffer(proposedOfferDetails.getOfferId(), now);
+                    JSONObject jsonObject = (JSONObject) proposedOfferDetails.getJSONRepresentation().clone();
+                    jsonObject.put("name", propOffer.getDisplay());
+                    OfferSalesChannelsAndPrice offerSalesChannelsAndPrice = propOffer.getOfferSalesChannelsAndPrices().stream().filter(slsChnlNPrc -> slsChnlNPrc.getSalesChannelIDs().contains(proposedOfferDetails.getSalesChannelId())).findFirst().orElse(null);
+                    if (offerSalesChannelsAndPrice != null && offerSalesChannelsAndPrice.getPrice() != null)
+                      {
+                        OfferPrice offerPrice = offerSalesChannelsAndPrice.getPrice();
+                        PaymentMean paymentMean = paymentMeanService.getActivePaymentMean(offerPrice.getPaymentMeanID(), now);
+                        SupportedCurrency currency = Deployment.getDeployment(tenantID).getSupportedCurrencies().get(offerPrice.getSupportedCurrencyID());
+                        JSONObject jsonObjectPrc = new JSONObject();
+                        jsonObjectPrc.put("paymentMean", paymentMean != null ? paymentMean.getDisplay() : "");
+                        jsonObjectPrc.put("paymentMeanID", paymentMean != null ? paymentMean.getPaymentMeanID() : "");
+                        jsonObjectPrc.put("amount", offerPrice.getAmount());
+                        jsonObjectPrc.put("currency", currency != null ? currency.getDisplay() : "");
+                        jsonObjectPrc.put("currencyID", currency != null ? currency.getID() : "");
+                        jsonObject.put("price", jsonObjectPrc);
+                      }
+                    offersJson.add(jsonObject);
                   }
                 
                 //
