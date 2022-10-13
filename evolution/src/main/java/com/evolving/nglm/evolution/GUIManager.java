@@ -642,7 +642,9 @@ public class GUIManager
     
     // for GUIManagerExtension
     getAuthDetailsSOS("getAuthDetailsSOS"),
-    getCutomerPresentableOffers("getCustomerTokenAndNBO"),
+    // gui cc NBO
+    getCutomerPresentableOffers("getCutomerPresentableOffers"),
+    presentCustomerOfferAndBind("presentCustomerOfferAndBind"),
     
     
     //
@@ -4645,6 +4647,10 @@ public class GUIManager
                   
                 case getCutomerPresentableOffers:
                   jsonResponse = guiManagerGeneral.processGetCutomerPresentableOffers(userID, jsonRoot, tenantID);
+                  break;
+                  
+                case presentCustomerOfferAndBind:
+                  jsonResponse = guiManagerGeneral.processPresentCustomerOfferAndBind(userID, jsonRoot, tenantID);
                   break;
                   
 

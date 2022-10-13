@@ -6169,6 +6169,7 @@ public class GUIManagerGeneral extends GUIManager
                     Offer propOffer = offerService.getActiveOffer(proposedOfferDetails.getOfferId(), now);
                     JSONObject jsonObject = (JSONObject) proposedOfferDetails.getJSONRepresentation().clone();
                     jsonObject.put("name", propOffer.getDisplay());
+                    jsonObject.put("description", propOffer.getDescription());
                     OfferSalesChannelsAndPrice offerSalesChannelsAndPrice = propOffer.getOfferSalesChannelsAndPrices().stream().filter(slsChnlNPrc -> slsChnlNPrc.getSalesChannelIDs().contains(proposedOfferDetails.getSalesChannelId())).findFirst().orElse(null);
                     if (offerSalesChannelsAndPrice != null && offerSalesChannelsAndPrice.getPrice() != null)
                       {
@@ -6215,12 +6216,13 @@ public class GUIManagerGeneral extends GUIManager
   
   /****************************************
   *
-  *  processPresentOfferAndBind
+  *  processPresentCustomerOfferAndBind
   *
   ****************************************/
   
-  public JSONObject processPresentOfferAndBind(String userID, JSONObject jsonRoot, int tenantID)
+  public JSONObject processPresentCustomerOfferAndBind(String userID, JSONObject jsonRoot, int tenantID)
   {
+    log.info("processPresentCustomerOfferAndBind jsonRoot {}", jsonRoot);
     Map<String, Object> response = new LinkedHashMap<String, Object>();
     Date now = SystemTime.getCurrentTime();
 
@@ -6235,6 +6237,7 @@ public class GUIManagerGeneral extends GUIManager
     Double offerScore = JSONUtilities.decodeDouble(jsonRoot, "offerScore", true);
     String tokenTypeID = JSONUtilities.decodeString(jsonRoot, "tokenTypeID", true);
     String presentationStrategyID = JSONUtilities.decodeString(jsonRoot, "presentationStrategyID", true);
+    String salesChannelId = JSONUtilities.decodeString(jsonRoot, "salesChannelId", true);
     
     //
     //  presentationStrategy
@@ -6283,7 +6286,7 @@ public class GUIManagerGeneral extends GUIManager
                 return JSONUtilities.encodeObject(response);
               } 
             List<ProposedOfferDetails> presentedOffers = new ArrayList<ProposedOfferDetails>();
-            ProposedOfferDetails proposedOfferDetails = new ProposedOfferDetails(offerID, presentationStrategy.getSalesChannelIDs().stream().findFirst().orElse(null), offerScore);
+            ProposedOfferDetails proposedOfferDetails = new ProposedOfferDetails(offerID, salesChannelId, offerScore);
             presentedOffers.add(proposedOfferDetails);
             
             if (presentedOffers.isEmpty())
@@ -6293,10 +6296,10 @@ public class GUIManagerGeneral extends GUIManager
               } 
             else
               {
-                String channelID = "channelID";
+                String channelID = "channelID"; // need to check - same as third party - RAJ K
                 String callUniqueIdentifier = "";
                 String controlGroupState = "controlGroupState";
-                String featureID = JSONUtilities.decodeString(jsonRoot, "loginName", ThirdPartyManager.DEFAULT_FEATURE_ID);
+                String featureID = JSONUtilities.decodeString(jsonRoot, "userName", "administrator");
                 String moduleID = DeliveryRequest.Module.Customer_Care.getExternalRepresentation();
                 List<Integer> positions = new ArrayList<Integer>();
                 List<Double> presentedOfferScores = new ArrayList<Double>();
@@ -6312,15 +6315,13 @@ public class GUIManagerGeneral extends GUIManager
                   }
                 
                 presentedOfferIDs = (ArrayList<String>) presentedOfferIDs.stream().filter(offerId -> (ThirdPartyManager.offerValidation(offerId, offerService, segmentationDimensionService, productService, voucherService, scoringStrategyService, productTypeService, supplierService, tenantID))).collect(Collectors.toList());
-                String salesChannelID = presentedOffers.iterator().next().getSalesChannelId(); // They all have the same one, set by TokenUtils.getOffers()
                 Presentation presentation = new Presentation(now, presentedOfferIDs);
                 List<Presentation> currentPresentationHistory = newToken.getPresentationHistory();
                 currentPresentationHistory.add(presentation);
                 
                 if (log.isDebugEnabled()) log.debug("Added " + presentation + " to presentationHistory " + currentPresentationHistory + " size " + currentPresentationHistory.size());
 
-                // clean list by removing presentations older than oldest limit of all offers in
-                // the lists
+                // clean list by removing presentations older than oldest limit of all offers in the lists
 
                 Set<String> allOfferIDs = new HashSet<>();
                 for (Presentation pres : currentPresentationHistory)
@@ -6383,7 +6384,7 @@ public class GUIManagerGeneral extends GUIManager
                 newToken.setPresentationHistory(newPresentationHistory);
                 if (log.isDebugEnabled()) log.debug("Cleanup of presentation history moved list from " + currentPresentationHistory.size() + " to " + newPresentationHistory.size() + " elements, earliest date to keep : " + earliestDateToKeep);
 
-                PresentationLog presentationLog = new PresentationLog(subscriberID, subscriberID, now, callUniqueIdentifier, channelID, salesChannelID, userID, newToken.getTokenCode(), presentationStrategyID, 0, presentedOfferIDs, presentedOfferScores, positions, controlGroupState, scoringStrategyIDs, null, null, null, moduleID, featureID, newToken.getPresentationDates(), tokenTypeID, newToken, newPresentationHistory);
+                PresentationLog presentationLog = new PresentationLog(subscriberID, subscriberID, now, callUniqueIdentifier, channelID, salesChannelId, userID, newToken.getTokenCode(), presentationStrategyID, 0, presentedOfferIDs, presentedOfferScores, positions, controlGroupState, scoringStrategyIDs, null, null, null, moduleID, featureID, newToken.getPresentationDates(), tokenTypeID, newToken, newPresentationHistory);
 
                 //
                 // submit to kafka
@@ -6396,13 +6397,12 @@ public class GUIManagerGeneral extends GUIManager
                 keySerializer.close();
                 valueSerializer.close(); // to make Eclipse happy
 
-                // Update token locally, so that it is correctly displayed in the response
-                // For the real token stored in Kafka, this is done offline in EnvolutionEngine.
+                // Update token locally, so that it is correctly displayed in the response, For the real token stored in Kafka, this is done offline in EnvolutionEngine.
 
                 // token.setPresentedOfferIDs(presentedOfferIDs);
                 List<ProposedOfferDetails> presentedOffersList = presentedOffers.stream().collect(Collectors.toList());
                 newToken.setPresentedOffers(presentedOffersList);
-                newToken.setPresentedOffersSalesChannel(salesChannelID);
+                newToken.setPresentedOffersSalesChannel(salesChannelId);
                 newToken.setTokenStatus(TokenStatus.Bound);
                 if (newToken.getCreationDate() == null)
                   {
