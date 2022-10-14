@@ -282,24 +282,19 @@ public JSONObject getNewJSONRepresentation(String relationshipID, SubscriberProf
     return JSONUtilities.encodeObject(json);
   }
   
-  private Object getDatedMapOfChildren(List<String> childrenSubscriberIDs,int tenantID) {
-	Map datedMap=new HashMap<String,String>();
-	String date,childId;
-	for(String child: childrenSubscriberIDs ){
-		if(child!=null && !child.isEmpty()) {
-			date=new String();
-			childId=new String();
-			childId=new String();
-			childId=child.substring(0,child.lastIndexOf(GUIManager.DATE_SEPERATOR)-1);
-			date=new String();
-		//date=getDateString(child.substring(child.lastIndexOf("@")+1),tenantID);
-		date=child.substring(child.lastIndexOf(GUIManager.DATE_SEPERATOR)+1);
-		datedMap.put(childId, date);
-		}
-		}
-	
-	return datedMap;
-}
+  private Object getDatedMapOfChildren(List<String> childrenSubscriberIDs,int tenantID) 
+  {
+    Map<String, String> datedMap = new HashMap<>();
+    for (String child : childrenSubscriberIDs)
+      {
+        if (child != null && !child.isEmpty())
+          {
+            String[] temp = child.trim().split(GUIManager.DATE_SEPERATOR, -1);
+            datedMap.put(temp[0], temp[1]);
+          }
+      }
+    return datedMap;
+  }
 /*****************************************
    *
    * pack
