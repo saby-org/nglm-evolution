@@ -92,11 +92,14 @@ public class ImportedOffersFileSource extends FileSourceConnector
             offerIDs.add(tokens[i]);
           }
         
-        ImportedOffersScoring imported = new ImportedOffersScoring(importedTypeID, subscriberID, offerIDs);
-        if (!getStopRequested())
+        if (importedTypeID != null && subscriberID !=null)
           {
-            return Collections.<KeyValue>singletonList(new KeyValue(Deployment.getImportedOffersDNBOTopic(), Schema.STRING_SCHEMA, subscriberID, ImportedOffersScoring.schema(), ImportedOffersScoring.pack(imported)));
-          }  
+            ImportedOffersScoring imported = new ImportedOffersScoring(importedTypeID, subscriberID, offerIDs);
+            if (!getStopRequested())
+              {
+                return Collections.<KeyValue>singletonList(new KeyValue(Deployment.getImportedOffersDNBOTopic(), Schema.STRING_SCHEMA, subscriberID, ImportedOffersScoring.schema(), ImportedOffersScoring.pack(imported)));
+              } 
+          }
       }
       catch (FileSourceTaskException | RuntimeException e)
       {
