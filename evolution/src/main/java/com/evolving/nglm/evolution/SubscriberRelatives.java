@@ -287,7 +287,7 @@ public JSONObject getNewJSONRepresentation(String relationshipID, SubscriberProf
     Map<String, String> datedMap = new HashMap<>();
     for (String child : childrenSubscriberIDs)
       {
-        if (child != null && !child.isEmpty())
+        if (child != null && !child.isEmpty() && child.contains("@"))
           {
             String[] temp = child.trim().split(GUIManager.DATE_SEPERATOR, -1);
             datedMap.put(temp[0], temp[1]);
