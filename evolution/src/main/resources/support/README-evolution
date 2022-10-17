@@ -418,7 +418,7 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "customerID" : "19195551000", "deliveryRequestID" : "21656404313000000", "origin":"origin"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/cancelPurchaseOffer; echo
 
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 , "customerID":"19195551000", "presentationStrategyID":"1"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getCutomerPresentableOffers; echo
-curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 , "customerID":"19195551000", "presentationStrategyID":"1", "offerID":"1", "offerScore":1.4, "tokenTypeID":"1", "salesChannelId":"1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/presentCustomerOfferAndBind; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 , "customerID":"19195551000", "presentationStrategyID":"1", "offerID":"1", "offerScore":1.4, "tokenTypeID":"1", "salesChannelId":"1", "presentationStrategyID":"1" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/presentCustomerOfferAndBind; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1,  "customerID":"19195551000", "tokenCode" : "JM3MJ", "offerID":"200102","origin":"whatever"}' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/acceptOffer; echo
 
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSourceAddressList; echo
