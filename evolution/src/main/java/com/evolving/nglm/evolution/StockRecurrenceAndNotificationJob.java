@@ -114,6 +114,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
         if (offer.getStockRecurrence())
           {
             boolean testMode = true;
+            log.info("[PRJT] rework...");
             
             String datePattern = DatePattern.LOCAL_DAY.get();
             Date formattedTime = formattedDate(now, datePattern);
