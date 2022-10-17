@@ -60,6 +60,11 @@ public class ImportedOffersFileSource extends FileSourceConnector
           }
         log.info("[PRJT] fileTemplate: {}",fileTemplate);
         log.info("[PRJT] importedTypeID: {}",importedTypeID);
+        if (importedTypeID == null)
+          {
+            log.info("[PRJT] importedTypeID is null, invalid fileTemplate - {}", fileTemplate);
+            return Collections.<KeyValue>emptyList();
+          }
         
         //
         // ignore header
