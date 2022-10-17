@@ -426,13 +426,20 @@ public class TokenUtils
         
         SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, eventDate, tenantID);
         List<String> importedOffers = subscriberProfile.getImportedOffersDNBO().get(scoringAlgorithmId);
-        for (String offerID : importedOffers)
+        if (importedOffers != null && !importedOffers.isEmpty())
           {
-           Offer offer = offerService.getActiveOffer(offerID, eventDate);
-           if (offer.evaluateProfileCriteria(evaluationRequest))
-             {
-               offersForAlgo.add(offer);
-             }
+            for (String offerID : importedOffers)
+              {
+               Offer offer = offerService.getActiveOffer(offerID, eventDate);
+               if (offer.evaluateProfileCriteria(evaluationRequest))
+                 {
+                   offersForAlgo.add(offer);
+                 }
+              }
+          }
+        else
+          {
+            log.error("[PRJT] no imported offers available for {}", subscriberProfile.getMSISDN());
           }
         log.info("[PRJT] Imported offersList[{}]: {}", offersForAlgo.size(), offersForAlgo);
         isSorted = true;

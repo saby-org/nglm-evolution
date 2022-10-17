@@ -1457,6 +1457,7 @@ public abstract class SubscriberProfile
     generalDetailsPresentation.put("universalControlGroupPrevious",getUniversalControlGroupPrevious());
     generalDetailsPresentation.put("universalControlGroupChangeDate",getDateString(getUniversalControlGroupChangeDate()));
     generalDetailsPresentation.put("badges", JSONUtilities.encodeArray(badgesPresentation));
+    generalDetailsPresentation.put("importedOffersDNBO", getImportedOffersDNBO());
     
     // prepare basic kpiPresentation (if any)
     //
@@ -1541,7 +1542,8 @@ public abstract class SubscriberProfile
     generalDetailsPresentation.put("universalControlGroupPrevious",getUniversalControlGroupPrevious());
     generalDetailsPresentation.put("universalControlGroupChangeDate",getDateString(getUniversalControlGroupChangeDate()));
     generalDetailsPresentation.put("badges", JSONUtilities.encodeArray(badgesPresentation));
-  
+    generalDetailsPresentation.put("importedOffersDNBO", getImportedOffersDNBO());
+    
     //
     // prepare basic kpiPresentation (if any)
     //
@@ -1569,7 +1571,7 @@ public abstract class SubscriberProfile
 
     return baseProfilePresentation;
   }
-
+  
   //
   //  getInSegment
   //
