@@ -114,6 +114,7 @@ public class Offer extends GUIManagedObject implements StockableItem
     schemaBuilder.field("stockAlertThreshold", Schema.OPTIONAL_INT32_SCHEMA);  //v5
     schemaBuilder.field("stockAlert", Schema.BOOLEAN_SCHEMA);  //v5
     schemaBuilder.field("notificationEmails", SchemaBuilder.array(Schema.STRING_SCHEMA).defaultValue(new ArrayList<String>()).schema());
+    schemaBuilder.field("reuseRemainingStock", Schema.OPTIONAL_BOOLEAN_SCHEMA);    //v5
     schema = schemaBuilder.build();
   };
 
@@ -160,6 +161,7 @@ public class Offer extends GUIManagedObject implements StockableItem
   private List<String> notificationEmails;
   private JourneyScheduler stockScheduler;
   private Date lastStockRecurrenceDate;
+  private boolean reuseRemainingStock;
   
   //
   //  derived
@@ -204,6 +206,7 @@ public class Offer extends GUIManagedObject implements StockableItem
   public List<String> getNotificationEmails() { return notificationEmails; }
   public JourneyScheduler getStockScheduler() { return stockScheduler; }
   public Date getLastStockRecurrenceDate() { return (lastStockRecurrenceDate != null) ? lastStockRecurrenceDate : getEffectiveStartDate(); }
+  public boolean reuseRemainingStock() { return reuseRemainingStock; }
   
   /*****************************************
   *
@@ -327,7 +330,7 @@ public class Offer extends GUIManagedObject implements StockableItem
   *
   *****************************************/
 
-  public Offer(SchemaAndValue schemaAndValue, double initialPropensity, Integer stock, int unitaryCost, List<EvaluationCriterion> profileCriteria, Set<OfferObjectiveInstance> offerObjectives, Set<OfferSalesChannelsAndPrice> offerSalesChannelsAndPrices, Set<OfferProduct> offerProducts, Set<OfferVoucher> offerVouchers, OfferCharacteristics offerCharacteristics, Set<OfferTranslation> offerTranslations, boolean simpleOffer, Integer maximumAcceptances, Integer maximumAcceptancesPeriodDays, Integer maximumAcceptancesPeriodMonths, boolean stockRecurrence, Integer stockRecurrenceBatch, Integer stockAlertThreshold, boolean stockAlert, List<String> notificationEmails, JourneyScheduler stockScheduler, Date lastStockRecurrenceDate)
+  public Offer(SchemaAndValue schemaAndValue, double initialPropensity, Integer stock, int unitaryCost, List<EvaluationCriterion> profileCriteria, Set<OfferObjectiveInstance> offerObjectives, Set<OfferSalesChannelsAndPrice> offerSalesChannelsAndPrices, Set<OfferProduct> offerProducts, Set<OfferVoucher> offerVouchers, OfferCharacteristics offerCharacteristics, Set<OfferTranslation> offerTranslations, boolean simpleOffer, Integer maximumAcceptances, Integer maximumAcceptancesPeriodDays, Integer maximumAcceptancesPeriodMonths, boolean stockRecurrence, Integer stockRecurrenceBatch, Integer stockAlertThreshold, boolean stockAlert, List<String> notificationEmails, JourneyScheduler stockScheduler, Date lastStockRecurrenceDate , boolean reuseRemainingStock)
   {
     super(schemaAndValue);
     this.initialPropensity = getValidPropensity(initialPropensity);
@@ -352,6 +355,7 @@ public class Offer extends GUIManagedObject implements StockableItem
     this.notificationEmails = notificationEmails;
     this.stockScheduler = stockScheduler;
     this.lastStockRecurrenceDate = lastStockRecurrenceDate;
+    this.reuseRemainingStock = reuseRemainingStock;
   }
 
   /*****************************************
@@ -386,6 +390,7 @@ public class Offer extends GUIManagedObject implements StockableItem
     struct.put("notificationEmails", offer.getNotificationEmails());
     struct.put("stockScheduler", JourneyScheduler.serde().packOptional(offer.getStockScheduler()));
     struct.put("lastStockRecurrenceDate", offer.getLastStockRecurrenceDate());
+    struct.put("reuseRemainingStock", offer.reuseRemainingStock());
     return struct;
   }
 
@@ -527,12 +532,13 @@ public class Offer extends GUIManagedObject implements StockableItem
     List<String> notificationEmails = schema.field("notificationEmails") != null ? valueStruct.getArray("notificationEmails") : new ArrayList<String>();
     JourneyScheduler stockScheduler = (schema.field("stockScheduler")!= null) ? JourneyScheduler.serde().unpackOptional(new SchemaAndValue(schema.field("stockScheduler").schema(),valueStruct.get("stockScheduler"))) : null;
     Date lastStockRecurrenceDate = schema.field("lastStockRecurrenceDate") != null ? (Date) valueStruct.get("lastStockRecurrenceDate") : null;
+    boolean reuseRemainingStock = schema.field("reuseRemainingStock") != null ? valueStruct.getBoolean("reuseRemainingStock") : false; 
     
     //
     //  return
     //
 
-    return new Offer(schemaAndValue, initialPropensity, stock, unitaryCost, profileCriteria, offerObjectives, offerSalesChannelsAndPrices, offerProducts, offerVouchers, offerCharacteristics, offerTranslations, simpleOffer, maximumAcceptances, maximumAcceptancesPeriodDays, maximumAcceptancesPeriodMonths, stockRecurrence, stockRecurrenceBatch, stockAlertThreshold, stockAlert, notificationEmails, stockScheduler, lastStockRecurrenceDate);
+    return new Offer(schemaAndValue, initialPropensity, stock, unitaryCost, profileCriteria, offerObjectives, offerSalesChannelsAndPrices, offerProducts, offerVouchers, offerCharacteristics, offerTranslations, simpleOffer, maximumAcceptances, maximumAcceptancesPeriodDays, maximumAcceptancesPeriodMonths, stockRecurrence, stockRecurrenceBatch, stockAlertThreshold, stockAlert, notificationEmails, stockScheduler, lastStockRecurrenceDate, reuseRemainingStock);
   }
   
   /*****************************************
@@ -804,6 +810,7 @@ public class Offer extends GUIManagedObject implements StockableItem
         this.notificationEmails.add((String) notificationArray.get(i));
       }
     this.lastStockRecurrenceDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "lastStockRecurrenceDate", Boolean.FALSE));
+    this.reuseRemainingStock = JSONUtilities.decodeBoolean(jsonRoot, "reuseRemainingStock", Boolean.FALSE);
 
     /*****************************************
     *
@@ -961,6 +968,7 @@ public class Offer extends GUIManagedObject implements StockableItem
         epochChanged = epochChanged || ! Objects.equals(stockAlertThreshold, existingOffer.getStockAlertThreshold());
         epochChanged = epochChanged || ! Objects.equals(stockAlert, existingOffer.getStockAlert());
         epochChanged = epochChanged || ! Objects.equals(notificationEmails, existingOffer.getNotificationEmails());
+        epochChanged = epochChanged || ! Objects.equals(reuseRemainingStock, existingOffer.reuseRemainingStock());
         return epochChanged;
       }
     else

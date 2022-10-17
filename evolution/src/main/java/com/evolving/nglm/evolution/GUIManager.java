@@ -9441,6 +9441,7 @@ public class GUIManager
     //stockScheduler.put("runEveryMonthDay", new JSONArray());
     
     jsonRoot.put("stockScheduler", stockScheduler);
+    jsonRoot.put("reuseRemainingStock", Boolean.TRUE);
     
     /*****************************************
     *

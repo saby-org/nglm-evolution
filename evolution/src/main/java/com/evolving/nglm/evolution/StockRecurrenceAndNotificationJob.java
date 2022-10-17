@@ -113,16 +113,30 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
         
         if (offer.getStockRecurrence())
           {
+            boolean testMode = true;
+            
             String datePattern = DatePattern.LOCAL_DAY.get();
             Date formattedTime = formattedDate(now, datePattern);
             List<Date> stockReplanishDates = getExpectedStockReplanishDates(offer, datePattern);
             
             log.info("[PRJT] offer[{}] Last Stock Replanish Date: [{}]", offer.getOfferID(), offer.getLastStockRecurrenceDate());
-            if(stockReplanishDates.contains(formattedTime) && formattedDate(offer.getLastStockRecurrenceDate(), datePattern).compareTo(formattedTime) < 0)
+            if(stockReplanishDates.contains(formattedTime) && formattedDate(offer.getLastStockRecurrenceDate(), datePattern).compareTo(formattedTime) < 0 || testMode)
               {
                 log.info("[PRJT] offer[{}] Next Stock Replanish Date: {} is TODAY:[{}]", offer.getOfferID(), stockReplanishDates.stream().filter(date -> date.compareTo(formattedTime) >= 0).findFirst(), formattedTime);
                 JSONObject offerJson = offer.getJSONRepresentation();
-                offerJson.replace("presentationStock", offer.getStock() + offer.getStockRecurrenceBatch());
+                
+                //
+                // reuse
+                //
+                
+                Integer stockToAdd = offer.getStockRecurrenceBatch();
+                if (offer.reuseRemainingStock())
+                  {
+                    stockToAdd += offer.getStock(); // new + old
+                  }
+                
+                log.info("[PRJT] stockToAdd: {} -- new[{}], old[{}] -- rem[{}]", offer.getStockRecurrenceBatch(), offer.getStock(), offer.getApproximateRemainingStock());
+                offerJson.replace("presentationStock", stockToAdd);
                 try
                   {
                     Offer newOffer = new Offer(offerJson, GUIManager.epochServer.getKey(), offer, catalogCharacteristicService, offer.getTenantID());
