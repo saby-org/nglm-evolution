@@ -2560,6 +2560,7 @@ public class GUIManager
         // for GUIManagerExtension
         restServer.createContext("/nglm-guimanager/getAuthDetailsSOS", new APISimpleHandler(API.getAuthDetailsSOS));
         restServer.createContext("/nglm-guimanager/getCutomerPresentableOffers", new APISimpleHandler(API.getCutomerPresentableOffers));
+        restServer.createContext("/nglm-guimanager/presentCustomerOfferAndBind", new APISimpleHandler(API.presentCustomerOfferAndBind));
         
         restServer.setExecutor(Executors.newFixedThreadPool(10));
         restServer.start();
