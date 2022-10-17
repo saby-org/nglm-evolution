@@ -6106,7 +6106,6 @@ public class GUIManagerGeneral extends GUIManager
   
   public JSONObject processGetCutomerPresentableOffers(String userID, JSONObject jsonRoot, int tenantID)
   {
-    log.info("processGetCutomerPresentableOffers jsonRoot {}", jsonRoot);
     Map<String, Object> response = new LinkedHashMap<String, Object>();
     Date now = SystemTime.getCurrentTime();
 
@@ -6223,7 +6222,6 @@ public class GUIManagerGeneral extends GUIManager
   
   public JSONObject processPresentCustomerOfferAndBind(String userID, JSONObject jsonRoot, int tenantID)
   {
-    log.info("processPresentCustomerOfferAndBind jsonRoot {}", jsonRoot);
     Map<String, Object> response = new LinkedHashMap<String, Object>();
     Date now = SystemTime.getCurrentTime();
 
@@ -6239,6 +6237,12 @@ public class GUIManagerGeneral extends GUIManager
     String tokenTypeID = JSONUtilities.decodeString(jsonRoot, "tokenTypeID", true);
     String presentationStrategyID = JSONUtilities.decodeString(jsonRoot, "presentationStrategyID", true);
     String salesChannelId = JSONUtilities.decodeString(jsonRoot, "salesChannelId", true);
+    
+    String channelID = "channelID"; // need to check - same as third party - RAJ K
+    String callUniqueIdentifier = "";
+    String controlGroupState = "controlGroupState";
+    String featureID = JSONUtilities.decodeString(jsonRoot, "userName", "administrator");
+    String moduleID = DeliveryRequest.Module.Customer_Care.getExternalRepresentation();
     
     //
     //  presentationStrategy
@@ -6287,6 +6291,12 @@ public class GUIManagerGeneral extends GUIManager
                 return JSONUtilities.encodeObject(response);
               }
             
+            newToken.setModuleID(moduleID);
+            newToken.setFeatureID(featureID);
+            newToken.setPresentationStrategyID(presentationStrategy.getPresentationStrategyID());
+            newToken.setPresentedOffersSalesChannel(salesChannelId);
+            newToken.setCreationDate(now);
+            
             //
             // handleTokenStateAndCriterias
             //
@@ -6314,18 +6324,6 @@ public class GUIManagerGeneral extends GUIManager
                   } 
                 else
                   {
-                    String channelID = "channelID"; // need to check - same as third party - RAJ K
-                    String callUniqueIdentifier = "";
-                    String controlGroupState = "controlGroupState";
-                    String featureID = JSONUtilities.decodeString(jsonRoot, "userName", "administrator");
-                    String moduleID = DeliveryRequest.Module.Customer_Care.getExternalRepresentation();
-                    
-                    newToken.setModuleID(moduleID);
-                    newToken.setFeatureID(featureID);
-                    newToken.setPresentationStrategyID(presentationStrategy.getPresentationStrategyID());
-                    newToken.setPresentedOffersSalesChannel(salesChannelId);
-                    newToken.setCreationDate(now);
-                    
                     List<Integer> positions = new ArrayList<Integer>();
                     List<Double> presentedOfferScores = new ArrayList<Double>();
                     List<String> scoringStrategyIDs = new ArrayList<String>();
