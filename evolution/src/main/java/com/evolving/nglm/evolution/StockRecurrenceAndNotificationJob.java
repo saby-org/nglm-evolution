@@ -113,8 +113,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
         
         if (offer.getStockRecurrence())
           {
-            boolean testMode = true;
-            log.info("[PRJT] rework...");
+            boolean testMode = false; // for testing
             
             String datePattern = DatePattern.LOCAL_DAY.get();
             Date formattedTime = formattedDate(now, datePattern);
@@ -130,13 +129,12 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                 // reuse
                 //
                 
-                Integer stockToAdd = offer.getStockRecurrenceBatch();
+                Integer stockToAdd = offer.getStockRecurrenceBatch(); // TODO - for now no stats of stock history
                 if (offer.reuseRemainingStock())
                   {
                     stockToAdd += offer.getStock(); // new + old
                   }
                 
-                log.info("[PRJT] stockToAdd: {} -- new[{}], old[{}] -- rem[{}]", offer.getStockRecurrenceBatch(), offer.getStock(), offer.getApproximateRemainingStock());
                 offerJson.replace("presentationStock", stockToAdd);
                 try
                   {
@@ -151,7 +149,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                   }
               }
             else{
-                log.info("[PRJT] offer[{}] Next Stock Replanish Date: {} is NOT Today:[{}]", offer.getOfferID(), stockReplanishDates.stream().filter(date -> date.compareTo(formattedTime) > 0).findFirst(), formattedTime);
+                log.info("[PRJT] offer[{}] Next Stock Replanish Date: {}", offer.getOfferID(), stockReplanishDates.stream().filter(date -> date.compareTo(formattedTime) > 0).findFirst());
               }
           } 
         else{
@@ -336,7 +334,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
           }
       }
     
-    log.info("[PRJT] getExpectedCreationDates(): {}", result);
+    log.debug("[PRJT] getExpectedCreationDates(): {}", result);
     return result;
   }
 
