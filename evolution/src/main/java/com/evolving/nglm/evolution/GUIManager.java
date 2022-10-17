@@ -9425,6 +9425,7 @@ public class GUIManager
     HashMap<String,Object> response = new HashMap<String,Object>();
     Boolean dryRun = false;
     
+    /*
     //
     // EVPRO-1600 -- TO BE REMOVED
     //
@@ -9441,7 +9442,7 @@ public class GUIManager
     //stockScheduler.put("runEveryMonthDay", new JSONArray());
     
     jsonRoot.put("stockScheduler", stockScheduler);
-    jsonRoot.put("reuseRemainingStock", Boolean.FALSE);
+    jsonRoot.put("reuseRemainingStock", Boolean.FALSE);*/
     
     /*****************************************
     *
