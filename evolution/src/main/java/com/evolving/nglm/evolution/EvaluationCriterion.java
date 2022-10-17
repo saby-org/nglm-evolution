@@ -23,12 +23,15 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.ElasticsearchStatusException;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.core.CountRequest;
 import org.elasticsearch.client.core.CountResponse;
 import org.elasticsearch.index.query.*;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
@@ -1400,6 +1403,16 @@ public class EvaluationCriterion
     CountRequest countRequest = new CountRequest("subscriberprofile").query(query);
     CountResponse countResponse = elasticsearch.count(countRequest, RequestOptions.DEFAULT);
     return countResponse.getCount();
+  }
+  
+  
+  //
+  // execute query  //  EVPRO-1604
+  //
+  public static SearchResponse esSearchMatchCriteriaExecuteQuery(BoolQueryBuilder query, ElasticsearchClientAPI elasticsearch) throws IOException, ElasticsearchStatusException {
+    SearchRequest searchRequest = new SearchRequest("subscriberprofile").source(new SearchSourceBuilder().query(query));
+    SearchResponse searchResponse = elasticsearch.search(searchRequest, RequestOptions.DEFAULT);
+    return searchResponse;
   }
 
   /*****************************************

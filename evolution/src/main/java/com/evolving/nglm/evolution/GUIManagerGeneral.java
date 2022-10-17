@@ -1012,10 +1012,10 @@ public class GUIManagerGeneral extends GUIManager
     *
     *****************************************/
 
-    long result;
+    SearchResponse result;
     try
       {
-        result = EvaluationCriterion.esCountMatchCriteriaExecuteQuery(query, elasticsearch);
+        result = EvaluationCriterion.esSearchMatchCriteriaExecuteQuery(query, elasticsearch);
       }
     catch (IOException|ElasticsearchStatusException e)
       {
@@ -1060,6 +1060,93 @@ public class GUIManagerGeneral extends GUIManager
     return JSONUtilities.encodeObject(response);
   }
 
+  
+  /*****************************************
+  *
+  *  processAdvancedSearch   -- search elasticSearch subscriberProfile Index, using profile criteria
+  *
+  *****************************************/
+
+  JSONObject processAdvancedSearch(String userID, JSONObject jsonRoot, int tenantID)
+  {
+	  
+	   /****************************************
+	    *
+	    *  response
+	    *
+	    ****************************************/
+
+	    HashMap<String,Object> response = new HashMap<String,Object>();
+
+	    /*****************************************
+	    *
+	    *  parse
+	    *
+	    *****************************************/
+
+	    List<EvaluationCriterion> criteriaList = new ArrayList<EvaluationCriterion>();
+	    try
+	      {
+	        JSONArray jsonCriteriaList = JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", true);
+	        for (int i=0; i<jsonCriteriaList.size(); i++)
+	          {
+	            criteriaList.add(new EvaluationCriterion((JSONObject) jsonCriteriaList.get(i), CriterionContext.FullDynamicProfile(tenantID), tenantID));
+	          }
+	      }
+	    catch (JSONUtilitiesException|GUIManagerException e)
+	      {
+	        //
+	        //  log
+	        //
+
+	        StringWriter stackTraceWriter = new StringWriter();
+	        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+	        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+	        //
+	        //  response
+	        //
+
+	        response.put("responseCode", "argumentError");
+	        response.put("responseMessage", e.getMessage());
+	        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+	        return JSONUtilities.encodeObject(response);
+	      }
+
+	    Boolean returnQuery = JSONUtilities.decodeBoolean(jsonRoot, "returnQuery", Boolean.FALSE);
+	    
+	    /*****************************************
+	    *
+	    *  construct query
+	    *
+	    *****************************************/
+
+	    BoolQueryBuilder query = null;
+	    try
+	      {
+	        query = EvaluationCriterion.esCountMatchCriteriaGetQuery(criteriaList);
+	      }
+	    catch (CriterionException e)
+	      {
+	        //
+	        //  log
+	        //
+
+	        StringWriter stackTraceWriter = new StringWriter();
+	        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+	        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+	        //
+	        //  response
+	        //
+
+	        response.put("responseCode", "argumentError");
+	        response.put("responseMessage", e.getMessage());
+	        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+	        return JSONUtilities.encodeObject(response);
+	      }
+	  return null;
+  }
   /*****************************************
   *
   *  processGetPointList

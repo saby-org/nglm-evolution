@@ -253,6 +253,7 @@ public class GUIManager
     getCountBySegmentationRangesBySegmentID("getCountBySegmentationRangesBySegmentID"),
     getCountBySegmentationEligibility("getCountBySegmentationEligibility"),
     evaluateProfileCriteria("evaluateProfileCriteria"),
+    advancedSerarch("advancedSearch"),
     getUCGDimensionSummaryList("getUCGDimensionSummaryList"),
     getPointList("getPointList"),
     getPointSummaryList("getPointSummaryList"),
@@ -2183,6 +2184,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getCountBySegmentationRangesBySegmentID", new APISimpleHandler(API.getCountBySegmentationRangesBySegmentID));
         restServer.createContext("/nglm-guimanager/getCountBySegmentationEligibility", new APISimpleHandler(API.getCountBySegmentationEligibility));
         restServer.createContext("/nglm-guimanager/evaluateProfileCriteria", new APISimpleHandler(API.evaluateProfileCriteria));
+        restServer.createContext("/nglm-guimanager/advancedSearch", new APISimpleHandler(API.advancedSerarch));
         restServer.createContext("/nglm-guimanager/getUCGDimensionSummaryList", new APISimpleHandler(API.getUCGDimensionSummaryList));
         restServer.createContext("/nglm-guimanager/getPointList", new APISimpleHandler(API.getPointList));
         restServer.createContext("/nglm-guimanager/getPointSummaryList", new APISimpleHandler(API.getPointSummaryList));
@@ -3258,6 +3260,10 @@ public class GUIManager
                 case evaluateProfileCriteria:
                   jsonResponse = guiManagerGeneral.processEvaluateProfileCriteria(userID, jsonRoot, tenantID);
                   break;
+                  
+                case advancedSerarch:
+                    jsonResponse = guiManagerGeneral.processAdvancedSearch(userID, jsonRoot, tenantID);
+                    break;
 
                 case getUCGDimensionSummaryList:
                   jsonResponse = guiManagerBaseManagement.processGetUCGDimensionList(userID, jsonRoot, false, includeArchived, tenantID);
