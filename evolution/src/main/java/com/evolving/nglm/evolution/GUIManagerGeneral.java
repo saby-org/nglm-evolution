@@ -1012,10 +1012,10 @@ public class GUIManagerGeneral extends GUIManager
     *
     *****************************************/
 
-    SearchResponse result;
+    long result;
     try
       {
-        result = EvaluationCriterion.esSearchMatchCriteriaExecuteQuery(query, elasticsearch);
+        result = EvaluationCriterion.esCountMatchCriteriaExecuteQuery(query, elasticsearch);
       }
     catch (IOException|ElasticsearchStatusException e)
       {
@@ -1145,8 +1145,63 @@ public class GUIManagerGeneral extends GUIManager
 	        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
 	        return JSONUtilities.encodeObject(response);
 	      }
-	  return null;
+	    
+	    /*****************************************
+	    *
+	    *  execute query
+	    *
+	    *****************************************/
+
+	    SearchResponse result;
+	    try
+	      {
+	        result = EvaluationCriterion.esSearchMatchCriteriaExecuteQuery(query, elasticsearch);
+	      }
+	    catch (IOException|ElasticsearchStatusException e)
+	      {
+	        //
+	        //  log
+	        //
+
+	        StringWriter stackTraceWriter = new StringWriter();
+	        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+	        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+	        //
+	        //  response
+	        //
+
+	        response.put("responseCode", "systemError");
+	        response.put("responseMessage", e.getMessage());
+	        response.put("responseParameter", null);
+	        return JSONUtilities.encodeObject(response);
+	      }
+	    
+	    
+	    /*****************************************
+	    *
+	    *  response
+	    *
+	    *****************************************/
+
+	    response.put("responseCode", "ok");
+	    response.put("result", result);
+	    if (returnQuery && (query != null))
+	      {
+	        try
+	          {
+	            JSONObject queryJSON = (JSONObject) (new JSONParser()).parse(query.toString());
+	            response.put("query", JSONUtilities.encodeObject(queryJSON));
+	          }
+	        catch (ParseException e)
+	          {
+	            log.debug("Cannot parse query string {} : {}", query.toString(), e.getLocalizedMessage());
+	          }
+	      }
+	    return JSONUtilities.encodeObject(response);  
+	    
   }
+  
   /*****************************************
   *
   *  processGetPointList
