@@ -594,7 +594,7 @@
               "bucketAggs": [
                 {
                   "fake": true,
-                  "field": "filter.levelChangeType",
+                  "field": "filter.stepChangeType",
                   "id": "5",
                   "settings": {
                     "min_doc_count": 1,
@@ -687,7 +687,7 @@
               "bucketAggs": [
                 {
                   "fake": true,
-                  "field": "filter.tierChangeType",
+                  "field": "filter.stepChangeType",
                   "id": "4",
                   "settings": {
                     "min_doc_count": 1,
@@ -719,7 +719,7 @@
                   "type": "sum"
                 }
               ],
-              "query": "filter.loyaltyProgram:$loyProgram AND filter.tierChangeType:$tierChangeType AND filter.previousStep:$previousStep AND filter.newStep:$newStep",
+              "query": "filter.loyaltyProgram:$loyProgram AND filter.stepChangeType:$stepChangeType AND filter.previousStep:$previousStep AND filter.newStep:$newStep",
               "refId": "A",
               "timeField": "timestamp"
             }
@@ -728,7 +728,7 @@
           "timeFrom": null,
           "timeRegions": [],
           "timeShift": null,
-          "title": "Customer Count for Level Program: \"$loyProgram\" and Level Change Type: \"$levelChangeType\" from $previousLevel to $newLevel",
+          "title": "Customer Count for Level Program: \"$loyProgram\" and Level Change Type: \"$stepChangeType\" from $previousLevel to $newLevel",
           "tooltip": {
             "shared": true,
             "sort": 0,
@@ -836,7 +836,7 @@
               "dateFormat": "YYYY-MM-DD HH:mm:ss",
               "decimals": 0,
               "mappingType": 1,
-              "pattern": "filter.tierChangeType",
+              "pattern": "filter.stepChangeType",
               "thresholds": [],
               "type": "number",
               "unit": "locale"
@@ -1006,7 +1006,7 @@
               "bucketAggs": [
                 {
                   "fake": true,
-                  "field": "filter.levelChangeType",
+                  "field": "filter.stepChangeType",
                   "id": "3",
                   "settings": {
                     "min_doc_count": 1,
@@ -1036,7 +1036,7 @@
                   "type": "sum"
                 }
               ],
-              "query": "filter.loyaltyProgram:$loyProgram AND (filter.levelChangeType:$downVar OR filter.levelChangeType:$upgradeVar) AND filter.previousLevel:$previousLevel AND filter.newLevel:$newLevel",
+              "query": "filter.loyaltyProgram:$loyProgram AND (filter.stepChangeType:$downVar OR filter.stepChangeType:$upgradeVar) AND filter.previousLevel:$previousLevel AND filter.newLevel:$newLevel",
               "refId": "A",
               "timeField": "timestamp"
             }
@@ -1140,7 +1140,7 @@
               "bucketAggs": [
                 {
                   "fake": true,
-                  "field": "fitler.levelChangeType",
+                  "field": "fitler.stepChangeType",
                   "id": "3",
                   "settings": {
                     "min_doc_count": 1,
@@ -1170,7 +1170,7 @@
                   "type": "sum"
                 }
               ],
-              "query": "filter.loyaltyProgram:$loyProgram AND (NOT(filter.levelChangeType:$downVar OR filter.levelChangeType:$upgradeVar)) AND filter.levelChangeType:$levelChangeType AND filter.previousLevel:$previousLevel AND filter.newLevel:$newLevel",
+              "query": "filter.loyaltyProgram:$loyProgram AND (NOT(filter.stepChangeType:$downVar OR filter.stepChangeType:$upgradeVar)) AND filter.stepChangeType:$stepChangeType AND filter.previousLevel:$previousLevel AND filter.newLevel:$newLevel",
               "refId": "A",
               "timeField": "timestamp"
             }
@@ -1436,7 +1436,7 @@
               {
                 "matcher": {
                   "id": "byName",
-                  "options": "filter.tierChangeType"
+                  "options": "filter.stepChangeType"
                 },
                 "properties": [
                   {

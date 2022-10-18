@@ -894,6 +894,7 @@ prepare-es-update-curl -XPUT https://$MASTER_ESROUTER_SERVER/_template/datacube_
       "filter.loyaltyProgram" : { "type" : "keyword" },
       "filter.newStep" : { "type" : "keyword" },
       "filter.previousStep" : { "type" : "keyword" },
+      "filter.stepChangeType" : { "type" : "keyword" },
       "count" : { "type" : "integer" }
     }
   }
