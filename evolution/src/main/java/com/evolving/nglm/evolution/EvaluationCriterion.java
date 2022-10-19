@@ -1432,7 +1432,7 @@ public class EvaluationCriterion
 	//
 	// sort result according to field or score
 	//
-	//sourceBuilder.sort(new ScoreSortBuilder().order(SortOrder.DESC)); 
+	sourceBuilder.sort(new ScoreSortBuilder().order(SortOrder.DESC)); 
 	//sourceBuilder.sort(new FieldSortBuilder("id").order(SortOrder.ASC));  //decide on an appropriate ESField
 	
     SearchRequest searchRequest = new SearchRequest("subscriberprofile").source(sourceBuilder);
