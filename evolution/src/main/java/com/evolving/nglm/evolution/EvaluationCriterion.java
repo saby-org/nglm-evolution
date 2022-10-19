@@ -32,6 +32,9 @@ import org.elasticsearch.index.query.*;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.sort.FieldSortBuilder;
+import org.elasticsearch.search.sort.ScoreSortBuilder;
+import org.elasticsearch.search.sort.SortOrder;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
@@ -1425,6 +1428,12 @@ public class EvaluationCriterion
 	//
 	if (size == null || size>10 || size<=0) size = 10;
 	sourceBuilder.size(size);
+	
+	//
+	// sort result according to field or score
+	//
+	//sourceBuilder.sort(new ScoreSortBuilder().order(SortOrder.DESC)); 
+	//sourceBuilder.sort(new FieldSortBuilder("id").order(SortOrder.ASC));  //decide on an appropriate ESField
 	
     SearchRequest searchRequest = new SearchRequest("subscriberprofile").source(sourceBuilder);
     SearchResponse searchResponse = elasticsearch.search(searchRequest, RequestOptions.DEFAULT);

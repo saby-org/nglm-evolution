@@ -1090,7 +1090,6 @@ JSONObject processAdvancedSearch(String userID, JSONObject jsonRoot, int tenantI
 
 	    HashMap<String,Object> response = new HashMap<String,Object>();
 	    
-	    //Initialize with default 
 	    Integer from;
 	    Integer size;
 	    /*****************************************
@@ -1110,7 +1109,7 @@ JSONObject processAdvancedSearch(String userID, JSONObject jsonRoot, int tenantI
 	        
 	        //parse default values for from and size
 	        from = JSONUtilities.decodeInteger(jsonRoot, "from",0);
-	        size = JSONUtilities.decodeInteger(jsonRoot, "size", 10);
+	        size = JSONUtilities.decodeInteger(jsonRoot, "size",10);
 	      }
 	    catch (JSONUtilitiesException|GUIManagerException e)
 	      {
@@ -1204,7 +1203,7 @@ JSONObject processAdvancedSearch(String userID, JSONObject jsonRoot, int tenantI
 	    *****************************************/
 
 	    response.put("responseCode", "ok");
-	    response.put("totalFound", result.getHits().getTotalHits());
+	    response.put("totalFound", result.getHits().getTotalHits().value);
 	    SearchHit[] hits = result.getHits().getHits();
 	    JSONArray subsResultArray = new JSONArray();
 	    for (SearchHit hit : hits)
