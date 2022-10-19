@@ -1409,8 +1409,24 @@ public class EvaluationCriterion
   //
   // execute query  //  EVPRO-1604
   //
-  public static SearchResponse esSearchMatchCriteriaExecuteQuery(BoolQueryBuilder query, ElasticsearchClientAPI elasticsearch) throws IOException, ElasticsearchStatusException {
-    SearchRequest searchRequest = new SearchRequest("subscriberprofile").source(new SearchSourceBuilder().query(query));
+  public static SearchResponse esSearchMatchCriteriaExecuteQuery(BoolQueryBuilder query, ElasticsearchClientAPI elasticsearch, Integer from, Integer size) throws IOException, ElasticsearchStatusException {
+	
+	SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
+	sourceBuilder.query(query);
+	
+	//
+	// set from to 0 -- default 
+	//
+	if (from == null) from = 0;
+	sourceBuilder.from(from);
+	
+	//
+	// set size to 10 -- default
+	//
+	if (size == null || size>10 || size<=0) size = 10;
+	sourceBuilder.size(size);
+	
+    SearchRequest searchRequest = new SearchRequest("subscriberprofile").source(sourceBuilder);
     SearchResponse searchResponse = elasticsearch.search(searchRequest, RequestOptions.DEFAULT);
     return searchResponse;
   }

@@ -38,6 +38,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import com.evolving.nglm.evolution.uniquekey.ZookeeperUniqueKeyServer;
+import com.google.gson.JsonArray;
+
 import org.apache.commons.fileupload.FileItemIterator;
 import org.apache.commons.fileupload.FileItemStream;
 import org.apache.commons.fileupload.FileUpload;
@@ -49,6 +51,7 @@ import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.index.query.*;
+import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.Aggregations;
@@ -71,6 +74,7 @@ import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.DeploymentCommon;
 import com.evolving.nglm.core.JSONUtilities;
@@ -103,6 +107,13 @@ public class GUIManagerGeneral extends GUIManager
 
   private static final int HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE = 100;
   
+  private static final Set<String> ADVANCED_SEARCH_RESPONSE_KEY;
+  
+  static 
+  {
+	  ADVANCED_SEARCH_RESPONSE_KEY = Collections.unmodifiableSet(buildAdvancedSearchResponseKeySet());
+  }
+  
   //
   //  data
   //
@@ -114,6 +125,7 @@ public class GUIManagerGeneral extends GUIManager
   public GUIManagerGeneral()
   {
     super();
+    buildAdvancedSearchResponseKeySet();
   }
   
   /***************************
@@ -1067,7 +1079,7 @@ public class GUIManagerGeneral extends GUIManager
   *
   *****************************************/
 
-  JSONObject processAdvancedSearch(String userID, JSONObject jsonRoot, int tenantID)
+JSONObject processAdvancedSearch(String userID, JSONObject jsonRoot, int tenantID)
   {
 	  
 	   /****************************************
@@ -1077,7 +1089,10 @@ public class GUIManagerGeneral extends GUIManager
 	    ****************************************/
 
 	    HashMap<String,Object> response = new HashMap<String,Object>();
-
+	    
+	    //Initialize with default 
+	    Integer from;
+	    Integer size;
 	    /*****************************************
 	    *
 	    *  parse
@@ -1092,6 +1107,10 @@ public class GUIManagerGeneral extends GUIManager
 	          {
 	            criteriaList.add(new EvaluationCriterion((JSONObject) jsonCriteriaList.get(i), CriterionContext.FullDynamicProfile(tenantID), tenantID));
 	          }
+	        
+	        //parse default values for from and size
+	        from = JSONUtilities.decodeInteger(jsonRoot, "from",0);
+	        size = JSONUtilities.decodeInteger(jsonRoot, "size", 10);
 	      }
 	    catch (JSONUtilitiesException|GUIManagerException e)
 	      {
@@ -1155,7 +1174,7 @@ public class GUIManagerGeneral extends GUIManager
 	    SearchResponse result;
 	    try
 	      {
-	        result = EvaluationCriterion.esSearchMatchCriteriaExecuteQuery(query, elasticsearch);
+	        result = EvaluationCriterion.esSearchMatchCriteriaExecuteQuery(query, elasticsearch, from , size);
 	      }
 	    catch (IOException|ElasticsearchStatusException e)
 	      {
@@ -1185,7 +1204,20 @@ public class GUIManagerGeneral extends GUIManager
 	    *****************************************/
 
 	    response.put("responseCode", "ok");
-	    response.put("result", result);
+	    response.put("totalFound", result.getHits().getTotalHits());
+	    SearchHit[] hits = result.getHits().getHits();
+	    JSONArray subsResultArray = new JSONArray();
+	    for (SearchHit hit : hits)
+	    {
+	    	JSONObject subscriber = new JSONObject();
+	    	for (String key : ADVANCED_SEARCH_RESPONSE_KEY)
+	    	{
+	    		subscriber.put(key, hit.getSourceAsMap().get(key));
+	    	}
+	    	subsResultArray.add(subscriber);
+	    }
+	    
+	    response.put("result", subsResultArray);
 	    if (returnQuery && (query != null))
 	      {
 	        try
@@ -6254,6 +6286,49 @@ public class GUIManagerGeneral extends GUIManager
         GUIDependencyModelTree guiDependencyModelTree = new GUIDependencyModelTree(guiDependencyModelClass, guiDependencyModelClassList);
         guiDependencyModelTreeMap.put(guiDependencyModelTree.getGuiManagedObjectType(), guiDependencyModelTree);
       }
+  }
+  
+  /****************************************
+  *
+  *  build AdvancedSearch Response Key Set.
+  *
+  ****************************************/
+  private static Set<String> buildAdvancedSearchResponseKeySet()
+  {
+	  Set<String> advancedSearchResponseKeySet = new HashSet<>();
+	  
+	  //
+	  // get all AlternateIDs as key
+	  //
+	  for (Map.Entry<String, AlternateID> entry : Deployment.getAlternateIDs().entrySet())
+      {
+        AlternateID alternateID = entry.getValue();
+        if (alternateID.getESField() == null)
+          {
+        	log.warn("buildAdvancedSearchResponseKeySet() : An Alternate key has null value for esField in deployment.json's alternateIDs");
+            continue;
+          }
+        advancedSearchResponseKeySet.add(alternateID.getESField());
+      }
+	  
+	  //
+	  // get all profileCriterionFields  as key which are used in advanced search
+	  //
+	  for (Map.Entry<String, CriterionField> entry : Deployment.getProfileCriterionFields().entrySet())
+      {
+		  CriterionField criterionField = entry.getValue();
+        if (criterionField.getUseInAdvancedSearch())
+          {
+        	 if (criterionField.getESField()== null)
+        	 {
+	        	log.warn("buildAdvancedSearchResponseKeySet() : An CriterionField key has null value for esField");
+	            continue;
+        	 }
+        	 advancedSearchResponseKeySet.add(criterionField.getESField());
+          }
+      }
+	 
+	  return advancedSearchResponseKeySet;
   }
 }
 
