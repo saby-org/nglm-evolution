@@ -3,7 +3,8 @@ package com.evolving.nglm.evolution.offeroptimizer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.data.Schema;
@@ -16,7 +17,6 @@ import com.evolving.nglm.core.FileSourceConnector;
 import com.evolving.nglm.core.FileSourceTask;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.evolution.OfferOptimizationAlgorithm;
-import com.evolving.nglm.evolution.OfferOptimizationAlgorithm.OfferOptimizationAlgorithmParameter;
 
 public class ImportedOffersFileSource extends FileSourceConnector 
 {
@@ -26,6 +26,27 @@ public class ImportedOffersFileSource extends FileSourceConnector
   public Class<? extends Task> taskClass()
   {
     return ImportedOffersFileSourceTask.class;
+  }
+  
+  @Override
+  public void start(Map<String, String> properties)
+  {
+    super.start(properties);
+    
+    List<String> prefixPatternList = new ArrayList<>();
+    for (OfferOptimizationAlgorithm offerOptimizationAlgorithm : Deployment.getOfferOptimizationAlgorithms().values())
+      {
+        if(offerOptimizationAlgorithm.getID().startsWith("imported"))
+        {
+          JSONObject offerOptimizationAlgorithmJSON = offerOptimizationAlgorithm.getJSONRepresentation();
+          String fileTemplate = JSONUtilities.decodeString(offerOptimizationAlgorithmJSON, "fileTemplate");
+          prefixPatternList.add(fileTemplate);
+        }
+      }
+    String prefixPattern = prefixPatternList.stream().map(n -> String.valueOf(n)).collect(Collectors.joining("|")); // as pattern
+    setFilenamePattern(prefixPattern.concat(getFilenamePattern()));
+    
+    log.info("[ImportedOffersFileSource Connector] FilenamePattern updated [{}]", getFilenamePattern());
   }
   
   public static class ImportedOffersFileSourceTask extends FileSourceTask 
@@ -54,6 +75,7 @@ public class ImportedOffersFileSource extends FileSourceConnector
                 }
             }
           }
+
         if (importedTypeID == null)
           {
             log.error("[ImportedOffersFileSourceTask-{}] importedTypeID not found, invalid fileTemplate - {}", getTaskNumber(), currentFileName);

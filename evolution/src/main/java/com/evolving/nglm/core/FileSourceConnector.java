@@ -506,6 +506,10 @@ public abstract class FileSourceConnector extends SourceConnector
   @Override public abstract Class<? extends Task> taskClass();
   public Map<String,String> additionalTaskConfig() { return Collections.<String,String>emptyMap(); }
 
+  
+  public String getFilenamePattern() { return filenamePattern; }
+  public void setFilenamePattern(String filenamePattern) { this.filenamePattern = filenamePattern; }
+  
   /****************************************
   *
   *  taskConfigs
