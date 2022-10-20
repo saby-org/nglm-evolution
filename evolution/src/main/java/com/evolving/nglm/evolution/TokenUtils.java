@@ -431,7 +431,7 @@ public class TokenUtils
             for (String offerID : importedOffers)
               {
                Offer offer = offerService.getActiveOffer(offerID, eventDate);
-               if (offer.evaluateProfileCriteria(evaluationRequest))
+               if (offer != null && offer.evaluateProfileCriteria(evaluationRequest))
                  {
                    offersForAlgo.add(offer);
                  }

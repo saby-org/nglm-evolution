@@ -36,21 +36,17 @@ public class ImportedOffersFileSource extends FileSourceConnector
       record = record.replaceAll("\r\n", "\n"); // DOS2UNIX
       String[] tokens = record.split("[;]", -1);
 
-      String fileTemplate = null;
-      String importedTypeID = null;
-      
       try
       {
         String currentFileName = getCurrentFilename();
-        log.info("[PRJT] currentFileName: {}",currentFileName);
         
+        String importedTypeID = null;
         for (OfferOptimizationAlgorithm offerOptimizationAlgorithm : Deployment.getOfferOptimizationAlgorithms().values())
           {
             if(offerOptimizationAlgorithm.getID().startsWith("imported"))
             {
-              log.info("[PRJT] JSON: {}",offerOptimizationAlgorithm.getJSONRepresentation());
               JSONObject offerOptimizationAlgorithmJSON = offerOptimizationAlgorithm.getJSONRepresentation();
-              fileTemplate = JSONUtilities.decodeString(offerOptimizationAlgorithmJSON, "fileTemplate");
+              String fileTemplate = JSONUtilities.decodeString(offerOptimizationAlgorithmJSON, "fileTemplate");
               if (currentFileName.startsWith(fileTemplate))
                 {
                   importedTypeID = offerOptimizationAlgorithm.getID();
@@ -58,11 +54,9 @@ public class ImportedOffersFileSource extends FileSourceConnector
                 }
             }
           }
-        log.info("[PRJT] fileTemplate: {}",fileTemplate);
-        log.info("[PRJT] importedTypeID: {}",importedTypeID);
         if (importedTypeID == null)
           {
-            log.info("[PRJT] importedTypeID is null, invalid fileTemplate - {}", fileTemplate);
+            log.error("[ImportedOffersFileSourceTask-{}] importedTypeID not found, invalid fileTemplate - {}", getTaskNumber(), currentFileName);
             return Collections.<KeyValue>emptyList();
           }
         
@@ -97,13 +91,10 @@ public class ImportedOffersFileSource extends FileSourceConnector
             offerIDs.add(tokens[i]);
           }
         
-        if (importedTypeID != null && subscriberID !=null)
+        if (!getStopRequested() && importedTypeID != null && subscriberID != null)
           {
             ImportedOffersScoring imported = new ImportedOffersScoring(importedTypeID, subscriberID, offerIDs);
-            if (!getStopRequested())
-              {
-                return Collections.<KeyValue>singletonList(new KeyValue(Deployment.getImportedOffersDNBOTopic(), Schema.STRING_SCHEMA, subscriberID, ImportedOffersScoring.schema(), ImportedOffersScoring.pack(imported)));
-              } 
+            return Collections.<KeyValue>singletonList(new KeyValue(Deployment.getImportedOffersDNBOTopic(), Schema.STRING_SCHEMA, subscriberID, ImportedOffersScoring.schema(), ImportedOffersScoring.pack(imported)));
           }
       }
       catch (FileSourceTaskException | RuntimeException e)
