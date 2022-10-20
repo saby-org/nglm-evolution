@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -23,6 +24,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -31,6 +33,8 @@ import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.ThirdPartyManager.AuthenticatedResponse;
+import com.evolving.nglm.evolution.ThirdPartyManager.ThirdPartyManagerException;
 
 public class StockRecurrenceAndNotificationJob  extends ScheduledJob 
 {
@@ -48,7 +52,8 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
   private SalesChannelService salesChannelService;
   private SupplierService supplierService;
   private String fwkServer;
-  private String fwkEmailSMTPUserName;
+  private JSONObject fromJSON;
+  private JSONObject credentialJson;
   int httpTimeout = 10000;
   RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(httpTimeout).setSocketTimeout(httpTimeout).setConnectionRequestTimeout(httpTimeout).build();
   
@@ -69,7 +74,14 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
     this.salesChannelService = salesChannelService;
     this.supplierService = supplierService;
     this.fwkServer = fwkServer;
-    this.fwkEmailSMTPUserName = fwkEmailSMTPUserName;
+    Map<String, Object> fromJson = new LinkedHashMap<String, Object>();
+    fromJson.put("SenderEmail", fwkEmailSMTPUserName);
+    fromJson.put("Sender", "Admin");
+    this.fromJSON = JSONUtilities.encodeObject(fromJson);
+    Map<String, Object> credentialJsonRepresentation = new LinkedHashMap<String, Object>();
+    credentialJsonRepresentation.put("LoginName", Deployment.getStockAlertLoginCredentail());
+    credentialJsonRepresentation.put("Password", Deployment.getStockAlertPasswordCredentail());
+    this.credentialJson = JSONUtilities.encodeObject(credentialJsonRepresentation);
   }
 
   /*****************************************
@@ -123,7 +135,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
           }
       }
     
-    Collection<Product> activeProducts = productService.getActiveProducts(now, 0);
+    /*Collection<Product> activeProducts = productService.getActiveProducts(now, 0);
     for (Product product : activeProducts)
       {
         Integer remainingStock = product.getApproximateRemainingStock();
@@ -164,7 +176,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
               }
           }
         
-      }
+      }*/
   }
   
   /*****************************************
@@ -178,14 +190,25 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
     CloseableHttpResponse httpResponse = null;
     try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultRequestConfig(requestConfig).build())
     {
-      List<String> receipientList = new ArrayList<String>();
+      List<JSONObject> receipientList = getRecipientList();
+      String token =  getLoginToken();
+      if (receipientList.isEmpty())
+        {
+          log.warn("stockAlertToList is empty - skip sending notification");
+          return;
+        }
+      if (token == null || token.trim().isEmpty())
+        {
+          log.warn("bad token - skip sending stockAlert notification");
+          return;
+        }
       String subject = null;
       String body = null;
       Map<String, Object> communicationMap = new HashMap<String, Object>();
       if (guiManagedObject instanceof Offer)
         {
           Offer offer = (Offer) guiManagedObject;
-          if (!offer.getNotificationEmails().isEmpty()) receipientList.addAll(offer.getNotificationEmails());
+          //if (!offer.getNotificationEmails().isEmpty()) receipientList.addAll(offer.getNotificationEmails());
           Object[] bodyTags = {"offer", offer.getGUIManagedObjectDisplay(), remainingStock};
           Object[] subjectTags = {"offer", offer.getGUIManagedObjectDisplay()};
           subject = resolveTags(Deployment.getStockAlertEmailSubject(), subjectTags);
@@ -195,7 +218,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
       else if (guiManagedObject instanceof Product)
         {
           Product product = (Product) guiManagedObject;
-          if (!product.getNotificationEmails().isEmpty()) receipientList.addAll(product.getNotificationEmails());
+          //if (!product.getNotificationEmails().isEmpty()) receipientList.addAll(product.getNotificationEmails());
           Object[] bodyTags = {"product", product.getGUIManagedObjectDisplay(), remainingStock};
           Object[] subjectTags = {"product", product.getGUIManagedObjectDisplay()};
           subject = resolveTags(Deployment.getStockAlertEmailSubject(), subjectTags);
@@ -204,14 +227,14 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
       else if (guiManagedObject instanceof Voucher)
         {
           Voucher voucher = (Voucher) guiManagedObject;
-          if (!voucher.getNotificationEmails().isEmpty()) receipientList.addAll(voucher.getNotificationEmails());
+          //if (!voucher.getNotificationEmails().isEmpty()) receipientList.addAll(voucher.getNotificationEmails());
           Object[] bodyTags = {"voucher", voucher.getGUIManagedObjectDisplay(), remainingStock};
           Object[] subjectTags = {"voucher", voucher.getGUIManagedObjectDisplay()};
           subject = resolveTags(Deployment.getStockAlertEmailSubject(), subjectTags);
           body = resolveTags(Deployment.getStockAlertEmailBody(), bodyTags);
         }
       communicationMap.put("UserId", "");
-      communicationMap.put("From", fwkEmailSMTPUserName);
+      communicationMap.put("From", fromJSON);
       communicationMap.put("To", JSONUtilities.encodeArray(receipientList));
       communicationMap.put("Cc", "");
       communicationMap.put("Subject", subject);
@@ -230,13 +253,6 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
       communicationMap.put("ObjectId", "");
       communicationMap.put("CallBackURL", "");
       
-      //
-      // auth
-      //
-      
-      //communicationMap.put("LoginName", loginName);
-      //communicationMap.put("Password", password);
-      
       String payload = JSONUtilities.encodeObject(communicationMap).toJSONString();
       log.debug("sendNotification - FWK API Call payload {}", payload);
       
@@ -246,6 +262,8 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
 
       StringEntity stringEntity = new StringEntity(payload, ContentType.create("application/json"));
       HttpPost httpPost = new HttpPost("http://" + fwkServer + "/api/communication/email");
+      httpPost.addHeader("token", token);
+      httpPost.addHeader("Content-Type", "application/json");
       httpPost.setEntity(stringEntity);
 
       //
@@ -304,6 +322,104 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
           }
     }
   
+  }
+  
+  /*****************************************
+  *
+  *  getLoginToken - FWK API Call
+  *
+  *****************************************/
+  
+  public String getLoginToken()
+  {
+    String result = null;
+    CloseableHttpResponse httpResponse = null;
+    try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultRequestConfig(requestConfig).build())
+    {
+      //
+      // create request
+      //
+
+      StringEntity stringEntity = new StringEntity(credentialJson.toJSONString(), ContentType.create("application/json"));
+      HttpPost httpPost = new HttpPost("http://" + fwkServer + "/api/account/login");
+      httpPost.setEntity(stringEntity);
+
+      //
+      // submit request
+      //
+
+      httpResponse = httpClient.execute(httpPost);
+
+      //
+      // process response
+      //
+
+      if (httpResponse != null && httpResponse.getStatusLine() != null && httpResponse.getStatusLine().getStatusCode() == 200)
+        {
+          String jsonResponse = EntityUtils.toString(httpResponse.getEntity(), "UTF-8");
+          log.info("FWK raw response : {}", jsonResponse);
+
+          //
+          // parse JSON response from FWK
+          //
+
+          JSONObject jsonRoot = (JSONObject) (new JSONParser()).parse(jsonResponse);
+
+          //
+          // prepare response
+          //
+          
+          result = JSONUtilities.decodeString(jsonRoot, "Token", true);
+        }
+      else if (httpResponse != null && httpResponse.getStatusLine() != null && httpResponse.getStatusLine().getStatusCode() == 401)
+        {
+          log.error("FWK server HTTP reponse code {} message {} ", httpResponse.getStatusLine().getStatusCode(), EntityUtils.toString(httpResponse.getEntity(), "UTF-8"), JSONUtilities.decodeString(credentialJson, "LoginName", true), " : user is reset in the cache" );
+        }
+      else if (httpResponse != null && httpResponse.getStatusLine() != null)
+        {
+          log.error("FWK server HTTP reponse code is invalid {}", httpResponse.getStatusLine().getStatusCode(), JSONUtilities.decodeString(credentialJson, "LoginName", true), " : user is reset in the cache");
+        }
+      else
+        {
+          log.error("FWK server error httpResponse or httpResponse.getStatusLine() is null {} {} ", httpResponse, httpResponse.getStatusLine(), JSONUtilities.decodeString(credentialJson, "LoginName", true), " : user is reset in the cache");
+        }
+    }
+    catch(ParseException pe) 
+    {
+      log.error("failed to Parse ParseException {} ", pe.getMessage());
+    }
+    catch(IOException e) 
+    {
+      log.error("failed to authenticate in FWK server");
+      log.error("IOException: {}", e.getMessage());
+    }
+    finally
+    {
+      if (httpResponse != null)
+        try
+          {
+            httpResponse.close();
+          } 
+      catch (IOException e)
+          {
+            e.printStackTrace();
+          }
+    }
+    return result;
+  }
+
+  private List<JSONObject> getRecipientList()
+  {
+    List<JSONObject> result = new ArrayList<JSONObject>();
+    for (String recipientEmail : Deployment.getStockAlertEmailToList())
+      {
+        Map<String, Object> recipientMap = new LinkedHashMap<String, Object>();
+        recipientMap.put("RecipientEmail", recipientEmail);
+        recipientMap.put("Recipient", "TEst");
+        recipientMap.put("Macros", new JSONArray());
+        result.add(JSONUtilities.encodeObject(recipientMap));
+      }
+    return result;
   }
 
   private String resolveTags(final String unformattedText, Object[] tagArgs)
