@@ -6169,6 +6169,7 @@ public class GUIManagerGeneral extends GUIManager
                     Offer propOffer = offerService.getActiveOffer(proposedOfferDetails.getOfferId(), now);
                     JSONObject jsonObject = (JSONObject) proposedOfferDetails.getJSONRepresentation().clone();
                     jsonObject.put("name", propOffer.getDisplay());
+                    jsonObject.put("imageURL", JSONUtilities.decodeString(propOffer.getJSONRepresentation(), "imageURL"));
                     jsonObject.put("description", propOffer.getDescription());
                     OfferSalesChannelsAndPrice offerSalesChannelsAndPrice = propOffer.getOfferSalesChannelsAndPrices().stream().filter(slsChnlNPrc -> slsChnlNPrc.getSalesChannelIDs().contains(proposedOfferDetails.getSalesChannelId())).findFirst().orElse(null);
                     if (offerSalesChannelsAndPrice != null && offerSalesChannelsAndPrice.getPrice() != null)
