@@ -130,7 +130,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                 //
                 
                 Integer stockToAdd = offer.getStockRecurrenceBatch(); // TODO - for now no stats of stock history
-                if (offer.reuseRemainingStock())
+                if (offer.reuseRemainingStock() && offer.getStock() != null)
                   {
                     stockToAdd += offer.getStock(); // new + old
                   }
