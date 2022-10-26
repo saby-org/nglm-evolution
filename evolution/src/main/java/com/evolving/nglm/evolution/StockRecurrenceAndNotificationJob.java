@@ -124,7 +124,6 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
               {
                 log.info("[PRJT] offer[{}] Next Stock Replanish Date: {} is TODAY:[{}]", offer.getOfferID(), stockReplanishDates.stream().filter(date -> date.compareTo(formattedTime) >= 0).findFirst(), formattedTime);
                 JSONObject offerJson = offer.getJSONRepresentation();
-                log.info("[PRJT] offerJson: {}", offerJson);
                 
                 //
                 // reuse
@@ -135,7 +134,26 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                   {
                     stockToAdd += offer.getStock(); // new + old
                   }
+                else
+                  {
+                    log.info("[PRJT] removing old stocks");
+                    offerJson.replace("presentationStock", 0);
+                    try
+                    {
+                      Offer newOffer = new Offer(offerJson, GUIManager.epochServer.getKey(), offer, catalogCharacteristicService, offer.getTenantID());
+                      offerService.putOffer(newOffer, callingChannelService, salesChannelService, productService, voucherService, (offer == null), "StockRecurrenceAndNotificationJob");
+                    } 
+                  catch (GUIManagerException e)
+                    {
+                      log.error("Stock Recurrence Exception: {}", e.getMessage());
+                    }
+                  }
                 
+                //
+                // again replenish
+                //
+                
+                log.info("[PRJT] adding new[{}] stocks", stockToAdd);
                 offerJson.replace("presentationStock", stockToAdd);
                 try
                   {
@@ -290,7 +308,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
 
     //if(log.isInfoEnabled()) log.info("[PRJT] before filter tmpJourneyCreationDates {}", tmpJourneyCreationDates);
     tmpJourneyCreationDates = tmpJourneyCreationDates.stream().filter(date -> date.after(offer.getEffectiveStartDate()) && date.compareTo(filterStartDate) >= 0 && filterEndDate.compareTo(date) >= 0 ).collect(Collectors.toList());
-    if(log.isInfoEnabled()) log.info("[PRJT] after filter tmpJourneyCreationDates {}", tmpJourneyCreationDates);
+    log.debug("[PRJT] after filter tmpJourneyCreationDates {}", tmpJourneyCreationDates);
 
     //
     // return with format
