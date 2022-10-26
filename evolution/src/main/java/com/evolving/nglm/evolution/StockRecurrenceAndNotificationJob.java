@@ -113,7 +113,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
         
         if (offer.getStockRecurrence())
           {
-            boolean testMode = false; // for testing
+            boolean testMode = true; // for testing
             
             String datePattern = DatePattern.LOCAL_DAY.get();
             Date formattedTime = formattedDate(now, datePattern);
@@ -124,6 +124,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
               {
                 log.info("[PRJT] offer[{}] Next Stock Replanish Date: {} is TODAY:[{}]", offer.getOfferID(), stockReplanishDates.stream().filter(date -> date.compareTo(formattedTime) >= 0).findFirst(), formattedTime);
                 JSONObject offerJson = offer.getJSONRepresentation();
+                log.info("[PRJT] offerJson: {}", offerJson);
                 
                 //
                 // reuse
