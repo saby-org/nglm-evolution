@@ -134,26 +134,15 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                   {
                     stockToAdd += offer.getStock(); // new + old
                   }
-                else
+                else if (offer.getApproximateRemainingStock() != null)
                   {
-                    log.info("[PRJT] removing old stocks");
-                    offerJson.replace("presentationStock", 0);
-                    try
-                    {
-                      Offer newOffer = new Offer(offerJson, GUIManager.epochServer.getKey(), offer, catalogCharacteristicService, offer.getTenantID());
-                      offerService.putOffer(newOffer, callingChannelService, salesChannelService, productService, voucherService, (offer == null), "StockRecurrenceAndNotificationJob");
-                    } 
-                  catch (GUIManagerException e)
-                    {
-                      log.error("Stock Recurrence Exception: {}", e.getMessage());
-                    }
+                    stockToAdd += offer.getStock() - offer.getApproximateRemainingStock();
                   }
                 
                 //
                 // again replenish
                 //
                 
-                log.info("[PRJT] adding new[{}] stocks", stockToAdd);
                 offerJson.replace("presentationStock", stockToAdd);
                 try
                   {
