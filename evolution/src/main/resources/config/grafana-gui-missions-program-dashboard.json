@@ -728,7 +728,7 @@
           "timeFrom": null,
           "timeRegions": [],
           "timeShift": null,
-          "title": "Customer Count for Level Program: \"$loyProgram\" and Level Change Type: \"$stepChangeType\" from $previousLevel to $newLevel",
+          "title": "Customer Count for Step Program: \"$loyProgram\" and Step Change Type: \"$stepChangeType\" from $previousStep to $newStep",
           "tooltip": {
             "shared": true,
             "sort": 0,
@@ -1036,7 +1036,7 @@
                   "type": "sum"
                 }
               ],
-              "query": "filter.loyaltyProgram:$loyProgram AND (filter.stepChangeType:$downVar OR filter.stepChangeType:$upgradeVar) AND filter.previousLevel:$previousLevel AND filter.newLevel:$newLevel",
+              "query": "filter.loyaltyProgram:$loyProgram AND (filter.stepChangeType:$downVar OR filter.stepChangeType:$upgradeVar) AND filter.previousStep:$previousStep AND filter.newStep:$newStep",
               "refId": "A",
               "timeField": "timestamp"
             }
@@ -1045,7 +1045,7 @@
           "timeFrom": null,
           "timeRegions": [],
           "timeShift": null,
-          "title": "Upgrade and Downgrade Daily Count for Level Program: \"$loyProgram\" from $previousLevel to $newLevel",
+          "title": "Upgrade and Downgrade Daily Count for step Program: \"$loyProgram\" from $previousStep to $newStep",
           "tooltip": {
             "shared": true,
             "sort": 0,
@@ -1170,7 +1170,7 @@
                   "type": "sum"
                 }
               ],
-              "query": "filter.loyaltyProgram:$loyProgram AND (NOT(filter.stepChangeType:$downVar OR filter.stepChangeType:$upgradeVar)) AND filter.stepChangeType:$stepChangeType AND filter.previousLevel:$previousLevel AND filter.newLevel:$newLevel",
+              "query": "filter.loyaltyProgram:$loyProgram AND (NOT(filter.stepChangeType:$downVar OR filter.stepChangeType:$upgradeVar)) AND filter.stepChangeType:$stepChangeType AND filter.previousStep:$previousStep AND filter.newStep:$newStep",
               "refId": "A",
               "timeField": "timestamp"
             }
@@ -1179,7 +1179,7 @@
           "timeFrom": null,
           "timeRegions": [],
           "timeShift": null,
-          "title": "Opt-in and Opt-out Daily Count for Level Program: \"$loyProgram\" from $previousLevel to $newLevel",
+          "title": "Opt-in and Opt-out Daily Count for step Program: \"$loyProgram\" from $previousStep to $newStep",
           "tooltip": {
             "shared": true,
             "sort": 0,
@@ -1822,7 +1822,7 @@
               "type": "sum"
             }
           ],
-          "query": "filter.stratum.XXX:$segement AND filter.step:$step",
+          "query": "filter.stratum.XXX:$segment AND filter.step:$step",
           "refId": "A",
           "timeField": "timestamp"
         }
@@ -2039,7 +2039,7 @@
               "type": "sum"
             }
           ],
-          "query": "filter.stratum.XXX:$segment AND filter.level:$level",
+          "query": "filter.stratum.XXX:$segment AND filter.step:$step",
           "refId": "A",
           "timeField": "@timestamp"
         }
@@ -2169,6 +2169,35 @@
         "name": "newStep",
         "options": [],
         "query": "{\"find\" : \"terms\", \"field\": \"filter.newStep\",\"query\": \"filter.loyaltyProgram:$loyProgram\"}",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allValue": null,
+        "current": {
+          "isNone": true,
+          "selected": false,
+          "text": "None",
+          "value": ""
+        },
+        "datasource": "LoyaltyMissionsChange",
+        "definition": "{\"find\" : \"terms\", \"field\": \"filter.stepChangeType\",\"query\": \"filter.loyaltyProgram:$loyProgram\"}",
+        "description": null,
+        "error": null,
+        "hide": 0,
+        "includeAll": false,
+        "label": "Step Change Type",
+        "multi": false,
+        "name": "stepChangeType",
+        "options": [],
+        "query": "{\"find\" : \"terms\", \"field\": \"filter.stepChangeType\",\"query\": \"filter.loyaltyProgram:$loyProgram\"}",
         "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
