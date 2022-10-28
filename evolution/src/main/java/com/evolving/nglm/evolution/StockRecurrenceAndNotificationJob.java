@@ -132,31 +132,34 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                 // reuse
                 //
                 
-                Integer stockToAdd = offer.getStockRecurrenceBatch(); // TODO - for now no stats of stock history
+                Integer stockToAdd = offer.getStockRecurrenceBatch();
                 if (offer.reuseRemainingStock() && offer.getStock() != null)
                   {
-                    //stockToAdd += offer.getStock(); // new + old
-                    stockService.voidConsumption(offer, offer.getStockRecurrenceBatch());
+                    stockToAdd += offer.getStock(); //using update offer
+                    //stockService.voidConsumption(offer, offer.getStockRecurrenceBatch()); //using 'StockMonitor' -- another way
                   }
-                else //if (offer.getApproximateRemainingStock() != null)
+                else
                   {
-                    //stockToAdd += offer.getStock() - offer.getApproximateRemainingStock(); 
+                    //
+                    // consume all stocks
+                    //
                     
                     Stock stock = new Stock(offer.getStockableItemID());
-                    log.info("[PRJT] total consumed stock: [{}] - before",stock.getStockConsumed());
                     stock.setStockConsumed(offer.getStock());
-                    log.info("[PRJT] total consumed stock: [{}] - after",stock.getStockConsumed());
-                    stockService.consume(offer, stockToAdd);
-                    log.info("[PRJT] total consumed stock: [{}] - end",stock.getStockConsumed());
+                    // or
+                    //stockService.consume(offer, offer.getStock());
+                    
+                    //
+                    // replenish batch count -- nothing to do
+                    //
+                    
+                    //stockToAdd += offer.getStock() - offer.getApproximateRemainingStock(); 
                   }
                 
                 //
-                // using StockMonitor
+                // update offer -- for 'initial stock' only
                 //
                 
-                
-                
-                /*
                 offerJson.replace("presentationStock", stockToAdd);
                 try
                   {
@@ -170,7 +173,6 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                   {
                     log.error("Stock Recurrence Exception: {}", e.getMessage());
                   }
-                  */
               }
             else{
                 log.info("[PRJT] offer[{}] Next Stock Replanish Date: {}", offer.getOfferID(), stockReplanishDates.stream().filter(date -> date.compareTo(formattedTime) > 0).findFirst());
