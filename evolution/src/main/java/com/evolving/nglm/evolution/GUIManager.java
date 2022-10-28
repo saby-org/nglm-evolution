@@ -748,6 +748,7 @@ public class GUIManager
   protected static Method externalAPIMethodJourneyActivated;
   protected static Method externalAPIMethodJourneyDeactivated;
   protected CustomCriteriaService customCriteriaService;
+  protected StockMonitor stockService;
   
   protected ZookeeperUniqueKeyServer zuks;
   protected ZookeeperUniqueKeyServer zuksVoucherChange;
@@ -1120,6 +1121,7 @@ public class GUIManager
     criterionFieldAvailableValuesService = new CriterionFieldAvailableValuesService(bootstrapServers, "guimanager-criterionfieldavailablevaluesservice-"+apiProcessKey, criterionFieldAvailableValuesTopic, true);
     otpTypeService = new OTPTypeService(bootstrapServers, "guimanager-otptypeservice-"+apiProcessKey, otpTypeTopic, true);
     customCriteriaService = new CustomCriteriaService(bootstrapServers, "guimanager-customCriteriaservice-" + apiProcessKey, customCriteriaTopic, true);
+    stockService = new StockMonitor("guimanager-stockService-"+apiProcessKey, offerService, productService, voucherService);
     
     DeliveryManagerDeclaration dmd = Deployment.getDeliveryManagers().get(ThirdPartyManager.PURCHASE_FULFILLMENT_MANAGER_TYPE);
     purchaseResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),dmd.getResponseTopic(DELIVERY_REQUEST_PRIORITY),StringKey.serde(),PurchaseFulfillmentRequest.serde());
@@ -2087,6 +2089,7 @@ public class GUIManager
     segmentContactPolicyService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);
     dynamicEventDeclarationsService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);
     customCriteriaService.start(elasticsearch, journeyService, journeyObjectiveService, targetService, contactPolicyService);
+    stockService.start();
     for(Tenant tenant : Deployment.getTenants())
       {
         dynamicEventDeclarationsService.refreshSegmentationChangeEvent(segmentationDimensionService, tenant.getTenantID());
@@ -2580,7 +2583,7 @@ public class GUIManager
     *
     *****************************************/
 
-    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, dynamicCriterionFieldService, journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, predictionSettingsService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, renamedProfileCriterionFieldReader, reportService, subscriberMessageTemplateService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, dnboMatrixService, segmentContactPolicyService, criterionFieldAvailableValuesService, customCriteriaService));
+    NGLMRuntime.addShutdownHook(new ShutdownHook(kafkaProducer, restServer, dynamicCriterionFieldService, journeyService, segmentationDimensionService, pointService, complexObjectTypeService, offerService, scoringStrategyService, presentationStrategyService, callingChannelService, salesChannelService, sourceAddressService, supplierService, productService, catalogCharacteristicService, contactPolicyService, journeyObjectiveService, offerObjectiveService, productTypeService, ucgRuleService, predictionSettingsService, deliverableService, tokenTypeService, voucherTypeService, voucherService, subscriberProfileService, subscriberIDService, subscriberGroupEpochReader, renamedProfileCriterionFieldReader, reportService, subscriberMessageTemplateService, uploadedFileService, targetService, communicationChannelBlackoutService, loyaltyProgramService, resellerService, exclusionInclusionTargetService, dnboMatrixService, segmentContactPolicyService, criterionFieldAvailableValuesService, customCriteriaService, stockService));
     
     /*****************************************
     *
@@ -2595,7 +2598,7 @@ public class GUIManager
     String stockRecurrenceAndNotificationCronEntry = DeploymentCommon.getStockRecurrenceAndNotificationCronEntry();
     ScheduledJob recurrnetCampaignCreationJob = new RecurrentCampaignCreationJob("Recurrent Campaign(create)", periodicGenerationCronEntry, Deployment.getDefault().getTimeZone(), false); // TODO EVPRO-99 i used systemTimeZone instead of BaseTimeZone pet tenant, check if correct
     ScheduledJob challengesOccurrenceJob = new ChallengesOccurrenceJob("Challenges Occurrence", periodicGenerationCronEntry, Deployment.getDefault().getTimeZone(), false);
-    StockRecurrenceAndNotificationJob stockRecurrenceJobAndNotificationJob = new StockRecurrenceAndNotificationJob("Stock Recurrence And Notification", stockRecurrenceAndNotificationCronEntry, Deployment.getDefault().getTimeZone(), true, offerService, productService, voucherService, callingChannelService, catalogCharacteristicService, salesChannelService, supplierService, fwkServer, fwkEmailSMTPUserName);
+    StockRecurrenceAndNotificationJob stockRecurrenceJobAndNotificationJob = new StockRecurrenceAndNotificationJob("Stock Recurrence And Notification", stockRecurrenceAndNotificationCronEntry, Deployment.getDefault().getTimeZone(), true, offerService, productService, voucherService, callingChannelService, catalogCharacteristicService, salesChannelService, supplierService, stockService, fwkServer, fwkEmailSMTPUserName);
     //ScheduledJob stockRecurrenceJob = new StockRecurrenceJob("Stocks Recurrence", qaCronEntry, Deployment.getDefault().getTimeZone(), false);
     if(recurrnetCampaignCreationJob.isProperlyConfigured() && challengesOccurrenceJob.isProperlyConfigured() && stockRecurrenceJobAndNotificationJob.isProperlyConfigured())
       {
@@ -2692,12 +2695,13 @@ public class GUIManager
     private SegmentContactPolicyService segmentContactPolicyService;
     private CriterionFieldAvailableValuesService criterionFieldAvailableValuesService;
     private CustomCriteriaService customCriteriaService;
+    private StockMonitor stockService; 
 
     //
     //  constructor
     //
     
-    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, DynamicCriterionFieldService dynamicCriterionFieldService, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, PredictionSettingsService predictionSettingsService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader, ReportService reportService, SubscriberMessageTemplateService subscriberMessageTemplateService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, DNBOMatrixService dnboMatrixService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService, CustomCriteriaService customCriteriaService)
+    private ShutdownHook(KafkaProducer<byte[], byte[]> kafkaProducer, HttpServer restServer, DynamicCriterionFieldService dynamicCriterionFieldService, JourneyService journeyService, SegmentationDimensionService segmentationDimensionService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, OfferService offerService, ScoringStrategyService scoringStrategyService, PresentationStrategyService presentationStrategyService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, SourceAddressService sourceAddressService, SupplierService supplierService, ProductService productService, CatalogCharacteristicService catalogCharacteristicService, ContactPolicyService contactPolicyService, JourneyObjectiveService journeyObjectiveService, OfferObjectiveService offerObjectiveService, ProductTypeService productTypeService, UCGRuleService ucgRuleService, PredictionSettingsService predictionSettingsService, DeliverableService deliverableService, TokenTypeService tokenTypeService, VoucherTypeService voucherTypeService, VoucherService voucherService, SubscriberProfileService subscriberProfileService, SubscriberIDService subscriberIDService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ReferenceDataReader<String,RenamedProfileCriterionField> renamedProfileCriterionFieldReader, ReportService reportService, SubscriberMessageTemplateService subscriberMessageTemplateService, UploadedFileService uploadedFileService, TargetService targetService, CommunicationChannelBlackoutService communicationChannelBlackoutService, LoyaltyProgramService loyaltyProgramService, ResellerService resellerService, ExclusionInclusionTargetService exclusionInclusionTargetService, DNBOMatrixService dnboMatrixService, SegmentContactPolicyService segmentContactPolicyService, CriterionFieldAvailableValuesService criterionFieldAvailableValuesService, CustomCriteriaService customCriteriaService, StockMonitor stockService)
     {
       this.kafkaProducer = kafkaProducer;
       this.restServer = restServer;
@@ -2741,6 +2745,7 @@ public class GUIManager
       this.segmentContactPolicyService = segmentContactPolicyService;
       this.criterionFieldAvailableValuesService = criterionFieldAvailableValuesService;
       this.customCriteriaService = customCriteriaService;
+      this.stockService = stockService;
     }
 
     //
@@ -2790,6 +2795,7 @@ public class GUIManager
       if (segmentContactPolicyService != null) segmentContactPolicyService.stop();
       if (criterionFieldAvailableValuesService != null) criterionFieldAvailableValuesService.stop();
       if (customCriteriaService != null) customCriteriaService.stop();
+      if (stockService != null) stockService.close();
 
       //
       //  rest server

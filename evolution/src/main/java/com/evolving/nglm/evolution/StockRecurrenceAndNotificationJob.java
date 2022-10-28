@@ -39,6 +39,7 @@ import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.RLMDateUtils.DatePattern;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.StockMonitor.Stock;
 
 public class StockRecurrenceAndNotificationJob  extends ScheduledJob 
 {
@@ -55,6 +56,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
   private CatalogCharacteristicService catalogCharacteristicService;
   private SalesChannelService salesChannelService;
   private SupplierService supplierService;
+  private StockMonitor stockService;
   private String fwkServer;
   private String fwkEmailSMTPUserName;
   int httpTimeout = 10000;
@@ -66,7 +68,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
   *
   *****************************************/
   
-  public StockRecurrenceAndNotificationJob(String jobName, String periodicGenerationCronEntry, String baseTimeZone, boolean scheduleAtStart, OfferService offerService, ProductService productService, VoucherService voucherService, CallingChannelService callingChannelService, CatalogCharacteristicService catalogCharacteristicService, SalesChannelService salesChannelService, SupplierService supplierService, String fwkServer, String fwkEmailSMTPUserName)
+  public StockRecurrenceAndNotificationJob(String jobName, String periodicGenerationCronEntry, String baseTimeZone, boolean scheduleAtStart, OfferService offerService, ProductService productService, VoucherService voucherService, CallingChannelService callingChannelService, CatalogCharacteristicService catalogCharacteristicService, SalesChannelService salesChannelService, SupplierService supplierService, StockMonitor stockService, String fwkServer, String fwkEmailSMTPUserName)
   {
     super(jobName, periodicGenerationCronEntry, baseTimeZone, scheduleAtStart); 
     this.offerService = offerService;
@@ -76,6 +78,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
     this.catalogCharacteristicService = catalogCharacteristicService;
     this.salesChannelService = salesChannelService;
     this.supplierService = supplierService;
+    this.stockService = stockService;
     this.fwkServer = fwkServer;
     this.fwkEmailSMTPUserName = fwkEmailSMTPUserName;
   }
@@ -132,29 +135,42 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                 Integer stockToAdd = offer.getStockRecurrenceBatch(); // TODO - for now no stats of stock history
                 if (offer.reuseRemainingStock() && offer.getStock() != null)
                   {
-                    stockToAdd += offer.getStock(); // new + old
+                    //stockToAdd += offer.getStock(); // new + old
+                    stockService.voidConsumption(offer, offer.getStockRecurrenceBatch());
                   }
-                else if (offer.getApproximateRemainingStock() != null)
+                else //if (offer.getApproximateRemainingStock() != null)
                   {
-                    stockToAdd += offer.getStock() - offer.getApproximateRemainingStock();
+                    //stockToAdd += offer.getStock() - offer.getApproximateRemainingStock(); 
+                    
+                    Stock stock = new Stock(offer.getStockableItemID());
+                    log.info("[PRJT] total consumed stock: [{}] - before",stock.getStockConsumed());
+                    stock.setStockConsumed(offer.getStock());
+                    log.info("[PRJT] total consumed stock: [{}] - after",stock.getStockConsumed());
+                    stockService.consume(offer, stockToAdd);
+                    log.info("[PRJT] total consumed stock: [{}] - end",stock.getStockConsumed());
                   }
                 
                 //
-                // again replenish
+                // using StockMonitor
                 //
                 
+                
+                
+                /*
                 offerJson.replace("presentationStock", stockToAdd);
                 try
                   {
                     Offer newOffer = new Offer(offerJson, GUIManager.epochServer.getKey(), offer, catalogCharacteristicService, offer.getTenantID());
                     newOffer.setLastStockRecurrenceDate(now);
-                    
                     offerService.putOffer(newOffer, callingChannelService, salesChannelService, productService, voucherService, (offer == null), "StockRecurrenceAndNotificationJob");
+                    
+                    
                   } 
                 catch (GUIManagerException e)
                   {
                     log.error("Stock Recurrence Exception: {}", e.getMessage());
                   }
+                  */
               }
             else{
                 log.info("[PRJT] offer[{}] Next Stock Replanish Date: {}", offer.getOfferID(), stockReplanishDates.stream().filter(date -> date.compareTo(formattedTime) > 0).findFirst());
