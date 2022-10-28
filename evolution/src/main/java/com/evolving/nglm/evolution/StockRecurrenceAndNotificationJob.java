@@ -147,13 +147,15 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                     //Stock stock = new Stock(offer.getStockableItemID());
                     //stock.setStockConsumed(offer.getStock());
                     // or
-                    stockService.confirmReservation(offer, offer.getStock());
-                    log.info("[PRJT] remaining stock [{}]", offer.getApproximateRemainingStock());
+                    stockService.confirmReservation(offer, offer.getApproximateRemainingStock());
+                    log.info("[PRJT] remaining stock [{}] (removed)", offer.getApproximateRemainingStock());
                     
                     //
-                    // replenish batch count -- nothing to do
+                    // replenish batch count
                     //
                     
+                    stockService.voidConsumption(offer, offer.getStockRecurrenceBatch());
+                    log.info("[PRJT] new stock [{}] (replenished)", offer.getApproximateRemainingStock());
                     //stockToAdd += offer.getStock() - offer.getApproximateRemainingStock(); 
                   }
                 
