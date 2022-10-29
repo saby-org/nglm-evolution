@@ -239,7 +239,6 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
   {
     Date now = SystemTime.getCurrentTime();
     String tz = Deployment.getDeployment(offer.getTenantID()).getTimeZone();
-    log.info("[PRJT] TIMEZONE: {}", tz);
     
     Date offerStartDate = offer.getEffectiveStartDate();
     //Date offerEndDate = offer.getEffectiveEndDate();
@@ -320,8 +319,6 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
   
   private List<Date> getExpectedCreationDates(Date firstDate, Date lastDate, String scheduling, List<String> runEveryDay, int tenantID)
   {
-    log.info("[PRJT] firstDate: {}",firstDate);
-    //log.info("[PRJT] lastDate: {}",lastDate);
     List<Date> result = new ArrayList<Date>();
     while (firstDate.before(lastDate) || firstDate.compareTo(lastDate) == 0)
       {
@@ -357,7 +354,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
           }
       }
     
-    log.info("[PRJT] getExpectedCreationDates(): {}", result);
+    log.debug("[PRJT] getExpectedCreationDates(): {}", result);
     return result;
   }
 
@@ -505,11 +502,13 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
 
   private Date getFirstDate(Date now, int dayOf, int tenantID)
   {
+    String tz = Deployment.getDeployment(tenantID).getTimeZone();
+    log.info("[PRJT] TIMEZONE: {}", tz);
     if (Calendar.DAY_OF_WEEK == dayOf)
       {
-        Date firstDateOfNext = RLMDateUtils.ceiling(now, dayOf, Deployment.getDeployment(tenantID).getTimeZone());
+        Date firstDateOfNext = RLMDateUtils.ceiling(now, dayOf, tz);
         log.info("[PRJT] firstDateOfNext: {}", firstDateOfNext);
-        Date result = RLMDateUtils.addDays(firstDateOfNext, -7, Deployment.getDeployment(tenantID).getTimeZone());
+        Date result = RLMDateUtils.addDays(firstDateOfNext, -7, tz);
         log.info("[PRJT] FirstDate: {}", result);
         return result;
       }
