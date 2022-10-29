@@ -21,6 +21,7 @@ import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -128,39 +129,29 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                 log.info("[PRJT] offer[{}] Next Stock Replanish Date: {} is TODAY:[{}]", offer.getOfferID(), stockReplanishDates.stream().filter(date -> date.compareTo(formattedTime) >= 0).findFirst(), formattedTime);
                 JSONObject offerJson = offer.getJSONRepresentation();
                 
-                //
-                // reuse
-                //
-                
                 Integer stockToAdd = offer.getStockRecurrenceBatch();
-                if (offer.reuseRemainingStock() && offer.getStock() != null)
+                if (offer.reuseRemainingStock())
                   {
-                    stockToAdd += offer.getStock(); //using update offer
+                    stockToAdd += ObjectUtils.defaultIfNull(offer.getStock(), 0); //using update offer
                     //stockService.voidConsumption(offer, offer.getStockRecurrenceBatch()); //using 'StockMonitor' -- another way
                   }
                 else
                   {
                     //
-                    // consume all stocks
+                    // reserving remaining stocks
                     //
                     
-                    //Stock stock = new Stock(offer.getStockableItemID());
-                    //stock.setStockConsumed(offer.getStock());
-                    // or
-                    stockService.confirmReservation(offer, offer.getApproximateRemainingStock());
-                    log.info("[PRJT] remaining stock [{}] (removed)", offer.getApproximateRemainingStock());
+                    stockService.confirmReservation(offer, ObjectUtils.defaultIfNull(offer.getApproximateRemainingStock(), 0)); // need to check the remaining stock for unlimited
                     
                     //
                     // replenish batch count
                     //
                     
                     stockService.voidConsumption(offer, offer.getStockRecurrenceBatch());
-                    log.info("[PRJT] new stock [{}] (replenished)", offer.getApproximateRemainingStock());
-                    //stockToAdd += offer.getStock() - offer.getApproximateRemainingStock(); 
                   }
                 
                 //
-                // update offer -- for 'initial stock' only
+                // update offer -- maintaining 'initial stock' only
                 //
                 
                 offerJson.replace("presentationStock", stockToAdd);
@@ -318,7 +309,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
 
     //if(log.isInfoEnabled()) log.info("[PRJT] before filter tmpJourneyCreationDates {}", tmpJourneyCreationDates);
     tmpJourneyCreationDates = tmpJourneyCreationDates.stream().filter(date -> date.after(offer.getEffectiveStartDate()) && date.compareTo(filterStartDate) >= 0 && filterEndDate.compareTo(date) >= 0 ).collect(Collectors.toList());
-    log.debug("[PRJT] after filter tmpJourneyCreationDates {}", tmpJourneyCreationDates);
+    log.info("[PRJT] Expected Stock Replanish Dates: {}", tmpJourneyCreationDates);
 
     //
     // return with format
