@@ -319,6 +319,8 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
   
   private List<Date> getExpectedCreationDates(Date firstDate, Date lastDate, String scheduling, List<String> runEveryDay, int tenantID)
   {
+    log.info("[PRJT] firstDate: {}",firstDate);
+    log.info("[PRJT] lastDate: {}",lastDate);
     List<Date> result = new ArrayList<Date>();
     while (firstDate.before(lastDate) || firstDate.compareTo(lastDate) == 0)
       {
