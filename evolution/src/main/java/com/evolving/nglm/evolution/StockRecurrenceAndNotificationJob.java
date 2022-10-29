@@ -151,7 +151,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                   }
                 
                 //
-                // update offer -- maintaining 'initial stock' only
+                // update offer -- maintaining 'initial stock' only, otherwise StockMonitor can handle remaining stocks
                 //
                 
                 offerJson.replace("presentationStock", stockToAdd);
@@ -354,7 +354,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
           }
       }
     
-    log.debug("[PRJT] getExpectedCreationDates(): {}", result);
+    log.info("[PRJT] getExpectedCreationDates(): {}", result);
     return result;
   }
 
