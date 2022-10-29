@@ -237,14 +237,18 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
   
   private List<Date> getExpectedStockReplanishDates(Offer offer, String datePattern)
   {
-    Date now = SystemTime.getCurrentTime();
     String tz = Deployment.getDeployment(offer.getTenantID()).getTimeZone();
+    final Date now = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, tz);
+    log.info("[PRJT] now: {}", now);
     
     Date offerStartDate = offer.getEffectiveStartDate();
+    log.info("[PRJT] offerStartDate: {}", offerStartDate);
     //Date offerEndDate = offer.getEffectiveEndDate();
     int stockReplanishDaysRange = Deployment.getStockReplanishDaysRange();
     Date filterStartDate = RLMDateUtils.addDays(now, -1*stockReplanishDaysRange, tz);
     Date filterEndDate = RLMDateUtils.addDays(now, stockReplanishDaysRange, tz);
+    log.info("[PRJT] filterStartDate: {}", filterStartDate);
+    log.info("[PRJT] filterEndDate: {}", filterEndDate);
     
     JourneyScheduler stockScheduler = offer.getStockScheduler();
     
@@ -319,6 +323,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
   
   private List<Date> getExpectedCreationDates(Date firstDate, Date lastDate, String scheduling, List<String> runEveryDay, int tenantID)
   {
+    log.info("[PRJT] firstDateOfStartDateWk: {}, lastDateOfStartDateWk: {}", firstDate, lastDate);
     List<Date> result = new ArrayList<Date>();
     while (firstDate.before(lastDate) || firstDate.compareTo(lastDate) == 0)
       {
