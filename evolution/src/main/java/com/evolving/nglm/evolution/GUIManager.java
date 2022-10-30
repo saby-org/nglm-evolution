@@ -31189,8 +31189,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
 
     private List<Date> getExpectedCreationDates(Date firstDate, Date lastDate, String scheduling, List<String> runEveryDay, int tenantID)
     {
-      log.info("[PRJT] CAMP firstDate: {}", firstDate);   
-      log.info("[PRJT] CAMP lastDate: {}", lastDate);
       List<Date> result = new ArrayList<Date>();
       while (firstDate.before(lastDate) || firstDate.compareTo(lastDate) == 0)
         {

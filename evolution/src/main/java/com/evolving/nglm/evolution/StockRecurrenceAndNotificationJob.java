@@ -158,10 +158,15 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                 try
                   {
                     Offer newOffer = new Offer(offerJson, GUIManager.epochServer.getKey(), offer, catalogCharacteristicService, offer.getTenantID());
+                    
+                    // last recurrence date
                     newOffer.setLastStockRecurrenceDate(now);
+                    
+                    // next recurrence date
+                    Date nextDate = stockReplanishDates.stream().filter(date -> date.compareTo(formattedTime) > 0).findFirst().get();
+                    if (nextDate != null) newOffer.setNextStockRecurrenceDate(nextDate);
+                    
                     offerService.putOffer(newOffer, callingChannelService, salesChannelService, productService, voucherService, (offer == null), "StockRecurrenceAndNotificationJob");
-                    
-                    
                   } 
                 catch (GUIManagerException e)
                   {
@@ -238,7 +243,8 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
   private List<Date> getExpectedStockReplanishDates(Offer offer, String datePattern)
   {
     String tz = Deployment.getDeployment(offer.getTenantID()).getTimeZone();
-    final Date now = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, tz);
+    //final Date now = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, tz);
+    Date now = SystemTime.getCurrentTime();
     log.info("[PRJT] now: {}", now);
     
     Date offerStartDate = offer.getEffectiveStartDate();
