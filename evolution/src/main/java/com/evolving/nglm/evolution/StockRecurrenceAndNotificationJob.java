@@ -160,7 +160,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                 try
                   {
                     Offer newOffer = new Offer(offerJson, GUIManager.epochServer.getKey(), offer, catalogCharacteristicService, offer.getTenantID());
-                    newOffer.setLastStockRecurrenceDate(SystemTime.getCurrentTime());
+                    newOffer.setLastStockRecurrenceDate(time);
                     offerService.putOffer(newOffer, callingChannelService, salesChannelService, productService, voucherService, (offer == null), "StockRecurrenceAndNotificationJob");
                   } 
                 catch (GUIManagerException e)
