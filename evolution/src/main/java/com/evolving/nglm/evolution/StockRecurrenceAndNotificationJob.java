@@ -125,7 +125,6 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
             Date formattedTime = formattedDate(time, datePattern);
             List<Date> stockReplanishDates = getExpectedStockReplanishDates(offer, datePattern);
             
-            log.info("[PRJT] offer[{}] Last Stock Replanish Date: [{}]", offer.getOfferID(), offer.getLastStockRecurrenceDate());
             if(stockReplanishDates.contains(formattedTime) && formattedDate(offer.getLastStockRecurrenceDate(), datePattern).compareTo(formattedTime) < 0 || testMode)
               {
                 log.info("[PRJT] offer[{}] Next Stock Replanish Date: {} is TODAY:[{}]", offer.getOfferID(), stockReplanishDates.stream().filter(date -> date.compareTo(formattedTime) >= 0).findFirst(), formattedTime);
@@ -246,6 +245,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
     int stockReplanishDaysRange = Deployment.getStockReplanishDaysRange();
     Date filterStartDate = RLMDateUtils.addDays(now, -1, tz); // starting from yesterday
     Date filterEndDate = RLMDateUtils.addDays(now, stockReplanishDaysRange, tz); // till next stockReplanishDaysRange
+    log.info("[PRJT] filter b/w: [{}] to [{}]", filterStartDate, filterEndDate);
     
     JourneyScheduler stockScheduler = offer.getStockScheduler();
     
