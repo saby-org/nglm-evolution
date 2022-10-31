@@ -160,7 +160,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                 try
                   {
                     Offer newOffer = new Offer(offerJson, GUIManager.epochServer.getKey(), offer, catalogCharacteristicService, offer.getTenantID());
-                    newOffer.setLastStockRecurrenceDate(time);
+                    newOffer.setLastStockRecurrenceDate(SystemTime.getCurrentTime());
                     offerService.putOffer(newOffer, callingChannelService, salesChannelService, productService, voucherService, (offer == null), "StockRecurrenceAndNotificationJob");
                   } 
                 catch (GUIManagerException e)
@@ -244,8 +244,8 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
     Date offerStartDate = offer.getEffectiveStartDate();
     //Date offerEndDate = offer.getEffectiveEndDate();
     int stockReplanishDaysRange = Deployment.getStockReplanishDaysRange();
-    Date filterStartDate = RLMDateUtils.addDays(now, -1*stockReplanishDaysRange, tz);
-    Date filterEndDate = RLMDateUtils.addDays(now, stockReplanishDaysRange, tz);
+    Date filterStartDate = RLMDateUtils.addDays(now, -1, tz); // starting from yesterday
+    Date filterEndDate = RLMDateUtils.addDays(now, stockReplanishDaysRange, tz); // till next stockReplanishDaysRange
     
     JourneyScheduler stockScheduler = offer.getStockScheduler();
     

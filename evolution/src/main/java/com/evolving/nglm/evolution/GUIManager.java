@@ -30951,12 +30951,9 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
       if (log.isDebugEnabled()) log.debug("creating recurrent campaigns");
       String tz = Deployment.getDefault().getTimeZone(); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct ? 
       final Date now = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, tz);
-      log.info("[PRJT] RecCamp now: {}", now);
       int recurrentCampaignCreationDaysRange = Deployment.getRecurrentCampaignCreationDaysRange();
       Date filterStartDate = RLMDateUtils.addDays(now, -1*recurrentCampaignCreationDaysRange, tz);
       Date filterEndDate = RLMDateUtils.addDays(now, recurrentCampaignCreationDaysRange, tz);
-      log.info("[PRJT] RecCamp filterStartDate: {}", filterStartDate);
-      log.info("[PRJT] RecCamp filterEndDate: {}", filterEndDate);
       Collection<Journey> recurrentJourneys = journeyService.getAcceptedAndCompletedRecurrentJourneys(SystemTime.getCurrentTime(), 0);
       if(log.isDebugEnabled()) log.debug("recurrentJourneys {}", recurrentJourneys);
       for (Journey recurrentJourney : recurrentJourneys)
