@@ -308,7 +308,6 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
     // filter out if before start date and recurrentCampaignCreationDaysRange (before / after)
     //
 
-    //if(log.isInfoEnabled()) log.info("[PRJT] before filter tmpJourneyCreationDates {}", tmpJourneyCreationDates);
     tmpJourneyCreationDates = tmpJourneyCreationDates.stream().filter(date -> date.after(offer.getEffectiveStartDate()) && date.compareTo(filterStartDate) >= 0 && filterEndDate.compareTo(date) >= 0 ).collect(Collectors.toList());
     log.info("[PRJT] Expected Stock Replanish Dates: {}", tmpJourneyCreationDates);
 
@@ -320,7 +319,6 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
   
   private List<Date> getExpectedCreationDates(Date firstDate, Date lastDate, String scheduling, List<String> runEveryDay, int tenantID)
   {
-    log.info("[PRJT] firstDateOfStartDateWk: {}, lastDateOfStartDateWk: {}", firstDate, lastDate);
     List<Date> result = new ArrayList<Date>();
     while (firstDate.before(lastDate) || firstDate.compareTo(lastDate) == 0)
       {
@@ -505,13 +503,10 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
   private Date getFirstDate(Date now, int dayOf, int tenantID)
   {
     String tz = Deployment.getDeployment(tenantID).getTimeZone();
-    log.info("[PRJT] TIMEZONE: {}", tz);
     if (Calendar.DAY_OF_WEEK == dayOf)
       {
         Date firstDateOfNext = RLMDateUtils.ceiling(now, dayOf, tz);
-        log.info("[PRJT] firstDateOfNext: {}", firstDateOfNext);
         Date result = RLMDateUtils.addDays(firstDateOfNext, -7, tz);
-        log.info("[PRJT] FirstDate: {}", result);
         return result;
       }
     else
