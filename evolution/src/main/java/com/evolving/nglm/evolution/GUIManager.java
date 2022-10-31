@@ -2596,7 +2596,7 @@ public class GUIManager
     String qaCronEntry = "4,9,14,19,24,29,34,39,44,49,54,59 * * * *";
 
     String stockRecurrenceAndNotificationCronEntry = DeploymentCommon.getStockRecurrenceAndNotificationCronEntry();
-    ScheduledJob recurrnetCampaignCreationJob = new RecurrentCampaignCreationJob("Recurrent Campaign(create)", qaCronEntry, Deployment.getDefault().getTimeZone(), false); // TODO EVPRO-99 i used systemTimeZone instead of BaseTimeZone pet tenant, check if correct
+    ScheduledJob recurrnetCampaignCreationJob = new RecurrentCampaignCreationJob("Recurrent Campaign(create)", periodicGenerationCronEntry, Deployment.getDefault().getTimeZone(), false); // TODO EVPRO-99 i used systemTimeZone instead of BaseTimeZone pet tenant, check if correct
     ScheduledJob challengesOccurrenceJob = new ChallengesOccurrenceJob("Challenges Occurrence", periodicGenerationCronEntry, Deployment.getDefault().getTimeZone(), false);
     StockRecurrenceAndNotificationJob stockRecurrenceJobAndNotificationJob = new StockRecurrenceAndNotificationJob("Stock Recurrence And Notification", stockRecurrenceAndNotificationCronEntry, Deployment.getDefault().getTimeZone(), true, offerService, productService, voucherService, callingChannelService, catalogCharacteristicService, salesChannelService, supplierService, stockService, fwkServer, fwkEmailSMTPUserName);
     //ScheduledJob stockRecurrenceJob = new StockRecurrenceJob("Stocks Recurrence", qaCronEntry, Deployment.getDefault().getTimeZone(), false);

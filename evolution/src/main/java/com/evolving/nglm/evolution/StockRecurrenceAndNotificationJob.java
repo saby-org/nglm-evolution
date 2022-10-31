@@ -119,10 +119,10 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
           {
             boolean testMode = true; // for testing
             
-            String tz = Deployment.getDeployment(offer.getTenantID()).getTimeZone(); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct ? 
-            final Date now2 = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, tz);
+            String tz = Deployment.getDeployment(offer.getTenantID()).getTimeZone();
+            final Date time = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, tz);
             String datePattern = DatePattern.LOCAL_DAY.get();
-            Date formattedTime = formattedDate(now2, datePattern);
+            Date formattedTime = formattedDate(time, datePattern);
             List<Date> stockReplanishDates = getExpectedStockReplanishDates(offer, datePattern);
             
             log.info("[PRJT] offer[{}] Last Stock Replanish Date: [{}]", offer.getOfferID(), offer.getLastStockRecurrenceDate());
@@ -160,14 +160,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                 try
                   {
                     Offer newOffer = new Offer(offerJson, GUIManager.epochServer.getKey(), offer, catalogCharacteristicService, offer.getTenantID());
-                    
-                    // last recurrence date
-                    newOffer.setLastStockRecurrenceDate(now2);
-                    
-                    // next recurrence date
-                    Date nextDate = stockReplanishDates.stream().filter(date -> date.compareTo(formattedTime) > 0).findFirst().get();
-                    if (nextDate != null) newOffer.setNextStockRecurrenceDate(nextDate);
-                    
+                    newOffer.setLastStockRecurrenceDate(SystemTime.getCurrentTime());
                     offerService.putOffer(newOffer, callingChannelService, salesChannelService, productService, voucherService, (offer == null), "StockRecurrenceAndNotificationJob");
                   } 
                 catch (GUIManagerException e)
