@@ -119,8 +119,10 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
           {
             boolean testMode = true; // for testing
             
+            String tz = Deployment.getDeployment(offer.getTenantID()).getTimeZone(); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct ? 
+            final Date now2 = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, tz);
             String datePattern = DatePattern.LOCAL_DAY.get();
-            Date formattedTime = formattedDate(now, datePattern);
+            Date formattedTime = formattedDate(now2, datePattern);
             List<Date> stockReplanishDates = getExpectedStockReplanishDates(offer, datePattern);
             
             log.info("[PRJT] offer[{}] Last Stock Replanish Date: [{}]", offer.getOfferID(), offer.getLastStockRecurrenceDate());
@@ -160,7 +162,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                     Offer newOffer = new Offer(offerJson, GUIManager.epochServer.getKey(), offer, catalogCharacteristicService, offer.getTenantID());
                     
                     // last recurrence date
-                    newOffer.setLastStockRecurrenceDate(now);
+                    newOffer.setLastStockRecurrenceDate(now2);
                     
                     // next recurrence date
                     Date nextDate = stockReplanishDates.stream().filter(date -> date.compareTo(formattedTime) > 0).findFirst().get();
@@ -243,18 +245,14 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
   private List<Date> getExpectedStockReplanishDates(Offer offer, String datePattern)
   {
     String tz = Deployment.getDeployment(offer.getTenantID()).getTimeZone();
-    //final Date now = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, tz);
-    Date now = SystemTime.getCurrentTime();
-    log.info("[PRJT] now: {}", now);
+    final Date now = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, tz);
+    //Date now = SystemTime.getCurrentTime();
     
     Date offerStartDate = offer.getEffectiveStartDate();
-    log.info("[PRJT] offerStartDate: {}", offerStartDate);
     //Date offerEndDate = offer.getEffectiveEndDate();
     int stockReplanishDaysRange = Deployment.getStockReplanishDaysRange();
     Date filterStartDate = RLMDateUtils.addDays(now, -1*stockReplanishDaysRange, tz);
     Date filterEndDate = RLMDateUtils.addDays(now, stockReplanishDaysRange, tz);
-    log.info("[PRJT] filterStartDate: {}", filterStartDate);
-    log.info("[PRJT] filterEndDate: {}", filterEndDate);
     
     JourneyScheduler stockScheduler = offer.getStockScheduler();
     
