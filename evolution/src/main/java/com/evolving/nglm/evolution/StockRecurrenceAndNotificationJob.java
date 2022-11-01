@@ -122,9 +122,15 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
             String tz = Deployment.getDeployment(offer.getTenantID()).getTimeZone();
             //final Date currentTime = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, tz);
             
-            //String datePattern = DatePattern.LOCAL_DAY.get();
-            //Date formattedTime = formattedDate(currentTime, datePattern);
+            log.info("[PRJT] -----------------------------------------------------------");
+            log.info("[PRJT] now: {}", now);
+            String datePattern = DatePattern.LOCAL_DAY.get();
+            Date formattedTime = formattedDate(now, datePattern);
+            log.info("[PRJT] formattedTime: {}", formattedTime);
             Date zeroHourTime = getZeroTimeDate(now, tz);
+            log.info("[PRJT] zeroHourTime: {}", zeroHourTime);
+            log.info("[PRJT] -----------------------------------------------------------");
+            
             List<Date> stockReplanishDates = getExpectedStockReplanishDates(offer, now, tz);
             
             if(stockReplanishDates.contains(zeroHourTime) && getZeroTimeDate(offer.getLastStockRecurrenceDate(), tz).compareTo(zeroHourTime) < 0 || testMode)
