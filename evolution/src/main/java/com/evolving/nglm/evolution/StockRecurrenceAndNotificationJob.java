@@ -258,7 +258,9 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
       {
         Date lastDateOfThisWk = getLastDate(now, Calendar.DAY_OF_WEEK, offer.getTenantID());
         Date firstDateOfStartDateWk = getFirstDate(offerStartDate, Calendar.DAY_OF_WEEK, offer.getTenantID());
+        log.info("[PRJT] firstDateOfStartDateWk: {}", firstDateOfStartDateWk);
         Date lastDateOfStartDateWk = getLastDate(offerStartDate, Calendar.DAY_OF_WEEK, offer.getTenantID());
+        log.info("[PRJT] lastDateOfStartDateWk: {}", lastDateOfStartDateWk);
         while(lastDateOfThisWk.compareTo(lastDateOfStartDateWk) >= 0)
           {
             tmpJourneyCreationDates.addAll(getExpectedCreationDates(firstDateOfStartDateWk, lastDateOfStartDateWk, scheduling, stockScheduler.getRunEveryWeekDay(), offer.getTenantID()));
