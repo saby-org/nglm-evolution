@@ -57,6 +57,7 @@ import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.client.indices.GetIndexResponse;
 import org.elasticsearch.client.indices.GetMappingsRequest;
 import org.elasticsearch.client.indices.GetMappingsResponse;
+import org.elasticsearch.client.security.RefreshPolicy;
 import org.elasticsearch.client.sniff.ElasticsearchNodesSniffer;
 import org.elasticsearch.client.sniff.NodesSniffer;
 import org.elasticsearch.client.sniff.Sniffer;
@@ -1838,7 +1839,8 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
             actionRequests.put("status", (String) esFields.get("status"));
             actionRequests.put("requestDate", getDateString(requestDate, tenantID));
             actionRequests.put("remarks", null);
-            if (daysBetween > 1) actionRequests.put("remarks", "actionRequests with id ".concat(hit.getId()).concat(" taking more time than usal, please check"));
+            actionRequests.put("requesteID", hit.getId());
+            if (daysBetween > 0) actionRequests.put("remarks", "actionRequests with id ".concat(hit.getId()).concat(" taking more time than usal, please check the log"));
             maintenanceRequests.add(JSONUtilities.encodeObject(actionRequests));
           }
       } 
@@ -1899,6 +1901,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
     request.doc(document);
     request.docAsUpsert(true);
     request.retryOnConflict(4);
+    request.setRefreshPolicy(org.elasticsearch.action.support.WriteRequest.RefreshPolicy.IMMEDIATE);
     try
       {
         UpdateResponse updateResponse = this.update(request, RequestOptions.DEFAULT);
