@@ -6140,6 +6140,56 @@ public class GUIManagerGeneral extends GUIManager
   
   /****************************************
   *
+  *  processGetSystemMaintenanceDetails
+  *
+  ****************************************/
+  
+  public JSONObject processGetRetentaionConfigurations(String userID, JSONObject jsonRoot, int tenantID)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    Map<String, Object> response = new HashMap<String, Object>();
+    List<JSONObject> retentionConfigurations = new ArrayList<JSONObject>();
+    
+    //
+    //  add
+    //
+    
+    retentionConfigurations.add(new RetentionConfiguration("guiConfigurationRetentionDays", "GUI Configuration Retention Days", String.valueOf(DeploymentCommon.getGuiConfigurationSoftRetentionDays()), "this is the number of days after which we delete record from topic deleted GUIManagedObjects").getJSONPresentation());
+    retentionConfigurations.add(new RetentionConfiguration("kafkaRetentionDaysExpiredTokens", "Kafka Retention Days ExpiredTokens", String.valueOf(DeploymentCommon.getKafkaRetentionDaysExpiredTokens()), "this is the number of days after which we delete Expired Tokens").getJSONPresentation());
+    retentionConfigurations.add(new RetentionConfiguration("kafkaRetentionDaysExpiredVouchers", "Kafka Retention Days ExpiredVouchers", String.valueOf(DeploymentCommon.getKafkaRetentionDaysExpiredVouchers()), "this is the number of days after which we delete Expired Vouchers").getJSONPresentation());
+    retentionConfigurations.add(new RetentionConfiguration("kafkaRetentionDaysLoyaltyPrograms", "Kafka Retention Days LoyaltyPrograms", String.valueOf(DeploymentCommon.getKafkaRetentionDaysLoyaltyPrograms()), "this is the number of days after which we delete Subscriber Loyalty Details if exited").getJSONPresentation());
+    retentionConfigurations.add(new RetentionConfiguration("kafkaRetentionDaysRemovedBadges", "Kafka Retention Days Removed Badges", String.valueOf(DeploymentCommon.getKafkaRetentionDaysRemovedBadges()), "this is the number of days after which we delete Subscriber Badge Details if removed").getJSONPresentation());
+    retentionConfigurations.add(new RetentionConfiguration("kafkaRetentionDaysTargets", "Kafka Retention Days Targets", String.valueOf(DeploymentCommon.getKafkaRetentionDaysTargets()), "this is the number of days after which we delete Subscriber Target details after target Expired/Ended").getJSONPresentation());
+    
+    retentionConfigurations.add(new RetentionConfiguration("ESRetentionDaysODR", "ES Retention Days ODR", String.valueOf(DeploymentCommon.getElasticsearchRetentionDaysODR()), "this is the number of days after which we delete ODR index - which privdes Offer Detaild Records").getJSONPresentation());
+    retentionConfigurations.add(new RetentionConfiguration("ESRetentionDaysBDR", "ES Retention Days BDR", String.valueOf(DeploymentCommon.getElasticsearchRetentionDaysBDR()), "this is the number of days after which we delete BDR index - which privdes Bonus Detaild Records").getJSONPresentation());
+    retentionConfigurations.add(new RetentionConfiguration("ESRetentionDaysMDR", "ES Retention Days MDR", String.valueOf(DeploymentCommon.getElasticsearchRetentionDaysMDR()), "this is the number of days after which we delete MDR index - which privdes Message/Notification Detaild Records").getJSONPresentation());
+    retentionConfigurations.add(new RetentionConfiguration("ESRetentionDaysTokens", "ES Retention Days Tokens", String.valueOf(DeploymentCommon.getElasticsearchRetentionDaysTokens()), "this is the number of days after which we delete Token index - which privdes Token Detaild Records").getJSONPresentation());
+    retentionConfigurations.add(new RetentionConfiguration("ESRetentionDaysSnapshots", "ES Retention Days Snapshots", String.valueOf(DeploymentCommon.getElasticsearchRetentionDaysSnapshots()), "this is the number of days after which we delete Snapshot index - like subscriberprofile snaps").getJSONPresentation());
+    
+    //
+    //  retentionConfigurations
+    //
+    
+    response.put("retentionConfigurations", JSONUtilities.encodeArray(retentionConfigurations));
+    
+    
+    /*****************************************
+    *
+    *  return
+    *
+    *****************************************/
+
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /****************************************
+  *
   *  processCreateSystemMaintenanceRequest
   *
   ****************************************/
@@ -6158,7 +6208,7 @@ public class GUIManagerGeneral extends GUIManager
       {
         Map<String, Object> documentMap = new HashMap<String, Object>();
         Date now = SystemTime.getCurrentTime();
-        documentMap.put("requestedBy", "user with ID "+ userID);
+        documentMap.put("requestedBy", "userID "+ userID != null ? userID : "Administrator");
         documentMap.put("status", "REQUESTED");
         documentMap.put("requestDate", RLMDateUtils.formatDateForElasticsearchDefault(now));
         String requestID = this.elasticsearch.createSystemMaintenanceRequest(documentMap, now);

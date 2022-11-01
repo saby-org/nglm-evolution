@@ -639,6 +639,7 @@ public class GUIManager
     getAuthDetailsSOS("getAuthDetailsSOS"),
     getSystemMaintenanceDetails("getSystemMaintenanceDetails"),
     createSystemMaintenanceRequest("createSystemMaintenanceRequest"),
+    getRetentionConfigurationDetails("getRetentionConfigurationDetails"),
     
     
     //
@@ -2555,6 +2556,7 @@ public class GUIManager
         restServer.createContext("/nglm-guimanager/getAuthDetailsSOS", new APISimpleHandler(API.getAuthDetailsSOS));
         restServer.createContext("/nglm-guimanager/getSystemMaintenanceDetails", new APISimpleHandler(API.getSystemMaintenanceDetails));
         restServer.createContext("/nglm-guimanager/createSystemMaintenanceRequest", new APISimpleHandler(API.createSystemMaintenanceRequest));
+        restServer.createContext("/nglm-guimanager/getRetentionConfigurationDetails", new APISimpleHandler(API.getRetentionConfigurationDetails));
         
         restServer.setExecutor(Executors.newFixedThreadPool(10));
         restServer.start();
@@ -4648,6 +4650,10 @@ public class GUIManager
                   
                 case createSystemMaintenanceRequest:
                   jsonResponse = guiManagerGeneral.processCreateSystemMaintenanceRequest(userID, jsonRoot, tenantID);
+                  break;
+                  
+                case getRetentionConfigurationDetails:
+                  jsonResponse = guiManagerGeneral.processGetRetentaionConfigurations(userID, jsonRoot, tenantID);
                   break;
               }
           }

@@ -518,6 +518,7 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID
 
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 , "startDate" : "2022-11-01", "endDate" : "2022-11-03" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSystemMaintenanceDetails; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/createSystemMaintenanceRequest; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getRetentionConfigurationDetails; echo
 
 --
 --  thirdpartymanager
