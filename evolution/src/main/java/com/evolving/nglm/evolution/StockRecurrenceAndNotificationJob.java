@@ -301,7 +301,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
     //
 
     tmpStockReccurenceDates = tmpStockReccurenceDates.stream().filter(date -> date.after(offer.getEffectiveStartDate()) && date.compareTo(filterStartDate) >= 0 && filterEndDate.compareTo(date) >= 0 ).collect(Collectors.toList());
-    log.info("[PRJT] Expected Stock Replanish Dates: {}", tmpStockReccurenceDates);
+    log.info("[PRJT] Offer[{}] Expected Stock Replanish Dates: {}", offer.getOfferID(), tmpStockReccurenceDates);
 
     //
     // return with format
