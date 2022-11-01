@@ -506,11 +506,16 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
 
   private Date getFirstDate(Date now, int dayOf, int tenantID)
   {
-    String tz = Deployment.getDeployment(tenantID).getTimeZone();
     if (Calendar.DAY_OF_WEEK == dayOf)
       {
-        Date firstDateOfNext = RLMDateUtils.ceiling(now, dayOf, tz);
-        Date result = RLMDateUtils.addDays(firstDateOfNext, -7, tz);
+        // OLD
+        //String tz = Deployment.getDeployment(tenantID).getTimeZone();
+        //Date firstDateOfNext = RLMDateUtils.ceiling(now, dayOf, tz);
+        //Date result = RLMDateUtils.addDays(firstDateOfNext, -7, tz);
+        
+        // NEW
+        int dayOfWeek = RLMDateUtils.getField(now, Calendar.DAY_OF_WEEK, Deployment.getDeployment(tenantID).getTimeZone());
+        Date result = RLMDateUtils.addDays(now, -dayOfWeek+1, Deployment.getDeployment(tenantID).getTimeZone());
         return result;
       }
     else
@@ -529,16 +534,25 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
 
   private Date getLastDate(Date now, int dayOf, int tenantID)
   {
-    Date firstDateOfNext = RLMDateUtils.ceiling(now, dayOf, Deployment.getDeployment(tenantID).getTimeZone());
+    Calendar c = Calendar.getInstance(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getTimeZone()));
+    c.setTime(now);
+    
     if (Calendar.DAY_OF_WEEK == dayOf)
       {
-        Date firstDateOfthisWk = RLMDateUtils.addDays(firstDateOfNext, -7, Deployment.getDeployment(tenantID).getTimeZone());
-        return RLMDateUtils.addDays(firstDateOfthisWk, 6, Deployment.getDeployment(tenantID).getTimeZone());
+        // OLD
+        //Date firstDateOfNext = RLMDateUtils.ceiling(now, dayOf, Deployment.getDeployment(tenantID).getTimeZone());
+        //Date firstDateOfthisWk = RLMDateUtils.addDays(firstDateOfNext, -7, Deployment.getDeployment(tenantID).getTimeZone());
+        //return RLMDateUtils.addDays(firstDateOfthisWk, 6, Deployment.getDeployment(tenantID).getTimeZone());
+        
+        // NEW
+        int toalNoOfDays = c.getActualMaximum(Calendar.DAY_OF_WEEK);
+        int dayOfWeek = RLMDateUtils.getField(now, Calendar.DAY_OF_WEEK, Deployment.getDeployment(tenantID).getTimeZone());
+        Date firstDate = RLMDateUtils.addDays(now, -dayOfWeek+1, Deployment.getDeployment(tenantID).getTimeZone());
+        Date lastDate = RLMDateUtils.addDays(firstDate, toalNoOfDays-1, Deployment.getDeployment(tenantID).getTimeZone());
+        return lastDate;
       }
     else
       {
-        Calendar c = Calendar.getInstance(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getTimeZone()));
-        c.setTime(now);
         int toalNoOfDays = c.getActualMaximum(Calendar.DAY_OF_MONTH);
         int dayOfMonth = RLMDateUtils.getField(now, Calendar.DAY_OF_MONTH, Deployment.getDeployment(tenantID).getTimeZone());
         Date firstDate = RLMDateUtils.addDays(now, -dayOfMonth+1, Deployment.getDeployment(tenantID).getTimeZone());
