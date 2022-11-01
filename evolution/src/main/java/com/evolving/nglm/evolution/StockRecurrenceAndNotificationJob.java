@@ -127,15 +127,13 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
             String datePattern = DatePattern.LOCAL_DAY.get();
             Date formattedTime = formattedDate(now, datePattern);
             log.info("[PRJT] formattedTime: {}", formattedTime);
-            Date zeroHourTime = getZeroTimeDate(now, tz);
-            log.info("[PRJT] zeroHourTime: {}", zeroHourTime);
             log.info("[PRJT] -----------------------------------------------------------");
             
-            List<Date> stockReplanishDates = getExpectedStockReplanishDates(offer, now, tz);
+            List<Date> stockReplanishDates = getExpectedStockReplanishDates(offer, formattedTime, tz);
             
-            if(stockReplanishDates.contains(zeroHourTime) && getZeroTimeDate(offer.getLastStockRecurrenceDate(), tz).compareTo(zeroHourTime) < 0 || testMode)
+            if(stockReplanishDates.contains(formattedTime) && formattedDate(offer.getLastStockRecurrenceDate(), datePattern).compareTo(formattedTime) < 0 || testMode)
               {
-                log.info("[PRJT] offer[{}] Next Stock Replanish Date: {} is TODAY:[{}]", offer.getOfferID(), stockReplanishDates.stream().filter(date -> date.compareTo(zeroHourTime) >= 0).findFirst(), now);
+                log.info("[PRJT] offer[{}] Next Stock Replanish Date: {} is TODAY:[{}]", offer.getOfferID(), stockReplanishDates.stream().filter(date -> date.compareTo(formattedTime) >= 0).findFirst(), formattedTime);
                 JSONObject offerJson = offer.getJSONRepresentation();
                 
                 Integer stockToAdd = offer.getStockRecurrenceBatch();
@@ -176,7 +174,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                   }
               }
             else{
-                log.info("[PRJT] offer[{}] Next Stock Replanish Date: {}", offer.getOfferID(), stockReplanishDates.stream().filter(date -> date.compareTo(zeroHourTime) > 0).findFirst());
+                log.info("[PRJT] offer[{}] Next Stock Replanish Date: {}", offer.getOfferID(), stockReplanishDates.stream().filter(date -> date.compareTo(formattedTime) > 0).findFirst());
               }
           } 
         else{
@@ -248,7 +246,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
     int stockReplanishDaysRange = Deployment.getStockReplanishDaysRange();
     Date filterStartDate = RLMDateUtils.addDays(now, -1, tz); // starting from yesterday
     Date filterEndDate = RLMDateUtils.addDays(now, stockReplanishDaysRange, tz); // till next stockReplanishDaysRange
-    log.info("[PRJT] filter b/w Start [{}] to End [{}]", filterStartDate, filterEndDate);
+    log.info("[PRJT] filter b/w START [{}] to END [{}]", filterStartDate, filterEndDate);
     
     JourneyScheduler stockScheduler = offer.getStockScheduler();
     
@@ -317,7 +315,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
     //
     // return with format
     //
-    return tmpJourneyCreationDates.stream().map(date -> getZeroTimeDate(date, tz)).collect(Collectors.toList());
+    return tmpJourneyCreationDates.stream().map(date -> formattedDate(date, DatePattern.LOCAL_DAY.get())).collect(Collectors.toList());
   }
   
   private List<Date> getExpectedCreationDates(Date firstDate, Date lastDate, String scheduling, List<String> runEveryDay, int tenantID)
@@ -357,7 +355,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
           }
       }
     
-    log.debug("[PRJT] getExpectedCreationDates(): {}", result);
+    log.info("[PRJT] getExpectedCreationDates(): {}", result);
     return result;
   }
 
@@ -546,14 +544,4 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
       }
   }
   
-  public static Date getZeroTimeDate(Date date, String tz) 
-  {
-    Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone(tz));
-    calendar.setTime(date);
-    calendar.set(Calendar.HOUR_OF_DAY, 0);
-    calendar.set(Calendar.MINUTE, 0);
-    calendar.set(Calendar.SECOND, 0);
-    calendar.set(Calendar.MILLISECOND, 0);
-    return calendar.getTime();
-  }
 }
