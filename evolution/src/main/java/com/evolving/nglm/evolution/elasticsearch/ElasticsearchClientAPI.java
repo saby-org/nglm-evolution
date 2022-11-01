@@ -1834,7 +1834,6 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
             Map<String, Object> actionRequests = new HashMap<String, Object>();
             Date requestDate = RLMDateUtils.parseDateFromElasticsearch((String) esFields.get("requestDate"));
             int daysBetween = RLMDateUtils.daysBetween(requestDate, SystemTime.getCurrentTime(), Deployment.getDefault().getTimeZone());
-            log.info("RAJ K daysBetween {}", daysBetween);
             actionRequests.put("requestedBy", (String) esFields.get("requestedBy"));
             actionRequests.put("status", (String) esFields.get("status"));
             actionRequests.put("requestDate", getDateString(requestDate));

@@ -285,6 +285,7 @@
                     <include>bin/guimanager-run.sh</include>
                     <include>bin/update-subscribergroup.sh</include>
                     <include>bin/configlog.sh</include>
+                    <include>bin/cleanup.sh</include>
                     <include>bin/restoreKafkaBackup.sh</include>
                     <include>bin/storeconfiguration.sh</include>
                     <include>bin/upgrade-run-preamble.sh</include>
