@@ -120,12 +120,12 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
             boolean testMode = true; // for testing
             
             String tz = Deployment.getDeployment(offer.getTenantID()).getTimeZone();
-            final Date currentTime = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, tz);
+            //final Date currentTime = RLMDateUtils.truncate(SystemTime.getCurrentTime(), Calendar.DATE, tz);
             
             //String datePattern = DatePattern.LOCAL_DAY.get();
             //Date formattedTime = formattedDate(currentTime, datePattern);
-            Date zeroHourTime = getZeroTimeDate(currentTime, tz);
-            List<Date> stockReplanishDates = getExpectedStockReplanishDates(offer, currentTime, tz);
+            Date zeroHourTime = getZeroTimeDate(now, tz);
+            List<Date> stockReplanishDates = getExpectedStockReplanishDates(offer, now, tz);
             
             if(stockReplanishDates.contains(zeroHourTime) && getZeroTimeDate(offer.getLastStockRecurrenceDate(), tz).compareTo(zeroHourTime) < 0 || testMode)
               {
@@ -238,12 +238,9 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
   
   private List<Date> getExpectedStockReplanishDates(Offer offer, Date now, String tz)
   {
-    //Date offerStartDate = offer.getEffectiveStartDate();
-    // need to parse json
-    
+    Date offerStartDate = offer.getEffectiveStartDate();
     int stockReplanishDaysRange = Deployment.getStockReplanishDaysRange();
-    Date filterStartDate = RLMDateUtils.addDays(now, -1*stockReplanishDaysRange, tz); // starting from yesterday
-    Date offerStartDate = filterStartDate;
+    Date filterStartDate = RLMDateUtils.addDays(now, -1, tz); // starting from yesterday
     Date filterEndDate = RLMDateUtils.addDays(now, stockReplanishDaysRange, tz); // till next stockReplanishDaysRange
     log.info("[PRJT] filter b/w Start [{}] to End [{}]", filterStartDate, filterEndDate);
     
