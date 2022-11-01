@@ -1266,3 +1266,47 @@ prepare-es-update-curl -XPUT https://$MASTER_ESROUTER_SERVER/_template/edr -u $E
 }'
 echo
 
+#
+#  manually create maintenance_action_request index
+#
+
+prepare-es-update-curl -XPUT https://$MASTER_ESROUTER_SERVER/maintenance_action_request -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
+{
+  "settings": {
+    "number_of_shards": "Deployment.getElasticsearchDefaultShards()"
+  },
+  "mappings": {
+    "properties": {
+      "requestedBy" : { "type" : "keyword" },
+      "requestDate" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ"},
+      "status" : { "type" : "keyword" }
+    }
+  }
+}'
+echo
+
+#
+#  manually create maintenance_action_log index
+#
+
+prepare-es-update-curl -XPUT https://$MASTER_ESROUTER_SERVER/maintenance_action_log -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
+{
+  "settings": {
+    "number_of_shards": "Deployment.getElasticsearchDefaultShards()"
+  },
+  "mappings": {
+    "properties": {
+      "actionType" : { "type" : "keyword" },
+      "node" : { "type" : "keyword" },
+      "user" : { "type" : "keyword" },
+      "actionStartDate" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ"},
+      "actionEndDate" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ"},
+      "executedThrough" : { "type" : "keyword" },
+      "actionLog" : { "type" : "keyword" },
+      "status" : { "type" : "keyword" },
+      "remarks" : { "type" : "keyword" }
+    }
+  }
+}'
+echo
+

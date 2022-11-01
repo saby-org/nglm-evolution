@@ -2583,10 +2583,12 @@ public class GUIManager
     String qaCronEntry = "5,10,15,30,45,59 * * * *";
     ScheduledJob recurrnetCampaignCreationJob = new RecurrentCampaignCreationJob("Recurrent Campaign(create)", periodicGenerationCronEntry, Deployment.getDefault().getTimeZone(), false); // TODO EVPRO-99 i used systemTimeZone instead of BaseTimeZone pet tenant, check if correct
     ScheduledJob challengesOccurrenceJob = new ChallengesOccurrenceJob("Challenges Occurrence", periodicGenerationCronEntry, Deployment.getDefault().getTimeZone(), false);
-    if(recurrnetCampaignCreationJob.isProperlyConfigured() && challengesOccurrenceJob.isProperlyConfigured())
+    ScheduledJob systemMaintenanceJob = new SystemMaintenanceJob("System Maintenance", qaCronEntry, Deployment.getDefault().getTimeZone(), false);
+    if(recurrnetCampaignCreationJob.isProperlyConfigured() && challengesOccurrenceJob.isProperlyConfigured() && systemMaintenanceJob.isProperlyConfigured())
       {
         guiManagerJobScheduler.schedule(recurrnetCampaignCreationJob);
         guiManagerJobScheduler.schedule(challengesOccurrenceJob);
+        guiManagerJobScheduler.schedule(systemMaintenanceJob);
         new Thread(guiManagerJobScheduler::runScheduler, "guiManagerJobScheduler").start();
       }
     else
@@ -31546,6 +31548,71 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
         }
     }
     
+  }
+  
+  /*****************************************
+  *
+  *  ChallengesOccurrenceJob
+  *
+  *****************************************/
+  
+  public class SystemMaintenanceJob extends ScheduledJob
+  {
+    /***********************************
+     *
+     * constructor
+     *
+     ************************************/
+
+    public SystemMaintenanceJob(String jobName, String periodicGenerationCronEntry, String baseTimeZone, boolean scheduleAtStart)
+    {
+      super(jobName, periodicGenerationCronEntry, baseTimeZone, scheduleAtStart);
+    }
+
+    /***********************************
+     *
+     * run
+     *
+     ************************************/
+
+    @Override protected void run()
+    {
+      
+      //
+      //  request
+      //
+      
+      List<JSONObject> pendingRequests = elasticsearch.getPendingMaintenanceRequests();
+      if (pendingRequests.isEmpty())
+        {
+          Map<String, Object> documentMap = new HashMap<String, Object>();
+          Date now = SystemTime.getCurrentTime();
+          documentMap.put("requestedBy", "System");
+          documentMap.put("status", "REQUESTED");
+          documentMap.put("requestDate", RLMDateUtils.formatDateForElasticsearchDefault(now));
+          String requestID = elasticsearch.createSystemMaintenanceRequest(documentMap, now);
+          if (requestID == null)
+            {
+              log.error("unable to create new request");            }
+          else
+            {
+              log.info("new request creaed with requestID {}", requestID);  
+            }
+        }
+      else
+        {
+          log.error("unable to create new request - {} pending requests",  pendingRequests.size());  
+        }
+      
+      //
+      // cleanup
+      //
+      
+      elasticsearch.clearMaintenanceActionLogs();
+      elasticsearch.clearSystemMaintenanceRequest();
+
+    }
+   
   }
   
   /*****************************************

@@ -1816,7 +1816,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
       }
   }
   
-  public List<JSONObject> getPendingMaintenanceRequests(int tenantID)
+  public List<JSONObject> getPendingMaintenanceRequests()
   {
     List<JSONObject> maintenanceRequests = new ArrayList<JSONObject>();
     BoolQueryBuilder maintenanceRequestquery = QueryBuilders.boolQuery().mustNot(QueryBuilders.matchQuery("status", "COMPLETED"));
@@ -1837,13 +1837,13 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
             log.info("RAJ K daysBetween {}", daysBetween);
             actionRequests.put("requestedBy", (String) esFields.get("requestedBy"));
             actionRequests.put("status", (String) esFields.get("status"));
-            actionRequests.put("requestDate", getDateString(requestDate, tenantID));
+            actionRequests.put("requestDate", getDateString(requestDate));
             actionRequests.put("remarks", null);
             actionRequests.put("requesteID", hit.getId());
-            if (daysBetween > 0) actionRequests.put("remarks", "actionRequests with id ".concat(hit.getId()).concat(" taking more time than usal, please check the log"));
+            if (daysBetween > 1) actionRequests.put("remarks", "actionRequests with id ".concat(hit.getId()).concat(" taking more time than usal, please check the log"));
             maintenanceRequests.add(JSONUtilities.encodeObject(actionRequests));
           }
-      } 
+      }
     catch (GUIManagerException | java.text.ParseException e)
       {
         e.printStackTrace();
@@ -1851,7 +1851,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
     return maintenanceRequests;
   }
   
-  public List<JSONObject> getMaintenanceActionLogs(Date startDate, Date endDate, int tenantID)
+  public List<JSONObject> getMaintenanceActionLogs(Date startDate, Date endDate)
   {
     List<JSONObject> actionLogs = new ArrayList<JSONObject>();
     
@@ -1883,7 +1883,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
             actionLog.put("actionLog", (String) esFields.get("actionLog"));
             actionLog.put("status", (String) esFields.get("status"));
             actionLog.put("remarks", (String) esFields.get("remarks"));
-            actionLog.put("actionDate", getDateString(actionDate, tenantID));
+            actionLog.put("actionDate", getDateString(actionDate));
             actionLogs.add(JSONUtilities.encodeObject(actionLog));
           }
       } 
@@ -1924,7 +1924,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
 
   }
   
-  @Deprecated public String getDateString(Date date, int tenantID)
+  @Deprecated public String getDateString(Date date)
   {
     String result = null;
     if (null == date)
@@ -1932,7 +1932,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
     try
       {
         SimpleDateFormat dateFormat = new SimpleDateFormat(Deployment.getAPIresponseDateFormat()); // TODO EVPRO-99
-        dateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getTimeZone()));
+        dateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getDefault().getTimeZone()));
         result = dateFormat.format(date);
       } 
     catch (Exception e)

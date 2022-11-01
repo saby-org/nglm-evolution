@@ -6120,8 +6120,8 @@ public class GUIManagerGeneral extends GUIManager
       {
         Date startDate = RLMDateUtils.parseDateFromDay(startDateReq, Deployment.getDeployment(tenantID).getTimeZone());
         Date endDate = RLMDateUtils.parseDateFromDay(endDateReq, Deployment.getDeployment(tenantID).getTimeZone());
-        response.put("actionLogs", JSONUtilities.encodeArray(this.elasticsearch.getMaintenanceActionLogs(startDate, endDate, tenantID)));
-        response.put("pendinRequests", JSONUtilities.encodeArray(this.elasticsearch.getPendingMaintenanceRequests(tenantID)));
+        response.put("actionLogs", JSONUtilities.encodeArray(this.elasticsearch.getMaintenanceActionLogs(startDate, endDate)));
+        response.put("pendinRequests", JSONUtilities.encodeArray(this.elasticsearch.getPendingMaintenanceRequests()));
         response.put("responseCode", "ok");
       } 
     catch (java.text.ParseException e)
@@ -6153,7 +6153,7 @@ public class GUIManagerGeneral extends GUIManager
     ****************************************/
     
     Map<String, Object> response = new HashMap<String, Object>();
-    List<JSONObject> pendingRequests = this.elasticsearch.getPendingMaintenanceRequests(tenantID);
+    List<JSONObject> pendingRequests = this.elasticsearch.getPendingMaintenanceRequests();
     if (pendingRequests.isEmpty())
       {
         Map<String, Object> documentMap = new HashMap<String, Object>();
