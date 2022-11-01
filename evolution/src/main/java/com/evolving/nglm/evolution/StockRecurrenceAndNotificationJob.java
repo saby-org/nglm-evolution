@@ -242,11 +242,12 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
   
   private List<Date> getExpectedStockReplanishDates(Offer offer, Date now, String tz)
   {
-    Date offerStartDate = offer.getEffectiveStartDate();
+    //Date offerStartDate = offer.getEffectiveStartDate();
     int stockReplanishDaysRange = Deployment.getStockReplanishDaysRange();
     Date filterStartDate = RLMDateUtils.addDays(now, -1, tz); // starting from yesterday
     Date filterEndDate = RLMDateUtils.addDays(now, stockReplanishDaysRange, tz); // till next stockReplanishDaysRange
     log.info("[PRJT] filter b/w START [{}] to END [{}]", filterStartDate, filterEndDate);
+    Date offerStartDate = filterStartDate;
     
     JourneyScheduler stockScheduler = offer.getStockScheduler();
     
