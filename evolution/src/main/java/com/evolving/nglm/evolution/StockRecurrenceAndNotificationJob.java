@@ -129,7 +129,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
             
             if(stockReplanishDates.contains(zeroHourTime) && getZeroTimeDate(offer.getLastStockRecurrenceDate(), tz).compareTo(zeroHourTime) < 0 || testMode)
               {
-                log.info("[PRJT] offer[{}] Next Stock Replanish Date: {} is TODAY:[{}]", offer.getOfferID(), stockReplanishDates.stream().filter(date -> date.compareTo(zeroHourTime) >= 0).findFirst(), zeroHourTime);
+                log.info("[PRJT] offer[{}] Next Stock Replanish Date: {} is TODAY:[{}]", offer.getOfferID(), stockReplanishDates.stream().filter(date -> date.compareTo(zeroHourTime) >= 0).findFirst(), now);
                 JSONObject offerJson = offer.getJSONRepresentation();
                 
                 Integer stockToAdd = offer.getStockRecurrenceBatch();
