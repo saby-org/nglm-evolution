@@ -17,6 +17,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -29,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -49,6 +51,7 @@ import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.index.query.*;
+import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.Aggregations;
@@ -74,6 +77,7 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.DeploymentCommon;
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.ServerRuntimeException;
@@ -6090,6 +6094,102 @@ public class GUIManagerGeneral extends GUIManager
   
   /****************************************
   *
+  *  processGetSystemMaintenanceDetails
+  *
+  ****************************************/
+  
+  public JSONObject processGetSystemMaintenanceDetails(String userID, JSONObject jsonRoot, int tenantID)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    Map<String, Object> response = new HashMap<String, Object>();
+    
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String startDateReq = JSONUtilities.decodeString(jsonRoot, "startDate", false);
+    String endDateReq = JSONUtilities.decodeString(jsonRoot, "endDate", false);
+    try
+      {
+        Date startDate = RLMDateUtils.parseDateFromDay(startDateReq, Deployment.getDeployment(tenantID).getTimeZone());
+        Date endDate = RLMDateUtils.parseDateFromDay(endDateReq, Deployment.getDeployment(tenantID).getTimeZone());
+        response.put("actionLogs", JSONUtilities.encodeArray(this.elasticsearch.getMaintenanceActionLogs(startDate, endDate, tenantID)));
+        response.put("pendinRequests", JSONUtilities.encodeArray(this.elasticsearch.getPendingMaintenanceRequests(tenantID)));
+        response.put("responseCode", "ok");
+      } 
+    catch (java.text.ParseException e)
+      {
+        e.printStackTrace();
+      }
+    
+    /*****************************************
+    *
+    *  return
+    *
+    *****************************************/
+
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /****************************************
+  *
+  *  processCreateSystemMaintenanceRequest
+  *
+  ****************************************/
+  
+  public JSONObject processCreateSystemMaintenanceRequest(String userID, JSONObject jsonRoot, int tenantID)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    Map<String, Object> response = new HashMap<String, Object>();
+    List<JSONObject> pendingRequests = this.elasticsearch.getPendingMaintenanceRequests(tenantID);
+    if (pendingRequests.isEmpty())
+      {
+        Map<String, Object> documentMap = new HashMap<String, Object>();
+        Date now = SystemTime.getCurrentTime();
+        documentMap.put("requestedBy", "user with ID "+ userID);
+        documentMap.put("status", "REQUESTED");
+        documentMap.put("requestDate", RLMDateUtils.formatDateForElasticsearchDefault(now));
+        String requestID = this.elasticsearch.createSystemMaintenanceRequest(documentMap, now);
+        if (requestID == null)
+          {
+            response.put("responseCode", "UnableToCreateNewRequest");
+          }
+        else
+          {
+            response.put("requestID", requestID);
+            response.put("responseCode", "ok");
+          }
+      }
+    else
+      {
+        response.put("responseCode", pendingRequests.size() + " pending requests");
+        response.put("pendingRequests", JSONUtilities.encodeArray(pendingRequests));
+      }
+    
+    /*****************************************
+    *
+    *  return
+    *
+    *****************************************/
+
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  
+  /****************************************
+  *
   *  buildGUIDependencyModelTreeMap
   *
   ****************************************/
@@ -6113,5 +6213,6 @@ public class GUIManagerGeneral extends GUIManager
         guiDependencyModelTreeMap.put(guiDependencyModelTree.getGuiManagedObjectType(), guiDependencyModelTree);
       }
   }
+  
 }
 

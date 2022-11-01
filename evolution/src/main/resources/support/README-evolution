@@ -516,6 +516,9 @@ curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1, "id":"1234" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getJobStatus; echo
 curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getJobStatusList; echo
 
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 , "startDate" : "2022-11-01", "endDate" : "2022-11-03" }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/getSystemMaintenanceDetails; echo
+curl -X POST -H "Content-Type: application/json" -d '{ "apiVersion":1, "tenantID":1 }' http://<_GUIMANAGER_HOST_>:<_GUIMANAGER_PORT_>/nglm-guimanager/createSystemMaintenanceRequest; echo
+
 --
 --  thirdpartymanager
 --
