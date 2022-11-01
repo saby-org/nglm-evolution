@@ -510,6 +510,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
     if (Calendar.DAY_OF_WEEK == dayOf)
       {
         Date firstDateOfNext = RLMDateUtils.ceiling(now, dayOf, tz);
+        log.info("[PRJT] getFirstDate: {}", firstDateOfNext);
         Date result = RLMDateUtils.addDays(firstDateOfNext, -7, tz);
         return result;
       }
@@ -533,6 +534,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
     if (Calendar.DAY_OF_WEEK == dayOf)
       {
         Date firstDateOfthisWk = RLMDateUtils.addDays(firstDateOfNext, -7, Deployment.getDeployment(tenantID).getTimeZone());
+        log.info("[PRJT] getLastDate: {}", firstDateOfthisWk);
         return RLMDateUtils.addDays(firstDateOfthisWk, 6, Deployment.getDeployment(tenantID).getTimeZone());
       }
     else
