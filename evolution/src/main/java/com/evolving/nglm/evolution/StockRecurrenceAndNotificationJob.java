@@ -154,7 +154,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                 // update offer -- maintaining 'initial stock' only, otherwise StockMonitor can handle remaining stocks
                 //
                 
-                offerJson.replace("presentationStock", stockToAdd);
+                //offerJson.replace("presentationStock", stockToAdd);
                 try
                   {
                     Offer newOffer = new Offer(offerJson, GUIManager.epochServer.getKey(), offer, catalogCharacteristicService, offer.getTenantID());
