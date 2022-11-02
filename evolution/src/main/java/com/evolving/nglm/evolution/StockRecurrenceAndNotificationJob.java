@@ -141,7 +141,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                 else
                   {
                     int reccNumber = 1;
-                    if (offer.getLastStockRecurrenceDate().compareTo(offer.getEffectiveStartDate()) > 0)
+                    if (offer.getLastStockRecurrenceDate().compareTo(offer.getEffectiveStartDate()) == 0)
                       {
                         reccNumber += 1;
                       }
