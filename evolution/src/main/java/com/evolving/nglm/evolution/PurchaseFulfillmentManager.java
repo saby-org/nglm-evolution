@@ -1378,7 +1378,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
                     List<VoucherDelivery> voucherDeliveries = getCancelableVouchers(subscriberProfile, purchaseRequest.getVoucherDeliveries());
                     for (VoucherDelivery voucherDelivery : voucherDeliveries)
                       {
-                        log.info("RAJ K need to cancel voucherDelivery {}", voucherDelivery);
+                        log.debug("cancell voucher delivery for {}", voucherDelivery);
                         Date voucherDeliveryDate = purchaseRequest.getPreviousPurchaseDate(); // sent to Evolution Engine to check this is that voucher
                         VoucherChange request = new VoucherChange(subscriberID, voucherDeliveryDate, purchaseRequest.getDeliveryRequestID(), VoucherChange.VoucherChangeAction.Cancel, voucherDelivery.getVoucherCode(), voucherDelivery.getVoucherID(), null, purchaseRequest.getModuleID(), purchaseRequest.getFeatureID(), purchaseRequest.getOrigin(), RESTAPIGenericReturnCodes.UNKNOWN, subscriberProfile.getSegments(), purchaseRequest.getDeliveryRequestID(), purchaseRequest.getOfferID(), purchaseRequest.getTenantID());
                         String requestTopic = Deployment.getVoucherChangeRequestTopic();

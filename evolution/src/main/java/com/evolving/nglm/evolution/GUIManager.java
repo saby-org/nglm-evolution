@@ -25234,7 +25234,7 @@ public class GUIManager
    //
    
    Offer offer = offerService.getActiveOffer(purchaseFulfillmentRequest.getOfferID(), now);   
-   if (offer != null) //RAJ K
+   if (offer != null && offer.getCancellable())
      {
        //
        // cancelPurchaseOffer
