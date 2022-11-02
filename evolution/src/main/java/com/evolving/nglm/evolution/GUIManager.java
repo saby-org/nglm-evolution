@@ -1122,7 +1122,7 @@ public class GUIManager
     otpTypeService = new OTPTypeService(bootstrapServers, "guimanager-otptypeservice-"+apiProcessKey, otpTypeTopic, true);
     customCriteriaService = new CustomCriteriaService(bootstrapServers, "guimanager-customCriteriaservice-" + apiProcessKey, customCriteriaTopic, true);
     
-    stockService = new StockMonitor("PurchaseMgr-stockService-001", offerService, productService, voucherService); // using same stockMonitorKey as PurchaseFulfillmentRequest-001
+    stockService = new StockMonitor("guimanager-stockService-" + apiProcessKey, offerService, productService, voucherService); // using same stockMonitorKey as PurchaseFulfillmentRequest-001
     
     DeliveryManagerDeclaration dmd = Deployment.getDeliveryManagers().get(ThirdPartyManager.PURCHASE_FULFILLMENT_MANAGER_TYPE);
     purchaseResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),dmd.getResponseTopic(DELIVERY_REQUEST_PRIORITY),StringKey.serde(),PurchaseFulfillmentRequest.serde());
