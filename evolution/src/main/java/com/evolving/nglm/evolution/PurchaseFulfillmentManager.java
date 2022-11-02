@@ -1375,11 +1375,12 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
               {
                 if (offer.getOfferVouchers() != null && !offer.getOfferVouchers().isEmpty())
                   {
-                    List<VoucherDelivery> voucherDeliveries = getCancelableVoucher(subscriberProfile, purchaseRequest.getPreviousPurchaseDate(), purchaseRequest.getVoucherDeliveries());//                purchaseRequest.getVoucherDeliveries().stream().filter(voucherDelivery -> voucherDelivery.getVoucherExpiryDate() == null || voucherDelivery.getVoucherExpiryDate().after(processingDate)).collect(Collectors.toList());
+                    List<VoucherDelivery> voucherDeliveries = getCancelableVouchers(subscriberProfile, purchaseRequest.getVoucherDeliveries());
                     for (VoucherDelivery voucherDelivery : voucherDeliveries)
                       {
                         log.info("RAJ K need to cancel voucherDelivery {}", voucherDelivery);
-                        VoucherChange request = new VoucherChange(subscriberID, null, purchaseRequest.getDeliveryRequestID(), VoucherChange.VoucherChangeAction.Cancel, voucherDelivery.getVoucherCode(), voucherDelivery.getVoucherID(), null, purchaseRequest.getModuleID(), purchaseRequest.getFeatureID(), purchaseRequest.getOrigin(), RESTAPIGenericReturnCodes.UNKNOWN, subscriberProfile.getSegments(), purchaseRequest.getDeliveryRequestID(), purchaseRequest.getOfferID(), purchaseRequest.getTenantID());
+                        Date voucherDeliveryDate = purchaseRequest.getPreviousPurchaseDate(); // sent to Evolution Engine to check this is that voucher
+                        VoucherChange request = new VoucherChange(subscriberID, voucherDeliveryDate, purchaseRequest.getDeliveryRequestID(), VoucherChange.VoucherChangeAction.Cancel, voucherDelivery.getVoucherCode(), voucherDelivery.getVoucherID(), null, purchaseRequest.getModuleID(), purchaseRequest.getFeatureID(), purchaseRequest.getOrigin(), RESTAPIGenericReturnCodes.UNKNOWN, subscriberProfile.getSegments(), purchaseRequest.getDeliveryRequestID(), purchaseRequest.getOfferID(), purchaseRequest.getTenantID());
                         String requestTopic = Deployment.getVoucherChangeRequestTopic();
                         kafkaProducer.send(new ProducerRecord<byte[], byte[]>(requestTopic, StringKey.serde().serializer().serialize(requestTopic, new StringKey(subscriberID)), VoucherChange.serde().serializer().serialize(requestTopic, request)));
                       }
@@ -1705,7 +1706,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       }
   }
   
-  private List<VoucherDelivery> getCancelableVoucher(SubscriberProfile subscriberProfile, Date voucherDeliveryDate, List<VoucherDelivery> voucherDeliveries)
+  private List<VoucherDelivery> getCancelableVouchers(SubscriberProfile subscriberProfile, List<VoucherDelivery> voucherDeliveries)
   {
     List<VoucherDelivery> result = new ArrayList<VoucherDelivery>();
     
@@ -1715,23 +1716,16 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     
     List<VoucherProfileStored> storedVouchers = subscriberProfile.getVouchers().stream().filter(voucher -> voucher.getVoucherStatus() != VoucherStatus.Cancelled && voucher.getVoucherStatus() != VoucherStatus.Expired).collect(Collectors.toList());
     
-    //
-    //  filter based on delivery date
-    //
-    
-    storedVouchers = storedVouchers.stream().filter(voucher -> RLMDateUtils.truncatedEquals(voucher.getVoucherDeliveryDate(), voucherDeliveryDate, Calendar.SECOND, DeploymentCommon.getDeployment(subscriberProfile.getTenantID()).getTimeZone())).collect(Collectors.toList());
-    
-    //
-    //  storedVoucherCodes
-    //
-    
-    List<String> storedVoucherCodes = storedVouchers.stream().map(voucher -> voucher.getVoucherCode()).collect(Collectors.toList());
-    
-    //
-    //  filter based on actual voucherCode
-    //
-    
-    result = voucherDeliveries.stream().filter(voucher -> storedVoucherCodes.contains(voucher.getVoucherCode())).collect(Collectors.toList());
+    for (VoucherDelivery voucherDelivery : voucherDeliveries)
+      {
+        for (VoucherProfileStored profileStored : storedVouchers)
+          {
+            if (voucherDelivery.getVoucherID().equals(profileStored.getVoucherID()) && voucherDelivery.getVoucherCode().equals(profileStored.getVoucherCode()))
+              {
+                result.add(voucherDelivery);
+              }
+          }
+      }
     
     //
     //  result

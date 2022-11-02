@@ -109,6 +109,7 @@ import com.evolving.nglm.core.AutoProvisionSubscriberStreamEvent;
 import com.evolving.nglm.core.CleanupSubscriber;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.Deployment;
+import com.evolving.nglm.core.DeploymentCommon;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.evolution.uniquekey.KStreamsUniqueKeyServer;
 import com.evolving.nglm.core.NGLMKafkaClientSupplier;
@@ -2743,21 +2744,31 @@ public class EvolutionEngine
                           }
                         else if (voucherChange.getAction() == VoucherChange.VoucherChangeAction.Cancel)
                           {
-                            if (voucherStored.getVoucherStatus() == VoucherDelivery.VoucherStatus.Expired || voucherStored.getVoucherStatus() == VoucherDelivery.VoucherStatus.Cancelled)
+                            //
+                            //  getNewVoucherExpiryDate returns deliveryDate see purchase section - this is a hack to get the exact voucher to cancel
+                            //
+                            
+                            if (RLMDateUtils.truncatedEquals(voucherStored.getVoucherDeliveryDate(), voucherChange.getNewVoucherExpiryDate(), Calendar.SECOND, DeploymentCommon.getDeployment(subscriberProfile.getTenantID()).getTimeZone()))
                               {
-                                voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_EXPIRED);
+                                if (voucherStored.getVoucherStatus() == VoucherDelivery.VoucherStatus.Expired || voucherStored.getVoucherStatus() == VoucherDelivery.VoucherStatus.Cancelled)
+                                  {
+                                    voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_EXPIRED);
+                                  }
+                                else
+                                  {
+                                    // Cancel voucher and set ExpiryDate date - to clean/track
+                                    voucherStored.setVoucherExpiryDate(context.processingDate());
+                                    expiryDate = voucherStored.getVoucherExpiryDate();
+                                    sortVouchersPerExpiryDate(subscriberProfile);
+                                    voucherStored.setVoucherStatus(VoucherDelivery.VoucherStatus.Cancelled);
+                                    voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
+                                    break;
+                                  }
                               }
                             else
                               {
-                                // Cancel voucher and set ExpiryDate date - to clean/track
-                                voucherStored.setVoucherExpiryDate(context.processingDate());
-                                expiryDate = voucherStored.getVoucherExpiryDate();
-                                sortVouchersPerExpiryDate(subscriberProfile);
-                                voucherStored.setVoucherStatus(VoucherDelivery.VoucherStatus.Cancelled);
-                                voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
-                                break;
+                                voucherFound = false;
                               }
-                          
                           }
                       }
                   }
