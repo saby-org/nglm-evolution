@@ -6116,12 +6116,14 @@ public class GUIManagerGeneral extends GUIManager
 
     String startDateReq = JSONUtilities.decodeString(jsonRoot, "startDate", false);
     String endDateReq = JSONUtilities.decodeString(jsonRoot, "endDate", false);
+    String requestID = JSONUtilities.decodeString(jsonRoot, "requestID", false);
     try
       {
         Date startDate = RLMDateUtils.parseDateFromDay(startDateReq, Deployment.getDeployment(tenantID).getTimeZone());
         Date endDate = RLMDateUtils.parseDateFromDay(endDateReq, Deployment.getDeployment(tenantID).getTimeZone());
-        response.put("actionLogs", JSONUtilities.encodeArray(this.elasticsearch.getMaintenanceActionLogs(startDate, endDate)));
-        response.put("pendingRequests", JSONUtilities.encodeArray(this.elasticsearch.getPendingMaintenanceRequests()));
+        response.put("actionLogs", JSONUtilities.encodeArray(this.elasticsearch.getMaintenanceActionLogs(requestID, startDate, endDate)));
+        response.put("pendingRequests", JSONUtilities.encodeArray(this.elasticsearch.getPendingMaintenanceRequests(requestID)));
+        response.put("completedRequests", JSONUtilities.encodeArray(this.elasticsearch.getCompletedMaintenanceRequests(requestID)));
         response.put("responseCode", "ok");
       } 
     catch (java.text.ParseException e)
@@ -6209,7 +6211,7 @@ public class GUIManagerGeneral extends GUIManager
     ****************************************/
     
     Map<String, Object> response = new HashMap<String, Object>();
-    List<JSONObject> pendingRequests = this.elasticsearch.getPendingMaintenanceRequests();
+    List<JSONObject> pendingRequests = this.elasticsearch.getPendingMaintenanceRequests(null);
     if (pendingRequests.isEmpty())
       {
         Map<String, Object> documentMap = new HashMap<String, Object>();

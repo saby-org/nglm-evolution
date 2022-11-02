@@ -1818,10 +1818,11 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
       }
   }
   
-  public List<JSONObject> getPendingMaintenanceRequests()
+  public List<JSONObject> getPendingMaintenanceRequests(String requestID)
   {
     List<JSONObject> maintenanceRequests = new ArrayList<JSONObject>();
     BoolQueryBuilder maintenanceRequestquery = QueryBuilders.boolQuery().mustNot(QueryBuilders.matchQuery("status", "COMPLETED"));
+    if (requestID != null && !requestID.trim().isEmpty()) maintenanceRequestquery = maintenanceRequestquery.filter(QueryBuilders.matchQuery("_id", requestID));
     SearchRequest searchMaintenanceRequest = new SearchRequest(MAINTENANCE_ACTION_REQUEST_INDEX).source(new SearchSourceBuilder().query(maintenanceRequestquery));
     try
       {
@@ -1852,7 +1853,42 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
     return maintenanceRequests;
   }
   
-  public List<JSONObject> getMaintenanceActionLogs(Date startDate, Date endDate)
+  public List<JSONObject> getCompletedMaintenanceRequests(String requestID)
+  {
+    List<JSONObject> maintenanceRequests = new ArrayList<JSONObject>();
+    BoolQueryBuilder maintenanceRequestquery = QueryBuilders.boolQuery().must(QueryBuilders.matchQuery("status", "COMPLETED"));
+    if (requestID != null && !requestID.trim().isEmpty()) maintenanceRequestquery = maintenanceRequestquery.filter(QueryBuilders.matchQuery("_id", requestID));
+    SearchRequest searchMaintenanceRequest = new SearchRequest(MAINTENANCE_ACTION_REQUEST_INDEX).source(new SearchSourceBuilder().query(maintenanceRequestquery));
+    try
+      {
+        List<SearchHit> hits = getESHits(searchMaintenanceRequest);
+        //
+        //  maintenance
+        //
+        
+        for (SearchHit hit : hits)
+          {
+            Map<String, Object> esFields = hit.getSourceAsMap();
+            Map<String, Object> actionRequests = new HashMap<String, Object>();
+            Date requestDate = RLMDateUtils.parseDateFromElasticsearch((String) esFields.get("requestDate"));
+            int daysBetween = RLMDateUtils.daysBetween(requestDate, SystemTime.getCurrentTime(), Deployment.getDefault().getTimeZone());
+            actionRequests.put("requestedBy", (String) esFields.get("requestedBy"));
+            actionRequests.put("status", (String) esFields.get("status"));
+            actionRequests.put("requestDate", getDateString(requestDate));
+            actionRequests.put("remarks", null);
+            actionRequests.put("requesteID", hit.getId());
+            if (daysBetween > 1) actionRequests.put("remarks", "actionRequest with id ".concat(hit.getId()).concat(" taking more time than usal, please check the log"));
+            maintenanceRequests.add(JSONUtilities.encodeObject(actionRequests));
+          }
+      }
+    catch (GUIManagerException | java.text.ParseException e)
+      {
+        e.printStackTrace();
+      }
+    return maintenanceRequests;
+  }
+  
+  public List<JSONObject> getMaintenanceActionLogs(String requestID, Date startDate, Date endDate)
   {
     List<JSONObject> actionLogs = new ArrayList<JSONObject>();
     
@@ -1863,6 +1899,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
     BoolQueryBuilder query = QueryBuilders.boolQuery();
     if (startDate != null) query = query.filter(QueryBuilders.rangeQuery("actionStartDate").gte(RLMDateUtils.formatDateForElasticsearchDefault(startDate)));
     if (endDate != null) query = query.filter(QueryBuilders.rangeQuery("actionStartDate").lte(RLMDateUtils.formatDateForElasticsearchDefault(endDate)));
+    if (requestID != null && !requestID.trim().isEmpty()) query = query.filter(QueryBuilders.matchQuery("requestID", requestID));
     
     //
     //  searchRequest

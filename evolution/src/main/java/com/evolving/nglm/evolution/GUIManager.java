@@ -31588,7 +31588,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
       //  request
       //
       
-      List<JSONObject> pendingRequests = elasticsearch.getPendingMaintenanceRequests();
+      List<JSONObject> pendingRequests = elasticsearch.getPendingMaintenanceRequests(null);
       if (pendingRequests.isEmpty())
         {
           Map<String, Object> documentMap = new HashMap<String, Object>();
