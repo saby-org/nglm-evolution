@@ -208,7 +208,7 @@ public class StockMonitor implements Runnable
 
   private synchronized void monitorStockableItem(StockableItem stockableItem)
   {
-    if (stockableItem.getStock() != null)
+    if (stockableItem.getStock() != null && stockableItem.updateStock())
       {
         //
         //  update allocations/used
@@ -1007,6 +1007,7 @@ public class StockMonitor implements Runnable
 
   public interface StockableItem
   {
+    public boolean updateStock();
     public String getStockableItemID();
     public Integer getStock();
     // can return null, means infinite

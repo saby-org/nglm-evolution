@@ -4694,5 +4694,10 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     
     return result;
   }
+  @Override
+  public boolean updateStock()
+  {
+    return true;
+  }
   
 }

@@ -134,6 +134,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                   {
                     stockToAdd += ObjectUtils.defaultIfNull(offer.getStock(), 0); //using update offer
                     //stockService.voidConsumption(offer, offer.getStockRecurrenceBatch()); //using 'StockMonitor' -- another way
+                    offerJson.replace("updateStock", Boolean.TRUE);
                   }
                 else
                   {
@@ -147,7 +148,8 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                     // replenish batch count
                     //
                     
-                    //stockService.voidConsumption(offer, offer.getStockRecurrenceBatch());
+                    stockService.voidConsumption(offer, offer.getStockRecurrenceBatch());
+                    offerJson.replace("updateStock", Boolean.FALSE);
                   }
                 
                 //

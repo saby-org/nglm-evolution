@@ -467,4 +467,9 @@ public class Product extends GUIManagedObject implements StockableItem
     result.put("deliverable", deliverableIDs);
     return result;
   }
+  @Override
+  public boolean updateStock()
+  {
+    return true;
+  }
 }
