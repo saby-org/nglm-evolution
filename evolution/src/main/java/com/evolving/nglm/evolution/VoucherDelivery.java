@@ -88,8 +88,9 @@ public class VoucherDelivery  {
   {
     this.voucherID = JSONUtilities.decodeString(jsonRoot, "voucherID", true);
     this.fileID = JSONUtilities.decodeString(jsonRoot, "fileID", false);
-    this.voucherCode = JSONUtilities.decodeString(jsonRoot, "voucherCode", true);;
+    this.voucherCode = JSONUtilities.decodeString(jsonRoot, "voucherCode", true);
     this.voucherExpiryDate = JSONUtilities.decodeDate(jsonRoot, "voucherExpiryDate", false);
+    this.voucherStatus = VoucherStatus.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "voucherStatus", "unknown"));
   }
   
   public JSONObject getJSONPresentation()
@@ -99,6 +100,7 @@ public class VoucherDelivery  {
     jsonMap.put("fileID", getFileID());
     jsonMap.put("voucherCode", getVoucherCode());
     jsonMap.put("voucherExpiryDate", getVoucherExpiryDate());
+    jsonMap.put("voucherStatus", getVoucherStatus().getExternalRepresentation());
     return JSONUtilities.encodeObject(jsonMap);
   }
 

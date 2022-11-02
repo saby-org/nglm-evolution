@@ -1942,7 +1942,6 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           log.info("proceedPurchase() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not confirm reservation of voucher "+offerVoucher.getVoucherID());
         }else{
           offerVoucher.setVoucherCode(voucher.getSharedCode());
-          offerVoucher.setVoucherExpiryDate(voucher.getEffectiveEndDate()); // RAJ K
           stockService.confirmReservation(voucher, offerVoucher.getQuantity());
         }
       }
