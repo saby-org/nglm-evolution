@@ -25047,11 +25047,11 @@ public class GUIManager
         String resellerID = "";
         if(!sync)
           {
-            purchaseResponse = purchaseOffer(subscriberProfile,false,subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, origin, resellerID, kafkaProducer, zuks.getStringKey(), false, null);
+            purchaseResponse = purchaseOffer(subscriberProfile,false,subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, origin, resellerID, kafkaProducer, zuks.getStringKey(), false, null, null);
           }
         else
           {
-            purchaseResponse = purchaseOffer(subscriberProfile,true,subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, origin, resellerID, kafkaProducer, zuks.getStringKey(), false, null);
+            purchaseResponse = purchaseOffer(subscriberProfile,true,subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, origin, resellerID, kafkaProducer, zuks.getStringKey(), false, null, null);
             response.put("offer",purchaseResponse.getGUIPresentationMap(subscriberMessageTemplateService,salesChannelService,journeyService,offerService,loyaltyProgramService,productService,voucherService,deliverableService,paymentMeanService, resellerService, tenantID));
           }
       }
@@ -25243,12 +25243,12 @@ public class GUIManager
        PurchaseFulfillmentRequest purchaseResponse = null;
        if (!sync)
          {
-           purchaseResponse = purchaseOffer(subscriberProfile, sync, subscriberID, purchaseFulfillmentRequest.getOfferID(), purchaseFulfillmentRequest.getSalesChannelID(), purchaseFulfillmentRequest.getQuantity(), moduleID, featureID, origin, purchaseFulfillmentRequest.getResellerID(), kafkaProducer, cancelledDeliveryRequestID, true, purchaseFulfillmentRequest.getCreationDate());
+           purchaseResponse = purchaseOffer(subscriberProfile, sync, subscriberID, purchaseFulfillmentRequest.getOfferID(), purchaseFulfillmentRequest.getSalesChannelID(), purchaseFulfillmentRequest.getQuantity(), moduleID, featureID, origin, purchaseFulfillmentRequest.getResellerID(), kafkaProducer, cancelledDeliveryRequestID, true, purchaseFulfillmentRequest.getCreationDate(), purchaseFulfillmentRequest.getVoucherDeliveries());
            response.put("responseCode", "ok");
          } 
        else
          {
-           purchaseResponse = purchaseOffer(subscriberProfile, sync, subscriberID, purchaseFulfillmentRequest.getOfferID(), purchaseFulfillmentRequest.getSalesChannelID(), purchaseFulfillmentRequest.getQuantity(), moduleID, featureID, origin, purchaseFulfillmentRequest.getResellerID(), kafkaProducer, cancelledDeliveryRequestID, true, purchaseFulfillmentRequest.getCreationDate());
+           purchaseResponse = purchaseOffer(subscriberProfile, sync, subscriberID, purchaseFulfillmentRequest.getOfferID(), purchaseFulfillmentRequest.getSalesChannelID(), purchaseFulfillmentRequest.getQuantity(), moduleID, featureID, origin, purchaseFulfillmentRequest.getResellerID(), kafkaProducer, cancelledDeliveryRequestID, true, purchaseFulfillmentRequest.getCreationDate(), purchaseFulfillmentRequest.getVoucherDeliveries());
            response.put("offer", purchaseResponse.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, tenantID));
            response.put("responseCode", "ok");
          }
@@ -26655,7 +26655,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
    *
    *****************************************/
   
-  private PurchaseFulfillmentRequest purchaseOffer(SubscriberProfile subscriberProfile, boolean sync, String subscriberID, String offerID, String salesChannelID, int quantity, String moduleID, String featureID, String origin, String resellerID, KafkaProducer<byte[],byte[]> kafkaProducer, String purchaseDeliveryRequestID, boolean cancelPurchase, Date previousPurchaseDate) throws GUIManagerException
+  private PurchaseFulfillmentRequest purchaseOffer(SubscriberProfile subscriberProfile, boolean sync, String subscriberID, String offerID, String salesChannelID, int quantity, String moduleID, String featureID, String origin, String resellerID, KafkaProducer<byte[],byte[]> kafkaProducer, String purchaseDeliveryRequestID, boolean cancelPurchase, Date previousPurchaseDate, List<VoucherDelivery> voucherDeliveryList) throws GUIManagerException
   {
     DeliveryManagerDeclaration deliveryManagerDeclaration = null;
     for (DeliveryManagerDeclaration dmd : Deployment.getDeliveryManagers().values())
@@ -26698,6 +26698,11 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     request.put("resellerID", resellerID);
     request.put("deliveryType", deliveryManagerDeclaration.getDeliveryType());
     request.put("cancelPurchase", cancelPurchase);
+    if (voucherDeliveryList != null)
+      {
+        List<JSONObject> voucherJSONs = voucherDeliveryList.stream().map(voucherDelivery -> voucherDelivery.getJSONPresentation()).collect(Collectors.toList());
+        request.put("voucherDeliveries", JSONUtilities.encodeArray(voucherDeliveryList));
+      }
     JSONObject valueRes = JSONUtilities.encodeObject(request);
     
     PurchaseFulfillmentRequest purchaseRequest = new PurchaseFulfillmentRequest(subscriberProfile,subscriberGroupEpochReader,valueRes, deliveryManagerDeclaration, offerService, paymentMeanService, resellerService, productService, supplierService, voucherService, SystemTime.getCurrentTime(), subscriberProfile.getTenantID());

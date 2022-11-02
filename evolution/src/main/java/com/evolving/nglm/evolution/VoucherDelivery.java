@@ -1,9 +1,13 @@
 package com.evolving.nglm.evolution;
 
+import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.SchemaUtilities;
 import org.apache.kafka.connect.data.*;
+import org.json.simple.JSONObject;
 
 import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class VoucherDelivery  {
 
@@ -71,12 +75,31 @@ public class VoucherDelivery  {
     return new VoucherDelivery(voucherID,fileID,voucherCode,voucherStatus,voucherExpiryDate);
   }
 
-  public VoucherDelivery(String voucherID, String fileID, String voucherCode, VoucherStatus voucherStatus, Date voucherExpiryDate) {
+  public VoucherDelivery(String voucherID, String fileID, String voucherCode, VoucherStatus voucherStatus, Date voucherExpiryDate)
+  {
     this.voucherID = voucherID;
     this.fileID = fileID;
     this.voucherCode = voucherCode;
     this.voucherStatus = voucherStatus;
     this.voucherExpiryDate = voucherExpiryDate;
+  }
+  
+  public VoucherDelivery(JSONObject jsonRoot)
+  {
+    this.voucherID = JSONUtilities.decodeString(jsonRoot, "voucherID", true);
+    this.fileID = JSONUtilities.decodeString(jsonRoot, "fileID", false);
+    this.voucherCode = JSONUtilities.decodeString(jsonRoot, "voucherCode", true);;
+    this.voucherExpiryDate = JSONUtilities.decodeDate(jsonRoot, "voucherExpiryDate", false);
+  }
+  
+  public JSONObject getJSONPresentation()
+  {
+    Map<String, Object> jsonMap = new LinkedHashMap<String, Object>();
+    jsonMap.put("voucherID", getVoucherID());
+    jsonMap.put("fileID", getFileID());
+    jsonMap.put("voucherCode", getVoucherCode());
+    jsonMap.put("voucherExpiryDate", getVoucherExpiryDate());
+    return JSONUtilities.encodeObject(jsonMap);
   }
 
   @Override

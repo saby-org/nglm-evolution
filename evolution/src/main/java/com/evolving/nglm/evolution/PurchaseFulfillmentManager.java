@@ -41,6 +41,7 @@ import com.evolving.nglm.evolution.Expression.ExpressionContext;
 import com.evolving.nglm.evolution.Expression.ExpressionReader;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.Journey.GUINode;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
@@ -495,6 +496,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public void setSupplierDisplay(String supplierDisplay) { this.supplierDisplay = supplierDisplay; }
     public void setCancelPurchase(boolean cancelPurchase) { this.cancelPurchase = cancelPurchase;}
     public void setPreviousPurchaseDate(Date previousPurchaseDate) { this.previousPurchaseDate = previousPurchaseDate; } 
+    public void setVoucherDeliveries(List<VoucherDelivery> voucherDeliveries) { this.voucherDeliveries = voucherDeliveries; }
     
     //
     //  offer delivery accessors
@@ -720,9 +722,25 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       this.resellerDisplay = JSONUtilities.decodeString(jsonRoot, "resellerDisplay", false);
       this.supplierDisplay = JSONUtilities.decodeString(jsonRoot, "supplierDisplay", false);
       this.cancelPurchase = JSONUtilities.decodeBoolean(jsonRoot, "cancelPurchase", Boolean.FALSE);
+      if (cancelPurchase) this.voucherDeliveries = decodeVoucherDeliveries(JSONUtilities.decodeJSONArray(jsonRoot, "voucherDeliveries", new JSONArray()));
       updatePurchaseFulfillmentRequest(offerService, paymentMeanService, resellerService, productService, supplierService, voucherService, now, tenantID);
     }
 
+    private List<VoucherDelivery> decodeVoucherDeliveries(JSONArray jsonArray)
+    {
+      List<VoucherDelivery> deliveries = new ArrayList<VoucherDelivery>();
+      for (int i=0; i<jsonArray.size(); i++)
+        {
+          //
+          //  voucherDelivery
+          //
+
+          JSONObject nodeJSON = (JSONObject) jsonArray.get(i);
+          VoucherDelivery voucherDelivery = new VoucherDelivery(nodeJSON);
+          deliveries.add(voucherDelivery);
+        }
+      return deliveries;
+    }
     /*****************************************
     *
     *  constructor -- unpack
@@ -1324,31 +1342,53 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
             
             PurchaseRequestStatus purchaseStatus = new PurchaseRequestStatus(correlator, purchaseRequest.getEventID(), purchaseRequest.getModuleID(), purchaseRequest.getFeatureID(), offerID, subscriberID, quantity, salesChannelID);
             
+            //
+            //  subscriberProfile
+            //
+            
+            SubscriberProfile subscriberProfile = null;
+            try
+              {
+                subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID);
+                if (subscriberProfile == null)
+                  {
+                    log.info("run() : (offer " + offerID + ", subscriberID " + subscriberID + ") : subscriber " + subscriberID + " not found");
+                    submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.CUSTOMER_NOT_FOUND, "customer " + subscriberID + " not found");
+                    continue mainLoop;
+                  } 
+                else
+                  {
+                    if (log.isDebugEnabled()) log.debug("run() : (offer " + offerID + ", subscriberID " + subscriberID + ") : subscriber " + subscriberID + " found (" + subscriberProfile + ")");
+                  }
+              } 
+            catch (SubscriberProfileServiceException e)
+              {
+                log.info("run() : (offer " + offerID + ", subscriberID " + subscriberID + ") : subscriberService not available");
+                submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.SYSTEM_ERROR, "subscriberService not available");
+                continue mainLoop;
+              }
+            
+            
             Offer offer = offerService.getActiveOffer(offerID, purchaseRequest.getPreviousPurchaseDate());
             if (offer != null)
               {
                 if (offer.getOfferVouchers() != null && !offer.getOfferVouchers().isEmpty())
                   {
-                    List<VoucherDelivery> voucherDeliveries = new ArrayList<VoucherDelivery>();
-                    for (OfferVoucher offerVoucher : offer.getOfferVouchers())
-                      {
-                        for (VoucherDelivery voucherDelivery : purchaseRequest.getVoucherDeliveries())
-                          {
-                            if (voucherDelivery.getVoucherID().equals(offerVoucher.getVoucherID()))
-                              {
-                                voucherDeliveries.add(voucherDelivery);
-                              }
-                          }
-                      }
-                    log.info("RAJ K voucherDeliveries {}", purchaseRequest.getVoucherDeliveries());
-                    log.info("RAJ K offer.getOfferVouchers()  {}", offer.getOfferVouchers() );
+                    List<VoucherDelivery> voucherDeliveries = purchaseRequest.getVoucherDeliveries().stream().filter(voucherDelivery -> voucherDelivery.getVoucherExpiryDate() != null && voucherDelivery.getVoucherExpiryDate().after(processingDate)).collect(Collectors.toList());
+                    log.info("RAJ K voucherDeliveries to Cancel{}", purchaseRequest.getVoucherDeliveries());
                     for (VoucherDelivery voucherDelivery : voucherDeliveries)
                       {
                         log.info("RAJ K need to cancel voucherDelivery {}", voucherDelivery);
-                        //VoucherChange request = new VoucherChange(subscriberID, null, purchaseRequest.getDeliveryRequestID(), VoucherChange.VoucherChangeAction.Cancel, voucherDelivery.getVoucherCode(), voucherDelivery.getVoucherID(), voucherProfileStored.getFileID(), voucherProfileStored.getModuleID(), voucherProfileStored.getFeatureID(), origin, RESTAPIGenericReturnCodes.UNKNOWN, segments, eventID, voucherProfileStored.getOfferID(), tenantID);
+                        VoucherChange request = new VoucherChange(subscriberID, null, purchaseRequest.getDeliveryRequestID(), VoucherChange.VoucherChangeAction.Cancel, voucherDelivery.getVoucherCode(), voucherDelivery.getVoucherID(), null, purchaseRequest.getModuleID(), purchaseRequest.getFeatureID(), purchaseRequest.getOrigin(), RESTAPIGenericReturnCodes.UNKNOWN, subscriberProfile.getSegments(), purchaseRequest.getDeliveryRequestID(), purchaseRequest.getOfferID(), purchaseRequest.getTenantID());
                         String requestTopic = Deployment.getVoucherChangeRequestTopic();
-                        //kafkaProducer.send(new ProducerRecord<byte[], byte[]>(requestTopic, StringKey.serde().serializer().serialize(requestTopic, new StringKey(subscriberID)), VoucherChange.serde().serializer().serialize(requestTopic, request)));
+                        kafkaProducer.send(new ProducerRecord<byte[], byte[]>(requestTopic, StringKey.serde().serializer().serialize(requestTopic, new StringKey(subscriberID)), VoucherChange.serde().serializer().serialize(requestTopic, request)));
                       }
+                    
+                    //
+                    //  clean
+                    //
+                    
+                    purchaseRequest.setVoucherDeliveries(null);
                     
                     
                     log.error("CancelpurchaseRequest not yet supported for vouchers");
