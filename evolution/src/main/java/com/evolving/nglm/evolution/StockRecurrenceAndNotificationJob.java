@@ -162,6 +162,9 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                   {
                     updateOffer(offer, stockToAdd, offerService, catalogCharacteristicService, callingChannelService, salesChannelService, productService, voucherService);
                     
+                    try { log.info("[PRJT] waiting..."); Thread.sleep(10000); } 
+                    catch (InterruptedException e) { e.printStackTrace(); }
+                    
                     stockService.confirmReservation(offer, ObjectUtils.defaultIfNull(offer.getApproximateRemainingStock(), 0)); // need to check the remaining stock for unlimited
                     stockService.voidConsumption(offer, offer.getStockRecurrenceBatch());
                   }
