@@ -65,6 +65,8 @@ import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.reindex.BulkByScrollResponse;
+import org.elasticsearch.index.reindex.DeleteByQueryRequest;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.Scroll;
 import org.elasticsearch.search.SearchHit;
@@ -1839,7 +1841,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
             actionRequests.put("requestDate", getDateString(requestDate));
             actionRequests.put("remarks", null);
             actionRequests.put("requesteID", hit.getId());
-            if (daysBetween > 1) actionRequests.put("remarks", "actionRequests with id ".concat(hit.getId()).concat(" taking more time than usal, please check the log"));
+            if (daysBetween > 1) actionRequests.put("remarks", "actionRequest with id ".concat(hit.getId()).concat(" taking more time than usal, please check the log"));
             maintenanceRequests.add(JSONUtilities.encodeObject(actionRequests));
           }
       }
@@ -1883,6 +1885,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
             actionLog.put("status", (String) esFields.get("status"));
             actionLog.put("remarks", (String) esFields.get("remarks"));
             actionLog.put("actionDate", getDateString(actionDate));
+            actionLog.put("requestID", (String) esFields.get("requestID"));
             actionLogs.add(JSONUtilities.encodeObject(actionLog));
           }
       } 
@@ -1913,13 +1916,59 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
     return result;
   }
   
-  public synchronized void clearSystemMaintenanceRequest()
+  public synchronized void clearSystemMaintenanceRequest(Date purgeTill)
   {
-
+    DeleteByQueryRequest deleteByQueryRequest = new DeleteByQueryRequest(MAINTENANCE_ACTION_REQUEST_INDEX);
+    BoolQueryBuilder query = QueryBuilders.boolQuery().must(QueryBuilders.matchQuery("status", "COMPLETED"));
+    query = query.filter(QueryBuilders.rangeQuery("actionStartDate").lte(RLMDateUtils.formatDateForElasticsearchDefault(purgeTill)));
+    deleteByQueryRequest.setQuery(query);
+    deleteByQueryRequest.setConflicts("proceed");
+    deleteByQueryRequest.setSlices(DeleteByQueryRequest.AUTO_SLICES);
+    deleteByQueryRequest.setScroll(TimeValue.timeValueMinutes(5));
+    try
+      {
+        BulkByScrollResponse response = this.deleteByQuery(deleteByQueryRequest, RequestOptions.DEFAULT);
+        if (response.getBulkFailures().isEmpty())
+          {
+            log.info("clearSystemMaintenanceRequest done");
+          }
+        else
+          {
+            log.info("clearSystemMaintenanceRequest partially done with number of failures {}", response.getBulkFailures().size());
+          }
+      } 
+    catch (IOException e)
+      {
+        log.info("clearSystemMaintenanceRequest failed error is {}", e.getMessage());
+      }
   }
   
-  public synchronized void clearMaintenanceActionLogs()
+  public synchronized void clearMaintenanceActionLogs(Date purgeTill)
   {
+
+    DeleteByQueryRequest deleteByQueryRequest = new DeleteByQueryRequest(MAINTENANCE_ACTION_LOG_INDEX);
+    BoolQueryBuilder query = QueryBuilders.boolQuery();
+    query = query.filter(QueryBuilders.rangeQuery("actionStartDate").lte(RLMDateUtils.formatDateForElasticsearchDefault(purgeTill)));
+    deleteByQueryRequest.setQuery(query);
+    deleteByQueryRequest.setConflicts("proceed");
+    deleteByQueryRequest.setSlices(DeleteByQueryRequest.AUTO_SLICES);
+    deleteByQueryRequest.setScroll(TimeValue.timeValueMinutes(5));
+    try
+      {
+        BulkByScrollResponse response = this.deleteByQuery(deleteByQueryRequest, RequestOptions.DEFAULT);
+        if (response.getBulkFailures().isEmpty())
+          {
+            log.info("clearMaintenanceActionLogs done");
+          }
+        else
+          {
+            log.info("clearMaintenanceActionLogs partially done with number of failures {}", response.getBulkFailures().size());
+          }
+      } 
+    catch (IOException e)
+      {
+        log.info("clearMaintenanceActionLogs failed error is {}", e.getMessage());
+      }
 
   }
   

@@ -1297,6 +1297,7 @@ prepare-es-update-curl -XPUT https://$MASTER_ESROUTER_SERVER/maintenance_action_
   "mappings": {
     "properties": {
       "actionType" : { "type" : "keyword" },
+      "requestID" : { "type" : "keyword" },
       "node" : { "type" : "keyword" },
       "user" : { "type" : "keyword" },
       "actionStartDate" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ"},

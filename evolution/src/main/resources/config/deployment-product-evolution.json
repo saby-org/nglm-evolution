@@ -107,6 +107,7 @@
   "ESRetentionDaysEDR"              : 45,
   "ESRetentionWeeksDatacubeJourneys.comment": "WARNING: here it is in week",
   "ESRetentionWeeksDatacubeJourneys": 3,
+  "ESRetentionDaysMaintenanceDetails": 45,
   
   "elasticsearchTemplatesVersion" : {
     "root":                             2,
@@ -160,6 +161,7 @@
   
   "periodicEvaluationCronEntry" : "0 2 * * *",
   "ucgEvaluationCronEntry" : "0 4 * * *",
+  "systemMaintenanceCronEntry"    : "10 5 * * *",
 
   "minExpiryDelayForVoucherDeliveryInHours" : 4,
   "importVoucherFileBulkSize" : 5000,
