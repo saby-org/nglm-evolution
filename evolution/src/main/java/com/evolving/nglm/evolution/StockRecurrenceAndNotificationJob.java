@@ -117,7 +117,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
         
         if (offer.getStockRecurrence())
           {
-            boolean testMode = false; // for testing
+            boolean testMode = true; // for testing
             
             String tz = Deployment.getDeployment(offer.getTenantID()).getTimeZone();
             String datePattern = DatePattern.LOCAL_DAY.get();
@@ -141,7 +141,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                     // reserving remaining stocks
                     //
                     
-                    stockService.confirmReservation(offer, ObjectUtils.defaultIfNull(offer.getApproximateRemainingStock(), 0)); // need to check the remaining stock for unlimited
+                    stockService. confirmReservation(offer, ObjectUtils.defaultIfNull(offer.getApproximateRemainingStock(), 0)); // need to check the remaining stock for unlimited
                     
                     //
                     // replenish batch count
