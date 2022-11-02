@@ -137,18 +137,6 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                     stockToAdd += ObjectUtils.defaultIfNull(offer.getStock(), 0); //using update offer
                     //stockService.voidConsumption(offer, offer.getStockRecurrenceBatch()); //using 'StockMonitor' -- another way
                   }
-                else
-                  {
-                    //
-                    // reserving remaining stocks
-                    //
-                    stockService. confirmReservation(offer, ObjectUtils.defaultIfNull(offer.getApproximateRemainingStock(), 0)); // need to check the remaining stock for unlimited
-                    
-                    //
-                    // replenish batch count
-                    //
-                    stockService.voidConsumption(offer, offer.getStockRecurrenceBatch());
-                  }
                 
                 //
                 // update offer -- maintaining 'initial stock' only, otherwise StockMonitor can handle remaining stocks
@@ -165,6 +153,20 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                   {
                     log.error("Stock Recurrence Exception: {}", e.getMessage());
                   }
+                
+                if (!offer.reuseRemainingStock())
+                  {
+                    //
+                    // reserving remaining stocks
+                    //
+                    stockService.confirmReservation(offer, ObjectUtils.defaultIfNull(offer.getApproximateRemainingStock(), 0)); // need to check the remaining stock for unlimited
+                    
+                    //
+                    // replenish batch count
+                    //
+                    stockService.voidConsumption(offer, offer.getStockRecurrenceBatch());
+                  }
+                
               }
             else{
                 log.info("[PRJT] offer[{}] Next Stock Replanish Date: {}", offer.getOfferID(), stockReplanishDates.stream().filter(date -> date.compareTo(formattedTime) > 0).findFirst());
