@@ -1329,8 +1329,27 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
               {
                 if (offer.getOfferVouchers() != null && !offer.getOfferVouchers().isEmpty())
                   {
+                    List<VoucherDelivery> voucherDeliveries = new ArrayList<VoucherDelivery>();
+                    for (OfferVoucher offerVoucher : offer.getOfferVouchers())
+                      {
+                        for (VoucherDelivery voucherDelivery : purchaseRequest.getVoucherDeliveries())
+                          {
+                            if (voucherDelivery.getVoucherID().equals(offerVoucher.getVoucherID()))
+                              {
+                                voucherDeliveries.add(voucherDelivery);
+                              }
+                          }
+                      }
                     log.info("RAJ K voucherDeliveries {}", purchaseRequest.getVoucherDeliveries());
                     log.info("RAJ K offer.getOfferVouchers()  {}", offer.getOfferVouchers() );
+                    for (VoucherDelivery voucherDelivery : voucherDeliveries)
+                      {
+                        log.info("RAJ K need to cancel voucherDelivery {}", voucherDelivery);
+                        //VoucherChange request = new VoucherChange(subscriberID, null, purchaseRequest.getDeliveryRequestID(), VoucherChange.VoucherChangeAction.Cancel, voucherDelivery.getVoucherCode(), voucherDelivery.getVoucherID(), voucherProfileStored.getFileID(), voucherProfileStored.getModuleID(), voucherProfileStored.getFeatureID(), origin, RESTAPIGenericReturnCodes.UNKNOWN, segments, eventID, voucherProfileStored.getOfferID(), tenantID);
+                        String requestTopic = Deployment.getVoucherChangeRequestTopic();
+                        //kafkaProducer.send(new ProducerRecord<byte[], byte[]>(requestTopic, StringKey.serde().serializer().serialize(requestTopic, new StringKey(subscriberID)), VoucherChange.serde().serializer().serialize(requestTopic, request)));
+                      }
+                    
                     
                     log.error("CancelpurchaseRequest not yet supported for vouchers");
                     submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.SYSTEM_ERROR, "CancelpurchaseRequest not yet supported for vouchers");
