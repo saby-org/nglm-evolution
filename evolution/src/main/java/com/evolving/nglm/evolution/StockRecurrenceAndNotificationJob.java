@@ -128,7 +128,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
             
             if(stockReplanishDates.contains(formattedTime) && formattedDate(offer.getLastStockRecurrenceDate(), datePattern).compareTo(formattedTime) < 0 || testMode)
               {
-                log.info("[PRJT] offer[{}] Next Stock Replanish Date: {} is TODAY:[{}]", offer.getOfferID(), stockReplanishDates.stream().filter(date -> date.compareTo(formattedTime) >= 0).findFirst(), formattedTime);
+                log.info("[StockRecurrenceAndNotificationJob] offer[{}] Next Stock Replanish Date: {} is TODAY:[{}]", offer.getOfferID(), stockReplanishDates.stream().filter(date -> date.compareTo(formattedTime) >= 0).findFirst(), formattedTime);
                 JSONObject offerJson = offer.getJSONRepresentation();
                 
                 Integer stockToAdd = offer.getStockRecurrenceBatch();
@@ -139,14 +139,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                   }
                 else
                   {
-                    //
-                    // reserving remaining stocks
-                    //
                     stockService.confirmReservation(offer, ObjectUtils.defaultIfNull(offer.getApproximateRemainingStock(), 0)); // need to check the remaining stock for unlimited
-                    
-                    //
-                    // replenish batch count
-                    //
                     stockService.voidConsumption(offer, offer.getLastStockRecurrenceDate().compareTo(offer.getEffectiveStartDate()) > 0 ? offer.getStockRecurrenceBatch() : 2 * offer.getStockRecurrenceBatch());
                   }
                 
@@ -167,11 +160,11 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                   }
               }
             else{
-                log.info("[PRJT] offer[{}] Next Stock Replanish Date: {}", offer.getOfferID(), stockReplanishDates.stream().filter(date -> date.compareTo(formattedTime) > 0).findFirst());
+                log.info("[StockRecurrenceAndNotificationJob] offer[{}] Next Stock Replanish Date is {}", offer.getOfferID(), stockReplanishDates.stream().filter(date -> date.compareTo(formattedTime) > 0).findFirst());
               }
           } 
         else{
-            log.debug("[PRJT] offer[{}] StockRecurrence[{}] - Stock Recurrence Scheduling not-configured.", offer.getOfferID(), offer.getStockRecurrence());
+            log.debug("[StockRecurrenceAndNotificationJob] offer[{}] StockRecurrence[{}] - Stock Recurrence Scheduling not-configured.", offer.getOfferID(), offer.getStockRecurrence());
           }
       }
     
@@ -301,7 +294,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
     //
 
     tmpStockReccurenceDates = tmpStockReccurenceDates.stream().filter(date -> date.after(offer.getEffectiveStartDate()) && date.compareTo(filterStartDate) >= 0 && filterEndDate.compareTo(date) >= 0 ).collect(Collectors.toList());
-    log.info("[PRJT] Offer[{}] Expected Stock Replanish Dates: {}", offer.getOfferID(), tmpStockReccurenceDates);
+    log.debug("[StockRecurrenceAndNotificationJob] Offer[{}] Expected Stock Replanish Dates: {}", offer.getOfferID(), tmpStockReccurenceDates);
 
     //
     // return with format
@@ -346,7 +339,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
           }
       }
     
-    log.debug("[PRJT] getExpectedCreationDates(): {}", result);
+    log.debug("[StockRecurrenceAndNotificationJob] getExpectedCreationDates(): {}", result);
     return result;
   }
 
