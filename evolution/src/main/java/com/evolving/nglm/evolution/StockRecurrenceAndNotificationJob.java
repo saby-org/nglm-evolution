@@ -140,19 +140,17 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                   }
                 else if(false)
                   {
-                    updateOffer(offer, stockToAdd, offerService, catalogCharacteristicService, callingChannelService, salesChannelService, productService, voucherService);
-                    
-                    try { log.info("[PRJT] waiting..."); Thread.sleep(10000); } 
-                    catch (InterruptedException e) { e.printStackTrace(); }
-                    
                     stockService.confirmReservation(offer, ObjectUtils.defaultIfNull(offer.getApproximateRemainingStock(), 0)); // need to check the remaining stock for unlimited
-                    stockService.voidConsumption(offer, offer.getStockRecurrenceBatch());
+                    stockService.voidConsumption(offer, ObjectUtils.defaultIfNull(offer.getStock(), 0));
+                    
+                    updateOffer(offer, stockToAdd, offerService, catalogCharacteristicService, callingChannelService, salesChannelService, productService, voucherService);
                   }
                 else
                   {
-                    stockService.confirmReservation(offer, ObjectUtils.defaultIfNull(offer.getApproximateRemainingStock(), 0)); // need to check the remaining stock for unlimited
-                    stockService.voidConsumption(offer, offer.getStock());
+                    //stockService.confirmReservation(offer, ObjectUtils.defaultIfNull(offer.getApproximateRemainingStock(), 0)); // need to check the remaining stock for unlimited
+                    //stockService.voidConsumption(offer, offer.getStock());
                     
+                    stockService.consume(offer, offer.getApproximateRemainingStock());
                     updateOffer(offer, stockToAdd, offerService, catalogCharacteristicService, callingChannelService, salesChannelService, productService, voucherService);
                     
                     //if (offer.getLastStockRecurrenceDate().compareTo(offer.getEffectiveStartDate()) == 0)
