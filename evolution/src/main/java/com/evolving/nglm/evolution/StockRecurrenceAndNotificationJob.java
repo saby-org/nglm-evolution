@@ -151,13 +151,14 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                 else
                   {
                     stockService.confirmReservation(offer, ObjectUtils.defaultIfNull(offer.getApproximateRemainingStock(), 0)); // need to check the remaining stock for unlimited
-                    stockService.voidConsumption(offer, offer.getStockRecurrenceBatch());
+                    stockService.voidConsumption(offer, ((2* offer.getStockRecurrenceBatch()) - offer.getStock()));
+                    
                     updateOffer(offer, stockToAdd, offerService, catalogCharacteristicService, callingChannelService, salesChannelService, productService, voucherService);
                     
-                    if (offer.getLastStockRecurrenceDate().compareTo(offer.getEffectiveStartDate()) == 0)
-                      {
-                        updateOffer(offer, stockToAdd, offerService, catalogCharacteristicService, callingChannelService, salesChannelService, productService, voucherService);
-                      }
+                    //if (offer.getLastStockRecurrenceDate().compareTo(offer.getEffectiveStartDate()) == 0)
+                      //{
+                        //updateOffer(offer, stockToAdd, offerService, catalogCharacteristicService, callingChannelService, salesChannelService, productService, voucherService);
+                      //}
                   }
                 
               }
