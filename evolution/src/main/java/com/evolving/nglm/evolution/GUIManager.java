@@ -1121,7 +1121,7 @@ public class GUIManager
     criterionFieldAvailableValuesService = new CriterionFieldAvailableValuesService(bootstrapServers, "guimanager-criterionfieldavailablevaluesservice-"+apiProcessKey, criterionFieldAvailableValuesTopic, true);
     otpTypeService = new OTPTypeService(bootstrapServers, "guimanager-otptypeservice-"+apiProcessKey, otpTypeTopic, true);
     customCriteriaService = new CustomCriteriaService(bootstrapServers, "guimanager-customCriteriaservice-" + apiProcessKey, customCriteriaTopic, true);
-    stockService = new StockMonitor("guimanager-stockService-" + apiProcessKey, offerService, productService, voucherService);
+    stockService = new StockMonitor("PurchaseMgr-stockService-001", offerService, productService, voucherService);
     
     DeliveryManagerDeclaration dmd = Deployment.getDeliveryManagers().get(ThirdPartyManager.PURCHASE_FULFILLMENT_MANAGER_TYPE);
     purchaseResponseListenerService = new KafkaResponseListenerService<>(Deployment.getBrokerServers(),dmd.getResponseTopic(DELIVERY_REQUEST_PRIORITY),StringKey.serde(),PurchaseFulfillmentRequest.serde());
