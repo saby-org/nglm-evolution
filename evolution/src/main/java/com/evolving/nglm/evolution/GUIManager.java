@@ -26701,7 +26701,7 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     if (voucherDeliveryList != null)
       {
         List<JSONObject> voucherJSONs = voucherDeliveryList.stream().map(voucherDelivery -> voucherDelivery.getJSONPresentation()).collect(Collectors.toList());
-        request.put("voucherDeliveries", JSONUtilities.encodeArray(voucherDeliveryList));
+        request.put("voucherDeliveries", JSONUtilities.encodeArray(voucherJSONs));
       }
     JSONObject valueRes = JSONUtilities.encodeObject(request);
     
