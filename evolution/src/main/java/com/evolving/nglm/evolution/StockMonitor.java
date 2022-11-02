@@ -217,6 +217,7 @@ public class StockMonitor implements Runnable
 
         if (! stockableItems.keySet().contains(stockableItem.getStockableItemID()) || stockableItem.resetStock())
           {
+            log.info("[PRJT] monitorStockableItem reset");
             localAllocations.put(stockableItem.getStockableItemID(), new LocalAllocation());
             localUncommitted.put(stockableItem.getStockableItemID(), new LocalUncommitted());
           }
