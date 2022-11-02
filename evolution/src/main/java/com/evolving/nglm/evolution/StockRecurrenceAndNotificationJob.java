@@ -191,7 +191,9 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
     try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultRequestConfig(requestConfig).build())
     {
       List<JSONObject> receipientList = getRecipientList();
-      String token =  getLoginToken();
+      JSONObject loginJSON = getLoginToken();
+      String token =  JSONUtilities.decodeString(loginJSON, "Token", true);
+      Integer userID = JSONUtilities.decodeInteger(loginJSON, "UserId", true);
       if (receipientList.isEmpty())
         {
           log.warn("stockAlertToList is empty - skip sending notification");
@@ -233,10 +235,10 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
           subject = resolveTags(Deployment.getStockAlertEmailSubject(), subjectTags);
           body = resolveTags(Deployment.getStockAlertEmailBody(), bodyTags);
         }
-      communicationMap.put("UserId", "");
+      communicationMap.put("UserId", userID);
       communicationMap.put("From", fromJSON);
       communicationMap.put("To", JSONUtilities.encodeArray(receipientList));
-      communicationMap.put("Cc", "");
+      communicationMap.put("Cc", new JSONArray());
       communicationMap.put("Subject", subject);
       communicationMap.put("Body", body);
       communicationMap.put("ObjectShortDescription", "");
@@ -245,13 +247,14 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
       communicationMap.put("AreRecepientsAllUsersWithPermission", false);
       communicationMap.put("PermissionKeyWhichRecipientsMustHave", "");
       communicationMap.put("AreMacrosAvailable", true);
-      communicationMap.put("Macros", "");
+      communicationMap.put("Macros", new JSONArray());
       communicationMap.put("GenerateTokenForEachRecepeint", true);
       communicationMap.put("AreFirstTwoMacrosFromBodyTokens", true);
       communicationMap.put("SendSeparateEmailForEachRecipient", true);
       communicationMap.put("ApplicationKey", "");
       communicationMap.put("ObjectId", "");
       communicationMap.put("CallBackURL", "");
+      communicationMap.put("LoginName", Deployment.getStockAlertLoginCredentail());
       
       String payload = JSONUtilities.encodeObject(communicationMap).toJSONString();
       log.debug("sendNotification - FWK API Call payload {}", payload);
@@ -265,6 +268,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
       httpPost.addHeader("token", token);
       httpPost.addHeader("Content-Type", "application/json");
       httpPost.setEntity(stringEntity);
+      //Arrays.stream(httpPost.getAllHeaders()).forEach(header -> log.info("RAJ K header {} - {}", header.getName(), header.getValue()));
 
       //
       // submit request
@@ -306,7 +310,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
     }
     catch(IOException e) 
     {
-      log.error("failed to authenticate in FWK server");
+      log.error("failed FWK server");
       log.error("IOException: {}", e.getMessage());
     }
     finally
@@ -330,9 +334,9 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
   *
   *****************************************/
   
-  public String getLoginToken()
+  public JSONObject getLoginToken()
   {
-    String result = null;
+    JSONObject result = new JSONObject();
     CloseableHttpResponse httpResponse = null;
     try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultRequestConfig(requestConfig).build())
     {
@@ -357,19 +361,12 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
       if (httpResponse != null && httpResponse.getStatusLine() != null && httpResponse.getStatusLine().getStatusCode() == 200)
         {
           String jsonResponse = EntityUtils.toString(httpResponse.getEntity(), "UTF-8");
-          log.info("FWK raw response : {}", jsonResponse);
-
           //
           // parse JSON response from FWK
           //
 
-          JSONObject jsonRoot = (JSONObject) (new JSONParser()).parse(jsonResponse);
+          result = (JSONObject) (new JSONParser()).parse(jsonResponse);
 
-          //
-          // prepare response
-          //
-          
-          result = JSONUtilities.decodeString(jsonRoot, "Token", true);
         }
       else if (httpResponse != null && httpResponse.getStatusLine() != null && httpResponse.getStatusLine().getStatusCode() == 401)
         {
