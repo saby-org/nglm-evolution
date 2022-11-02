@@ -44,6 +44,7 @@ import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.Journey.GUINode;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
+import com.evolving.nglm.evolution.VoucherDelivery.VoucherStatus;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 import com.evolving.nglm.evolution.statistics.CounterStat;
 import com.evolving.nglm.evolution.statistics.StatBuilder;
@@ -874,7 +875,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 				} catch (java.text.ParseException e) {
 					throw new ServerRuntimeException(e);
 				}
-                  VoucherDelivery voucherDelivery = new VoucherDelivery(voucherID, voucherFileID, voucherCode, null, voucherExpiryDate); //minimal
+                  VoucherDelivery voucherDelivery = new VoucherDelivery(voucherID, voucherFileID, voucherCode, VoucherStatus.Unknown, voucherExpiryDate); //minimal
                   voucherDeliveries.add(voucherDelivery);
                 }
               this.voucherDeliveries = voucherDeliveries;
