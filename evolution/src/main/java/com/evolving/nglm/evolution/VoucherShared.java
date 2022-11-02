@@ -143,10 +143,5 @@ public class VoucherShared extends Voucher implements StockableItem {
   {
     return GUIManagedObjectType.Vouchershared;
   }
-  @Override
-  public boolean updateStock()
-  {
-    return true;
-  }
 
 }

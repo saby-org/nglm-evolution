@@ -208,7 +208,7 @@ public class StockMonitor implements Runnable
 
   private synchronized void monitorStockableItem(StockableItem stockableItem)
   {
-    if (stockableItem.getStock() != null && stockableItem.updateStock())
+    if (stockableItem.getStock() != null)
       {
         //
         //  update allocations/used
@@ -364,6 +364,20 @@ public class StockMonitor implements Runnable
       {
         allocation.voidReservation(quantity);
         uncommitted.voidConsumption(quantity);
+      }
+  }
+  
+  // TEST
+  public synchronized void voidConsumptionOnly(StockableItem stockableItem)
+  {
+    //
+    //  stock
+    //
+    
+    LocalUncommitted uncommitted = localUncommitted.get(stockableItem.getStockableItemID());
+    if (stockableItem.getStock() != null && uncommitted != null)
+      {
+        uncommitted.voidConsumptionALL();
       }
   }
 
@@ -1007,7 +1021,6 @@ public class StockMonitor implements Runnable
 
   public interface StockableItem
   {
-    public boolean updateStock();
     public String getStockableItemID();
     public Integer getStock();
     // can return null, means infinite
@@ -1292,9 +1305,7 @@ public class StockMonitor implements Runnable
 
     void voidReservation(int quantity)
     {
-      log.info("[PRJT] ENTER voidReservation[{}] -- allocated[{}]", quantity, allocated);
       allocated += quantity;
-      log.info("[PRJT] ENTER voidReservation[{}] -- allocated[{}]", quantity, allocated);
     }
 
     /*****************************************
@@ -1367,10 +1378,8 @@ public class StockMonitor implements Runnable
 
     void confirmReservation(int quantity)
     {
-      log.info("[PRJT] ENTER confirmReservation[{}] -- reserved[{}], consumed[{}]", quantity, reserved, consumed);
       reserved -= quantity;
       consumed += quantity;
-      log.info("[PRJT] CLOSE confirmReservation[{}] -- reserved[{}], consumed[{}]", quantity, reserved, consumed);
     }
 
     /*****************************************
@@ -1386,9 +1395,12 @@ public class StockMonitor implements Runnable
     
     void voidConsumption(int quantity)
     {
-      log.info("[PRJT] ENTER voidConsumption[{}] -- consumed[{}]", quantity, consumed);
       consumed -= quantity;
-      log.info("[PRJT] ENTER voidConsumption[{}] -- consumed[{}]", quantity, consumed);
+    }
+    
+    void voidConsumptionALL()
+    {
+      consumed = 0;
     }
 
     /*****************************************

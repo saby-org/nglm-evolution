@@ -134,7 +134,6 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                   {
                     stockToAdd += ObjectUtils.defaultIfNull(offer.getStock(), 0); //using update offer
                     //stockService.voidConsumption(offer, offer.getStockRecurrenceBatch()); //using 'StockMonitor' -- another way
-                    offerJson.replace("updateStock", Boolean.TRUE);
                   }
                 else
                   {
@@ -142,14 +141,17 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                     // reserving remaining stocks
                     //
                     
-                    stockService. confirmReservation(offer, ObjectUtils.defaultIfNull(offer.getApproximateRemainingStock(), 0)); // need to check the remaining stock for unlimited
+                    //stockService. confirmReservation(offer, ObjectUtils.defaultIfNull(offer.getApproximateRemainingStock(), 0)); // need to check the remaining stock for unlimited
                     
                     //
                     // replenish batch count
                     //
                     
-                    stockService.voidConsumption(offer, offer.getStockRecurrenceBatch());
-                    offerJson.replace("updateStock", Boolean.FALSE);
+                    //stockService.voidConsumption(offer, offer.getStockRecurrenceBatch());
+                    
+                    // new way
+                    stockService.voidConsumptionOnly(offer);
+                    log.info("[PRJT] stock consumption set to 0");
                   }
                 
                 //
