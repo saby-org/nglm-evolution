@@ -119,7 +119,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
         
         if (offer.getStockRecurrence())
           {
-            boolean testMode = true; // for testing
+            boolean testMode = false; // for testing
             
             String tz = Deployment.getDeployment(offer.getTenantID()).getTimeZone();
             String datePattern = DatePattern.LOCAL_DAY.get();
@@ -129,35 +129,23 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
             if(stockReplanishDates.contains(formattedTime) && formattedDate(offer.getLastStockRecurrenceDate(), datePattern).compareTo(formattedTime) < 0 || testMode)
               {
                 log.info("[StockRecurrenceAndNotificationJob] offer[{}] Next Stock Replanish Date: {} is TODAY:[{}]", offer.getOfferID(), stockReplanishDates.stream().filter(date -> date.compareTo(formattedTime) >= 0).findFirst(), formattedTime);
-                
                 Integer stockToAdd = offer.getStockRecurrenceBatch();
                 if (offer.reuseRemainingStock())
                   {
                     stockToAdd += ObjectUtils.defaultIfNull(offer.getStock(), 0); //using update offer
                     //stockService.voidConsumption(offer, offer.getStockRecurrenceBatch()); //using 'StockMonitor' -- another way
-                    
-                    updateOffer(offer, stockToAdd, offerService, catalogCharacteristicService, callingChannelService, salesChannelService, productService, voucherService);
-                  }
-                else if(false)
-                  {
-                    stockService.confirmReservation(offer, ObjectUtils.defaultIfNull(offer.getApproximateRemainingStock(), 0)); // need to check the remaining stock for unlimited
-                    stockService.voidConsumption(offer, ObjectUtils.defaultIfNull(offer.getStock(), 0));
-                    
-                    updateOffer(offer, stockToAdd, offerService, catalogCharacteristicService, callingChannelService, salesChannelService, productService, voucherService);
                   }
                 else
                   {
-                    //stockService.confirmReservation(offer, ObjectUtils.defaultIfNull(offer.getApproximateRemainingStock(), 0)); // need to check the remaining stock for unlimited
-                    //stockService.voidConsumption(offer, offer.getStock());
-                    
-                    stockService.consume(offer, offer.getApproximateRemainingStock());
-                    updateOffer(offer, stockToAdd, offerService, catalogCharacteristicService, callingChannelService, salesChannelService, productService, voucherService);
-                    
-                    //if (offer.getLastStockRecurrenceDate().compareTo(offer.getEffectiveStartDate()) == 0)
-                      //{
-                        //updateOffer(offer, stockToAdd, offerService, catalogCharacteristicService, callingChannelService, salesChannelService, productService, voucherService);
-                      //}
+                    stockService.confirmReservation(offer, ObjectUtils.defaultIfNull(offer.getApproximateRemainingStock(), 0)); // need to check the remaining stock for unlimited
+                    stockService.voidConsumption(offer, ObjectUtils.defaultIfNull(offer.getStock(), 0));
                   }
+                
+                //
+                // update offer
+                //
+                
+                updateOffer(offer, stockToAdd, offerService, catalogCharacteristicService, callingChannelService, salesChannelService, productService, voucherService);
                 
               }
             else{
@@ -217,7 +205,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
   // update offer -- maintaining 'initial stock' only, otherwise StockMonitor can handle remaining stocks
   //
   
-  public static void updateOffer(Offer offer, Integer stockToAdd, OfferService offerService, CatalogCharacteristicService catalogCharacteristicService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, ProductService productService, VoucherService voucherService)
+  private static void updateOffer(Offer offer, Integer stockToAdd, OfferService offerService, CatalogCharacteristicService catalogCharacteristicService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, ProductService productService, VoucherService voucherService)
   {
     JSONObject offerJson = offer.getJSONRepresentation();
     offerJson.replace("presentationStock", stockToAdd);
