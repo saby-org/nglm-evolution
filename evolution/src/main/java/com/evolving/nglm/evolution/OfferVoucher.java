@@ -110,4 +110,10 @@ public class OfferVoucher {
     return voucherID.hashCode();
   }
 
+  @Override
+  public String toString()
+  {
+    return "OfferVoucher [voucherID=" + voucherID + ", quantity=" + quantity + ", fileID=" + fileID + ", voucherCode=" + voucherCode + ", voucherExpiryDate=" + voucherExpiryDate + "]";
+  }
+
 }

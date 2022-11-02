@@ -1329,6 +1329,9 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
               {
                 if (offer.getOfferVouchers() != null && !offer.getOfferVouchers().isEmpty())
                   {
+                    log.info("RAJ K voucherDeliveries {}", purchaseRequest.getVoucherDeliveries());
+                    log.info("RAJ K offer.getOfferVouchers()  {}", offer.getOfferVouchers() );
+                    
                     log.error("CancelpurchaseRequest not yet supported for vouchers");
                     submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.SYSTEM_ERROR, "CancelpurchaseRequest not yet supported for vouchers");
                     continue mainLoop;

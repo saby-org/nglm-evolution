@@ -2664,29 +2664,13 @@ public class EvolutionEngine
           continue;
         }
         // change status to expired
-        if(voucherStored.getVoucherStatus()!=VoucherDelivery.VoucherStatus.Expired
-                && voucherStored.getVoucherStatus()!=VoucherDelivery.VoucherStatus.Redeemed
-                && retentionService.isExpired(voucherStored)){
-          voucherStored.setVoucherStatus(VoucherDelivery.VoucherStatus.Expired); 
-          VoucherChange voucherChange = new VoucherChange(
-              subscriberProfile.getSubscriberID(),
-              voucherStored.getVoucherExpiryDate(),
-              voucherStored.getEventID(),
-              VoucherChangeAction.Expire,
-              voucherStored.getVoucherCode(),
-              voucherStored.getVoucherID(),
-              voucherStored.getFileID(),
-              voucherStored.getModuleID(),
-              voucherStored.getFeatureID(),
-              voucherStored.getOrigin(),
-              RESTAPIGenericReturnCodes.SUCCESS,
-              subscriberProfile.getSegments(),
-              uniqueKeyServer.getKey(),
-              voucherStored.getOfferID(),
-              tenantID);
-          subscriberState.getVoucherChanges().add(voucherChange);
-          subscriberUpdated=true;
-        }
+        if (voucherStored.getVoucherStatus() != VoucherDelivery.VoucherStatus.Expired && voucherStored.getVoucherStatus() != VoucherDelivery.VoucherStatus.Cancelled && voucherStored.getVoucherStatus() != VoucherDelivery.VoucherStatus.Redeemed && retentionService.isExpired(voucherStored))
+          {
+            voucherStored.setVoucherStatus(VoucherDelivery.VoucherStatus.Expired);
+            VoucherChange voucherChange = new VoucherChange(subscriberProfile.getSubscriberID(), voucherStored.getVoucherExpiryDate(), voucherStored.getEventID(), VoucherChangeAction.Expire, voucherStored.getVoucherCode(), voucherStored.getVoucherID(), voucherStored.getFileID(), voucherStored.getModuleID(), voucherStored.getFeatureID(), voucherStored.getOrigin(), RESTAPIGenericReturnCodes.SUCCESS, subscriberProfile.getSegments(), uniqueKeyServer.getKey(), voucherStored.getOfferID(), tenantID);
+            subscriberState.getVoucherChanges().add(voucherChange);
+            subscriberUpdated = true;
+          }
 
       }
 
@@ -2753,7 +2737,7 @@ public class EvolutionEngine
                                 // already redeemed
                                 voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED);
                               } 
-                            else if (voucherStored.getVoucherStatus() == VoucherDelivery.VoucherStatus.Expired)
+                            else if (voucherStored.getVoucherStatus() == VoucherDelivery.VoucherStatus.Expired || voucherStored.getVoucherStatus() == VoucherDelivery.VoucherStatus.Cancelled)
                               {
                                 // already expired
                                 voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_EXPIRED);
@@ -2768,6 +2752,17 @@ public class EvolutionEngine
                                 voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
                                 break;
                               }
+                          }
+                        else if (voucherChange.getAction() == VoucherChange.VoucherChangeAction.Cancel)
+                          {
+                            // Cancel voucher and set ExpiryDate date - to clean/track
+                            voucherStored.setVoucherExpiryDate(context.processingDate());
+                            expiryDate = voucherStored.getVoucherExpiryDate();
+                            sortVouchersPerExpiryDate(subscriberProfile);
+                            voucherStored.setVoucherStatus(VoucherDelivery.VoucherStatus.Cancelled);
+                            voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
+                            break;
+                          
                           }
                       }
                   }
@@ -3030,7 +3025,7 @@ public class EvolutionEngine
         // already redeemed
         voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED);
       } 
-    else if (voucherStored.getVoucherStatus() == VoucherDelivery.VoucherStatus.Expired)
+    else if (voucherStored.getVoucherStatus() == VoucherDelivery.VoucherStatus.Expired || voucherStored.getVoucherStatus() == VoucherDelivery.VoucherStatus.Cancelled)
       {
         // already expired
         voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_EXPIRED);
@@ -10341,7 +10336,7 @@ public class EvolutionEngine
               {
                 errorException = new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED);
               } 
-            else if (profileVoucher.getVoucherStatus() == VoucherDelivery.VoucherStatus.Expired || profileVoucher.getVoucherExpiryDate().before(now))
+            else if (profileVoucher.getVoucherStatus() == VoucherDelivery.VoucherStatus.Expired || profileVoucher.getVoucherStatus() == VoucherDelivery.VoucherStatus.Cancelled || profileVoucher.getVoucherExpiryDate().before(now))
               {
                 errorException = new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_EXPIRED);
               } 

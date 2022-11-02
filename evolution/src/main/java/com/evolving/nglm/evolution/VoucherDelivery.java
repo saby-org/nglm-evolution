@@ -12,6 +12,7 @@ public class VoucherDelivery  {
     Delivered("delivered"),
     Redeemed("redeemed"),
     Expired("expired"),
+    Cancelled("cancelled"),
     Unknown("(unknown)");
     private String externalRepresentation;
     private VoucherStatus(String externalRepresentation) { this.externalRepresentation = externalRepresentation;}

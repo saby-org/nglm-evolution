@@ -6050,35 +6050,16 @@ public class ThirdPartyManager
     
     
     //build the request to send
-    String eventID=zuksVoucherChange.getStringKey();
-    VoucherChange request = new VoucherChange(
-            subscriberID,
-            null,
-            eventID,
-            VoucherChange.VoucherChangeAction.Redeem,
-            voucherProfileStored.getVoucherCode(),
-            voucherProfileStored.getVoucherID(),
-            voucherProfileStored.getFileID(),
-            voucherProfileStored.getModuleID(),
-            voucherProfileStored.getFeatureID(),
-            origin,
-            RESTAPIGenericReturnCodes.UNKNOWN,
-            segments,
-            eventID,
-            voucherProfileStored.getOfferID(),
-            tenantID);
+    String eventID = zuksVoucherChange.getStringKey();
+    VoucherChange request = new VoucherChange(subscriberID, null, eventID, VoucherChange.VoucherChangeAction.Redeem, voucherProfileStored.getVoucherCode(), voucherProfileStored.getVoucherID(), voucherProfileStored.getFileID(), voucherProfileStored.getModuleID(), voucherProfileStored.getFeatureID(), origin, RESTAPIGenericReturnCodes.UNKNOWN, segments, eventID, voucherProfileStored.getOfferID(), tenantID);
 
     Future<VoucherChange> waitingResponse=null;
     if(sync){
       waitingResponse = voucherChangeResponseListenerService.addWithOnValueFilter((value)->value.getEventID().equals(request.getEventID())&&value.getReturnStatus()!=RESTAPIGenericReturnCodes.UNKNOWN);
     }
 
-    String requestTopic = Deployment.getVoucherChangeRequestTopic();
-    kafkaProducer.send(new ProducerRecord<byte[], byte[]>(
-            requestTopic,
-            StringKey.serde().serializer().serialize(requestTopic, new StringKey(subscriberID)),
-            VoucherChange.serde().serializer().serialize(requestTopic, request)
-    ));
+  String requestTopic = Deployment.getVoucherChangeRequestTopic();
+  kafkaProducer.send(new ProducerRecord<byte[], byte[]>(requestTopic, StringKey.serde().serializer().serialize(requestTopic, new StringKey(subscriberID)), VoucherChange.serde().serializer().serialize(requestTopic, request)));
 
     if(sync){
       VoucherChange response = handleWaitingResponse(waitingResponse);
@@ -6268,7 +6249,7 @@ public class ThirdPartyManager
                 errorException = new ThirdPartyManagerException(
                     RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED.getGenericResponseMessage(),
                     RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED.getGenericResponseCode(), additionalDetails);
-              }else if(profileVoucher.getVoucherStatusComputed()==VoucherDelivery.VoucherStatus.Expired){
+              }else if(profileVoucher.getVoucherStatusComputed()==VoucherDelivery.VoucherStatus.Expired || profileVoucher.getVoucherStatusComputed()==VoucherDelivery.VoucherStatus.Cancelled){
                 errorException = new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_EXPIRED);
               }else{
                 //an OK one
