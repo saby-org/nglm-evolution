@@ -1113,6 +1113,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       guiPresentationMap.put(CUSTOMERID, getSubscriberID());
       guiPresentationMap.put(OFFERID, getOfferID());
       guiPresentationMap.put(OFFERQTY, getQuantity());
+      guiPresentationMap.put(OFFERQTY, getQuantity());
 
       GUIManagedObject offerGMO = offerService.getStoredOffer(getOfferID(), true);
 
@@ -1124,6 +1125,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         {
           guiPresentationMap.put(OFFERNAME, offerGMO.getJSONRepresentation().get("name"));
           guiPresentationMap.put(OFFERDISPLAY, offerGMO.getJSONRepresentation().get("display"));
+          guiPresentationMap.put(OFFERCANCELLABLE, offerGMO.getAccepted() ? ((Offer) offerGMO).getCancellable() : false);
 
           guiPresentationMap.put(OFFERSTOCK, offerGMO.getJSONRepresentation().get("presentationStock")); // in case we don't find the offer
           
@@ -1214,6 +1216,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           thirdPartyPresentationMap.put(OFFERDISPLAY, offer.getJSONRepresentation().get("display"));
           thirdPartyPresentationMap.put(OFFERQTY, getQuantity());
           thirdPartyPresentationMap.put(OFFERSTOCK, offer.getStock());
+          thirdPartyPresentationMap.put(OFFERCANCELLABLE, offer);
           if(offer.getOfferSalesChannelsAndPrices() != null){
             for(OfferSalesChannelsAndPrice channel : offer.getOfferSalesChannelsAndPrices()){
               if(channel.getSalesChannelIDs() != null) {
