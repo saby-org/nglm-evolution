@@ -147,14 +147,14 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                     // replenish batch count
                     //
                     
-                    stockService.voidConsumption(offer, offer.getStockRecurrenceBatch());
+                    //stockService.voidConsumption(offer, offer.getStockRecurrenceBatch());
                   }
                 
                 //
                 // update offer -- maintaining 'initial stock' only, otherwise StockMonitor can handle remaining stocks
                 //
                 
-                //offerJson.replace("presentationStock", stockToAdd);
+                offerJson.replace("presentationStock", stockToAdd);
                 try
                   {
                     Offer newOffer = new Offer(offerJson, GUIManager.epochServer.getKey(), offer, catalogCharacteristicService, offer.getTenantID());
