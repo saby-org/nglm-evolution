@@ -4694,5 +4694,11 @@ public class Journey extends GUIManagedObject implements StockableItem, GUIManag
     
     return result;
   }
+  @Override
+  public boolean resetStock()
+  {
+    // TODO Auto-generated method stub
+    return false;
+  }
   
 }

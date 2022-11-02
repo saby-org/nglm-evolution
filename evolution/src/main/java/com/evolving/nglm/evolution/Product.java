@@ -467,4 +467,10 @@ public class Product extends GUIManagedObject implements StockableItem
     result.put("deliverable", deliverableIDs);
     return result;
   }
+  @Override
+  public boolean resetStock()
+  {
+    // TODO Auto-generated method stub
+    return false;
+  }
 }

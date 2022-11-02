@@ -41,6 +41,8 @@ import com.evolving.nglm.core.RLMDateUtils.DatePattern;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
 import com.evolving.nglm.evolution.StockMonitor.Stock;
+import com.evolving.nglm.evolution.zookeeper.ZookeeperEvolution;
+import com.evolving.nglm.evolution.zookeeper.ZookeeperEvolutionClient;
 
 public class StockRecurrenceAndNotificationJob  extends ScheduledJob 
 {
@@ -150,7 +152,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                     //stockService.voidConsumption(offer, offer.getStockRecurrenceBatch());
                     
                     // new way
-                    stockService.voidConsumptionOnly(offer);
+                    //stockService.voidConsumptionOnly(offer, offer.getApproximateRemainingStock());
                   }
                 
                 //

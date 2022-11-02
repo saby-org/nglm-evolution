@@ -210,11 +210,12 @@ public class StockMonitor implements Runnable
   {
     if (stockableItem.getStock() != null)
       {
+        log.info("[PRJT] monitorStockableItem");
         //
         //  update allocations/used
         //
 
-        if (! stockableItems.keySet().contains(stockableItem.getStockableItemID()))
+        if (! stockableItems.keySet().contains(stockableItem.getStockableItemID()) || stockableItem.resetStock())
           {
             localAllocations.put(stockableItem.getStockableItemID(), new LocalAllocation());
             localUncommitted.put(stockableItem.getStockableItemID(), new LocalUncommitted());
@@ -368,7 +369,7 @@ public class StockMonitor implements Runnable
   }
   
   // TEST
-  public synchronized void voidConsumptionOnly(StockableItem stockableItem)
+  public synchronized void voidConsumptionOnly(StockableItem stockableItem, int quantity)
   {
     //
     //  stock
@@ -379,8 +380,8 @@ public class StockMonitor implements Runnable
     if (stockableItem.getStock() != null && allocation != null && uncommitted != null)
       {
         log.info("[PRJT] stock reset");
-        allocation.voidReservationALL();
-        uncommitted.voidConsumptionALL();
+        //allocation.voidReservationALL();
+        uncommitted.voidConsumption(quantity);
       }
   }
 
@@ -1024,6 +1025,7 @@ public class StockMonitor implements Runnable
 
   public interface StockableItem
   {
+    public boolean resetStock();
     public String getStockableItemID();
     public Integer getStock();
     // can return null, means infinite
