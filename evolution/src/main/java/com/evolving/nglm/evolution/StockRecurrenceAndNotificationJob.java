@@ -129,34 +129,30 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
             if(stockReplanishDates.contains(formattedTime) && formattedDate(offer.getLastStockRecurrenceDate(), datePattern).compareTo(formattedTime) < 0 || testMode)
               {
                 log.info("[StockRecurrenceAndNotificationJob] offer[{}] Next Stock Replanish Date: {} is TODAY:[{}]", offer.getOfferID(), stockReplanishDates.stream().filter(date -> date.compareTo(formattedTime) >= 0).findFirst(), formattedTime);
-                JSONObject offerJson = offer.getJSONRepresentation();
                 
                 Integer stockToAdd = offer.getStockRecurrenceBatch();
                 if (offer.reuseRemainingStock())
                   {
                     stockToAdd += ObjectUtils.defaultIfNull(offer.getStock(), 0); //using update offer
                     //stockService.voidConsumption(offer, offer.getStockRecurrenceBatch()); //using 'StockMonitor' -- another way
+                    
+                    updateOffer(offer, stockToAdd, offerService, catalogCharacteristicService, callingChannelService, salesChannelService, productService, voucherService);
                   }
                 else
                   {
-                    stockService.confirmReservation(offer, ObjectUtils.defaultIfNull(offer.getApproximateRemainingStock(), 0)); // need to check the remaining stock for unlimited
-                    stockService.voidConsumption(offer, offer.getLastStockRecurrenceDate().compareTo(offer.getEffectiveStartDate()) > 0 ? offer.getStockRecurrenceBatch() : 2 * offer.getStockRecurrenceBatch());
-                  }
-                
-                //
-                // update offer -- maintaining 'initial stock' only, otherwise StockMonitor can handle remaining stocks
-                //
-                
-                offerJson.replace("presentationStock", stockToAdd);
-                try
-                  {
-                    Offer newOffer = new Offer(offerJson, GUIManager.epochServer.getKey(), offer, catalogCharacteristicService, offer.getTenantID());
-                    newOffer.setLastStockRecurrenceDate(SystemTime.getCurrentTime());
-                    offerService.putOffer(newOffer, callingChannelService, salesChannelService, productService, voucherService, (offer == null), "StockRecurrenceAndNotificationJob");
-                  } 
-                catch (GUIManagerException e)
-                  {
-                    log.error("Stock Recurrence Exception: {}", e.getMessage());
+                    int reccNumber = 1;
+                    if (offer.getLastStockRecurrenceDate().compareTo(offer.getEffectiveStartDate()) > 0)
+                      {
+                        reccNumber += 1;
+                      }
+                    
+                    for (int i=0; i<reccNumber; i++)
+                      {
+                        stockService.confirmReservation(offer, ObjectUtils.defaultIfNull(offer.getApproximateRemainingStock(), 0)); // need to check the remaining stock for unlimited
+                        stockService.voidConsumption(offer, offer.getStockRecurrenceBatch());
+                        
+                        updateOffer(offer, stockToAdd, offerService, catalogCharacteristicService, callingChannelService, salesChannelService, productService, voucherService);
+                      }
                   }
               }
             else{
@@ -209,6 +205,26 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
               }
           }
         
+      }
+  }
+  
+  //
+  // update offer -- maintaining 'initial stock' only, otherwise StockMonitor can handle remaining stocks
+  //
+  
+  public static void updateOffer(Offer offer, Integer stockToAdd, OfferService offerService, CatalogCharacteristicService catalogCharacteristicService, CallingChannelService callingChannelService, SalesChannelService salesChannelService, ProductService productService, VoucherService voucherService)
+  {
+    JSONObject offerJson = offer.getJSONRepresentation();
+    offerJson.replace("presentationStock", stockToAdd);
+    try
+      {
+        Offer newOffer = new Offer(offerJson, GUIManager.epochServer.getKey(), offer, catalogCharacteristicService, offer.getTenantID());
+        newOffer.setLastStockRecurrenceDate(SystemTime.getCurrentTime());
+        offerService.putOffer(newOffer, callingChannelService, salesChannelService, productService, voucherService, (offer == null), "StockRecurrenceAndNotificationJob");
+      } 
+    catch (GUIManagerException e)
+      {
+        log.error("Stock Recurrence Exception: {}", e.getMessage());
       }
   }
   
