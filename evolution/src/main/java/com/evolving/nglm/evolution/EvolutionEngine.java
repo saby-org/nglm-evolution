@@ -2743,13 +2743,20 @@ public class EvolutionEngine
                           }
                         else if (voucherChange.getAction() == VoucherChange.VoucherChangeAction.Cancel)
                           {
-                            // Cancel voucher and set ExpiryDate date - to clean/track
-                            voucherStored.setVoucherExpiryDate(context.processingDate());
-                            expiryDate = voucherStored.getVoucherExpiryDate();
-                            sortVouchersPerExpiryDate(subscriberProfile);
-                            voucherStored.setVoucherStatus(VoucherDelivery.VoucherStatus.Cancelled);
-                            voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
-                            break;
+                            if (voucherStored.getVoucherStatus() == VoucherDelivery.VoucherStatus.Expired || voucherStored.getVoucherStatus() == VoucherDelivery.VoucherStatus.Cancelled)
+                              {
+                                voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_EXPIRED);
+                              }
+                            else
+                              {
+                                // Cancel voucher and set ExpiryDate date - to clean/track
+                                voucherStored.setVoucherExpiryDate(context.processingDate());
+                                expiryDate = voucherStored.getVoucherExpiryDate();
+                                sortVouchersPerExpiryDate(subscriberProfile);
+                                voucherStored.setVoucherStatus(VoucherDelivery.VoucherStatus.Cancelled);
+                                voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
+                                break;
+                              }
                           
                           }
                       }

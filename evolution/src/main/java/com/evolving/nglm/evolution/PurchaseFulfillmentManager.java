@@ -723,7 +723,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       this.resellerDisplay = JSONUtilities.decodeString(jsonRoot, "resellerDisplay", false);
       this.supplierDisplay = JSONUtilities.decodeString(jsonRoot, "supplierDisplay", false);
       this.cancelPurchase = JSONUtilities.decodeBoolean(jsonRoot, "cancelPurchase", Boolean.FALSE);
-      if (cancelPurchase) this.voucherDeliveries = decodeVoucherDeliveries(JSONUtilities.decodeJSONArray(jsonRoot, "voucherDeliveries", new JSONArray()));
+      if (cancelPurchase) this.voucherDeliveries = decodeVoucherDeliveries(JSONUtilities.decodeJSONArray(jsonRoot, "voucherDeliveries", new JSONArray())); // hack to get back the voucher details send on a previous purchase call in cancel
       updatePurchaseFulfillmentRequest(offerService, paymentMeanService, resellerService, productService, supplierService, voucherService, now, tenantID);
     }
 
@@ -1375,8 +1375,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
               {
                 if (offer.getOfferVouchers() != null && !offer.getOfferVouchers().isEmpty())
                   {
-                    List<VoucherDelivery> voucherDeliveries = purchaseRequest.getVoucherDeliveries().stream().filter(voucherDelivery -> voucherDelivery.getVoucherExpiryDate() == null || voucherDelivery.getVoucherExpiryDate().after(processingDate)).collect(Collectors.toList());
-                    log.info("RAJ K voucherDeliveries to Cancel{}", purchaseRequest.getVoucherDeliveries());
+                    List<VoucherDelivery> voucherDeliveries = getCancelableVoucher(subscriberProfile, purchaseRequest.getPreviousPurchaseDate(), purchaseRequest.getVoucherDeliveries());//                purchaseRequest.getVoucherDeliveries().stream().filter(voucherDelivery -> voucherDelivery.getVoucherExpiryDate() == null || voucherDelivery.getVoucherExpiryDate().after(processingDate)).collect(Collectors.toList());
                     for (VoucherDelivery voucherDelivery : voucherDeliveries)
                       {
                         log.info("RAJ K need to cancel voucherDelivery {}", voucherDelivery);
@@ -1390,11 +1389,6 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
                     //
                     
                     purchaseRequest.setVoucherDeliveries(null);
-                    
-                    
-                    log.error("CancelpurchaseRequest not yet supported for vouchers");
-                    submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.SYSTEM_ERROR, "CancelpurchaseRequest not yet supported for vouchers");
-                    continue mainLoop;
                   }
                 
                 //
@@ -1711,6 +1705,41 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       }
   }
   
+  private List<VoucherDelivery> getCancelableVoucher(SubscriberProfile subscriberProfile, Date voucherDeliveryDate, List<VoucherDelivery> voucherDeliveries)
+  {
+    List<VoucherDelivery> result = new ArrayList<VoucherDelivery>();
+    
+    //
+    //  filter out already Cancelled/Expired vouchers
+    //
+    
+    List<VoucherProfileStored> storedVouchers = subscriberProfile.getVouchers().stream().filter(voucher -> voucher.getVoucherStatus() != VoucherStatus.Cancelled && voucher.getVoucherStatus() != VoucherStatus.Expired).collect(Collectors.toList());
+    
+    //
+    //  filter based on delivery date
+    //
+    
+    storedVouchers = storedVouchers.stream().filter(voucher -> RLMDateUtils.truncatedEquals(voucher.getVoucherDeliveryDate(), voucherDeliveryDate, Calendar.SECOND, DeploymentCommon.getDeployment(subscriberProfile.getTenantID()).getTimeZone())).collect(Collectors.toList());
+    
+    //
+    //  storedVoucherCodes
+    //
+    
+    List<String> storedVoucherCodes = storedVouchers.stream().map(voucher -> voucher.getVoucherCode()).collect(Collectors.toList());
+    
+    //
+    //  filter based on actual voucherCode
+    //
+    
+    result = voucherDeliveries.stream().filter(voucher -> storedVoucherCodes.contains(voucher.getVoucherCode())).collect(Collectors.toList());
+    
+    //
+    //  result
+    //
+    
+    return result;
+  }
+
   /*****************************************
   *
   *  CorrelatorUpdate
