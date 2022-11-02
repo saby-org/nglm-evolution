@@ -1291,7 +1291,9 @@ public class StockMonitor implements Runnable
 
     void voidReservation(int quantity)
     {
+      log.info("[PRJT] ENTER voidReservation[{}] -- allocated[{}]", quantity, allocated);
       allocated += quantity;
+      log.info("[PRJT] ENTER voidReservation[{}] -- allocated[{}]", quantity, allocated);
     }
 
     /*****************************************
@@ -1364,8 +1366,10 @@ public class StockMonitor implements Runnable
 
     void confirmReservation(int quantity)
     {
+      log.info("[PRJT] ENTER confirmReservation[{}] -- reserved[{}], consumed[{}]", quantity, reserved, consumed);
       reserved -= quantity;
       consumed += quantity;
+      log.info("[PRJT] CLOSE confirmReservation[{}] -- reserved[{}], consumed[{}]", quantity, reserved, consumed);
     }
 
     /*****************************************
@@ -1381,7 +1385,9 @@ public class StockMonitor implements Runnable
     
     void voidConsumption(int quantity)
     {
+      log.info("[PRJT] ENTER voidConsumption[{}] -- consumed[{}]", quantity, consumed);
       consumed -= quantity;
+      log.info("[PRJT] ENTER voidConsumption[{}] -- consumed[{}]", quantity, consumed);
     }
 
     /*****************************************
