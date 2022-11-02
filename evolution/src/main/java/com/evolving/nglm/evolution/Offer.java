@@ -101,6 +101,7 @@ public class Offer extends GUIManagedObject implements StockableItem
     schemaBuilder.field("maximumAcceptances", Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("maximumAcceptancesPeriodDays", Schema.OPTIONAL_INT32_SCHEMA);
     schemaBuilder.field("maximumAcceptancesPeriodMonths", Schema.OPTIONAL_INT32_SCHEMA);
+    schemaBuilder.field("cancellable", Schema.BOOLEAN_SCHEMA);
     schema = schemaBuilder.build();
   };
 
@@ -140,6 +141,7 @@ public class Offer extends GUIManagedObject implements StockableItem
   private Integer maximumAcceptancesPeriodMonths;
   private String notEligibilityReason;
   private String limitsReachedReason;
+  private boolean cancellable;
 
   //
   //  derived
@@ -177,6 +179,7 @@ public class Offer extends GUIManagedObject implements StockableItem
   public Integer getMaximumAcceptancesPeriodMonths() { return maximumAcceptancesPeriodMonths; }
   public String getNotEligibilityReason() { return notEligibilityReason; }
   public String getLimitsReachedReason() {	return limitsReachedReason; }
+  public boolean getCancellable() { return cancellable; }
   
   /*****************************************
   *
@@ -300,7 +303,7 @@ public class Offer extends GUIManagedObject implements StockableItem
   *
   *****************************************/
 
-  public Offer(SchemaAndValue schemaAndValue, double initialPropensity, Integer stock, int unitaryCost, List<EvaluationCriterion> profileCriteria, Set<OfferObjectiveInstance> offerObjectives, Set<OfferSalesChannelsAndPrice> offerSalesChannelsAndPrices, Set<OfferProduct> offerProducts, Set<OfferVoucher> offerVouchers, OfferCharacteristics offerCharacteristics, Set<OfferTranslation> offerTranslations, boolean simpleOffer, Integer maximumAcceptances, Integer maximumAcceptancesPeriodDays, Integer maximumAcceptancesPeriodMonths)
+  public Offer(SchemaAndValue schemaAndValue, double initialPropensity, Integer stock, int unitaryCost, List<EvaluationCriterion> profileCriteria, Set<OfferObjectiveInstance> offerObjectives, Set<OfferSalesChannelsAndPrice> offerSalesChannelsAndPrices, Set<OfferProduct> offerProducts, Set<OfferVoucher> offerVouchers, OfferCharacteristics offerCharacteristics, Set<OfferTranslation> offerTranslations, boolean simpleOffer, Integer maximumAcceptances, Integer maximumAcceptancesPeriodDays, Integer maximumAcceptancesPeriodMonths, boolean cancellable)
   {
     super(schemaAndValue);
     this.initialPropensity = getValidPropensity(initialPropensity);
@@ -318,6 +321,7 @@ public class Offer extends GUIManagedObject implements StockableItem
     this.maximumAcceptances = maximumAcceptances;
     this.maximumAcceptancesPeriodDays = maximumAcceptancesPeriodDays;
     this.maximumAcceptancesPeriodMonths = maximumAcceptancesPeriodMonths;
+    this.cancellable = cancellable;
   }
 
   /*****************************************
@@ -345,6 +349,7 @@ public class Offer extends GUIManagedObject implements StockableItem
     struct.put("maximumAcceptances", offer.getMaximumAcceptances());
     struct.put("maximumAcceptancesPeriodDays", offer.getMaximumAcceptancesPeriodDays());
     struct.put("maximumAcceptancesPeriodMonths", offer.getMaximumAcceptancesPeriodMonths());
+    struct.put("cancellable", offer.getCancellable());
     return struct;
   }
 
@@ -478,13 +483,14 @@ public class Offer extends GUIManagedObject implements StockableItem
     boolean simpleOffer = (schemaVersion >= 3) ? valueStruct.getBoolean("simpleOffer") : false;
     Integer maximumAcceptances = (schemaVersion >= 3) ? valueStruct.getInt32("maximumAcceptances") : Integer.MAX_VALUE;
     Integer maximumAcceptancesPeriodDays = (schemaVersion >= 3) ? valueStruct.getInt32("maximumAcceptancesPeriodDays") : 1;
-    Integer maximumAcceptancesPeriodMonths = (schema.field("maximumAcceptancesPeriodMonths")!= null) ? valueStruct.getInt32("maximumAcceptancesPeriodMonths") : 1;
+    Integer maximumAcceptancesPeriodMonths = (schema.field("maximumAcceptancesPeriodMonths")!= null) ? valueStruct.getInt32("maximumAcceptancesPeriodMonths") : 1; 
+    boolean cancellable = (schema.field("cancellable")!= null) ? valueStruct.getBoolean("cancellable") : false;
     
     //
     //  return
     //
 
-    return new Offer(schemaAndValue, initialPropensity, stock, unitaryCost, profileCriteria, offerObjectives, offerSalesChannelsAndPrices, offerProducts, offerVouchers, offerCharacteristics, offerTranslations, simpleOffer, maximumAcceptances, maximumAcceptancesPeriodDays, maximumAcceptancesPeriodMonths);
+    return new Offer(schemaAndValue, initialPropensity, stock, unitaryCost, profileCriteria, offerObjectives, offerSalesChannelsAndPrices, offerProducts, offerVouchers, offerCharacteristics, offerTranslations, simpleOffer, maximumAcceptances, maximumAcceptancesPeriodDays, maximumAcceptancesPeriodMonths, cancellable);
   }
   
   /*****************************************
@@ -744,6 +750,7 @@ public class Offer extends GUIManagedObject implements StockableItem
     } else { // old version
       this.maximumAcceptancesPeriodDays = JSONUtilities.decodeInteger(jsonRoot, "maximumAcceptancesPeriodDays", 1);
     }
+    this.cancellable = JSONUtilities.decodeBoolean(jsonRoot, "cancellable", Boolean.FALSE);
 
     /*****************************************
     *
@@ -895,6 +902,7 @@ public class Offer extends GUIManagedObject implements StockableItem
         epochChanged = epochChanged || ! Objects.equals(simpleOffer, existingOffer.getSimpleOffer());
         epochChanged = epochChanged || ! Objects.equals(maximumAcceptances, existingOffer.getMaximumAcceptances());
         epochChanged = epochChanged || ! Objects.equals(maximumAcceptancesPeriodDays, existingOffer.getMaximumAcceptancesPeriodDays());
+        epochChanged = epochChanged || ! Objects.equals(cancellable, existingOffer.getCancellable());
         return epochChanged;
       }
     else
