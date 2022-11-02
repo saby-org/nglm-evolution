@@ -374,9 +374,12 @@ public class StockMonitor implements Runnable
     //  stock
     //
     
+    LocalAllocation allocation = localAllocations.get(stockableItem.getStockableItemID());
     LocalUncommitted uncommitted = localUncommitted.get(stockableItem.getStockableItemID());
-    if (stockableItem.getStock() != null && uncommitted != null)
+    if (stockableItem.getStock() != null && allocation != null && uncommitted != null)
       {
+        log.info("[PRJT] stock reset");
+        allocation.voidReservationALL();
         uncommitted.voidConsumptionALL();
       }
   }
@@ -1308,6 +1311,12 @@ public class StockMonitor implements Runnable
       allocated += quantity;
     }
 
+    void voidReservationALL()
+    {
+      log.info("[PRJT] stock allocated set to 0");
+      allocated = 0;
+    }
+    
     /*****************************************
     *
     *  toString
@@ -1400,6 +1409,7 @@ public class StockMonitor implements Runnable
     
     void voidConsumptionALL()
     {
+      log.info("[PRJT] stock consumed set to 0");
       consumed = 0;
     }
 

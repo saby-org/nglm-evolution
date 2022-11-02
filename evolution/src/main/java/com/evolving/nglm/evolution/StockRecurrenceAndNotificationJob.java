@@ -151,7 +151,6 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                     
                     // new way
                     stockService.voidConsumptionOnly(offer);
-                    log.info("[PRJT] stock consumption set to 0");
                   }
                 
                 //
