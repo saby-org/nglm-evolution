@@ -138,27 +138,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                     
                     updateOffer(offer, stockToAdd, offerService, catalogCharacteristicService, callingChannelService, salesChannelService, productService, voucherService);
                   }
-                else if (false)
-                  {
-                    int reccNumber = 1;
-                    if (offer.getLastStockRecurrenceDate().compareTo(offer.getEffectiveStartDate()) == 0)
-                      {
-                        reccNumber += 1;
-                      }
-                    
-                    for (int i=0; i<reccNumber; i++)
-                      {
-                        stockService.confirmReservation(offer, ObjectUtils.defaultIfNull(offer.getApproximateRemainingStock(), 0)); // need to check the remaining stock for unlimited
-                        stockService.voidConsumption(offer, offer.getStockRecurrenceBatch());
-                        
-                        updateOffer(offer, stockToAdd, offerService, catalogCharacteristicService, callingChannelService, salesChannelService, productService, voucherService);
-                        
-                        // wait
-                        try { Thread.sleep(5000); } 
-                        catch (InterruptedException e) { e.printStackTrace(); }
-                      }
-                  }
-                else
+                else if(false)
                   {
                     updateOffer(offer, stockToAdd, offerService, catalogCharacteristicService, callingChannelService, salesChannelService, productService, voucherService);
                     
@@ -168,6 +148,18 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                     stockService.confirmReservation(offer, ObjectUtils.defaultIfNull(offer.getApproximateRemainingStock(), 0)); // need to check the remaining stock for unlimited
                     stockService.voidConsumption(offer, offer.getStockRecurrenceBatch());
                   }
+                else
+                  {
+                    stockService.confirmReservation(offer, ObjectUtils.defaultIfNull(offer.getApproximateRemainingStock(), 0)); // need to check the remaining stock for unlimited
+                    stockService.voidConsumption(offer, offer.getStockRecurrenceBatch());
+                    updateOffer(offer, stockToAdd, offerService, catalogCharacteristicService, callingChannelService, salesChannelService, productService, voucherService);
+                    
+                    if (offer.getLastStockRecurrenceDate().compareTo(offer.getEffectiveStartDate()) == 0)
+                      {
+                        updateOffer(offer, stockToAdd, offerService, catalogCharacteristicService, callingChannelService, salesChannelService, productService, voucherService);
+                      }
+                  }
+                
               }
             else{
                 log.info("[StockRecurrenceAndNotificationJob] offer[{}] Next Stock Replanish Date is {}", offer.getOfferID(), stockReplanishDates.stream().filter(date -> date.compareTo(formattedTime) > 0).findFirst());
