@@ -152,6 +152,10 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                         stockService.voidConsumption(offer, offer.getStockRecurrenceBatch());
                         
                         updateOffer(offer, stockToAdd, offerService, catalogCharacteristicService, callingChannelService, salesChannelService, productService, voucherService);
+                        
+                        // wait
+                        try { Thread.sleep(5000); } 
+                        catch (InterruptedException e) { e.printStackTrace(); }
                       }
                   }
               }
