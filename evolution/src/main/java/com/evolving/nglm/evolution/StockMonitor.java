@@ -210,14 +210,12 @@ public class StockMonitor implements Runnable
   {
     if (stockableItem.getStock() != null)
       {
-        log.info("[PRJT] monitorStockableItem");
         //
         //  update allocations/used
         //
 
-        if (! stockableItems.keySet().contains(stockableItem.getStockableItemID()) || stockableItem.resetStock())
+        if (! stockableItems.keySet().contains(stockableItem.getStockableItemID()))
           {
-            log.info("[PRJT] monitorStockableItem reset");
             localAllocations.put(stockableItem.getStockableItemID(), new LocalAllocation());
             localUncommitted.put(stockableItem.getStockableItemID(), new LocalUncommitted());
           }
@@ -365,23 +363,6 @@ public class StockMonitor implements Runnable
     if (stockableItem.getStock() != null && allocation != null && uncommitted != null)
       {
         allocation.voidReservation(quantity);
-        uncommitted.voidConsumption(quantity);
-      }
-  }
-  
-  // TEST
-  public synchronized void voidConsumptionOnly(StockableItem stockableItem, int quantity)
-  {
-    //
-    //  stock
-    //
-    
-    LocalAllocation allocation = localAllocations.get(stockableItem.getStockableItemID());
-    LocalUncommitted uncommitted = localUncommitted.get(stockableItem.getStockableItemID());
-    if (stockableItem.getStock() != null && allocation != null && uncommitted != null)
-      {
-        log.info("[PRJT] stock reset");
-        //allocation.voidReservationALL();
         uncommitted.voidConsumption(quantity);
       }
   }
@@ -1026,7 +1007,6 @@ public class StockMonitor implements Runnable
 
   public interface StockableItem
   {
-    public boolean resetStock();
     public String getStockableItemID();
     public Integer getStock();
     // can return null, means infinite
@@ -1314,12 +1294,6 @@ public class StockMonitor implements Runnable
       allocated += quantity;
     }
 
-    void voidReservationALL()
-    {
-      log.info("[PRJT] stock allocated set to 0");
-      allocated = 0;
-    }
-    
     /*****************************************
     *
     *  toString
@@ -1408,12 +1382,6 @@ public class StockMonitor implements Runnable
     void voidConsumption(int quantity)
     {
       consumed -= quantity;
-    }
-    
-    void voidConsumptionALL()
-    {
-      log.info("[PRJT] stock consumed set to 0");
-      consumed = 0;
     }
 
     /*****************************************

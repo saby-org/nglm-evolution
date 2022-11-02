@@ -143,11 +143,4 @@ public class VoucherShared extends Voucher implements StockableItem {
   {
     return GUIManagedObjectType.Vouchershared;
   }
-  @Override
-  public boolean resetStock()
-  {
-    // TODO Auto-generated method stub
-    return false;
-  }
-
 }

@@ -1408,10 +1408,4 @@ public class Offer extends GUIManagedObject implements StockableItem
         getJSONRepresentation().put("lastStockRecurrenceDate", lastStockRecurrenceDateStr);
     }
   
-  @Override
-  public boolean resetStock()
-  {
-    return this.reuseRemainingStock == false;
-  }
-  
 }

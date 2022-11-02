@@ -142,24 +142,19 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                     //
                     // reserving remaining stocks
                     //
-                    
-                    //stockService. confirmReservation(offer, ObjectUtils.defaultIfNull(offer.getApproximateRemainingStock(), 0)); // need to check the remaining stock for unlimited
+                    stockService. confirmReservation(offer, ObjectUtils.defaultIfNull(offer.getApproximateRemainingStock(), 0)); // need to check the remaining stock for unlimited
                     
                     //
                     // replenish batch count
                     //
-                    
-                    //stockService.voidConsumption(offer, offer.getStockRecurrenceBatch());
-                    
-                    // new way
-                    //stockService.voidConsumptionOnly(offer, offer.getApproximateRemainingStock());
+                    stockService.voidConsumption(offer, offer.getStockRecurrenceBatch());
                   }
                 
                 //
                 // update offer -- maintaining 'initial stock' only, otherwise StockMonitor can handle remaining stocks
                 //
                 
-                offerJson.replace("presentationStock", stockToAdd);
+                //offerJson.replace("presentationStock", stockToAdd);
                 try
                   {
                     Offer newOffer = new Offer(offerJson, GUIManager.epochServer.getKey(), offer, catalogCharacteristicService, offer.getTenantID());
