@@ -1374,7 +1374,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
               {
                 if (offer.getOfferVouchers() != null && !offer.getOfferVouchers().isEmpty())
                   {
-                    List<VoucherDelivery> voucherDeliveries = purchaseRequest.getVoucherDeliveries().stream().filter(voucherDelivery -> voucherDelivery.getVoucherExpiryDate() != null && voucherDelivery.getVoucherExpiryDate().after(processingDate)).collect(Collectors.toList());
+                    List<VoucherDelivery> voucherDeliveries = purchaseRequest.getVoucherDeliveries().stream().filter(voucherDelivery -> voucherDelivery.getVoucherExpiryDate() == null || voucherDelivery.getVoucherExpiryDate().after(processingDate)).collect(Collectors.toList());
                     log.info("RAJ K voucherDeliveries to Cancel{}", purchaseRequest.getVoucherDeliveries());
                     for (VoucherDelivery voucherDelivery : voucherDeliveries)
                       {
@@ -1942,6 +1942,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           log.info("proceedPurchase() : (offer "+purchaseStatus.getOfferID()+", subscriberID "+purchaseStatus.getSubscriberID()+") : could not confirm reservation of voucher "+offerVoucher.getVoucherID());
         }else{
           offerVoucher.setVoucherCode(voucher.getSharedCode());
+          offerVoucher.setVoucherExpiryDate(voucher.getEffectiveEndDate()); // RAJ K
           stockService.confirmReservation(voucher, offerVoucher.getQuantity());
         }
       }
