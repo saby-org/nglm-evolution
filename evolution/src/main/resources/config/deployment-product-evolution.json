@@ -1386,7 +1386,7 @@
 	},
 	
 	"stockReplanishDaysRange" : 30,
-	"stockRecurrenceAndNotificationCronEntry": "5 1,7,13,19 * * *",
+	"stockRecurrenceAndNotificationCronEntry": "5 2,8,14,20 * * *",
 	"stockAlertEmailSubject" : "Stock alert notification of - {0} - {1}",
 	"stockAlertEmailBody" : "Dear User,\n The remaining stock of the {0} - ''{1}'' reaches at {2}. Please refill the stock or do the needful from the RTOM GUI.\n\n\nThanks,\nThis is a system generated automatic email. Please don't reply to this."
 }

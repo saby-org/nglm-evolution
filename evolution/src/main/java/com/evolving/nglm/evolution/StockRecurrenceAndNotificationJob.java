@@ -128,7 +128,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
             
             if(stockReplanishDates.contains(formattedTime) && formattedDate(offer.getLastStockRecurrenceDate(), datePattern).compareTo(formattedTime) < 0 || testMode)
               {
-                log.info("[StockRecurrenceAndNotificationJob] offer[{}] Next Stock Replanish Date: {} is TODAY:[{}]", offer.getOfferID(), stockReplanishDates.stream().filter(date -> date.compareTo(formattedTime) >= 0).findFirst(), formattedTime);
+                log.info("[StockRecurrenceAndNotificationJob] offer[{}] Next Stock Replanish Date: {} is TODAY:[{}]", offer.getOfferID(), RLMDateUtils.formatDateForElasticsearchDefault(stockReplanishDates.stream().filter(date -> date.compareTo(formattedTime) >= 0).findFirst().get()), RLMDateUtils.formatDateForElasticsearchDefault(formattedTime));
                 Integer stockToAdd = offer.getStockRecurrenceBatch();
                 if (offer.reuseRemainingStock())
                   {
@@ -149,7 +149,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                 
               }
             else{
-                log.info("[StockRecurrenceAndNotificationJob] offer[{}] Next Stock Replanish Date is {}", offer.getOfferID(), stockReplanishDates.stream().filter(date -> date.compareTo(formattedTime) > 0).findFirst());
+                log.info("[StockRecurrenceAndNotificationJob] offer[{}] Next Stock Replanish Date is {}", offer.getOfferID(), RLMDateUtils.formatDateForElasticsearchDefault(stockReplanishDates.stream().filter(date -> date.compareTo(formattedTime) > 0).findFirst().get()));
               }
           } 
         else{
