@@ -106,7 +106,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
             
             if (offer.getStockAlert())
               {
-                log.info("ready to send alert notification for offer {}", offer.getGUIManagedObjectDisplay());
+                log.debug("ready to send alert notification for offer {}", offer.getGUIManagedObjectDisplay());
                 sendNotification(offer, remainingStock);
               }
             
@@ -148,7 +148,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
             
             if (product.getStockAlert())
               {
-                log.info("ready to send alert notification for product {}", product.getGUIManagedObjectDisplay());
+                log.debug("ready to send alert notification for product {}", product.getGUIManagedObjectDisplay());
                 sendNotification(product, remainingStock);
               }
           }
@@ -170,7 +170,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                 
                 if (voucher.getStockAlert())
                   {
-                    log.info("ready to send alert notification for voucher {}", voucher.getGUIManagedObjectDisplay());
+                    log.debug("ready to send alert notification for voucher {}", voucher.getGUIManagedObjectDisplay());
                     sendNotification(voucherwithStock, remainingStock);
                   }
               }
@@ -291,6 +291,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
 
       if (httpResponse != null && httpResponse.getStatusLine() != null && httpResponse.getStatusLine().getStatusCode() == 200)
         {
+          log.debug("stock notification sent for {}", guiManagedObject.getGUIManagedObjectDisplay());
         }
       else if (httpResponse != null && httpResponse.getStatusLine() != null && httpResponse.getStatusLine().getStatusCode() == 401)
         {
