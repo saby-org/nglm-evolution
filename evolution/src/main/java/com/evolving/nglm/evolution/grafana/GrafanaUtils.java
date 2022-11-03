@@ -194,7 +194,7 @@ public class GrafanaUtils
                           }
                         System.out.println("OK file " + currentFileName + " " + s);
 
-                        log.info("GrafanaUtils.prepareGrafanaForTenants ===parsing a datasource====");
+                        log.debug("GrafanaUtils.prepareGrafanaForTenants ===parsing a datasource====");
                         try
                           {
                             JSONObject datasourcesDef = (JSONObject) (new JSONParser()).parse(s);
@@ -216,7 +216,7 @@ public class GrafanaUtils
                                     Pair<String, Integer> db = createGrafanaDatasourceForOrg(orgID, datasourceDef);
                                     if (db != null && db.getFirstElement() != null && db.getSecondElement() != null)
                                       {
-                                        log.info("GrafanaUtils.prepareGrafanaForTenants Datasource " + db.getFirstElement() + " " + db.getSecondElement() + " well created for org " + orgID);
+                                        log.debug("GrafanaUtils.prepareGrafanaForTenants Datasource " + db.getFirstElement() + " " + db.getSecondElement() + " well created for org " + orgID);
                                       }
                                     else
                                       {
@@ -301,7 +301,6 @@ public class GrafanaUtils
                         s = s.replace("tenantID:camptenantID", "tenantID:" + tenantID);
                         s = s.replace("replaceWithTenantID", "" + tenantID );
                         
-                        log.info("GrafanaUtils.prepareGrafanaForTenants: = parsing a Dashboard = " + currentFileName);
                         log.trace("GrafanaUtils.prepareGrafanaForTenants ===parsing a Dashboard==== " + currentFileName + "\n" + s);
                         JSONObject fulldashboardDef = (JSONObject) (new JSONParser()).parse(s);
                         JSONObject dashboardDef = (JSONObject) fulldashboardDef.get("dashboard");
@@ -320,7 +319,7 @@ public class GrafanaUtils
                         // 1- The dashboard already exists but its uid doesn't start with t<tenantID>-
                         if (exisitingDashBoards.containsKey(expectedTitle)&& existingUID.substring(0, 3).equals("t" + tenantID + "-") == false)
                         {
-                          log.info("GrafanaUtils.prepareGrafanaForTenants: Dashboard " + expectedTitle + " already exists for orgID " + orgID + " for dashboard file name " + currentFileName + " and it'll be deleted and recreated.");
+                          log.debug("GrafanaUtils.prepareGrafanaForTenants: Dashboard " + expectedTitle + " already exists for orgID " + orgID + " for dashboard file name " + currentFileName + " and it'll be deleted and recreated.");
                           // Delete it using its exisitng uid
                           HttpResponse response = sendGrafanaCurl(null, "/api/dashboards/uid/" + existingUID, "DELETE");
                           log.info("Dashboard titled " + expectedTitle + " with uid " + existingUID + " is deleted");
@@ -361,7 +360,7 @@ public class GrafanaUtils
                             else
                             {
                               // overwrite it using the same existing uid
-                              log.info("GrafanaUtils.prepareGrafanaForTenants: Dashboard " + expectedTitle + " already exists for orgID " + orgID + " for dashboard file name " + currentFileName + " and it'll be overwritten.");
+                              log.debug("GrafanaUtils.prepareGrafanaForTenants: Dashboard " + expectedTitle + " already exists for orgID " + orgID + " for dashboard file name " + currentFileName + " and it'll be overwritten.");
                               s= s.replace("replaceWithTenantTimeZone", tz);
                               s= s.replace("replaceWithUniqueID", existingUID);
                               fulldashboardDef = (JSONObject) (new JSONParser()).parse(s);
@@ -375,7 +374,7 @@ public class GrafanaUtils
                         // 3- The dashboard doesn't exist already
                         else 
                         {
-                          log.info("GrafanaUtils.prepareGrafanaForTenants: Dashboard " + expectedTitle + " doesn't exist for orgID " + orgID + " for dashboard file name " + currentFileName + " and it'll be created.");
+                          log.debug("GrafanaUtils.prepareGrafanaForTenants: Dashboard " + expectedTitle + " doesn't exist for orgID " + orgID + " for dashboard file name " + currentFileName + " and it'll be created.");
                           // Create it using a unique uid that starts with t<tenandID>-
                           String newUID = "t"+ tenantID + "-" + TokenUtils.generateFromRegex(regex);
                           s= s.replace("replaceWithTenantTimeZone", tz);
@@ -391,7 +390,7 @@ public class GrafanaUtils
                         Pair<String, Integer> db = createGrafanaDashBoardForOrg(orgID, fulldashboardDef);
                         if (db != null && db.getFirstElement() != null && db.getSecondElement() != null)
                         {
-                          log.info("GrafanaUtils.prepareGrafanaForTenants: Dashboard " + db.getFirstElement() + " " + db.getSecondElement() + " is well loaded");
+                          log.debug("GrafanaUtils.prepareGrafanaForTenants: Dashboard " + db.getFirstElement() + " " + db.getSecondElement() + " is well loaded");
                         }
                         else
                         {
