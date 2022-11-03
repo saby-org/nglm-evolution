@@ -121,15 +121,14 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
           {
             boolean testMode = false; // for testing
             
-            //String tz = Deployment.getDeployment(offer.getTenantID()).getTimeZone();
-            String tz = Deployment.getDefault().getTimeZone();
+            String tz = Deployment.getDeployment(offer.getTenantID()).getTimeZone();
             String datePattern = DatePattern.LOCAL_DAY.get();
             Date formattedTime = formattedDate(now, datePattern);
             List<Date> stockReplanishDates = getExpectedStockReplanishDates(offer, formattedTime, tz);
             
             if(stockReplanishDates.contains(formattedTime) && formattedDate(offer.getLastStockRecurrenceDate(), datePattern).compareTo(formattedTime) < 0 || testMode)
               {
-                log.info("[StockRecurrenceAndNotificationJob] offer[{}] Next Stock Replanish Date: {} is TODAY:[{}]", offer.getOfferID(), RLMDateUtils.formatDateForElasticsearchDefault(stockReplanishDates.stream().filter(date -> date.compareTo(formattedTime) >= 0).findFirst().get()), RLMDateUtils.formatDateForElasticsearchDefault(formattedTime));
+                log.info("[StockRecurrenceAndNotificationJob] offer[{}] Next Stock Replanish Date: {} is TODAY: {}", offer.getOfferID(), RLMDateUtils.formatDateForElasticsearchDefault(stockReplanishDates.stream().filter(date -> date.compareTo(formattedTime) >= 0).findFirst().get()), RLMDateUtils.formatDateForElasticsearchDefault(now));
                 Integer stockToAdd = offer.getStockRecurrenceBatch();
                 if (offer.reuseRemainingStock())
                   {
@@ -304,7 +303,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
     //
 
     tmpStockReccurenceDates = tmpStockReccurenceDates.stream().filter(date -> date.after(offer.getEffectiveStartDate()) && date.compareTo(filterStartDate) >= 0 && filterEndDate.compareTo(date) >= 0 ).collect(Collectors.toList());
-    log.info("[StockRecurrenceAndNotificationJob] Offer[{}] Expected Stock Replanish Dates: {}", offer.getOfferID(), tmpStockReccurenceDates);
+    log.debug("[StockRecurrenceAndNotificationJob] Offer[{}] Expected Stock Replanish Dates: {}", offer.getOfferID(), tmpStockReccurenceDates);
 
     //
     // return with format
