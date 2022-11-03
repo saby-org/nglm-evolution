@@ -121,7 +121,8 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
           {
             boolean testMode = false; // for testing
             
-            String tz = Deployment.getDeployment(offer.getTenantID()).getTimeZone();
+            //String tz = Deployment.getDeployment(offer.getTenantID()).getTimeZone();
+            String tz = Deployment.getDefault().getTimeZone();
             String datePattern = DatePattern.LOCAL_DAY.get();
             Date formattedTime = formattedDate(now, datePattern);
             List<Date> stockReplanishDates = getExpectedStockReplanishDates(offer, formattedTime, tz);
@@ -303,7 +304,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
     //
 
     tmpStockReccurenceDates = tmpStockReccurenceDates.stream().filter(date -> date.after(offer.getEffectiveStartDate()) && date.compareTo(filterStartDate) >= 0 && filterEndDate.compareTo(date) >= 0 ).collect(Collectors.toList());
-    log.debug("[StockRecurrenceAndNotificationJob] Offer[{}] Expected Stock Replanish Dates: {}", offer.getOfferID(), tmpStockReccurenceDates);
+    log.info("[StockRecurrenceAndNotificationJob] Offer[{}] Expected Stock Replanish Dates: {}", offer.getOfferID(), tmpStockReccurenceDates);
 
     //
     // return with format
