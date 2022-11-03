@@ -54,7 +54,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
   private String fwkServer;
   private JSONObject fromJSON;
   private JSONObject credentialJson;
-  int httpTimeout = 10000;
+  int httpTimeout = 50000;
   RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(httpTimeout).setSocketTimeout(httpTimeout).setConnectionRequestTimeout(httpTimeout).build();
   
   /*****************************************
@@ -190,15 +190,9 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
     CloseableHttpResponse httpResponse = null;
     try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultRequestConfig(requestConfig).build())
     {
-      List<JSONObject> receipientList = getRecipientList();
       JSONObject loginJSON = getLoginToken();
       String token =  JSONUtilities.decodeString(loginJSON, "Token", true);
       Integer userID = JSONUtilities.decodeInteger(loginJSON, "UserId", true);
-      if (receipientList.isEmpty())
-        {
-          log.warn("stockAlertToList is empty - skip sending notification");
-          return;
-        }
       if (token == null || token.trim().isEmpty())
         {
           log.warn("bad token - skip sending stockAlert notification");
@@ -206,11 +200,17 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
         }
       String subject = null;
       String body = null;
+      List<JSONObject> receipientList = new ArrayList<JSONObject>();
       Map<String, Object> communicationMap = new HashMap<String, Object>();
       if (guiManagedObject instanceof Offer)
         {
           Offer offer = (Offer) guiManagedObject;
-          //if (!offer.getNotificationEmails().isEmpty()) receipientList.addAll(offer.getNotificationEmails());
+          receipientList = getRecipientList(offer.getNotificationEmails());
+          if (receipientList.isEmpty())
+            {
+              log.warn("unable to send stock alert notification as RecipientList is empty for {}", guiManagedObject.getGUIManagedObjectDisplay());
+              return;
+            }
           Object[] bodyTags = {"offer", offer.getGUIManagedObjectDisplay(), remainingStock};
           Object[] subjectTags = {"offer", offer.getGUIManagedObjectDisplay()};
           subject = resolveTags(Deployment.getStockAlertEmailSubject(), subjectTags);
@@ -220,7 +220,12 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
       else if (guiManagedObject instanceof Product)
         {
           Product product = (Product) guiManagedObject;
-          //if (!product.getNotificationEmails().isEmpty()) receipientList.addAll(product.getNotificationEmails());
+          receipientList = getRecipientList(product.getNotificationEmails());
+          if (receipientList.isEmpty())
+            {
+              log.warn("unable to send stock alert notification as RecipientList is empty for {}", guiManagedObject.getGUIManagedObjectDisplay());
+              return;
+            }
           Object[] bodyTags = {"product", product.getGUIManagedObjectDisplay(), remainingStock};
           Object[] subjectTags = {"product", product.getGUIManagedObjectDisplay()};
           subject = resolveTags(Deployment.getStockAlertEmailSubject(), subjectTags);
@@ -229,7 +234,12 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
       else if (guiManagedObject instanceof Voucher)
         {
           Voucher voucher = (Voucher) guiManagedObject;
-          //if (!voucher.getNotificationEmails().isEmpty()) receipientList.addAll(voucher.getNotificationEmails());
+          receipientList = getRecipientList(voucher.getNotificationEmails());
+          if (receipientList.isEmpty())
+            {
+              log.warn("unable to send stock alert notification as RecipientList is empty for {}", guiManagedObject.getGUIManagedObjectDisplay());
+              return;
+            }
           Object[] bodyTags = {"voucher", voucher.getGUIManagedObjectDisplay(), remainingStock};
           Object[] subjectTags = {"voucher", voucher.getGUIManagedObjectDisplay()};
           subject = resolveTags(Deployment.getStockAlertEmailSubject(), subjectTags);
@@ -283,13 +293,13 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
       if (httpResponse != null && httpResponse.getStatusLine() != null && httpResponse.getStatusLine().getStatusCode() == 200)
         {
           String jsonResponse = EntityUtils.toString(httpResponse.getEntity(), "UTF-8");
-          log.info("FWK communication raw response : {}", jsonResponse);
+          log.info("notification raw response : {}", jsonResponse);
 
           //
           // parse JSON response from FWK
           //
 
-          JSONObject jsonRoot = (JSONObject) (new JSONParser()).parse(jsonResponse);
+          //JSONObject jsonRoot = (JSONObject) (new JSONParser()).parse(jsonResponse);
         }
       else if (httpResponse != null && httpResponse.getStatusLine() != null && httpResponse.getStatusLine().getStatusCode() == 401)
         {
@@ -304,13 +314,13 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
           log.error("FWK communication server error httpResponse or httpResponse.getStatusLine() is null {}", httpResponse, httpResponse.getStatusLine());
         }
     }
-    catch(ParseException pe) 
+    /*catch(ParseException pe) 
     {
       log.error("failed to Parse ParseException {} ", pe.getMessage());
-    }
+    }*/
     catch(IOException e) 
     {
-      log.error("failed FWK server");
+      log.error("failed FWK server on sending notification");
       log.error("IOException: {}", e.getMessage());
     }
     finally
@@ -405,10 +415,10 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
     return result;
   }
 
-  private List<JSONObject> getRecipientList()
+  private List<JSONObject> getRecipientList(List<String> stockAlertEmailToList)
   {
     List<JSONObject> result = new ArrayList<JSONObject>();
-    for (String recipientEmail : Deployment.getStockAlertEmailToList())
+    for (String recipientEmail : stockAlertEmailToList)
       {
         Map<String, Object> recipientMap = new LinkedHashMap<String, Object>();
         recipientMap.put("RecipientEmail", recipientEmail);

@@ -519,7 +519,6 @@ public class DeploymentCommon
   private static List<String> thirdPartyMethodTypes;
   private static Map<String,String> thirdPartyAPIHeaders;
   private static String stockRecurrenceAndNotificationCronEntry;
-  private static List<String> stockAlertEmailToList;
   private static String stockAlertEmailSubject;
   private static String stockAlertEmailBody;
   private static String stockAlertLoginCredentail;
@@ -879,7 +878,6 @@ public class DeploymentCommon
   public static List<String> getThirdPartyMethodTypes() { return thirdPartyMethodTypes; }
   public static Map<String, String> getThirdPartyAPIHeaders() { return thirdPartyAPIHeaders; }
   public static String getStockRecurrenceAndNotificationCronEntry() { return stockRecurrenceAndNotificationCronEntry; }
-  public static List<String> getStockAlertEmailToList() { return stockAlertEmailToList; }
   public static String getStockAlertEmailSubject() { return stockAlertEmailSubject; }
   public static String getStockAlertEmailBody() { return stockAlertEmailBody; }
   public static String getStockAlertLoginCredentail() { return stockAlertLoginCredentail; }
@@ -1630,13 +1628,6 @@ public class DeploymentCommon
     stockAlertEmailBody = jsonReader.decodeString("stockAlertEmailBody");
     stockAlertLoginCredentail = jsonReader.decodeString("stockAlertLoginCredentail");
     stockAlertPasswordCredentail = jsonReader.decodeString("stockAlertPasswordCredentail");
-    stockAlertEmailToList =  new ArrayList<>();
-    JSONArray stockAlertEmailToListJsonArray = jsonReader.decodeJSONArray("stockAlertEmailToList") != null ? jsonReader.decodeJSONArray("stockAlertEmailToList") : new JSONArray();
-    for (int i = 0; i < stockAlertEmailToListJsonArray.size(); i++)
-      {
-        String data = stockAlertEmailToListJsonArray.get(i).toString();
-        if (data != null && !data.isBlank()) stockAlertEmailToList.add(data);
-      }
   }
 
   

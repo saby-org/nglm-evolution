@@ -506,8 +506,8 @@ public class Offer extends GUIManagedObject implements StockableItem
     Integer maximumAcceptancesPeriodMonths = (schema.field("maximumAcceptancesPeriodMonths")!= null) ? valueStruct.getInt32("maximumAcceptancesPeriodMonths") : 1;
     boolean stockRecurrence = (schemaVersion >= 5) ? valueStruct.getBoolean("stockRecurrence") : false;
     Integer stockRecurrenceBatch = (schemaVersion >= 5) ? valueStruct.getInt32("stockRecurrenceBatch") : 0;
-    Integer stockAlertThreshold = (schemaVersion >= 5) ? valueStruct.getInt32("stockAlertThreshold") : 0;
-    boolean stockAlert = (schemaVersion >= 5) ? valueStruct.getBoolean("stockAlert") : false;
+    Integer stockAlertThreshold = schema.field("stockAlertThreshold") != null ?  valueStruct.getInt32("stockAlertThreshold") : 0;
+    boolean stockAlert = schema.field("stockAlert") != null ? valueStruct.getBoolean("stockAlert") : false;
     List<String> notificationEmails = schema.field("notificationEmails") != null ? valueStruct.getArray("notificationEmails") : new ArrayList<String>();
     
     //

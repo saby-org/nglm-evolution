@@ -1383,7 +1383,6 @@
     "Content-Type":"application/json"
 	},
 	"stockRecurrenceAndNotificationCronEntry": "5 4,10,15 * * *",
-	"stockAlertEmailToList" : ["rajkamal.mitra@evolving.com"],
 	"stockAlertLoginCredentail" : "administrator",
 	"stockAlertPasswordCredentail" : "password",
 	"stockAlertEmailSubject" : "Stock alert notification of - {0} - {1}",
