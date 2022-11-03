@@ -135,7 +135,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
           }
       }
     
-    /*Collection<Product> activeProducts = productService.getActiveProducts(now, 0);
+    Collection<Product> activeProducts = productService.getActiveProducts(now, 0);
     for (Product product : activeProducts)
       {
         Integer remainingStock = product.getApproximateRemainingStock();
@@ -176,7 +176,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
               }
           }
         
-      }*/
+      }
   }
   
   /*****************************************
@@ -278,7 +278,6 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
       httpPost.addHeader("token", token);
       httpPost.addHeader("Content-Type", "application/json");
       httpPost.setEntity(stringEntity);
-      //Arrays.stream(httpPost.getAllHeaders()).forEach(header -> log.info("RAJ K header {} - {}", header.getName(), header.getValue()));
 
       //
       // submit request
@@ -292,14 +291,6 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
 
       if (httpResponse != null && httpResponse.getStatusLine() != null && httpResponse.getStatusLine().getStatusCode() == 200)
         {
-          String jsonResponse = EntityUtils.toString(httpResponse.getEntity(), "UTF-8");
-          log.info("notification raw response : {}", jsonResponse);
-
-          //
-          // parse JSON response from FWK
-          //
-
-          //JSONObject jsonRoot = (JSONObject) (new JSONParser()).parse(jsonResponse);
         }
       else if (httpResponse != null && httpResponse.getStatusLine() != null && httpResponse.getStatusLine().getStatusCode() == 401)
         {
@@ -314,10 +305,6 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
           log.error("FWK communication server error httpResponse or httpResponse.getStatusLine() is null {}", httpResponse, httpResponse.getStatusLine());
         }
     }
-    /*catch(ParseException pe) 
-    {
-      log.error("failed to Parse ParseException {} ", pe.getMessage());
-    }*/
     catch(IOException e) 
     {
       log.error("failed FWK server on sending notification");
