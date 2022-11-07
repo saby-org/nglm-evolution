@@ -52,8 +52,6 @@ public class LoyaltyProgramCustomerStatesMonoPhase implements ReportCsvFactory
   private static final String rewardPointsBalance = "rewardPointsBalance";
   private static final String programExitDate = "programExitDate";
   
-  
-  
   static List<String> headerFieldsOrder = new ArrayList<String>();
   static
   {

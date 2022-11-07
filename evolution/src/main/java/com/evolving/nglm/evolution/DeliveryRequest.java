@@ -95,6 +95,7 @@ public abstract class DeliveryRequest extends SubscriberStreamOutput implements 
   public static final String OFFERID = "offerId";
   public static final String OFFERNAME = "offerName";
   public static final String OFFERDISPLAY = "offerDisplay";
+  public static final String OFFERCANCELLABLE = "cancellable";
   public static final String OFFERQTY = "offerQty";
   public static final String SALESCHANNELID = "salesChannelId";
   public static final String SALESCHANNEL = "salesChannel";

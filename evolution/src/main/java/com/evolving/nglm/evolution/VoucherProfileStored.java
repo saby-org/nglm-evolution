@@ -90,7 +90,7 @@ public class VoucherProfileStored implements Cleanable {
   public VoucherStatus getVoucherStatus() { return voucherStatus; }
   // derived cause stored status might no reflect "expired" based on expiry date
   public VoucherStatus getVoucherStatusComputed(){
-    if(voucherStatus!=VoucherStatus.Redeemed && voucherStatus!=VoucherStatus.Expired && getVoucherExpiryDate().before(SystemTime.getCurrentTime())) return VoucherStatus.Expired;
+    if(voucherStatus!=VoucherStatus.Redeemed && voucherStatus!=VoucherStatus.Cancelled && voucherStatus!=VoucherStatus.Expired && getVoucherExpiryDate().before(SystemTime.getCurrentTime())) return VoucherStatus.Expired;
     return voucherStatus;
   }
   public Date getVoucherExpiryDate() { return voucherExpiryDate; }

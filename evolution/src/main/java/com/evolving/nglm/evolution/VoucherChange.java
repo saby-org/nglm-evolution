@@ -24,6 +24,7 @@ public class VoucherChange extends SubscriberStreamOutput implements EvolutionEn
     Resend("resend"),
     Extend("extend"),
     Expire("expire"),
+    Cancel("Cancel"),
     Deliver("deliver"),
     Unknown("(unknown)");
     private String externalRepresentation;
