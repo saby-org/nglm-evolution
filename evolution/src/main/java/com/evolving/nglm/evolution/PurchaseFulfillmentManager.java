@@ -1113,7 +1113,6 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       guiPresentationMap.put(CUSTOMERID, getSubscriberID());
       guiPresentationMap.put(OFFERID, getOfferID());
       guiPresentationMap.put(OFFERQTY, getQuantity());
-      guiPresentationMap.put(OFFERQTY, getQuantity());
 
       GUIManagedObject offerGMO = offerService.getStoredOffer(getOfferID(), true);
 
