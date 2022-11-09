@@ -512,8 +512,8 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public String getOfferDeliverySalesChannelId() { return getSalesChannelID(); }
     public long getOfferDeliveryOfferPrice() { return getOfferPrice(); }
     public String getOfferDeliveryMeanOfPayment() { return getMeanOfPayment(); }
-    public String getOfferDeliveryVoucherCode() { return getVoucherDeliveries()==null?"":getVoucherDeliveries().get(0).getVoucherCode(); }
-    public String getOfferDeliveryVoucherExpiryDate() { return getVoucherDeliveries()==null?"":getVoucherDeliveries().get(0).getVoucherExpiryDate()==null?"":getVoucherDeliveries().get(0).getVoucherExpiryDate().toString(); }
+    public String getOfferDeliveryVoucherCode() { return getVoucherDeliveries()==null || getVoucherDeliveries().isEmpty() ?"":getVoucherDeliveries().get(0).getVoucherCode(); }
+    public String getOfferDeliveryVoucherExpiryDate() { return getVoucherDeliveries()==null || getVoucherDeliveries().isEmpty() ?"":getVoucherDeliveries().get(0).getVoucherExpiryDate()==null?"":getVoucherDeliveries().get(0).getVoucherExpiryDate().toString(); }
     public String getOfferDeliveryVoucherPartnerId() { return ""; }//TODO
     public String getOfferDeliveryOfferContent() { return getOfferContent(); }
     public String getOfferDeliveryResellerID() { return getResellerID(); }
@@ -1167,7 +1167,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
                 	  voucherFormat = ((VoucherShared)voucher).getCodeFormatId();
                     } else if (voucher instanceof VoucherPersonal){
                     	for(VoucherFile voucherFile:((VoucherPersonal)voucher).getVoucherFiles()){
-                    		if(voucherFile.getFileId().equals(getVoucherDeliveries()==null?"":getVoucherDeliveries().get(0).getFileID())) {
+                    		if(voucherFile.getFileId().equals(getVoucherDeliveries()==null || getVoucherDeliveries().isEmpty() ?"":getVoucherDeliveries().get(0).getFileID())) {
                     			voucherFormat = voucherFile.getCodeFormatId();
                     		}
                     	}
@@ -1251,7 +1251,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
                   voucherFormat = ((VoucherShared)voucher).getCodeFormatId();
                 } else if (voucher instanceof VoucherPersonal){
                 	for(VoucherFile voucherFile:((VoucherPersonal)voucher).getVoucherFiles()){
-                		if(voucherFile.getFileId().equals(getVoucherDeliveries()==null?"":getVoucherDeliveries().get(0).getFileID())) {
+                		if(voucherFile.getFileId().equals(getVoucherDeliveries()==null || getVoucherDeliveries().isEmpty() ?"":getVoucherDeliveries().get(0).getFileID())) {
                 			voucherFormat = voucherFile.getCodeFormatId();
                 		}
                 	}
