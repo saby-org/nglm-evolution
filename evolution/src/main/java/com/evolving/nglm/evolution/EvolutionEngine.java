@@ -2705,7 +2705,12 @@ public class EvolutionEngine
                               {
                                 // already redeemed
                                 voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED);
-                              } 
+                              }
+                            else if (voucherStored.getVoucherStatus() == VoucherDelivery.VoucherStatus.Expired || voucherStored.getVoucherStatus() == VoucherDelivery.VoucherStatus.Cancelled)
+                              {
+                                // already expired
+                                voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_EXPIRED);
+                              }
                             else
                               {
                                 // extend voucher OK
