@@ -1,7 +1,7 @@
 gui-audit-<_KEY_>:
   image: ${env.DOCKER_REGISTRY}ev-gui.auditlogstash:${gui-audit.version}
   environment:
-    ELASTICSEARCH: '<_MASTER_ESROUTER_HOST_>:<_MASTER_ESROUTER_PORT_>'
+    ELASTICSEARCH: 'https://<_MASTER_ESROUTER_HOST_>:<_MASTER_ESROUTER_PORT_>'
     ELASTICSEARCH_INDEXNAME: 'auditlogs'
     ODUser: 'admin'
     ODPassword: '<_ELASTICSEARCH_ADMIN_PASSWORD_>'
