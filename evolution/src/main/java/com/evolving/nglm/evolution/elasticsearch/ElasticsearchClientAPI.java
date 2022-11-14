@@ -1917,12 +1917,11 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
             actionLog.put("actionType", (String) esFields.get("actionType"));
             actionLog.put("node", (String) esFields.get("node"));
             actionLog.put("user", (String) esFields.get("user"));
-            actionLog.put("executedThrough", (String) esFields.get("executedThrough"));
             actionLog.put("actionLog", (String) esFields.get("actionLog"));
             actionLog.put("status", (String) esFields.get("status"));
             actionLog.put("remarks", (String) esFields.get("remarks"));
             actionLog.put("actionDate", getDateString(actionDate));
-            actionLog.put("requestID", (String) esFields.get("requestID"));
+            actionLog.put("requestID", (String) esFields.get("requestId"));
             actionLogs.add(JSONUtilities.encodeObject(actionLog));
           }
       } 
