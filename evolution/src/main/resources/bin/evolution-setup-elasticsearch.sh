@@ -1327,3 +1327,18 @@ prepare-es-update-curl -XPUT https://$MASTER_ESROUTER_SERVER/maintenance_action_
   "requestId" : "-1", "node" : "dummy", "user" : "deployment"
 }'
 echo
+
+#
+# sample value - delete
+#
+
+prepare-es-update-curl -XDELETE https://$MASTER_ESROUTER_SERVER/maintenance_action_log/_doc/-1 -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD
+echo
+
+
+#
+# sample value - delete
+#
+
+prepare-es-update-curl -XDELETE https://$MASTER_ESROUTER_SERVER/maintenance_action_request/_doc/-1 -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD
+echo
