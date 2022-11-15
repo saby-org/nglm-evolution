@@ -1332,7 +1332,9 @@ echo
 # sample value - delete
 #
 
-prepare-es-update-curl -XDELETE https://$MASTER_ESROUTER_SERVER/maintenance_action_log/_doc/-1 -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD
+prepare-es-update-curl -XDELETE https://$MASTER_ESROUTER_SERVER/maintenance_action_log/_doc/-1 -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
+{
+}'
 echo
 
 
@@ -1340,5 +1342,7 @@ echo
 # sample value - delete
 #
 
-prepare-es-update-curl -XDELETE https://$MASTER_ESROUTER_SERVER/maintenance_action_request/_doc/-1 -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD
+prepare-es-update-curl -XDELETE https://$MASTER_ESROUTER_SERVER/maintenance_action_request/_doc/-1 -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
+{
+}'
 echo
