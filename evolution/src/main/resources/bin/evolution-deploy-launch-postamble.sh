@@ -22,7 +22,7 @@ then
    echo "* * * * * $DEPLOY_ROOT/bin/cleanup.sh" >> $DEPLOY_ROOT/config/cleanup.crontab
    cd $DEPLOY_ROOT
    crontab ./config/cleanup.crontab
-   cd -
+   cd - > /dev/null
    CTR=`crontab -l | grep cleanup.sh | wc -l`
    if test $CTR -ne 1
    then
