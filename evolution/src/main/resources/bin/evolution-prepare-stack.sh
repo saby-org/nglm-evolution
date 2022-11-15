@@ -1488,4 +1488,7 @@ if [ "$BACKUPMANAGER_ENABLED" = "true" ]; then
 
 fi
 
+echo $MAINTENANCE_CRON cleanup.sh > $DEPLOY_ROOT/bin/cleanup.crontab
+chmod 755 $DEPLOY_ROOT/bin/cleanup.crontab
+
 
