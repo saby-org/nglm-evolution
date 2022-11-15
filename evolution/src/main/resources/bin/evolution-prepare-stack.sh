@@ -1487,8 +1487,3 @@ if [ "$BACKUPMANAGER_ENABLED" = "true" ]; then
   cat $DEPLOY_ROOT/docker/stack-postamble.yml >> $DEPLOY_ROOT/stack/stack-backupmanager.yml
 
 fi
-
-echo $MAINTENANCE_CRON cleanup.sh > $DEPLOY_ROOT/bin/cleanup.crontab
-chmod 755 $DEPLOY_ROOT/bin/cleanup.crontab
-
-
