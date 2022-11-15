@@ -1266,17 +1266,19 @@ prepare-es-update-curl -XPUT https://$MASTER_ESROUTER_SERVER/_template/edr -u $E
 }'
 echo
 
+# -------------------------------------------------------------------------------
 #
-#  manually create maintenance_action_request index
+# maintenance
 #
+# -------------------------------------------------------------------------------
 
-prepare-es-update-curl -XPUT https://$MASTER_ESROUTER_SERVER/maintenance_action_request -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
+# maintenance_action_request is a static index, filled by maintenance job guimanager - a sample value populated/deleted with complete req to crete the index.
+prepare-es-update-curl -XPUT https://$MASTER_ESROUTER_SERVER/_template/maintenance_action_request -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
-  "settings": {
-    "number_of_shards": "Deployment.getElasticsearchDefaultShards()"
-  },
-  "mappings": {
-    "properties": {
+  "index_patterns": ["maintenance_action_request*"],
+  "mappings" : {
+    "_meta": { "maintenance_action_request" : { "version": Deployment.getElasticsearchDefaultShards() } },
+	"properties": {
       "requestedBy" : { "type" : "keyword" },
       "requestDate" : { "type" : "date", "format":"yyyy-MM-dd HH:mm:ss.SSSZZ"},
       "status" : { "type" : "keyword" }
@@ -1286,16 +1288,22 @@ prepare-es-update-curl -XPUT https://$MASTER_ESROUTER_SERVER/maintenance_action_
 echo
 
 #
-#  manually create maintenance_action_log index
+# sample value - create
 #
 
-prepare-es-update-curl -XPUT https://$MASTER_ESROUTER_SERVER/maintenance_action_log -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
+prepare-es-update-curl -XPUT https://$MASTER_ESROUTER_SERVER/maintenance_action_request/_doc/-1 -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
 {
-  "settings": {
-    "number_of_shards": "Deployment.getElasticsearchDefaultShards()"
-  },
-  "mappings": {
-    "properties": {
+  "requestedBy" : "dummy-deployment", "status" : "COMPLETED"
+}'
+echo
+
+# maintenance_action_log is a static index, filled by maintenance job script - a sample value populated/deleted to crete the index.
+prepare-es-update-curl -XPUT https://$MASTER_ESROUTER_SERVER/_template/maintenance_action_log -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
+{
+  "index_patterns": ["maintenance_action_log*"],
+  "mappings" : {
+    "_meta": { "maintenance_action_log" : { "version": Deployment.getElasticsearchDefaultShards() } },
+	"properties": {
       "actionType" : { "type" : "keyword" },
       "requestId" : { "type" : "keyword" },
       "node" : { "type" : "keyword" },
@@ -1310,3 +1318,12 @@ prepare-es-update-curl -XPUT https://$MASTER_ESROUTER_SERVER/maintenance_action_
 }'
 echo
 
+#
+# sample value - create
+#
+
+prepare-es-update-curl -XPUT https://$MASTER_ESROUTER_SERVER/maintenance_action_log/_doc/-1 -u $ELASTICSEARCH_USERNAME:$ELASTICSEARCH_USERPASSWORD -H'Content-Type: application/json' -d'
+{
+  "requestId" : "-1", "node" : "dummy", "user" : "deployment"
+}'
+echo
