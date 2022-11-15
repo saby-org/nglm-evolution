@@ -14,12 +14,15 @@ docker stack deploy -c $DEPLOY_ROOT/stack/stack-gui.yml ${DOCKER_STACK}-gui
 
 if test -e $DEPLOY_ROOT/bin/cleanup.sh
 then
-   crontab -l | grep -v cleanup.sh > $DEPLOY_ROOT/config/cleanup.crontab
+   CTR=`crontab -l | grep -v cleanup.sh | wc -l`
+   if test $CTR -gt 0
+   then
+      crontab -l | grep -v cleanup.sh > $DEPLOY_ROOT/config/cleanup.crontab
+   fi
    echo "* * * * * $DEPLOY_ROOT/bin/cleanup.sh" >> $DEPLOY_ROOT/config/cleanup.crontab
-
-
-
-   crontab $DEPLOY_ROOT/config/cleanup.crontab
+   cd $DEPLOY_ROOT
+   crontab ./config/cleanup.crontab
+   cd -
    CTR=`crontab -l | grep cleanup.sh | wc -l`
    if test $CTR -ne 1
    then
