@@ -353,6 +353,7 @@ public class OTPUtils
         if (initialOtpList != null && !initialOtpList.isEmpty())
           {
             OTPInstance mostRecentOtp = Collections.max(initialOtpList, new OTPCreationDateComparator());
+            mostRecentOtp.setRetryCount(mostRecentOtp.getRetryCount() + 1);
 
             // Check 01 : not during a ban issue
             if (mostRecentOtp.getOTPStatus().equals(OTPStatus.RaisedBan) && DateUtils.addSeconds(mostRecentOtp.getLatestUpdate(), otptype.getBanPeriod()).after(now))
@@ -378,6 +379,8 @@ public class OTPUtils
                     previous.setLatestUpdate(now);
                   }
               }
+            
+            otpRequest.setRemainingAttempts(otptype.getMaxWrongCheckAttemptsByInstance() - mostRecentOtp.getRetryCount());
           }
         // OK to proceed
 
@@ -397,7 +400,7 @@ public class OTPUtils
             otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
             return otpRequest;
           }
-        OTPInstance otpInstance = new OTPInstance(otptype.getDisplay(), OTPStatus.New, otpValue, 0, 0, now, now, null, null, DateUtils.addSeconds(now, otptype.getInstanceExpirationDelay()));
+        OTPInstance otpInstance = new OTPInstance(otptype.getDisplay(), OTPStatus.New, otpValue, 0, 0, now, now, null, null, DateUtils.addSeconds(now, otptype.getInstanceExpirationDelay()), 0);
 
         // put the relevant content of this instance in the returning event
         List<OTPInstance> existingInstances = profile.getOTPInstances();
@@ -418,7 +421,7 @@ public class OTPUtils
           }
 
         // prepare response
-        otpRequest.setRemainingAttempts(otptype.getMaxWrongCheckAttemptsByInstance());
+        //otpRequest.setRemainingAttempts(otptype.getMaxWrongCheckAttemptsByInstance());
         otpRequest.setValidityDuration(otptype.getInstanceExpirationDelay());
         otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
 
