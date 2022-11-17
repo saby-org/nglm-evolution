@@ -362,6 +362,10 @@ public class OTPUtils
                 otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.CUSTOMER_NOT_ALLOWED);
                 return otpRequest;
               }
+            else
+              {
+                retryCount = mostRecentOtp.getRetryCount() + 1;
+              }
 
             // Check 02 : not have asked too many elements of the given type within the
             // timewindow
@@ -381,7 +385,6 @@ public class OTPUtils
                   }
               }
             
-            retryCount = mostRecentOtp.getRetryCount() + 1;
           }
         // OK to proceed
 
