@@ -6121,6 +6121,14 @@ public class GUIManagerGeneral extends GUIManager
       {
         Date startDate = RLMDateUtils.parseDateFromDay(startDateReq, Deployment.getDeployment(tenantID).getTimeZone());
         Date endDate = RLMDateUtils.parseDateFromDay(endDateReq, Deployment.getDeployment(tenantID).getTimeZone());
+        
+        //
+        //  prepare
+        //
+        
+        startDate = GUIManager.prepareStartDate(startDate, Deployment.getDeployment(tenantID).getTimeZone());
+        endDate = GUIManager.prepareEndDate(endDate, Deployment.getDeployment(tenantID).getTimeZone());
+        
         response.put("actionLogs", JSONUtilities.encodeArray(this.elasticsearch.getMaintenanceActionLogs(requestID, startDate, endDate)));
         response.put("pendingRequests", JSONUtilities.encodeArray(this.elasticsearch.getPendingMaintenanceRequests(requestID)));
         response.put("completedRequests", JSONUtilities.encodeArray(this.elasticsearch.getCompletedMaintenanceRequests(requestID)));

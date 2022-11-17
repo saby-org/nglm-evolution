@@ -1821,7 +1821,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
   public List<JSONObject> getPendingMaintenanceRequests(String requestID)
   {
     List<JSONObject> maintenanceRequests = new ArrayList<JSONObject>();
-    BoolQueryBuilder maintenanceRequestquery = QueryBuilders.boolQuery().mustNot(QueryBuilders.matchQuery("status", "COMPLETED"));
+    BoolQueryBuilder maintenanceRequestquery = QueryBuilders.boolQuery().mustNot(QueryBuilders.matchQuery("status", "COMPLETED")).mustNot(QueryBuilders.matchQuery("status", "ABORTED"));
     if (requestID != null && !requestID.trim().isEmpty()) maintenanceRequestquery = maintenanceRequestquery.filter(QueryBuilders.matchQuery("_id", requestID));
     SearchRequest searchMaintenanceRequest = new SearchRequest(MAINTENANCE_ACTION_REQUEST_INDEX).source(new SearchSourceBuilder().query(maintenanceRequestquery));
     try
@@ -1856,7 +1856,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
   public List<JSONObject> getCompletedMaintenanceRequests(String requestID)
   {
     List<JSONObject> maintenanceRequests = new ArrayList<JSONObject>();
-    BoolQueryBuilder maintenanceRequestquery = QueryBuilders.boolQuery().must(QueryBuilders.matchQuery("status", "COMPLETED"));
+    BoolQueryBuilder maintenanceRequestquery = QueryBuilders.boolQuery().should(QueryBuilders.matchQuery("status", "COMPLETED")).should(QueryBuilders.matchQuery("status", "ABORTED"));
     if (requestID != null && !requestID.trim().isEmpty()) maintenanceRequestquery = maintenanceRequestquery.filter(QueryBuilders.matchQuery("_id", requestID));
     SearchRequest searchMaintenanceRequest = new SearchRequest(MAINTENANCE_ACTION_REQUEST_INDEX).source(new SearchSourceBuilder().query(maintenanceRequestquery));
     try
