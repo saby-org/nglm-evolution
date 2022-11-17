@@ -345,7 +345,7 @@ public class OTPUtils
             return otpRequest;
           }
 
-        int retryCount = 0;
+        int retryCount = 1;
         // check for previous elements of the same type to invalidate them or forbid
         // current action :
         // testing only the latest should be enough
@@ -354,13 +354,11 @@ public class OTPUtils
         if (initialOtpList != null && !initialOtpList.isEmpty())
           {
             OTPInstance mostRecentOtp = Collections.max(initialOtpList, new OTPCreationDateComparator());
-            log.info("[PRJT] OTPInstance: {}", mostRecentOtp.toString());
             
             // Check 01 : not during a ban issue
             if (mostRecentOtp.getOTPStatus().equals(OTPStatus.RaisedBan) && DateUtils.addSeconds(mostRecentOtp.getLatestUpdate(), otptype.getBanPeriod()).after(now))
               {
                 mostRecentOtp.setRetryCount(0);
-                log.info("[PRJT] OTPStatus.RaisedBan -- not during a ban issue");
                 otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.CUSTOMER_NOT_ALLOWED);
                 return otpRequest;
               }
@@ -370,14 +368,12 @@ public class OTPUtils
             if (otptype.getMaxConcurrentWithinTimeWindow() <= initialOtpList.stream().filter(c -> c.getOTPTypeDisplayName().equals(otptype.getOTPTypeName()) && DateUtils.addSeconds(c.getCreationDate(), otptype.getTimeWindow()).after(now)).count())
               {
                 mostRecentOtp.setRetryCount(0);
-                log.info("[PRJT] Within Time Window");
                 otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.CUSTOMER_NOT_ALLOWED);
                 return otpRequest;
               }
             
             if (DateUtils.addSeconds(mostRecentOtp.getCreationDate(), otptype.getTimeWindow()).before(now))
               {
-                log.info("[PRJT] RESET retryCount to 0");
                 mostRecentOtp.setRetryCount(0);
               }
 
@@ -391,7 +387,7 @@ public class OTPUtils
                   }
               }
             
-            retryCount = mostRecentOtp.getRetryCount() + 1;
+            retryCount += mostRecentOtp.getRetryCount();
           }
         // OK to proceed
 
