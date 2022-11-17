@@ -353,6 +353,8 @@ public class OTPUtils
         if (initialOtpList != null && !initialOtpList.isEmpty())
           {
             OTPInstance mostRecentOtp = Collections.max(initialOtpList, new OTPCreationDateComparator());
+            log.info("[PRJT] OTPInstance: {}", mostRecentOtp.toString());
+            
             mostRecentOtp.setRetryCount(mostRecentOtp.getRetryCount() + 1);
 
             // Check 01 : not during a ban issue
