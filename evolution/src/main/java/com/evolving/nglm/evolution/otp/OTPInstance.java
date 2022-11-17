@@ -274,7 +274,7 @@ public class OTPInstance // implements Action
     Date latestSuccess = (Date) valueStruct.get("latestSuccess");
     Date latestError = (Date) valueStruct.get("latestError");
     Date expirationDate = (Date) valueStruct.get("expirationDate");
-    Integer retryCount = valueStruct.getInt32("retryCount");
+    Integer retryCount = (schema.field("retryCount")!= null) ? valueStruct.getInt32("retryCount") : 0;
 
     return new OTPInstance( otpTypeID,  otpStatus, otpValue, checksCount, errorCount,
   		   creationDate, latestUpdate, latestSuccess, latestError, expirationDate, retryCount);
