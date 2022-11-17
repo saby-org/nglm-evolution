@@ -382,6 +382,7 @@ public class OTPUtils
                   {
                     previous.setOTPStatus(OTPStatus.Expired);
                     previous.setLatestUpdate(now);
+                    previous.setRetryCount(0);
                   }
               }
             
