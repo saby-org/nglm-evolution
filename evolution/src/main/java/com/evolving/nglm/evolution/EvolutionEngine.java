@@ -7854,7 +7854,11 @@ public class EvolutionEngine
                                     {
                                       if(Module.Journey_Manager.getExternalRepresentation().equals(journeyState.getSourceModuleID()) && existing.getJourneyID().equals(journeyState.getsourceFeatureID())){
                                         existing.getJourneyParameters().put(current.getKey(), current.getValue());
-                                        existing.getJourneyHistory().setConversionsCount(journeyState.getJourneyHistory().getConversionCount(), SystemTime.getCurrentTime());
+                                        
+                                        log.info("[PRJT] WF Journey[{}], workflow[{}]", existing.getJourneyID(), journey.isWorkflow());
+                                        //existing.getJourneyHistory().setConversionsCount(journeyState.getJourneyHistory().getConversionCount(), SystemTime.getCurrentTime());
+                                        existing.getJourneyHistory().incrementConversions(SystemTime.getCurrentTime());
+                                        
                                         break;
                                       }
                                     }
@@ -7880,7 +7884,10 @@ public class EvolutionEngine
                                     if(Module.Journey_Manager.getExternalRepresentation().equals(existing.getSourceModuleID()) && journeyState.getJourneyID().equals(existing.getsourceFeatureID())){
                                       // this is a workflow of the given journey
                                       existing.getJourneyParameters().put(current.getKey(), current.getValue());
-                                      existing.getJourneyHistory().setConversionsCount(journeyState.getJourneyHistory().getConversionCount(), SystemTime.getCurrentTime());
+                                      
+                                      log.info("[PRJT] CMP Journey[{}], workflow[{}]", existing.getJourneyID(), journey.isWorkflow());
+                                      //existing.getJourneyHistory().setConversionsCount(journeyState.getJourneyHistory().getConversionCount(), SystemTime.getCurrentTime());
+                                      existing.getJourneyHistory().incrementConversions(SystemTime.getCurrentTime());
                                     }
                                   }
                               }
