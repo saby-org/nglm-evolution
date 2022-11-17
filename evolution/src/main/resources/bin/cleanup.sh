@@ -311,8 +311,14 @@ do
                add_log_to_elasticsearch_index "Docker Image Cleanup" "$NODE" "$USR" "`date '+%Y-%m-%d %T.%3N%z'`" "NULL" "WARNING" "Services are restarting.. skipping docker prune.." "$DOCID"
             else
                TMPD=`ssh $NODE 'docker image prune -a -f' | tail -1 | cut -d" " -f4`
-               echo "Reclaimed space from unused images is -- $TMPD" >> $LOGFILE
-               add_log_to_elasticsearch_index "Docker Image Cleanup" "$NODE" "$USR" "`date '+%Y-%m-%d %T.%3N%z'`" "Reclaimable space: $TMPL, Reclaimed space: $TMPD" "SUCCESS" "NULL" "$DOCID"
+               VAL=`echo $TMPD | cut -c1`
+               if test $VAL -ne 0
+               then
+                  echo "Reclaimed space from unused images is -- $TMPD" >> $LOGFILE
+                  add_log_to_elasticsearch_index "Docker Image Cleanup" "$NODE" "$USR" "`date '+%Y-%m-%d %T.%3N%z'`" "Reclaimable space: $TMPL, Reclaimed space: $TMPD" "SUCCESS" "NULL" "$DOCID"
+               else
+                  add_log_to_elasticsearch_index "Docker Image Cleanup" "$NODE" "$USR" "`date '+%Y-%m-%d %T.%3N%z'`" "Nothing eligible for reclaim now" "SUCCESS" "NULL" "$DOCID"
+               fi
             fi
          else
             echo "Nothing to reclaim for unused images --" >> $LOGFILE
