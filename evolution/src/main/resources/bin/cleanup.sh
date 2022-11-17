@@ -214,7 +214,12 @@ then
    TMP=`du -ks $NGLM_LOGS`
    TMPD=`echo $TMP | tr -s " " | cut -d" " -f1`
    echo "Total space after purging maintenance log files older than $MAINTENANCE_LOG_RETENTION_DAYS days is -- $TMPD KB" >> $LOGFILE
-   add_log_to_elasticsearch_index "Maintenance Log Cleanup" "`hostname`" "$USR" "`date '+%Y-%m-%d %T.%3N%z'`" "Occupied before cleanup: $TMPL KB, Occupied after cleaning files older than $MAINTENANCE_LOG_RETENTION_DAYS days: $TMPD KB" "SUCCESS" "NULL" "$DOCID"
+   if test $TMPL -eq $TMPD
+   then
+      add_log_to_elasticsearch_index "Maintenance Log Cleanup" "`hostname`" "$USR" "`date '+%Y-%m-%d %T.%3N%z'`" "Nothing found eligible for cleanup now" "SUCCESS" "NULL" "$DOCID"
+   else
+      add_log_to_elasticsearch_index "Maintenance Log Cleanup" "`hostname`" "$USR" "`date '+%Y-%m-%d %T.%3N%z'`" "Occupied before cleanup: $TMPL KB, Occupied after cleaning files older than $MAINTENANCE_LOG_RETENTION_DAYS days: $TMPD KB" "SUCCESS" "NULL" "$DOCID"
+   fi
    echo >> $LOGFILE
 else
    echo "WARNING: Maintenance Log file cleanup skipped!" >> $LOGFILE
@@ -251,7 +256,12 @@ then
          TMP=`du -ks $NGLM_DATA`
          TMPD=`echo $TMP | tr -s " " | cut -d" " -f1`
          echo "Total space after purging archived CDR files older than $ARCHIVED_CDR_RETENTION_DAYS days is -- $TMPD KB" >> $LOGFILE
-         add_log_to_elasticsearch_index "Archived CDR Cleanup" "`hostname`" "$USR" "`date '+%Y-%m-%d %T.%3N%z'`" "Occupied before cleanup: $TMPL KB, Occupied after cleaning files older than $ARCHIVED_CDR_RETENTION_DAYS days: $TMPD KB" "SUCCESS" "NULL" "$DOCID"
+         if test $TMPL -eq $TMPD
+         then
+            add_log_to_elasticsearch_index "Archived CDR Cleanup" "`hostname`" "$USR" "`date '+%Y-%m-%d %T.%3N%z'`" "Nothing found eligible for cleanup now" "SUCCESS" "NULL" "$DOCID"
+         else
+            add_log_to_elasticsearch_index "Archived CDR Cleanup" "`hostname`" "$USR" "`date '+%Y-%m-%d %T.%3N%z'`" "Occupied before cleanup: $TMPL KB, Occupied after cleaning files older than $ARCHIVED_CDR_RETENTION_DAYS days: $TMPD KB" "SUCCESS" "NULL" "$DOCID"
+         fi
          echo >> $LOGFILE
       fi
    fi
@@ -261,6 +271,7 @@ else
 fi
 
 echo >> $LOGFILE
+
 
 NODES=`docker node ls --format "{{.Hostname}}"`
 if test -z $NODES
@@ -293,12 +304,20 @@ do
          VAL=`echo $TMPL | cut -c1`
          if test $VAL -ne 0
          then
-            TMPD=`ssh $NODE 'docker image prune -a -f' | tail -1 | cut -d" " -f4`
-            echo "Reclaimed space from unused images is -- $TMPD" >> $LOGFILE
+            CTR=`docker stack ls | grep "$DOCKER_STACK-connect\|$DOCKER_STACK-evolutionengine\|$DOCKER_STACK-gui\|$DOCKER_STACK-guimanager\|$DOCKER_STACK-licensemanager" | wc -l`
+            if test $CTR -lt 5
+            then
+               echo "WARNING: Services are restarting.. skipping docker prune.." >> $LOGFILE
+               add_log_to_elasticsearch_index "Docker Image Cleanup" "$NODE" "$USR" "`date '+%Y-%m-%d %T.%3N%z'`" "NULL" "WARNING" "Services are restarting.. skipping docker prune.." "$DOCID"
+            else
+               TMPD=`ssh $NODE 'docker image prune -a -f' | tail -1 | cut -d" " -f4`
+               echo "Reclaimed space from unused images is -- $TMPD" >> $LOGFILE
+               add_log_to_elasticsearch_index "Docker Image Cleanup" "$NODE" "$USR" "`date '+%Y-%m-%d %T.%3N%z'`" "Reclaimable space: $TMPL, Reclaimed space: $TMPD" "SUCCESS" "NULL" "$DOCID"
+            fi
          else
             echo "Nothing to reclaim for unused images --" >> $LOGFILE
+            add_log_to_elasticsearch_index "Docker Image Cleanup" "$NODE" "$USR" "`date '+%Y-%m-%d %T.%3N%z'`" "Nothing to reclaim from unused images now" "SUCCESS" "NULL" "$DOCID"
          fi
-         add_log_to_elasticsearch_index "Docker Image Cleanup" "$NODE" "$USR" "`date '+%Y-%m-%d %T.%3N%z'`" "Reclaimable space: $TMPL, Reclaimed space: $TMPD" "SUCCESS" "NULL" "$DOCID"
          echo >> $LOGFILE
       fi
    else
@@ -328,7 +347,12 @@ do
          else
             echo "Nothing to reclaim for archived journal logs --" >> $LOGFILE
          fi
-         add_log_to_elasticsearch_index "Journal Log Cleanup" "$NODE" "$USR" "`date '+%Y-%m-%d %T.%3N%z'`" "Occupied before cleanup: $TMPL, Occupied after cleaning files older than $JOURNALCTL_RETENTION_DAYS days: $TMPD" "SUCCESS" "NULL" "$DOCID"
+         if test "$TMPL" == "$TMPD"
+         then
+            add_log_to_elasticsearch_index "Journal Log Cleanup" "$NODE" "$USR" "`date '+%Y-%m-%d %T.%3N%z'`" "Nothing found eligible for cleanup now" "SUCCESS" "NULL" "$DOCID"
+         else
+            add_log_to_elasticsearch_index "Journal Log Cleanup" "$NODE" "$USR" "`date '+%Y-%m-%d %T.%3N%z'`" "Occupied before cleanup: $TMPL, Occupied after cleaning files older than $JOURNALCTL_RETENTION_DAYS days: $TMPD" "SUCCESS" "NULL" "$DOCID"
+         fi
          echo >> $LOGFILE
       fi
    else
