@@ -374,6 +374,12 @@ public class OTPUtils
                 otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.CUSTOMER_NOT_ALLOWED);
                 return otpRequest;
               }
+            
+            if (DateUtils.addSeconds(mostRecentOtp.getCreationDate(), otptype.getTimeWindow()).before(now))
+              {
+                log.info("[PRJT] RESET retryCount to 0");
+                mostRecentOtp.setRetryCount(0);
+              }
 
             // Invalidate all PREVIOUS INSTANCES that may still be active
             for (OTPInstance previous : initialOtpList)
@@ -382,7 +388,6 @@ public class OTPUtils
                   {
                     previous.setOTPStatus(OTPStatus.Expired);
                     previous.setLatestUpdate(now);
-                    previous.setRetryCount(0);
                   }
               }
             
