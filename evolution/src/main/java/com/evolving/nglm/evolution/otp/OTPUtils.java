@@ -363,8 +363,7 @@ public class OTPUtils
                 return otpRequest;
               }
 
-            // Check 02 : not have asked too many elements of the given type within the
-            // timewindow
+            // Check 02 : not have asked too many elements of the given type within the timewindow
             if (otptype.getMaxConcurrentWithinTimeWindow() <= initialOtpList.stream().filter(c -> c.getOTPTypeDisplayName().equals(otptype.getOTPTypeName()) && DateUtils.addSeconds(c.getCreationDate(), otptype.getTimeWindow()).after(now)).count())
               {
                 mostRecentOtp.setRetryCount(0);
@@ -372,6 +371,7 @@ public class OTPUtils
                 return otpRequest;
               }
             
+            // reset retryCount at each timewindow
             if (DateUtils.addSeconds(mostRecentOtp.getCreationDate(), otptype.getTimeWindow()).before(now))
               {
                 mostRecentOtp.setRetryCount(0);
@@ -387,6 +387,7 @@ public class OTPUtils
                   }
               }
             
+            // update retryCount
             retryCount += mostRecentOtp.getRetryCount();
           }
         // OK to proceed
@@ -428,8 +429,8 @@ public class OTPUtils
           }
 
         // prepare response
-        otpRequest.setRemainingAttempts(otptype.getMaxWrongCheckAttemptsByInstance() - otpInstance.getRetryCount());
         //otpRequest.setRemainingAttempts(otptype.getMaxWrongCheckAttemptsByInstance());
+        otpRequest.setRemainingAttempts(otptype.getMaxWrongCheckAttemptsByInstance() - otpInstance.getRetryCount());
         otpRequest.setValidityDuration(otptype.getInstanceExpirationDelay());
         otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
 
