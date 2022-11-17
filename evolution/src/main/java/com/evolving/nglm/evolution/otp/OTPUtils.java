@@ -359,6 +359,7 @@ public class OTPUtils
             // Check 01 : not during a ban issue
             if (mostRecentOtp.getOTPStatus().equals(OTPStatus.RaisedBan) && DateUtils.addSeconds(mostRecentOtp.getLatestUpdate(), otptype.getBanPeriod()).after(now))
               {
+                log.info("[PRJT] OTPStatus.RaisedBan -- not during a ban issue");
                 otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.CUSTOMER_NOT_ALLOWED);
                 return otpRequest;
               }
@@ -371,6 +372,7 @@ public class OTPUtils
             // timewindow
             if (otptype.getMaxConcurrentWithinTimeWindow() <= initialOtpList.stream().filter(c -> c.getOTPTypeDisplayName().equals(otptype.getOTPTypeName()) && DateUtils.addSeconds(c.getCreationDate(), otptype.getTimeWindow()).after(now)).count())
               {
+                log.info("[PRJT] Within Time Window");
                 otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.CUSTOMER_NOT_ALLOWED);
                 return otpRequest;
               }
