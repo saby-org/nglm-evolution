@@ -345,6 +345,7 @@ public class OTPUtils
             return otpRequest;
           }
 
+        int retryCount = 0;
         // check for previous elements of the same type to invalidate them or forbid
         // current action :
         // testing only the latest should be enough
@@ -355,8 +356,6 @@ public class OTPUtils
             OTPInstance mostRecentOtp = Collections.max(initialOtpList, new OTPCreationDateComparator());
             log.info("[PRJT] OTPInstance: {}", mostRecentOtp.toString());
             
-            mostRecentOtp.setRetryCount(mostRecentOtp.getRetryCount() + 1);
-
             // Check 01 : not during a ban issue
             if (mostRecentOtp.getOTPStatus().equals(OTPStatus.RaisedBan) && DateUtils.addSeconds(mostRecentOtp.getLatestUpdate(), otptype.getBanPeriod()).after(now))
               {
@@ -382,7 +381,7 @@ public class OTPUtils
                   }
               }
             
-            otpRequest.setRemainingAttempts(otptype.getMaxWrongCheckAttemptsByInstance() - mostRecentOtp.getRetryCount());
+            retryCount = mostRecentOtp.getRetryCount() + 1;
           }
         // OK to proceed
 
@@ -402,7 +401,7 @@ public class OTPUtils
             otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
             return otpRequest;
           }
-        OTPInstance otpInstance = new OTPInstance(otptype.getDisplay(), OTPStatus.New, otpValue, 0, 0, now, now, null, null, DateUtils.addSeconds(now, otptype.getInstanceExpirationDelay()), 0);
+        OTPInstance otpInstance = new OTPInstance(otptype.getDisplay(), OTPStatus.New, otpValue, 0, 0, now, now, null, null, DateUtils.addSeconds(now, otptype.getInstanceExpirationDelay()), retryCount);
 
         // put the relevant content of this instance in the returning event
         List<OTPInstance> existingInstances = profile.getOTPInstances();
@@ -423,6 +422,7 @@ public class OTPUtils
           }
 
         // prepare response
+        otpRequest.setRemainingAttempts(otptype.getMaxWrongCheckAttemptsByInstance() - otpInstance.getRetryCount());
         //otpRequest.setRemainingAttempts(otptype.getMaxWrongCheckAttemptsByInstance());
         otpRequest.setValidityDuration(otptype.getInstanceExpirationDelay());
         otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
