@@ -245,8 +245,10 @@ public class GrafanaUtils
                     Set<String> nonT0FileNames = new LinkedHashSet<String>();
                     Set<String> t0FileNames = new LinkedHashSet<String>();
                     Set<String> magFileNames = new LinkedHashSet<String>();
+                    log.info("RAJ K dbFileNames {}", dbFileNames);
                     for(String fileName : dbFileNames)
                     {
+                      log.info("RAJ K fileName {}", fileName);
                       if(tenantID == 0 && fileName.startsWith("config/grafana-gui-t0"))
                       {
                         t0FileNames.add(fileName);
