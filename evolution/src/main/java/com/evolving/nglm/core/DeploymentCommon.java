@@ -257,6 +257,10 @@ public class DeploymentCommon
   private static int elasticsearchRetentionDaysBulkCampaigns;
   private static int elasticsearchRetentionWeeksDatacubeJourneys;
   private static int elasticsearchRetentionDaysMaintenanceDetails;
+  private static int maintenanceLogRetentionDays;
+  private static int archivedCdrRetentionDays;
+  private static int journalctlRetentionDays;
+  
   private static Map<String, Long> elasticsearchTemplatesVersion;
   private static Map<String, Long> elasticsearchIndexByPassVersion;
 
@@ -572,6 +576,9 @@ public class DeploymentCommon
   public static int getElasticsearchRetentionDaysBulkCampaigns() { return elasticsearchRetentionDaysBulkCampaigns; }
   public static int getElasticsearchRetentionWeeksDatacubeJourneys() { return elasticsearchRetentionWeeksDatacubeJourneys; }
   public static int getElasticsearchRetentionDaysMaintenanceDetails() { return elasticsearchRetentionDaysMaintenanceDetails; }
+  public static int getMaintenanceLogRetentionDays() { return maintenanceLogRetentionDays; }
+  public static int getArchivedCdrRetentionDays() { return archivedCdrRetentionDays; }
+  public static int getJournalctlRetentionDays() { return journalctlRetentionDays; }
   public static Map<String, Long> getElasticsearchTemplatesVersion() { return elasticsearchTemplatesVersion; }
   public static Map<String, Long> getElasticsearchIndexByPassVersion() { return elasticsearchIndexByPassVersion; }
   public static Long getElasticsearchRootTemplateVersion() { return elasticsearchTemplatesVersion.get("root"); }
@@ -941,6 +948,17 @@ public class DeploymentCommon
     elasticsearchRetentionDaysBulkCampaigns = jsonReader.decodeInteger("ESRetentionDaysBulkCampaigns");
     elasticsearchRetentionWeeksDatacubeJourneys = jsonReader.decodeInteger("ESRetentionWeeksDatacubeJourneys");
     elasticsearchRetentionDaysMaintenanceDetails = jsonReader.decodeInteger("ESRetentionDaysMaintenanceDetails");
+    
+    String tempResult = null;
+    tempResult = jsonReader.decodeOptionalString("maintenanceLogRetentionDays");
+    maintenanceLogRetentionDays = tempResult == null || tempResult.trim().isEmpty() ? Integer.valueOf(0) : Integer.parseInt(tempResult);
+    
+    tempResult = jsonReader.decodeOptionalString("archivedCdrRetentionDays");
+    archivedCdrRetentionDays = tempResult == null || tempResult.trim().isEmpty() ? Integer.valueOf(0) : Integer.parseInt(tempResult);
+    
+    tempResult = jsonReader.decodeOptionalString("journalctlRetentionDays");
+    journalctlRetentionDays = tempResult == null || tempResult.trim().isEmpty() ? Integer.valueOf(0) : Integer.parseInt(tempResult);
+    
     JSONObject elasticsearchTemplatesVersionJSON = jsonReader.decodeJSONObject("elasticsearchTemplatesVersion");
     elasticsearchTemplatesVersion = new LinkedHashMap<String, Long>();
     for (Object key : elasticsearchTemplatesVersionJSON.keySet()) {
