@@ -242,10 +242,8 @@ public class GrafanaUtils
                     Set<String> nonT0FileNames = new LinkedHashSet<String>();
                     Set<String> t0FileNames = new LinkedHashSet<String>();
                     Set<String> magFileNames = new LinkedHashSet<String>();
-                    log.info("RAJ K dbFileNames {}", dbFileNames);
                     for (String fileName : dbFileNames)
                       {
-                        log.info("RAJ K fileName {}", fileName);
                         if (tenantID == 0 && fileName.startsWith("config/grafana-gui-t0"))
                           {
                             t0FileNames.add(fileName);
@@ -300,7 +298,7 @@ public class GrafanaUtils
             s = s.replace("tenantID:camptenantID", "tenantID:" + tenantID);
             s = s.replace("replaceWithTenantID", "" + tenantID);
 
-            log.info("GrafanaUtils.prepareGrafanaForTenants: = parsing a Dashboard = " + currentFileName);
+            log.debug("GrafanaUtils.prepareGrafanaForTenants: = parsing a Dashboard = " + currentFileName);
             log.trace("GrafanaUtils.prepareGrafanaForTenants ===parsing a Dashboard==== " + currentFileName + "\n" + s);
             JSONObject fulldashboardDef = (JSONObject) (new JSONParser()).parse(s);
             JSONObject dashboardDef = (JSONObject) fulldashboardDef.get("dashboard");
@@ -314,15 +312,13 @@ public class GrafanaUtils
             Deployment deployment = Deployment.getDeployment(tenantID);
             String tz = deployment.getTimeZone();
 
-            log.info("The dashboard under-study is: === " + expectedTitle + " ===");
-
             // 1- The dashboard already exists but its uid doesn't start with t<tenantID>-
             if (exisitingDashBoards.containsKey(expectedTitle) && existingUID.substring(0, 3).equals("t" + tenantID + "-") == false)
               {
-                log.info("GrafanaUtils.prepareGrafanaForTenants: Dashboard " + expectedTitle + " already exists for orgID " + orgID + " for dashboard file name " + currentFileName + " and it'll be deleted and recreated.");
+                log.debug("GrafanaUtils.prepareGrafanaForTenants: Dashboard " + expectedTitle + " already exists for orgID " + orgID + " for dashboard file name " + currentFileName + " and it'll be deleted and recreated.");
                 // Delete it using its exisitng uid
                 HttpResponse response = sendGrafanaCurl(null, "/api/dashboards/uid/" + existingUID, "DELETE");
-                log.info("Dashboard titled " + expectedTitle + " with uid " + existingUID + " is deleted");
+                log.debug("Dashboard titled " + expectedTitle + " with uid " + existingUID + " is deleted");
                 if (response == null)
                   {
                     log.warn("Could not get a non null response while loading dashboard " + expectedTitle + " for organisation " + orgID);
@@ -339,7 +335,6 @@ public class GrafanaUtils
                 // mapDbEs.put("name",expectedTitle);
                 // mapDbEs.put("reportID",newUID);
                 // request = new UpdateRequest("dashboard_links",newUID);
-                log.info("The new uid of the already existing Dashboard: " + expectedTitle + " is " + newUID);
               }
             // 2- The dashboard already exists and its uid starts with t<tenantID>-
             else if (exisitingDashBoards.containsKey(expectedTitle) && existingUID.substring(0, 3).equals("t" + tenantID + "-") == true)
@@ -365,21 +360,21 @@ public class GrafanaUtils
                       } else
                       {
                         // overwrite it using the same existing uid
-                        log.info("GrafanaUtils.prepareGrafanaForTenants: Dashboard " + expectedTitle + " already exists for orgID " + orgID + " for dashboard file name " + currentFileName + " and it'll be overwritten.");
+                        log.debug("GrafanaUtils.prepareGrafanaForTenants: Dashboard " + expectedTitle + " already exists for orgID " + orgID + " for dashboard file name " + currentFileName + " and it'll be overwritten.");
                         s = s.replace("replaceWithTenantTimeZone", tz);
                         s = s.replace("replaceWithUniqueID", existingUID);
                         fulldashboardDef = (JSONObject) (new JSONParser()).parse(s);
                         // mapDbEs.put("name",expectedTitle);
                         // mapDbEs.put("reportID",existingUID);
                         // request = new UpdateRequest("dashboard_links",existingUID);
-                        log.info("The uid of the already existing Dashboard: " + expectedTitle + " is " + existingUID);
+                        log.debug("The uid of the already existing Dashboard: " + expectedTitle + " is " + existingUID);
                       }
                   }
               }
             // 3- The dashboard doesn't exist already
             else
               {
-                log.info("GrafanaUtils.prepareGrafanaForTenants: Dashboard " + expectedTitle + " doesn't exist for orgID " + orgID + " for dashboard file name " + currentFileName + " and it'll be created.");
+                log.debug("GrafanaUtils.prepareGrafanaForTenants: Dashboard " + expectedTitle + " doesn't exist for orgID " + orgID + " for dashboard file name " + currentFileName + " and it'll be created.");
                 // Create it using a unique uid that starts with t<tenandID>-
                 String newUID = "t" + tenantID + "-" + TokenUtils.generateFromRegex(regex);
                 s = s.replace("replaceWithTenantTimeZone", tz);
@@ -388,7 +383,6 @@ public class GrafanaUtils
                 // mapDbEs.put("name",expectedTitle);
                 // mapDbEs.put("reportID",newUID);
                 // request = new UpdateRequest("dashboard_links",newUID);
-                log.info("The uid of the newly created Dashboard: " + expectedTitle + " is " + newUID);
               }
             scanner.close();
             // Overwrite / create the dashboard
@@ -396,7 +390,8 @@ public class GrafanaUtils
             if (db != null && db.getFirstElement() != null && db.getSecondElement() != null)
               {
                 log.info("GrafanaUtils.prepareGrafanaForTenants: Dashboard " + db.getFirstElement() + " " + db.getSecondElement() + " is well loaded");
-              } else
+              } 
+            else
               {
                 log.warn("GrafanaUtils.prepareGrafanaForTenants: Problem while loading Dashboard " + db.getFirstElement() + " for orgID " + orgID + " for dashboard file name " + currentFileName);
               }
@@ -431,7 +426,6 @@ public class GrafanaUtils
 
   private static HttpResponse sendGrafanaCurl(JSONObject body, String uri, String httpMethod)
   {
-    log.info("RAJ K sendGrafanaCurl body {}, uri {}, httpMethod {}", body, uri, httpMethod);
     String grafanaHost = System.getenv("GRAFANA_HOST");
     String grafanaPort = System.getenv("GRAFANA_FOR_GUI_PORT");
     String grafanaUser = System.getenv("GRAFANA_USER_GUI");
@@ -468,14 +462,12 @@ public class GrafanaUtils
         request.setHeader("Content-type", "application/json");
         String encoding = Base64.getEncoder().encodeToString(new String(grafanaUser + ":" + grafanaPassword).getBytes());
         request.setHeader(HttpHeaders.AUTHORIZATION, "Basic " + encoding);
-        log.info("RAJ K sendGrafanaCurl request {}", request.getRequestLine());
 
         int httpTimeout = 10000;
         RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(httpTimeout).setSocketTimeout(httpTimeout).setConnectionRequestTimeout(httpTimeout).build();
 
         CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultRequestConfig(requestConfig).build();
         response = httpClient.execute(request);
-        log.info("RAJ K sendGrafanaCurl response {}", response.getStatusLine());
         return response;
       } 
     catch (Exception e)
@@ -670,7 +662,6 @@ public class GrafanaUtils
         try
           {
             JSONObject responseJson = (JSONObject) (new JSONParser()).parse(EntityUtils.toString(response.getEntity(), "UTF-8"));
-            log.info("RAJ K sendGrafanaCurl responseJson {}", responseJson);
           } catch (ParseException e)
           {
             // TODO Auto-generated catch block

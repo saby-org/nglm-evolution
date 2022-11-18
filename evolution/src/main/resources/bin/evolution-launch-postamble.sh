@@ -14,7 +14,7 @@ docker stack deploy -c $DEPLOY_ROOT/stack/stack-gui.yml <_DOCKER_STACK_>-gui
 
 if test -e $DEPLOY_ROOT/bin/cleanup.sh
 then
-   echo -n > ./config/cleanup.crontab
+   echo -n > $DEPLOY_ROOT/config/cleanup.crontab
    CTR=`crontab -l | grep -v cleanup.sh | wc -l`
    if test $CTR -gt 0
    then
