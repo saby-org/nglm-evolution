@@ -79,6 +79,7 @@ public class OTPUtils
   // called by EvolutionEngine when receiving an event from thirdparty message
   public static OTPInstanceChangeEvent handleOTPEvent(OTPInstanceChangeEvent otpRequest, SubscriberState subscriberState, OTPTypeService otpTypeService, SubscriberMessageTemplateService subscriberMessageTemplateService, SourceAddressService sourceAddressService, SubscriberEvaluationRequest subscriberEvaluationRequest, EvolutionEventContext evolutionEventContextint, int tenantID)
   {
+    log.info("[PRJT] OTPInstanceChangeEvent.handleOTPEvent()");
     switch (otpRequest.getAction())
     {
       case Check:
@@ -325,6 +326,7 @@ public class OTPUtils
   // OTP Creation
   public static OTPInstanceChangeEvent generateOTP(OTPInstanceChangeEvent otpRequest, SubscriberState subscriberState, OTPTypeService otpTypeService, SubscriberMessageTemplateService subscriberMessageTemplateService, SourceAddressService sourceAddressService, SubscriberEvaluationRequest subscriberEvaluationRequest, EvolutionEventContext evolutionEventContext, int tenantID)
   {
+    log.info("[PRJT] OTPInstanceChangeEvent.handleOTPEvent().generateOTP()");
     try
       {
         if (subscriberState == null)
