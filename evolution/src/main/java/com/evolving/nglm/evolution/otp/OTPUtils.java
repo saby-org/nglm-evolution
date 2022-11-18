@@ -374,6 +374,7 @@ public class OTPUtils
             // reset retryCount at each timewindow
             if (DateUtils.addSeconds(mostRecentOtp.getCreationDate(), otptype.getTimeWindow()).before(now))
               {
+                log.info("[PRJT] RESET retryCount to 0");
                 mostRecentOtp.setRetryCount(0);
               }
 
