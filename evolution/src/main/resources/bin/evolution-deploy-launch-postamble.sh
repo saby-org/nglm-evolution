@@ -14,10 +14,11 @@ docker stack deploy -c $DEPLOY_ROOT/stack/stack-gui.yml ${DOCKER_STACK}-gui
 
 if test -e $DEPLOY_ROOT/bin/cleanup.sh
 then
+   echo -n > ./config/cleanup.crontab
    CTR=`crontab -l | grep -v cleanup.sh | wc -l`
    if test $CTR -gt 0
    then
-      crontab -l | grep -v cleanup.sh > $DEPLOY_ROOT/config/cleanup.crontab
+      crontab -l | grep -v cleanup.sh >> $DEPLOY_ROOT/config/cleanup.crontab
    fi
    if [ "<_MAINTENANCE_ENABLED_>" = "true" ]; then
       echo "* * * * * $DEPLOY_ROOT/bin/cleanup.sh" >> $DEPLOY_ROOT/config/cleanup.crontab
