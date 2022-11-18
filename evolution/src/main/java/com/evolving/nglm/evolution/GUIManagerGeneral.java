@@ -6187,9 +6187,13 @@ public class GUIManagerGeneral extends GUIManager
     retentionConfigurations.add(new RetentionConfiguration("ESRetentionDaysSnapshots", "ES Retention Days Snapshots", String.valueOf(DeploymentCommon.getElasticsearchRetentionDaysSnapshots()), "this is the number of days after which we delete Snapshot index - like subscriberprofile snaps").getJSONPresentation());
     retentionConfigurations.add(new RetentionConfiguration("ESRetentionDaysMaintenanceDetails", "ES Retention Days Maintenance Details", String.valueOf(DeploymentCommon.getElasticsearchRetentionDaysMaintenanceDetails()), "this is the number of days after which we delete MaintenanceHistoryDetails - like requests, logs, etc...").getJSONPresentation());
     
+    //
+    //  maintenance
+    //
+    
     retentionConfigurations.add(new RetentionConfiguration("maintenanceLogRetentionDays", "MAINTENANCE LOG RETENTION DAYS", String.valueOf(DeploymentCommon.getMaintenanceLogRetentionDays()), "this parameter sets the number of days for which the Maintenance Logs need to be retained; any files prior to that period will be deleted").getJSONPresentation());
-    retentionConfigurations.add(new RetentionConfiguration("archivedCdrRetentionDays", "ARCHIVED CDR RETENTION DAYS", String.valueOf(DeploymentCommon.getElasticsearchRetentionDaysSnapshots()), "this parameter sets the number of days for which archived CDRs need to be retained; any files prior to that period will be deleted").getJSONPresentation());
-    retentionConfigurations.add(new RetentionConfiguration("journalctlRetentionDays", "JOURNALCTL RETENTION DAYS", String.valueOf(DeploymentCommon.getElasticsearchRetentionDaysMaintenanceDetails()), "this parameter sets the number of days for which old journal logs need to be retained; any logs prior to that period will be deleted").getJSONPresentation());
+    retentionConfigurations.add(new RetentionConfiguration("archivedCdrRetentionDays", "ARCHIVED CDR RETENTION DAYS", String.valueOf(DeploymentCommon.getArchivedCdrRetentionDays()), "this parameter sets the number of days for which archived CDRs need to be retained; any files prior to that period will be deleted").getJSONPresentation());
+    retentionConfigurations.add(new RetentionConfiguration("journalctlRetentionDays", "JOURNALCTL RETENTION DAYS", String.valueOf(DeploymentCommon.getJournalctlRetentionDays()), "this parameter sets the number of days for which old journal logs need to be retained; any logs prior to that period will be deleted").getJSONPresentation());
    
     //
     //  retentionConfigurations
