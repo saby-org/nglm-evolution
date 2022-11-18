@@ -162,7 +162,7 @@ public class GrafanaUtils
                         if (!currentFileName.endsWith(".json"))
                           continue;
                         // check if the datasource exists
-                        log.info("GrafanaUtils.prepareGrafanaForTenants Handle datasource file " + currentFileName);
+                        log.debug("GrafanaUtils.prepareGrafanaForTenants Handle datasource file " + currentFileName);
 
                         InputStream is = GrafanaUtils.class.getResourceAsStream("/" + currentFileName);
                         java.util.Scanner scanner = new java.util.Scanner(is).useDelimiter("\\A");
@@ -192,9 +192,7 @@ public class GrafanaUtils
                           {
                             s = s.replace("<_" + replace.getKey() + "_>", replace.getValue());
                           }
-                        System.out.println("OK file " + currentFileName + " " + s);
-
-                        log.info("GrafanaUtils.prepareGrafanaForTenants ===parsing a datasource====");
+                        log.debug("GrafanaUtils.prepareGrafanaForTenants ===parsing a datasource====");
                         try
                           {
                             JSONObject datasourcesDef = (JSONObject) (new JSONParser()).parse(s);
