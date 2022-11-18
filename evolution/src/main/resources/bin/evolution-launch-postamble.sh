@@ -21,8 +21,6 @@ then
       crontab -l | grep -v cleanup.sh >> $DEPLOY_ROOT/config/cleanup.crontab
    fi
    if [ "<_MAINTENANCE_ENABLED_>" = "true" ]; then
-      echo "* * * * * $DEPLOY_ROOT/bin/cleanup.sh" >> $DEPLOY_ROOT/config/cleanup.crontab
-      echo "setting cron in cleanup.crontab"
       cat $DEPLOY_ROOT/config/cleanup.crontab
    fi
    cd $DEPLOY_ROOT
