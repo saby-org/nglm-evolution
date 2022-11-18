@@ -354,6 +354,7 @@ public class OTPUtils
         if (initialOtpList != null && !initialOtpList.isEmpty())
           {
             OTPInstance mostRecentOtp = Collections.max(initialOtpList, new OTPCreationDateComparator());
+            log.info("[PRJT] OTPInstance: {}", mostRecentOtp.toString());
             
             // Check 01 : not during a ban issue
             if (mostRecentOtp.getOTPStatus().equals(OTPStatus.RaisedBan) && DateUtils.addSeconds(mostRecentOtp.getLatestUpdate(), otptype.getBanPeriod()).after(now))
@@ -405,7 +406,7 @@ public class OTPUtils
           } 
           else
           {
-            log.debug("Impossible to generate a code for otp : no generation method filled in GUI OTPType object content.");
+            log.info("Impossible to generate a code for otp : no generation method filled in GUI OTPType object content.");
             otpRequest.setReturnStatus(RESTAPIGenericReturnCodes.SYSTEM_ERROR);
             return otpRequest;
           }
