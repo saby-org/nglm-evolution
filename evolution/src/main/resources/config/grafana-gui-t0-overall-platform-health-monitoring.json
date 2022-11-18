@@ -16,7 +16,7 @@
       "editable":true,
       "gnetId":null,
       "graphTooltip":0,
-      "id":21,
+      "id":null,
       "iteration":1668756454678,
       "links":[
          
@@ -1506,7 +1506,7 @@
       ],
       "refresh":"1m",
       "schemaVersion":27,
-      "style":"dark",
+      "style":"light",
       "tags":[
          
       ],
