@@ -6191,9 +6191,9 @@ public class GUIManagerGeneral extends GUIManager
     //  maintenance
     //
     
-    retentionConfigurations.add(new RetentionConfiguration("maintenanceLogRetentionDays", "MAINTENANCE LOG RETENTION DAYS", String.valueOf(DeploymentCommon.getMaintenanceLogRetentionDays()), "this parameter sets the number of days for which the Maintenance Logs need to be retained; any files prior to that period will be deleted").getJSONPresentation());
-    retentionConfigurations.add(new RetentionConfiguration("archivedCdrRetentionDays", "ARCHIVED CDR RETENTION DAYS", String.valueOf(DeploymentCommon.getArchivedCdrRetentionDays()), "this parameter sets the number of days for which archived CDRs need to be retained; any files prior to that period will be deleted").getJSONPresentation());
-    retentionConfigurations.add(new RetentionConfiguration("journalctlRetentionDays", "JOURNALCTL RETENTION DAYS", String.valueOf(DeploymentCommon.getJournalctlRetentionDays()), "this parameter sets the number of days for which old journal logs need to be retained; any logs prior to that period will be deleted").getJSONPresentation());
+    retentionConfigurations.add(new RetentionConfiguration("maintenanceLogRetentionDays", "MAINTENANCE LOG RETENTION DAYS", String.valueOf(DeploymentCommon.getMaintenanceLogRetentionDays()), "this parameter sets the number of days for which the Maintenance Logs need to be retained; any files prior to that period will be deleted... -1 means not configured.").getJSONPresentation());
+    retentionConfigurations.add(new RetentionConfiguration("archivedCdrRetentionDays", "ARCHIVED CDR RETENTION DAYS", String.valueOf(DeploymentCommon.getArchivedCdrRetentionDays()), "this parameter sets the number of days for which archived CDRs need to be retained; any files prior to that period will be deleted... -1 means not configured.").getJSONPresentation());
+    retentionConfigurations.add(new RetentionConfiguration("journalctlRetentionDays", "JOURNALCTL RETENTION DAYS", String.valueOf(DeploymentCommon.getJournalctlRetentionDays()), "this parameter sets the number of days for which old journal logs need to be retained; any logs prior to that period will be deleted... -1 means not configured.").getJSONPresentation());
    
     //
     //  retentionConfigurations

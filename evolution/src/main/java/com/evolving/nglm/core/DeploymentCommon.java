@@ -951,13 +951,13 @@ public class DeploymentCommon
     
     String tempResult = null;
     tempResult = jsonReader.decodeOptionalString("maintenanceLogRetentionDays");
-    maintenanceLogRetentionDays = tempResult == null || tempResult.trim().isEmpty() ? Integer.valueOf(0) : Integer.parseInt(tempResult);
+    maintenanceLogRetentionDays = tempResult == null || tempResult.trim().isEmpty() ? Integer.valueOf(-1) : Integer.parseInt(tempResult);
     
     tempResult = jsonReader.decodeOptionalString("archivedCdrRetentionDays");
-    archivedCdrRetentionDays = tempResult == null || tempResult.trim().isEmpty() ? Integer.valueOf(0) : Integer.parseInt(tempResult);
+    archivedCdrRetentionDays = tempResult == null || tempResult.trim().isEmpty() ? Integer.valueOf(-1) : Integer.parseInt(tempResult);
     
     tempResult = jsonReader.decodeOptionalString("journalctlRetentionDays");
-    journalctlRetentionDays = tempResult == null || tempResult.trim().isEmpty() ? Integer.valueOf(0) : Integer.parseInt(tempResult);
+    journalctlRetentionDays = tempResult == null || tempResult.trim().isEmpty() ? Integer.valueOf(-1) : Integer.parseInt(tempResult);
     
     JSONObject elasticsearchTemplatesVersionJSON = jsonReader.decodeJSONObject("elasticsearchTemplatesVersion");
     elasticsearchTemplatesVersion = new LinkedHashMap<String, Long>();
