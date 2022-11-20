@@ -1877,7 +1877,7 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
             actionRequests.put("requestDate", getDateString(requestDate));
             actionRequests.put("remarks", null);
             actionRequests.put("requesteID", hit.getId());
-            if (daysBetween > 1) actionRequests.put("remarks", "actionRequest with id ".concat(hit.getId()).concat(" taking more time than usal, please check the log"));
+            actionRequests.put("remarks", null);
             maintenanceRequests.add(JSONUtilities.encodeObject(actionRequests));
           }
       }
