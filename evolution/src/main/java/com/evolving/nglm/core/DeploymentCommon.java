@@ -467,6 +467,7 @@ public class DeploymentCommon
   private static int stockRefreshPeriod;
   private static String periodicEvaluationCronEntry;
   private static String ucgEvaluationCronEntry;
+  private static String stockRecurrenceCronEntry;
   private static String uploadedFileSeparator;
   private static CustomerMetaData customerMetaData;
   private static String APIresponseDateFormat;
@@ -523,6 +524,7 @@ public class DeploymentCommon
   private static String stockAlertEmailBody;
   private static String stockAlertLoginCredentail;
   private static String stockAlertPasswordCredentail;
+  private static int stockReplanishDaysRange;
   
   /*****************************************
   *
@@ -818,6 +820,7 @@ public class DeploymentCommon
   public static int getStockRefreshPeriod() { return stockRefreshPeriod; } // TODO EVPRO-99 check for tenant and static
   public static String getPeriodicEvaluationCronEntry() { return periodicEvaluationCronEntry; }
   public static String getUCGEvaluationCronEntry() { return ucgEvaluationCronEntry; } // TODO EVPRO-99 check for tenant and static
+  public static String getStockRecurrenceCronEntry() { return stockRecurrenceCronEntry; } // EVPRO-1600
   public static String getReportManagerZookeeperDir() { return reportManagerZookeeperDir; }
   public static String getReportManagerOutputPath() { return reportManagerOutputPath; } // TODO EVPRO-99 Move in TENANT
   public static String getReportManagerContentDateFormat() { return reportManagerContentDateFormat; }
@@ -882,7 +885,8 @@ public class DeploymentCommon
   public static String getStockAlertEmailBody() { return stockAlertEmailBody; }
   public static String getStockAlertLoginCredentail() { return stockAlertLoginCredentail; }
   public static String getStockAlertPasswordCredentail() { return stockAlertPasswordCredentail; }
-  
+  public static int getStockReplanishDaysRange() { return stockReplanishDaysRange; }
+
   /****************************************
   *
   * Load all variables need by static code (GUIManagedObject init)
@@ -1445,6 +1449,7 @@ public class DeploymentCommon
     stockRefreshPeriod = jsonReader.decodeInteger("stockRefreshPeriod");
     periodicEvaluationCronEntry = jsonReader.decodeString("periodicEvaluationCronEntry");
     ucgEvaluationCronEntry = jsonReader.decodeString("ucgEvaluationCronEntry");
+    stockRecurrenceCronEntry = jsonReader.decodeString("stockRecurrenceCronEntry");
 
     //
     //  Reports
@@ -1628,6 +1633,7 @@ public class DeploymentCommon
     stockAlertEmailBody = jsonReader.decodeString("stockAlertEmailBody");
     stockAlertLoginCredentail = jsonReader.decodeString("stockAlertLoginCredentail");
     stockAlertPasswordCredentail = jsonReader.decodeString("stockAlertPasswordCredentail");
+    stockReplanishDaysRange = jsonReader.decodeInteger("stockReplanishDaysRange");
   }
 
   

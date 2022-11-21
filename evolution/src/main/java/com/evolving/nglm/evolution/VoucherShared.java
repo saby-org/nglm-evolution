@@ -143,5 +143,4 @@ public class VoucherShared extends Voucher implements StockableItem {
   {
     return GUIManagedObjectType.Vouchershared;
   }
-
 }

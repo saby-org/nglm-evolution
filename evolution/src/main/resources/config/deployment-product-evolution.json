@@ -160,6 +160,8 @@
   
   "periodicEvaluationCronEntry" : "0 2 * * *",
   "ucgEvaluationCronEntry" : "0 4 * * *",
+  
+  "stockRecurrenceCronEntry" : "0 0 * * *",
 
   "minExpiryDelayForVoucherDeliveryInHours" : 4,
   "importVoucherFileBulkSize" : 5000,
@@ -1386,5 +1388,6 @@
 	"stockAlertLoginCredentail" : "administrator",
 	"stockAlertPasswordCredentail" : "password",
 	"stockAlertEmailSubject" : "Stock alert notification of - {0} - {1}",
-	"stockAlertEmailBody" : "Dear User,<br/> The remaining stock of the {0} - <b>''{1}''</b> reaches at <b>{2}</b>. Please refill the stock or do the needful from the RTOM GUI.<br/><br/><br/>Thanks,<br/>This is a system generated automatic email. Please don't reply to this."
+	"stockAlertEmailBody" : "Dear User,<br/> The remaining stock of the {0} - <b>''{1}''</b> reaches at <b>{2}</b>. Please refill the stock or do the needful from the RTOM GUI.<br/><br/><br/>Thanks,<br/>This is a system generated automatic email. Please don't reply to this.",
+	"stockReplanishDaysRange" : 30
 }
