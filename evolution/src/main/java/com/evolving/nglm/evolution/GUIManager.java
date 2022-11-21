@@ -775,6 +775,12 @@ public class GUIManager
   private GUIManagerGeneral guiManagerGeneral;
   
   //
+  //  fwkServer
+  //
+  
+  private String fwkServer = null;
+  
+  //
   //  properties
   //
   
@@ -816,6 +822,8 @@ public class GUIManager
     *****************************************/
 
     int apiRestPort = Integer.parseInt(args[0]);
+    String fwkServer = args[1];
+    String fwkEmailSMTPUserName = args[2];
     
     String nodeID = System.getProperty("nglm.license.nodeid");
 
@@ -870,12 +878,13 @@ public class GUIManager
     String customCriteriaTopic = Deployment.getCustomCriteriaTopic();
     
     this.getCustomerAlternateID = Deployment.getGetCustomerAlternateID();
+    this.fwkServer = fwkServer;
 
     //
     //  log
     //
 
-    log.info("main START: on port {}", apiRestPort);
+    log.info("main START: on port {}, fwkServer {}, fwkEmailSMTPUserName {}", apiRestPort, fwkServer, fwkEmailSMTPUserName);
 
     //
     //  license
@@ -2581,18 +2590,21 @@ public class GUIManager
     
     JobScheduler guiManagerJobScheduler = new JobScheduler("GUIManager");
     String periodicGenerationCronEntry = "5 1,6,11,16,21 * * *";
-    String qaCronEntry = "5,10,15,30,45,59 * * * *";
+    String qaCronEntry = "4,9,14,19,24,29,34,39,44,49,54,59 * * * *";
+    String stockRecurrenceAndNotificationCronEntry = DeploymentCommon.getStockRecurrenceAndNotificationCronEntry();
     ScheduledJob recurrnetCampaignCreationJob = new RecurrentCampaignCreationJob("Recurrent Campaign(create)", periodicGenerationCronEntry, Deployment.getDefault().getTimeZone(), false); // TODO EVPRO-99 i used systemTimeZone instead of BaseTimeZone pet tenant, check if correct
     ScheduledJob challengesOccurrenceJob = new ChallengesOccurrenceJob("Challenges Occurrence", periodicGenerationCronEntry, Deployment.getDefault().getTimeZone(), false);
-    if(recurrnetCampaignCreationJob.isProperlyConfigured() && challengesOccurrenceJob.isProperlyConfigured())
+    StockRecurrenceAndNotificationJob stockRecurrenceJobAndNotificationJob = new StockRecurrenceAndNotificationJob("Stock Recurrence And Notification", stockRecurrenceAndNotificationCronEntry, Deployment.getDefault().getTimeZone(), false, offerService, productService, voucherService, callingChannelService, catalogCharacteristicService, salesChannelService, supplierService, fwkServer, fwkEmailSMTPUserName);
+    if(recurrnetCampaignCreationJob.isProperlyConfigured() && challengesOccurrenceJob.isProperlyConfigured() && stockRecurrenceJobAndNotificationJob.isProperlyConfigured())
       {
         guiManagerJobScheduler.schedule(recurrnetCampaignCreationJob);
         guiManagerJobScheduler.schedule(challengesOccurrenceJob);
+        guiManagerJobScheduler.schedule(stockRecurrenceJobAndNotificationJob);
         new Thread(guiManagerJobScheduler::runScheduler, "guiManagerJobScheduler").start();
       }
     else
       {
-        if (log.isErrorEnabled()) log.error("invalid recurrnetCampaignCreationJob or ChallengesOccurrenceJob cron");
+        if (log.isErrorEnabled()) log.error("invalid recurrnetCampaignCreationJob or ChallengesOccurrenceJob or StockRecurrenceAndNotificationJob cron");
       }
     
     /*****************************************
@@ -9411,7 +9423,6 @@ public class GUIManager
     HashMap<String,Object> response = new HashMap<String,Object>();
     Boolean dryRun = false;
     
-
     /*****************************************
     *
     *  dryRun
@@ -25149,7 +25160,6 @@ public class GUIManager
 
  private JSONObject processPurchaseOffer(String userID, JSONObject jsonRoot, int tenantID) throws GUIManagerException
  {
-   
    boolean sync = true; // always sync today
    /****************************************
    *
