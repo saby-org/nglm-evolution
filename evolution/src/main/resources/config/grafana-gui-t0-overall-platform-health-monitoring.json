@@ -1188,6 +1188,7 @@
          },
          {
             "aliasColors":{
+               "ERROR": "red",
                "SUCCESS":"green",
                "WARNING":"yellow",
                "qa6-as01 ERROR":"red",
@@ -1271,8 +1272,9 @@
                   ],
                   "metrics":[
                      {
+                        "field": "status",
                         "id":"1",
-                        "type":"count"
+                        "type":"cardinality"
                      }
                   ],
                   "query":"",
@@ -1413,7 +1415,10 @@
                         
                      },
                      "renameByName":{
-                        
+                     	"_id": "Request Id",
+              			"requestDate": "Request Date",
+              			"requestedBy": "Requested By",
+              			"status": "Request Status"
                      }
                   }
                }
@@ -1422,9 +1427,10 @@
          },
          {
             "aliasColors":{
+               "ABORTED": "#E02F44",
                "COMPLETED":"#56A64B",
                "REQUESTED":"#5794F2",
-               "STARTED":"#F2495C"
+               "STARTED":"#FF9830"
             },
             "breakPoint":"50%",
             "cacheTimeout":null,
