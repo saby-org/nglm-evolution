@@ -164,7 +164,7 @@
   
   "periodicEvaluationCronEntry" : "0 2 * * *",
   "ucgEvaluationCronEntry" : "0 4 * * *",
-  "systemMaintenanceCronEntry"    : "10 5 * * *",
+  "systemMaintenanceCronEntry"    : "5 4 15 * *",
 
   "minExpiryDelayForVoucherDeliveryInHours" : 4,
   "importVoucherFileBulkSize" : 5000,
