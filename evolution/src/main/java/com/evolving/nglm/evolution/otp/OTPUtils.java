@@ -79,7 +79,6 @@ public class OTPUtils
   // called by EvolutionEngine when receiving an event from thirdparty message
   public static OTPInstanceChangeEvent handleOTPEvent(OTPInstanceChangeEvent otpRequest, SubscriberState subscriberState, OTPTypeService otpTypeService, SubscriberMessageTemplateService subscriberMessageTemplateService, SourceAddressService sourceAddressService, SubscriberEvaluationRequest subscriberEvaluationRequest, EvolutionEventContext evolutionEventContextint, int tenantID)
   {
-    log.info("[PRJT] OTPInstanceChangeEvent.handleOTPEvent()");
     switch (otpRequest.getAction())
     {
       case Check:
@@ -326,7 +325,6 @@ public class OTPUtils
   // OTP Creation
   public static OTPInstanceChangeEvent generateOTP(OTPInstanceChangeEvent otpRequest, SubscriberState subscriberState, OTPTypeService otpTypeService, SubscriberMessageTemplateService subscriberMessageTemplateService, SourceAddressService sourceAddressService, SubscriberEvaluationRequest subscriberEvaluationRequest, EvolutionEventContext evolutionEventContext, int tenantID)
   {
-    log.info("[PRJT] OTPInstanceChangeEvent.handleOTPEvent().generateOTP()");
     try
       {
         if (subscriberState == null)
@@ -356,7 +354,6 @@ public class OTPUtils
         if (initialOtpList != null && !initialOtpList.isEmpty())
           {
             OTPInstance mostRecentOtp = Collections.max(initialOtpList, new OTPCreationDateComparator());
-            log.info("[PRJT] OTPInstance: {}", mostRecentOtp.toString());
             
             // Check 01 : not during a ban issue
             if (mostRecentOtp.getOTPStatus().equals(OTPStatus.RaisedBan) && DateUtils.addSeconds(mostRecentOtp.getLatestUpdate(), otptype.getBanPeriod()).after(now))
@@ -377,7 +374,6 @@ public class OTPUtils
             // reset retryCount at each timewindow
             if (DateUtils.addSeconds(mostRecentOtp.getCreationDate(), otptype.getTimeWindow()).before(now))
               {
-                log.info("[PRJT] RESET retryCount to 0");
                 mostRecentOtp.setRetryCount(0);
               }
 

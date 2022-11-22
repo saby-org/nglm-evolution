@@ -28669,7 +28669,6 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
           log.error(stackTraceWriter.toString());
         }
       }
-    log.info("[PRJT] evaluateAuthDetailsSOSValues: {}", result.toString());
     return result; 
   }
 

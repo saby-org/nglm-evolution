@@ -5391,7 +5391,6 @@ public class ThirdPartyManager
 
       // validate subscriber loyalty program when opt-out
       Map<String, LoyaltyProgramState> subsLoyaltyPrograms = subscriberProfile.getLoyaltyPrograms();
-      log.info("[PRJT] subsLoyaltyPrograms: {}", subsLoyaltyPrograms);
 
       if (!optIn)
         {

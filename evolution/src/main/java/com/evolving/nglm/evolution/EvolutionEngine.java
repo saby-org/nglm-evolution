@@ -2033,7 +2033,6 @@ public class EvolutionEngine
     OTPUtils.clearOldOTPs(subscriberProfile, otpTypeService, tenantID);
   }
   if (evolutionEvent instanceof OTPInstanceChangeEvent) {
-    log.info("[PRJT] OTPInstanceChangeEvent triggered in EvE...");
     subscriberState.getOTPInstanceChangeEvent()
         .add(OTPUtils.handleOTPEvent((OTPInstanceChangeEvent) evolutionEvent, subscriberState, otpTypeService,
             subscriberMessageTemplateService, sourceAddressService, subscriberEvaluationRequest, context,
