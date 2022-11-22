@@ -14,7 +14,11 @@ fwk-web-<_KEY_>:
     FWK_SHOWVERSION: '<_FWK_SHOWVERSION_>'
     TENANT_ENABLED: '<_FWK_TENANT_ENABLED_>'    
     TZ: <_DEPLOYMENT_TIMEZONE_>
-    FWK_WEB_PORT: <_PORT_>   
+    FWK_WEB_PORT: <_PORT_>
+  volumes:
+    - type: bind
+      source: <_NGLM_GUI_RUNTIME_>/fwk-api-<_KEY_>/mnt
+      target: /mnt    
   deploy:
     restart_policy:
       condition: <_DOCKER_RESTART_POLICY_>
