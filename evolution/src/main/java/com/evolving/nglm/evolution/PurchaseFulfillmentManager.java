@@ -1215,7 +1215,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           thirdPartyPresentationMap.put(OFFERDISPLAY, offer.getJSONRepresentation().get("display"));
           thirdPartyPresentationMap.put(OFFERQTY, getQuantity());
           thirdPartyPresentationMap.put(OFFERSTOCK, offer.getStock());
-          thirdPartyPresentationMap.put(OFFERCANCELLABLE, offer);
+          thirdPartyPresentationMap.put(OFFERCANCELLABLE, offer.getCancellable());
           if(offer.getOfferSalesChannelsAndPrices() != null){
             for(OfferSalesChannelsAndPrice channel : offer.getOfferSalesChannelsAndPrices()){
               if(channel.getSalesChannelIDs() != null) {
