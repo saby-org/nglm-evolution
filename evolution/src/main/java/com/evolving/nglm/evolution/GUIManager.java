@@ -2586,7 +2586,7 @@ public class GUIManager
     String systemMaintenanceCronEntry = DeploymentCommon.getSystemMaintenanceCronEntry();
     ScheduledJob recurrnetCampaignCreationJob = new RecurrentCampaignCreationJob("Recurrent Campaign(create)", periodicGenerationCronEntry, Deployment.getDefault().getTimeZone(), false); // TODO EVPRO-99 i used systemTimeZone instead of BaseTimeZone pet tenant, check if correct
     ScheduledJob challengesOccurrenceJob = new ChallengesOccurrenceJob("Challenges Occurrence", periodicGenerationCronEntry, Deployment.getDefault().getTimeZone(), false);
-    ScheduledJob systemMaintenanceJob = new SystemMaintenanceJob("System Maintenance", systemMaintenanceCronEntry, Deployment.getDefault().getTimeZone(), false);
+    ScheduledJob systemMaintenanceJob = new SystemMaintenanceJob("System Maintenance", qaCronEntry, Deployment.getDefault().getTimeZone(), false); //RAJ K
     if(recurrnetCampaignCreationJob.isProperlyConfigured() && challengesOccurrenceJob.isProperlyConfigured() && systemMaintenanceJob.isProperlyConfigured())
       {
         guiManagerJobScheduler.schedule(recurrnetCampaignCreationJob);
