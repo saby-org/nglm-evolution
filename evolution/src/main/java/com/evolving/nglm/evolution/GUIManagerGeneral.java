@@ -6220,8 +6220,6 @@ public class GUIManagerGeneral extends GUIManager
   
   public JSONObject processCreateSystemMaintenanceRequest(String userID, JSONObject jsonRoot, int tenantID)
   {
-    log.info("RAJ K processCreateSystemMaintenanceRequest jsonRoot {}", jsonRoot);
-    
     /****************************************
     *
     *  response
