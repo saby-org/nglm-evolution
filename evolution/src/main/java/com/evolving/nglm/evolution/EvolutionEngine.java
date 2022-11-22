@@ -7875,7 +7875,7 @@ public class EvolutionEngine
                               {
                                 // this journey (not workflow) changed to notified
                                 journeyState.setConvertedThisEvent(true);
-                                //journeyState.getJourneyHistory().incrementConversions(SystemTime.getCurrentTime());
+                                journeyState.getJourneyHistory().incrementConversions(SystemTime.getCurrentTime());
                                 journeyState.getJourneyParameters().put(current.getKey(), current.getValue());
                                 // retrieve the main campaign (if exist) that triggered this workflow
                                 for(JourneyState existing : subscriberState.getJourneyStates())
@@ -7885,7 +7885,7 @@ public class EvolutionEngine
                                       existing.getJourneyParameters().put(current.getKey(), current.getValue());
                                       
                                       //existing.getJourneyHistory().setConversionsCount(journeyState.getJourneyHistory().getConversionCount(), SystemTime.getCurrentTime());
-                                      existing.getJourneyHistory().incrementConversions(SystemTime.getCurrentTime());
+                                      //existing.getJourneyHistory().incrementConversions(SystemTime.getCurrentTime());
                                     }
                                   }
                               }
