@@ -7889,10 +7889,10 @@ public class EvolutionEngine
                                     }
                                   }
                               }
-                            else if(newValue)   // EVPRO-1631 -- added a new block just to update conversioncount, without interrupting prev code
+                            /*else if(newValue)   // EVPRO-1631 -- added a new block just to update conversioncount, without interrupting prev code
                               {
                                 journeyState.getJourneyHistory().incrementConversions(SystemTime.getCurrentTime());
-                              }
+                              }*/
                           }
                         }
                       else 
