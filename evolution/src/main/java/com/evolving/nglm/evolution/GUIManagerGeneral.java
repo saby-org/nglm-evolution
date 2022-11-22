@@ -6220,6 +6220,8 @@ public class GUIManagerGeneral extends GUIManager
   
   public JSONObject processCreateSystemMaintenanceRequest(String userID, JSONObject jsonRoot, int tenantID)
   {
+    log.info("RAJ K processCreateSystemMaintenanceRequest jsonRoot {}", jsonRoot);
+    
     /****************************************
     *
     *  response
@@ -6227,12 +6229,13 @@ public class GUIManagerGeneral extends GUIManager
     ****************************************/
     
     Map<String, Object> response = new HashMap<String, Object>();
+    String userName = JSONUtilities.decodeString(jsonRoot, "userName", "Administrator");
     List<JSONObject> pendingRequests = this.elasticsearch.getPendingMaintenanceRequests(null);
     if (pendingRequests.isEmpty())
       {
         Map<String, Object> documentMap = new HashMap<String, Object>();
         Date now = SystemTime.getCurrentTime();
-        documentMap.put("requestedBy", "userID "+ userID != null ? userID : "Administrator");
+        documentMap.put("requestedBy", userName);
         documentMap.put("status", "REQUESTED");
         documentMap.put("requestDate", RLMDateUtils.formatDateForElasticsearchDefault(now));
         String requestID = this.elasticsearch.createSystemMaintenanceRequest(documentMap, now);
