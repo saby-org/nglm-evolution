@@ -27865,6 +27865,23 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
                 }
             }
           break;
+          
+        case "offerDisplays":
+          if (includeDynamic)
+            {
+              for (GUIManagedObject offerUnchecked : offerService.getStoredOffers(tenantID))
+                {
+                  if (offerUnchecked.getAccepted())
+                    {
+                      Offer offer = (Offer) offerUnchecked;
+                      HashMap<String,Object> availableValue = new HashMap<String,Object>();
+                      availableValue.put("id", offer.getGUIManagedObjectDisplay());
+                      availableValue.put("display", offer.getGUIManagedObjectDisplay());
+                      result.add(JSONUtilities.encodeObject(availableValue));
+                    }
+                }
+            }
+          break;
 
         case "offerIDs":
           if (includeDynamic)
