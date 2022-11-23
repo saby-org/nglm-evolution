@@ -280,7 +280,8 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
     this.createLeaderBoard = JSONUtilities.decodeBoolean(jsonRoot, "createLeaderBoard", Boolean.FALSE);
     this.recurrence = JSONUtilities.decodeBoolean(jsonRoot, "recurrence", Boolean.FALSE);
     this.recurrenceId = JSONUtilities.decodeString(jsonRoot, "recurrenceId", recurrence);
-    this.occurrenceNumber = JSONUtilities.decodeInteger(jsonRoot, "occurrenceNumber", recurrence);
+    //this.occurrenceNumber = JSONUtilities.decodeInteger(jsonRoot, "occurrenceNumber", recurrence);
+    this.occurrenceNumber = JSONUtilities.decodeInteger(jsonRoot, "occurrenceNumber", 1); // EVPRO-1603 -- to happy datacubemanager for non-recurrence type
     if (recurrence) this.journeyScheduler = new JourneyScheduler(JSONUtilities.decodeJSONObject(jsonRoot, "scheduler", recurrence));
     this.lastCreatedOccurrenceNumber = JSONUtilities.decodeInteger(jsonRoot, "lastCreatedOccurrenceNumber", false);
     this.lastOccurrenceCreateDate = parseDateField(JSONUtilities.decodeString(jsonRoot, "lastOccurrenceCreateDate", false));
@@ -695,6 +696,12 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
     {
       return this.scoreLevel - challengeLevel.getScoreLevel();
     }
+    
+    @Override
+    public String toString()
+    {
+      return "ChallengeLevel [levelName=" + levelName + ", scoreLevel=" + scoreLevel + ", scoreEventName=" + scoreEventName + ", numberOfscorePerEvent=" + numberOfscorePerEvent + ", workflowChange=" + workflowChange + ", workflowScore=" + workflowScore + ", workflowDaily=" + workflowDaily + "]";
+    }
    
   }
   
@@ -733,4 +740,6 @@ public class LoyaltyProgramChallenge extends LoyaltyProgram
     result.put("catalogcharacteristic", catalogcharacteristicIDs);
     return result;
   }
+  
+  
 }

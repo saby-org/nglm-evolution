@@ -142,6 +142,7 @@ public class MissionsChangesDatacubeGenerator extends DatacubeGenerator
     sources.add(new TermsValuesSourceBuilder("loyaltyProgramID").field("loyaltyPrograms.programID"));
     sources.add(new TermsValuesSourceBuilder("newStep").field("loyaltyPrograms.stepName").missingBucket(true)); // Missing means opt-out. We need to catch them !
     sources.add(new TermsValuesSourceBuilder("previousStep").field("loyaltyPrograms.previousStepName").missingBucket(true)); // Missing means opt-out. We need to catch them !
+    sources.add(new TermsValuesSourceBuilder("stepChangeType").field("loyaltyPrograms.stepChangeType").missingBucket(true)); // Missing means opt-out. We need to catch them !
     
     //
     // Sub Aggregation DATE - It is a filter (only one bucket), but for a field of the nested object.

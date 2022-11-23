@@ -1830,7 +1830,7 @@
                   "type": "sum"
                 }
               ],
-              "query": "filter.stratum.XXX:$segement AND filter.level:$level",
+              "query": "filter.stratum.XXX:$segment AND filter.level:$level",
               "refId": "A",
               "timeField": "timestamp"
             }
