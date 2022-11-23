@@ -40,6 +40,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import com.evolving.nglm.evolution.uniquekey.ZookeeperUniqueKeyServer;
+import com.google.gson.JsonArray;
+
 import org.apache.commons.fileupload.FileItemIterator;
 import org.apache.commons.fileupload.FileItemStream;
 import org.apache.commons.fileupload.FileUpload;
@@ -74,6 +76,7 @@ import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.evolving.nglm.core.AlternateID;
 import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.DeploymentCommon;
 import com.evolving.nglm.core.JSONUtilities;
@@ -107,6 +110,13 @@ public class GUIManagerGeneral extends GUIManager
 
   private static final int HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE = 100;
   
+  private static final Set<String> ADVANCED_SEARCH_RESPONSE_KEY;
+  
+  static 
+  {
+	  ADVANCED_SEARCH_RESPONSE_KEY = Collections.unmodifiableSet(buildAdvancedSearchResponseKeySet());
+  }
+  
   //
   //  data
   //
@@ -118,6 +128,7 @@ public class GUIManagerGeneral extends GUIManager
   public GUIManagerGeneral()
   {
     super();
+    buildAdvancedSearchResponseKeySet();
   }
   
   /***************************
@@ -1064,6 +1075,167 @@ public class GUIManagerGeneral extends GUIManager
     return JSONUtilities.encodeObject(response);
   }
 
+  
+  /*****************************************
+  *
+  *  processAdvancedSearch   -- search elasticSearch subscriberProfile Index, using profile criteria
+  *
+  *****************************************/
+
+JSONObject processAdvancedSearch(String userID, JSONObject jsonRoot, int tenantID)
+  {
+	  
+	   /****************************************
+	    *
+	    *  response
+	    *
+	    ****************************************/
+
+	    HashMap<String,Object> response = new HashMap<String,Object>();
+	    
+	    Integer from;
+	    Integer size;
+	    /*****************************************
+	    *
+	    *  parse
+	    *
+	    *****************************************/
+
+	    List<EvaluationCriterion> criteriaList = new ArrayList<EvaluationCriterion>();
+	    try
+	      {
+	        JSONArray jsonCriteriaList = JSONUtilities.decodeJSONArray(jsonRoot, "profileCriteria", true);
+	        for (int i=0; i<jsonCriteriaList.size(); i++)
+	          {
+	            criteriaList.add(new EvaluationCriterion((JSONObject) jsonCriteriaList.get(i), CriterionContext.FullDynamicProfile(tenantID), tenantID));
+	          }
+	        
+	        //parse default values for from and size
+	        from = JSONUtilities.decodeInteger(jsonRoot, "from",0);
+	        size = JSONUtilities.decodeInteger(jsonRoot, "size",10);
+	      }
+	    catch (JSONUtilitiesException|GUIManagerException e)
+	      {
+	        //
+	        //  log
+	        //
+
+	        StringWriter stackTraceWriter = new StringWriter();
+	        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+	        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+	        //
+	        //  response
+	        //
+
+	        response.put("responseCode", "argumentError");
+	        response.put("responseMessage", e.getMessage());
+	        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+	        return JSONUtilities.encodeObject(response);
+	      }
+
+	    Boolean returnQuery = JSONUtilities.decodeBoolean(jsonRoot, "returnQuery", Boolean.FALSE);
+	    
+	    /*****************************************
+	    *
+	    *  construct query
+	    *
+	    *****************************************/
+
+	    BoolQueryBuilder query = null;
+	    try
+	      {
+	        query = EvaluationCriterion.esCountMatchCriteriaGetQuery(criteriaList);
+	      }
+	    catch (CriterionException e)
+	      {
+	        //
+	        //  log
+	        //
+
+	        StringWriter stackTraceWriter = new StringWriter();
+	        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+	        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+	        //
+	        //  response
+	        //
+
+	        response.put("responseCode", "argumentError");
+	        response.put("responseMessage", e.getMessage());
+	        response.put("responseParameter", (e instanceof GUIManagerException) ? ((GUIManagerException) e).getResponseParameter() : null);
+	        return JSONUtilities.encodeObject(response);
+	      }
+	    
+	    /*****************************************
+	    *
+	    *  execute query
+	    *
+	    *****************************************/
+
+	    SearchResponse result;
+	    try
+	      {
+	        result = EvaluationCriterion.esSearchMatchCriteriaExecuteQuery(query, elasticsearch, from , size);
+	      }
+	    catch (IOException|ElasticsearchStatusException e)
+	      {
+	        //
+	        //  log
+	        //
+
+	        StringWriter stackTraceWriter = new StringWriter();
+	        e.printStackTrace(new PrintWriter(stackTraceWriter, true));
+	        log.warn("Exception processing REST api: {}", stackTraceWriter.toString());
+
+	        //
+	        //  response
+	        //
+
+	        response.put("responseCode", "systemError");
+	        response.put("responseMessage", e.getMessage());
+	        response.put("responseParameter", null);
+	        return JSONUtilities.encodeObject(response);
+	      }
+	    
+	    
+	    /*****************************************
+	    *
+	    *  response
+	    *
+	    *****************************************/
+
+	    response.put("responseCode", "ok");
+	    response.put("totalFound", result.getHits().getTotalHits().value);
+	    SearchHit[] hits = result.getHits().getHits();
+	    JSONArray subsResultArray = new JSONArray();
+	    for (SearchHit hit : hits)
+	    {
+	    	JSONObject subscriber = new JSONObject();
+	    	for (String key : ADVANCED_SEARCH_RESPONSE_KEY)
+	    	{
+	    		subscriber.put(key, hit.getSourceAsMap().get(key));
+	    	}
+	    	subsResultArray.add(subscriber);
+	    }
+	    
+	    response.put("result", subsResultArray);
+	    if (returnQuery && (query != null))
+	      {
+	        try
+	          {
+	            JSONObject queryJSON = (JSONObject) (new JSONParser()).parse(query.toString());
+	            response.put("query", JSONUtilities.encodeObject(queryJSON));
+	          }
+	        catch (ParseException e)
+	          {
+	            log.debug("Cannot parse query string {} : {}", query.toString(), e.getLocalizedMessage());
+	          }
+	      }
+	    return JSONUtilities.encodeObject(response);  
+	    
+  }
+  
   /*****************************************
   *
   *  processGetPointList
@@ -6289,5 +6461,49 @@ public class GUIManagerGeneral extends GUIManager
       }
   }
   
+  /****************************************
+  *
+  *  build AdvancedSearch Response Key Set.
+  *
+  ****************************************/
+  
+  private static Set<String> buildAdvancedSearchResponseKeySet()
+  {
+	  Set<String> advancedSearchResponseKeySet = new HashSet<>();
+	  
+	  //
+	  // get all AlternateIDs as key
+	  //
+	  
+	  for (Map.Entry<String, AlternateID> entry : Deployment.getAlternateIDs().entrySet())
+      {
+        AlternateID alternateID = entry.getValue();
+        if (alternateID.getESField() == null)
+          {
+        	log.warn("buildAdvancedSearchResponseKeySet() : An Alternate key has null value for esField in deployment.json's alternateIDs");
+            continue;
+          }
+        advancedSearchResponseKeySet.add(alternateID.getESField());
+      }
+	  
+	  //
+	  // get all profileCriterionFields  as key which are used in advanced search
+	  //
+	  
+	  for (Map.Entry<String, CriterionField> entry : Deployment.getProfileCriterionFields().entrySet())
+      {
+		  CriterionField criterionField = entry.getValue();
+        if (criterionField.getUseInAdvancedSearch())
+          {
+        	 if (criterionField.getESField()== null)
+        	 {
+	        	log.warn("buildAdvancedSearchResponseKeySet() : An CriterionField key has null value for esField");
+	            continue;
+        	 }
+        	 advancedSearchResponseKeySet.add(criterionField.getESField());
+          }
+      }
+	  return advancedSearchResponseKeySet;
+  }
 }
 

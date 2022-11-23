@@ -97,7 +97,7 @@ public class CriterionField extends DeploymentManagedObject
   {
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("criterion_field");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(7));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(8));
     schemaBuilder.field("jsonRepresentation", Schema.STRING_SCHEMA);
     schemaBuilder.field("fieldDataType", Schema.STRING_SCHEMA);
     schemaBuilder.field("mandatoryParameter", Schema.BOOLEAN_SCHEMA);
@@ -113,6 +113,7 @@ public class CriterionField extends DeploymentManagedObject
     schemaBuilder.field("profileChangeEvent", SchemaBuilder.bool().defaultValue(false).schema());
     schemaBuilder.field("useESQueryNoPainless",SchemaBuilder.bool().defaultValue(true).schema());
     schemaBuilder.field("subcriteria", SchemaBuilder.array(Schema.STRING_SCHEMA).defaultValue(Collections.<String>emptyList()).schema());
+    schemaBuilder.field("useInAdvancedSearch" , SchemaBuilder.bool().defaultValue(false).schema());
     schema = schemaBuilder.build();
   };
 
@@ -149,6 +150,7 @@ public class CriterionField extends DeploymentManagedObject
   private boolean profileChangeEvent;
   private boolean useESQueryNoPainless;
   private Set<String> subcriterias;
+  private boolean useInAdvancedSearch;
 
   //
   //  calculated
@@ -177,6 +179,8 @@ public class CriterionField extends DeploymentManagedObject
   public boolean getUseESQueryNoPainless() { return useESQueryNoPainless; }
   public Set<String> getSubcriterias() { return subcriterias; }
   public boolean hasSubcriterias() { return getSubcriterias() != null && !getSubcriterias().isEmpty(); }
+  public boolean getUseInAdvancedSearch() {return useInAdvancedSearch;}
+  
 
   /*****************************************
   *
@@ -218,6 +222,7 @@ public class CriterionField extends DeploymentManagedObject
     this.variableType = VariableType.fromExternalRepresentation(JSONUtilities.decodeString(jsonRoot, "variableType", "local"));
     this.profileChangeEvent = JSONUtilities.decodeBoolean(jsonRoot, "profileChangeEvent", Boolean.FALSE);
     this.useESQueryNoPainless = JSONUtilities.decodeBoolean(jsonRoot,"useESQueryNoPainless",Boolean.TRUE);
+    this.useInAdvancedSearch = JSONUtilities.decodeBoolean(jsonRoot,"useInAdvancedSearch",Boolean.FALSE);
     this.subcriterias = new LinkedHashSet<String>();
     JSONArray subcriteriaArray = JSONUtilities.decodeJSONArray(jsonRoot, "subcriteria", new JSONArray());
     for (int i = 0; i < subcriteriaArray.size(); i++)
@@ -437,7 +442,7 @@ public class CriterionField extends DeploymentManagedObject
   *
   *****************************************/
 
-  private CriterionField(JSONObject jsonRepresentation, CriterionDataType fieldDataType, boolean mandatoryParameter, boolean generateDimension, String esField, String criterionFieldRetriever, boolean expressionValuedParameter, boolean internalOnly, boolean evaluationVariable, String tagFormat, Integer tagMaxLength, VariableType variableType, boolean profileChangeEvent,boolean useESQueryNoPainless, Set<String> subcriterias)
+  private CriterionField(JSONObject jsonRepresentation, CriterionDataType fieldDataType, boolean mandatoryParameter, boolean generateDimension, String esField, String criterionFieldRetriever, boolean expressionValuedParameter, boolean internalOnly, boolean evaluationVariable, String tagFormat, Integer tagMaxLength, VariableType variableType, boolean profileChangeEvent,boolean useESQueryNoPainless, Set<String> subcriterias, boolean useInAdvancedSearch)
   {
     //
     //  super
@@ -464,6 +469,7 @@ public class CriterionField extends DeploymentManagedObject
     this.profileChangeEvent = profileChangeEvent;
     this.useESQueryNoPainless = useESQueryNoPainless;
     this.subcriterias = subcriterias;
+    this.useInAdvancedSearch = useInAdvancedSearch;
 
     //
     //  retriever
@@ -518,6 +524,7 @@ public class CriterionField extends DeploymentManagedObject
     struct.put("profileChangeEvent", criterionField.getProfileChangeEvent());
     struct.put("useESQueryNoPainless",criterionField.getUseESQueryNoPainless());
     struct.put("subcriteria",criterionField.getSubcriterias());
+    struct.put("useInAdvancedSearch", criterionField.getUseInAdvancedSearch());
     return struct;
   }
 
@@ -557,12 +564,12 @@ public class CriterionField extends DeploymentManagedObject
     boolean profileChangeEvent = (schemaVersion >= 2) ? valueStruct.getBoolean("profileChangeEvent") : false;
     boolean useESQueryNoPainless = (schemaVersion >= 6) ? valueStruct.getBoolean("useESQueryNoPainless"):false;
     Set<String> subcriterias = (schemaVersion >= 7) ? unpackSubcrierias(valueStruct.get("subcriteria")) : new LinkedHashSet<String>();
-
+    boolean useInAdvancedSearch = (schemaVersion >= 8) ? valueStruct.getBoolean("useInAdvancedSearch"): false;
     //
     //  return
     //
 
-    return new CriterionField(jsonRepresentation, fieldDataType, mandatoryParameter, generateDimension, esField, criterionFieldRetriever, expressionValuedParameter, internalOnly, evaluationVariable, tagFormat, tagMaxLength, variableType, profileChangeEvent,useESQueryNoPainless, subcriterias);
+    return new CriterionField(jsonRepresentation, fieldDataType, mandatoryParameter, generateDimension, esField, criterionFieldRetriever, expressionValuedParameter, internalOnly, evaluationVariable, tagFormat, tagMaxLength, variableType, profileChangeEvent,useESQueryNoPainless, subcriterias,useInAdvancedSearch);
   }
 
   /*****************************************
@@ -962,6 +969,7 @@ public class CriterionField extends DeploymentManagedObject
         result = result && profileChangeEvent == criterionField.getProfileChangeEvent();
         result =  result && useESQueryNoPainless == criterionField.getUseESQueryNoPainless();
         result = result && Objects.equals(subcriterias, criterionField.getSubcriterias());
+        result = result && useInAdvancedSearch == criterionField.getUseInAdvancedSearch();
       }
     return result;
   }
@@ -980,7 +988,7 @@ public class CriterionField extends DeploymentManagedObject
   @Override
   public String toString()
   {
-    return "CriterionField [fieldDataType=" + fieldDataType + ", mandatoryParameter=" + mandatoryParameter + ", generateDimension=" + generateDimension + ", esField=" + esField + ", criterionFieldRetriever=" + criterionFieldRetriever + ", expressionValuedParameter=" + expressionValuedParameter + ", internalOnly=" + internalOnly + ", evaluationVariable=" + evaluationVariable + ", tagFormat=" + tagFormat + ", tagMaxLength=" + tagMaxLength + ", variableType=" + variableType + ", profileChangeEvent=" + profileChangeEvent + ", retriever=" + retriever + ", useESQueryNoPainless=" + useESQueryNoPainless + "]";
+    return "CriterionField [fieldDataType=" + fieldDataType + ", mandatoryParameter=" + mandatoryParameter + ", generateDimension=" + generateDimension + ", esField=" + esField + ", criterionFieldRetriever=" + criterionFieldRetriever + ", expressionValuedParameter=" + expressionValuedParameter + ", internalOnly=" + internalOnly + ", evaluationVariable=" + evaluationVariable + ", tagFormat=" + tagFormat + ", tagMaxLength=" + tagMaxLength + ", variableType=" + variableType + ", profileChangeEvent=" + profileChangeEvent + ", retriever=" + retriever + ", useESQueryNoPainless=" + useESQueryNoPainless+ ", useInAdvancedSearch=" + useInAdvancedSearch +"]";
   }
   
   
