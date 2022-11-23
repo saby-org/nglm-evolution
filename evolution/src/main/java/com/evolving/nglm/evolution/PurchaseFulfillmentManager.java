@@ -41,8 +41,10 @@ import com.evolving.nglm.evolution.Expression.ExpressionContext;
 import com.evolving.nglm.evolution.Expression.ExpressionReader;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
+import com.evolving.nglm.evolution.Journey.GUINode;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
+import com.evolving.nglm.evolution.VoucherDelivery.VoucherStatus;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 import com.evolving.nglm.evolution.statistics.CounterStat;
 import com.evolving.nglm.evolution.statistics.StatBuilder;
@@ -495,6 +497,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public void setSupplierDisplay(String supplierDisplay) { this.supplierDisplay = supplierDisplay; }
     public void setCancelPurchase(boolean cancelPurchase) { this.cancelPurchase = cancelPurchase;}
     public void setPreviousPurchaseDate(Date previousPurchaseDate) { this.previousPurchaseDate = previousPurchaseDate; } 
+    public void setVoucherDeliveries(List<VoucherDelivery> voucherDeliveries) { this.voucherDeliveries = voucherDeliveries; }
     
     //
     //  offer delivery accessors
@@ -509,8 +512,8 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public String getOfferDeliverySalesChannelId() { return getSalesChannelID(); }
     public long getOfferDeliveryOfferPrice() { return getOfferPrice(); }
     public String getOfferDeliveryMeanOfPayment() { return getMeanOfPayment(); }
-    public String getOfferDeliveryVoucherCode() { return getVoucherDeliveries()==null?"":getVoucherDeliveries().get(0).getVoucherCode(); }
-    public String getOfferDeliveryVoucherExpiryDate() { return getVoucherDeliveries()==null?"":getVoucherDeliveries().get(0).getVoucherExpiryDate()==null?"":getVoucherDeliveries().get(0).getVoucherExpiryDate().toString(); }
+    public String getOfferDeliveryVoucherCode() { return getVoucherDeliveries()==null || getVoucherDeliveries().isEmpty() ?"":getVoucherDeliveries().get(0).getVoucherCode(); }
+    public String getOfferDeliveryVoucherExpiryDate() { return getVoucherDeliveries()==null || getVoucherDeliveries().isEmpty() ?"":getVoucherDeliveries().get(0).getVoucherExpiryDate()==null?"":getVoucherDeliveries().get(0).getVoucherExpiryDate().toString(); }
     public String getOfferDeliveryVoucherPartnerId() { return ""; }//TODO
     public String getOfferDeliveryOfferContent() { return getOfferContent(); }
     public String getOfferDeliveryResellerID() { return getResellerID(); }
@@ -720,9 +723,25 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       this.resellerDisplay = JSONUtilities.decodeString(jsonRoot, "resellerDisplay", false);
       this.supplierDisplay = JSONUtilities.decodeString(jsonRoot, "supplierDisplay", false);
       this.cancelPurchase = JSONUtilities.decodeBoolean(jsonRoot, "cancelPurchase", Boolean.FALSE);
+      if (cancelPurchase) this.voucherDeliveries = decodeVoucherDeliveries(JSONUtilities.decodeJSONArray(jsonRoot, "voucherDeliveries", new JSONArray())); // hack to get back the voucher details send on a previous purchase call in cancel
       updatePurchaseFulfillmentRequest(offerService, paymentMeanService, resellerService, productService, supplierService, voucherService, now, tenantID);
     }
 
+    private List<VoucherDelivery> decodeVoucherDeliveries(JSONArray jsonArray)
+    {
+      List<VoucherDelivery> deliveries = new ArrayList<VoucherDelivery>();
+      for (int i=0; i<jsonArray.size(); i++)
+        {
+          //
+          //  voucherDelivery
+          //
+
+          JSONObject nodeJSON = (JSONObject) jsonArray.get(i);
+          VoucherDelivery voucherDelivery = new VoucherDelivery(nodeJSON);
+          deliveries.add(voucherDelivery);
+        }
+      return deliveries;
+    }
     /*****************************************
     *
     *  constructor -- unpack
@@ -856,7 +875,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
 				} catch (java.text.ParseException e) {
 					throw new ServerRuntimeException(e);
 				}
-                  VoucherDelivery voucherDelivery = new VoucherDelivery(voucherID, voucherFileID, voucherCode, null, voucherExpiryDate); //minimal
+                  VoucherDelivery voucherDelivery = new VoucherDelivery(voucherID, voucherFileID, voucherCode, VoucherStatus.Unknown, voucherExpiryDate); //minimal
                   voucherDeliveries.add(voucherDelivery);
                 }
               this.voucherDeliveries = voucherDeliveries;
@@ -1105,6 +1124,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         {
           guiPresentationMap.put(OFFERNAME, offerGMO.getJSONRepresentation().get("name"));
           guiPresentationMap.put(OFFERDISPLAY, offerGMO.getJSONRepresentation().get("display"));
+          guiPresentationMap.put(OFFERCANCELLABLE, offerGMO.getAccepted() ? ((Offer) offerGMO).getCancellable() : false);
 
           guiPresentationMap.put(OFFERSTOCK, offerGMO.getJSONRepresentation().get("presentationStock")); // in case we don't find the offer
           
@@ -1147,7 +1167,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
                 	  voucherFormat = ((VoucherShared)voucher).getCodeFormatId();
                     } else if (voucher instanceof VoucherPersonal){
                     	for(VoucherFile voucherFile:((VoucherPersonal)voucher).getVoucherFiles()){
-                    		if(voucherFile.getFileId().equals(getVoucherDeliveries()==null?"":getVoucherDeliveries().get(0).getFileID())) {
+                    		if(voucherFile.getFileId().equals(getVoucherDeliveries()==null || getVoucherDeliveries().isEmpty() ?"":getVoucherDeliveries().get(0).getFileID())) {
                     			voucherFormat = voucherFile.getCodeFormatId();
                     		}
                     	}
@@ -1195,6 +1215,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           thirdPartyPresentationMap.put(OFFERDISPLAY, offer.getJSONRepresentation().get("display"));
           thirdPartyPresentationMap.put(OFFERQTY, getQuantity());
           thirdPartyPresentationMap.put(OFFERSTOCK, offer.getStock());
+          thirdPartyPresentationMap.put(OFFERCANCELLABLE, offer.getCancellable());
           if(offer.getOfferSalesChannelsAndPrices() != null){
             for(OfferSalesChannelsAndPrice channel : offer.getOfferSalesChannelsAndPrices()){
               if(channel.getSalesChannelIDs() != null) {
@@ -1230,7 +1251,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
                   voucherFormat = ((VoucherShared)voucher).getCodeFormatId();
                 } else if (voucher instanceof VoucherPersonal){
                 	for(VoucherFile voucherFile:((VoucherPersonal)voucher).getVoucherFiles()){
-                		if(voucherFile.getFileId().equals(getVoucherDeliveries()==null?"":getVoucherDeliveries().get(0).getFileID())) {
+                		if(voucherFile.getFileId().equals(getVoucherDeliveries()==null || getVoucherDeliveries().isEmpty() ?"":getVoucherDeliveries().get(0).getFileID())) {
                 			voucherFormat = voucherFile.getCodeFormatId();
                 		}
                 	}
@@ -1363,9 +1384,21 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
               {
                 if (offer.getOfferVouchers() != null && !offer.getOfferVouchers().isEmpty())
                   {
-                    log.error("CancelpurchaseRequest not yet supported for vouchers");
-                    submitCorrelatorUpdate(purchaseStatus, PurchaseFulfillmentStatus.SYSTEM_ERROR, "CancelpurchaseRequest not yet supported for vouchers");
-                    continue mainLoop;
+                    List<VoucherDelivery> voucherDeliveries = getCancelableVouchers(subscriberProfile, purchaseRequest.getVoucherDeliveries());
+                    for (VoucherDelivery voucherDelivery : voucherDeliveries)
+                      {
+                        log.debug("cancel voucher delivery for {}", voucherDelivery);
+                        Date voucherDeliveryDate = purchaseRequest.getPreviousPurchaseDate(); // sent to Evolution Engine to check this is that voucher
+                        VoucherChange request = new VoucherChange(subscriberID, voucherDeliveryDate, purchaseRequest.getDeliveryRequestID(), VoucherChange.VoucherChangeAction.Cancel, voucherDelivery.getVoucherCode(), voucherDelivery.getVoucherID(), null, purchaseRequest.getModuleID(), purchaseRequest.getFeatureID(), purchaseRequest.getOrigin(), RESTAPIGenericReturnCodes.UNKNOWN, subscriberProfile.getSegments(), purchaseRequest.getDeliveryRequestID(), purchaseRequest.getOfferID(), purchaseRequest.getTenantID());
+                        String requestTopic = Deployment.getVoucherChangeRequestTopic();
+                        kafkaProducer.send(new ProducerRecord<byte[], byte[]>(requestTopic, StringKey.serde().serializer().serialize(requestTopic, new StringKey(subscriberID)), VoucherChange.serde().serializer().serialize(requestTopic, request)));
+                      }
+                    
+                    //
+                    //  clean
+                    //
+                    
+                    purchaseRequest.setVoucherDeliveries(null);
                   }
                 
                 //
@@ -1682,6 +1715,34 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       }
   }
   
+  private List<VoucherDelivery> getCancelableVouchers(SubscriberProfile subscriberProfile, List<VoucherDelivery> voucherDeliveries)
+  {
+    List<VoucherDelivery> result = new ArrayList<VoucherDelivery>();
+    
+    //
+    //  filter out already Cancelled/Expired vouchers
+    //
+    
+    List<VoucherProfileStored> storedVouchers = subscriberProfile.getVouchers().stream().filter(voucher -> voucher.getVoucherStatus() != VoucherStatus.Cancelled && voucher.getVoucherStatus() != VoucherStatus.Expired).collect(Collectors.toList());
+    
+    for (VoucherDelivery voucherDelivery : voucherDeliveries)
+      {
+        for (VoucherProfileStored profileStored : storedVouchers)
+          {
+            if (voucherDelivery.getVoucherID().equals(profileStored.getVoucherID()) && voucherDelivery.getVoucherCode().equals(profileStored.getVoucherCode()))
+              {
+                result.add(voucherDelivery);
+              }
+          }
+      }
+    
+    //
+    //  result
+    //
+    
+    return result;
+  }
+
   /*****************************************
   *
   *  CorrelatorUpdate

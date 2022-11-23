@@ -109,6 +109,7 @@ import com.evolving.nglm.core.AutoProvisionSubscriberStreamEvent;
 import com.evolving.nglm.core.CleanupSubscriber;
 import com.evolving.nglm.core.ConnectSerde;
 import com.evolving.nglm.core.Deployment;
+import com.evolving.nglm.core.DeploymentCommon;
 import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.evolution.uniquekey.KStreamsUniqueKeyServer;
 import com.evolving.nglm.core.NGLMKafkaClientSupplier;
@@ -2576,83 +2577,71 @@ public class EvolutionEngine
       if(log.isDebugEnabled()) log.debug("will process purchase request for vouchers : "+purchaseFulfillmentRequest);
 
       // check if there is vouchers delivery in this purchase request :
-      if(purchaseFulfillmentRequest.getVoucherDeliveries()!=null && !purchaseFulfillmentRequest.getVoucherDeliveries().isEmpty()){
-        if(log.isDebugEnabled()) log.debug("purchase request contains voucher deliveries to process");
+      if (!purchaseFulfillmentRequest.getCancelPurchase() && purchaseFulfillmentRequest.getVoucherDeliveries() != null && !purchaseFulfillmentRequest.getVoucherDeliveries().isEmpty())
+        {
+          for (VoucherDelivery voucherDelivery : purchaseFulfillmentRequest.getVoucherDeliveries())
+            {
+              Voucher voucher = voucherService.getActiveVoucher(voucherDelivery.getVoucherID(), context.eventDate());
+              VoucherType voucherType = voucherTypeService.getActiveVoucherType(voucher.getVoucherTypeId(), context.eventDate());
+              if (voucherType == null)
+                {
+                  log.warn("no more voucher type for voucherId " + voucherDelivery.getVoucherID() + ", skipping " + voucherDelivery.getVoucherCode() + " for " + context.getSubscriberState().getSubscriberID());
+                } 
+              else
+                {
+                  Date expiryDate = null;
+                  // compute expiry date here for relative expiry vouchers
+                  if (voucherType.getCodeType() == VoucherType.CodeType.Shared)
+                    {
+                      expiryDate = EvolutionUtilities.addTime(context.processingDate(), voucherType.getValidity().getPeriodQuantity(), voucherType.getValidity().getPeriodType(), Deployment.getDeployment(tenantID).getTimeZone(), voucherType.getValidity().getRoundDown() ? EvolutionUtilities.RoundingSelection.RoundDown : EvolutionUtilities.RoundingSelection.NoRound);
+                    } 
+                  else if (voucherType.getCodeType() == VoucherType.CodeType.Personal)
+                    {
+                      VoucherPersonal voucherPersonal = (VoucherPersonal) voucher;
+                      for (VoucherFile voucherFile : voucherPersonal.getVoucherFiles())
+                        {
+                          if (voucherFile.getFileId().equals(voucherDelivery.getFileID()))
+                            {
+                              if (voucherFile.getExpiryDate() == null)
+                                {
+                                  expiryDate = EvolutionUtilities.addTime(context.processingDate(), voucherType.getValidity().getPeriodQuantity(), voucherType.getValidity().getPeriodType(), Deployment.getDeployment(tenantID).getTimeZone(), voucherType.getValidity().getRoundDown() ? EvolutionUtilities.RoundingSelection.RoundDown : EvolutionUtilities.RoundingSelection.NoRound);
+                                }
+                              break;
+                            }
+                        }
+                    }
+                  // or the absolute one from ES
+                  if (expiryDate == null)
+                    {
+                      expiryDate = voucherDelivery.getVoucherExpiryDate();
+                    }
+                  if (expiryDate == null)
+                    {
+                      log.error("voucher " + voucherDelivery.getVoucherCode() + " for " + subscriberProfile.getSubscriberID() + " could not compute an expiryDate !! " + voucher.getVoucherID());
+                    } 
+                  else
+                    {
+                      voucherDelivery.setVoucherStatus(VoucherDelivery.VoucherStatus.Delivered);
+                    }
 
-        for(VoucherDelivery voucherDelivery:purchaseFulfillmentRequest.getVoucherDeliveries()){
-          Voucher voucher = voucherService.getActiveVoucher(voucherDelivery.getVoucherID(),context.eventDate());
-          VoucherType voucherType = voucherTypeService.getActiveVoucherType(voucher.getVoucherTypeId(),context.eventDate());
-          if(voucherType==null){
-            log.warn("no more voucher type for voucherId "+voucherDelivery.getVoucherID()+", skipping "+voucherDelivery.getVoucherCode()+" for "+context.getSubscriberState().getSubscriberID());
-          }else{
-            Date expiryDate=null;
-            // compute expiry date here for relative expiry vouchers
-            if(voucherType.getCodeType()==VoucherType.CodeType.Shared){
-              expiryDate = EvolutionUtilities.addTime(context.processingDate(),voucherType.getValidity().getPeriodQuantity(),voucherType.getValidity().getPeriodType(),Deployment.getDeployment(tenantID).getTimeZone(),voucherType.getValidity().getRoundDown()? EvolutionUtilities.RoundingSelection.RoundDown: EvolutionUtilities.RoundingSelection.NoRound);
-            }else if(voucherType.getCodeType()==VoucherType.CodeType.Personal){
-              VoucherPersonal voucherPersonal = (VoucherPersonal) voucher;
-              for(VoucherFile voucherFile:voucherPersonal.getVoucherFiles()){
-                if(voucherFile.getFileId().equals(voucherDelivery.getFileID())){
-                  if(voucherFile.getExpiryDate()==null){
-                    expiryDate = EvolutionUtilities.addTime(context.processingDate(),voucherType.getValidity().getPeriodQuantity(),voucherType.getValidity().getPeriodType(),Deployment.getDeployment(tenantID).getTimeZone(),voucherType.getValidity().getRoundDown()? EvolutionUtilities.RoundingSelection.RoundDown: EvolutionUtilities.RoundingSelection.NoRound);
-                  }
-                  break;
+                  // storing the voucher
+                  VoucherProfileStored voucherToStore = new VoucherProfileStored(voucherDelivery.getVoucherID(), voucherDelivery.getFileID(), voucherDelivery.getVoucherCode(), voucherDelivery.getVoucherStatus(), expiryDate, purchaseFulfillmentRequest.getCreationDate(), null, purchaseFulfillmentRequest.getOfferID(), purchaseFulfillmentRequest.getEventID(), purchaseFulfillmentRequest.getModuleID(), purchaseFulfillmentRequest.getFeatureID(), purchaseFulfillmentRequest.getOrigin());
+                  int returnCode = purchaseFulfillmentRequest.getReturnCode();
+                  // exporting result
+                  VoucherChange voucherChange = new VoucherChange(purchaseFulfillmentRequest.getSubscriberID(), expiryDate, purchaseFulfillmentRequest.getEventID(), VoucherChangeAction.Deliver, voucherDelivery.getVoucherCode(), voucherDelivery.getVoucherID(), voucherDelivery.getFileID(), purchaseFulfillmentRequest.getModuleID(), purchaseFulfillmentRequest.getFeatureID(), purchaseFulfillmentRequest.getOrigin(), RESTAPIGenericReturnCodes.fromGenericResponseCode(returnCode), purchaseFulfillmentRequest.getSegments(), uniqueKeyServer.getKey(), purchaseFulfillmentRequest.getOfferID(), tenantID);
+                  subscriberProfile.getVouchers().add(voucherToStore);
+                  subscriberState.getVoucherChanges().add(voucherChange);
+                  // we keep voucher ordered by expiry data, this is important when we will apply
+                  // change
+                  sortVouchersPerExpiryDate(subscriberProfile);
+                  subscriberUpdated = true;
                 }
-              }
             }
-            // or the absolute one from ES
-            if(expiryDate==null){
-              expiryDate=voucherDelivery.getVoucherExpiryDate();
-            }
-            if(expiryDate==null){
-              log.error("voucher "+voucherDelivery.getVoucherCode()+" for "+subscriberProfile.getSubscriberID()+" could not compute an expiryDate !! "+voucher.getVoucherID());
-            }else{              
-              voucherDelivery.setVoucherStatus(VoucherDelivery.VoucherStatus.Delivered);
-            }
-
-            // storing the voucher
-            VoucherProfileStored voucherToStore = new VoucherProfileStored(
-              voucherDelivery.getVoucherID(),
-              voucherDelivery.getFileID(),
-              voucherDelivery.getVoucherCode(),
-              voucherDelivery.getVoucherStatus(),
-              expiryDate,
-              purchaseFulfillmentRequest.getCreationDate(),
-              null,
-              purchaseFulfillmentRequest.getOfferID(),
-              purchaseFulfillmentRequest.getEventID(),
-              purchaseFulfillmentRequest.getModuleID(),
-              purchaseFulfillmentRequest.getFeatureID(),
-              purchaseFulfillmentRequest.getOrigin()
-            );
-            int returnCode = purchaseFulfillmentRequest.getReturnCode();
-            // exporting result
-            VoucherChange voucherChange = new VoucherChange(
-                purchaseFulfillmentRequest.getSubscriberID(),
-                expiryDate,
-                purchaseFulfillmentRequest.getEventID(),
-                VoucherChangeAction.Deliver,
-                voucherDelivery.getVoucherCode(),
-                voucherDelivery.getVoucherID(),
-                voucherDelivery.getFileID(),
-                purchaseFulfillmentRequest.getModuleID(),
-                purchaseFulfillmentRequest.getFeatureID(),
-                purchaseFulfillmentRequest.getOrigin(),
-                RESTAPIGenericReturnCodes.fromGenericResponseCode(returnCode),
-                purchaseFulfillmentRequest.getSegments(),
-                uniqueKeyServer.getKey(),
-                purchaseFulfillmentRequest.getOfferID(),
-                tenantID);
-            subscriberProfile.getVouchers().add(voucherToStore);
-            subscriberState.getVoucherChanges().add(voucherChange);
-            // we keep voucher ordered by expiry data, this is important when we will apply change
-            sortVouchersPerExpiryDate(subscriberProfile);
-            subscriberUpdated = true;
-          }
         }
-      }else{
-        if(log.isDebugEnabled()) log.debug("no voucher delivered in purchaseFulfillmentRequest");
-      }
+      else
+        {
+          if (log.isDebugEnabled()) log.debug("no voucher delivered in purchaseFulfillmentRequest");
+        }
     }
 
     // no we check all, if some expired, to clean, expired to generate event ???
@@ -2664,29 +2653,13 @@ public class EvolutionEngine
           continue;
         }
         // change status to expired
-        if(voucherStored.getVoucherStatus()!=VoucherDelivery.VoucherStatus.Expired
-                && voucherStored.getVoucherStatus()!=VoucherDelivery.VoucherStatus.Redeemed
-                && retentionService.isExpired(voucherStored)){
-          voucherStored.setVoucherStatus(VoucherDelivery.VoucherStatus.Expired); 
-          VoucherChange voucherChange = new VoucherChange(
-              subscriberProfile.getSubscriberID(),
-              voucherStored.getVoucherExpiryDate(),
-              voucherStored.getEventID(),
-              VoucherChangeAction.Expire,
-              voucherStored.getVoucherCode(),
-              voucherStored.getVoucherID(),
-              voucherStored.getFileID(),
-              voucherStored.getModuleID(),
-              voucherStored.getFeatureID(),
-              voucherStored.getOrigin(),
-              RESTAPIGenericReturnCodes.SUCCESS,
-              subscriberProfile.getSegments(),
-              uniqueKeyServer.getKey(),
-              voucherStored.getOfferID(),
-              tenantID);
-          subscriberState.getVoucherChanges().add(voucherChange);
-          subscriberUpdated=true;
-        }
+        if (voucherStored.getVoucherStatus() != VoucherDelivery.VoucherStatus.Expired && voucherStored.getVoucherStatus() != VoucherDelivery.VoucherStatus.Cancelled && voucherStored.getVoucherStatus() != VoucherDelivery.VoucherStatus.Redeemed && retentionService.isExpired(voucherStored))
+          {
+            voucherStored.setVoucherStatus(VoucherDelivery.VoucherStatus.Expired);
+            VoucherChange voucherChange = new VoucherChange(subscriberProfile.getSubscriberID(), voucherStored.getVoucherExpiryDate(), voucherStored.getEventID(), VoucherChangeAction.Expire, voucherStored.getVoucherCode(), voucherStored.getVoucherID(), voucherStored.getFileID(), voucherStored.getModuleID(), voucherStored.getFeatureID(), voucherStored.getOrigin(), RESTAPIGenericReturnCodes.SUCCESS, subscriberProfile.getSegments(), uniqueKeyServer.getKey(), voucherStored.getOfferID(), tenantID);
+            subscriberState.getVoucherChanges().add(voucherChange);
+            subscriberUpdated = true;
+          }
 
       }
 
@@ -2732,7 +2705,12 @@ public class EvolutionEngine
                               {
                                 // already redeemed
                                 voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED);
-                              } 
+                              }
+                            else if (voucherStored.getVoucherStatus() == VoucherDelivery.VoucherStatus.Expired || voucherStored.getVoucherStatus() == VoucherDelivery.VoucherStatus.Cancelled)
+                              {
+                                // already expired
+                                voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_EXPIRED);
+                              }
                             else
                               {
                                 // extend voucher OK
@@ -2753,7 +2731,7 @@ public class EvolutionEngine
                                 // already redeemed
                                 voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED);
                               } 
-                            else if (voucherStored.getVoucherStatus() == VoucherDelivery.VoucherStatus.Expired)
+                            else if (voucherStored.getVoucherStatus() == VoucherDelivery.VoucherStatus.Expired || voucherStored.getVoucherStatus() == VoucherDelivery.VoucherStatus.Cancelled)
                               {
                                 // already expired
                                 voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_EXPIRED);
@@ -2767,6 +2745,34 @@ public class EvolutionEngine
                                 voucherStored.setVoucherStatus(VoucherDelivery.VoucherStatus.Expired);
                                 voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
                                 break;
+                              }
+                          }
+                        else if (voucherChange.getAction() == VoucherChange.VoucherChangeAction.Cancel)
+                          {
+                            //
+                            //  getNewVoucherExpiryDate returns deliveryDate see purchase section - this is a hack to get the exact voucher to cancel
+                            //
+                            
+                            if (RLMDateUtils.truncatedEquals(voucherStored.getVoucherDeliveryDate(), voucherChange.getNewVoucherExpiryDate(), Calendar.SECOND, DeploymentCommon.getDeployment(subscriberProfile.getTenantID()).getTimeZone()))
+                              {
+                                if (voucherStored.getVoucherStatus() == VoucherDelivery.VoucherStatus.Expired || voucherStored.getVoucherStatus() == VoucherDelivery.VoucherStatus.Cancelled)
+                                  {
+                                    voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_EXPIRED);
+                                  }
+                                else
+                                  {
+                                    // Cancel voucher and set ExpiryDate date - to clean/track
+                                    voucherStored.setVoucherExpiryDate(context.processingDate());
+                                    expiryDate = voucherStored.getVoucherExpiryDate();
+                                    sortVouchersPerExpiryDate(subscriberProfile);
+                                    voucherStored.setVoucherStatus(VoucherDelivery.VoucherStatus.Cancelled);
+                                    voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.SUCCESS);
+                                    break;
+                                  }
+                              }
+                            else
+                              {
+                                voucherFound = false;
                               }
                           }
                       }
@@ -3030,7 +3036,7 @@ public class EvolutionEngine
         // already redeemed
         voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED);
       } 
-    else if (voucherStored.getVoucherStatus() == VoucherDelivery.VoucherStatus.Expired)
+    else if (voucherStored.getVoucherStatus() == VoucherDelivery.VoucherStatus.Expired || voucherStored.getVoucherStatus() == VoucherDelivery.VoucherStatus.Cancelled)
       {
         // already expired
         voucherChange.setReturnStatus(RESTAPIGenericReturnCodes.VOUCHER_EXPIRED);
@@ -10355,7 +10361,7 @@ public class EvolutionEngine
               {
                 errorException = new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED);
               } 
-            else if (profileVoucher.getVoucherStatus() == VoucherDelivery.VoucherStatus.Expired || profileVoucher.getVoucherExpiryDate().before(now))
+            else if (profileVoucher.getVoucherStatus() == VoucherDelivery.VoucherStatus.Expired || profileVoucher.getVoucherStatus() == VoucherDelivery.VoucherStatus.Cancelled || profileVoucher.getVoucherExpiryDate().before(now))
               {
                 errorException = new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_EXPIRED);
               } 

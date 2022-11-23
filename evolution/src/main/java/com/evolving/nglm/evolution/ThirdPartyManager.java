@@ -5077,11 +5077,11 @@ public class ThirdPartyManager
             {
               if(!sync)
                 {
-                  purchaseResponse = purchaseOffer(subscriberProfile, false, subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, origin, resellerID, kafkaProducer, tenantID, zuks.getStringKey(), false, null);
+                  purchaseResponse = purchaseOffer(subscriberProfile, false, subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, origin, resellerID, kafkaProducer, tenantID, zuks.getStringKey(), false, null, null);
                 }
               else
                 {
-                  purchaseResponse = purchaseOffer(subscriberProfile, true, subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, origin, resellerID, kafkaProducer, tenantID, zuks.getStringKey(), false, null);
+                  purchaseResponse = purchaseOffer(subscriberProfile, true, subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, origin, resellerID, kafkaProducer, tenantID, zuks.getStringKey(), false, null, null);
                   response.put("offer",purchaseResponse.getThirdPartyPresentationMap(subscriberMessageTemplateService,salesChannelService,journeyService,offerService,loyaltyProgramService,productService,voucherService,deliverableService,paymentMeanService, resellerService, tenantID));
                 }
             }
@@ -5096,11 +5096,11 @@ public class ThirdPartyManager
 
             if(!sync)
             {
-              purchaseResponse = purchaseOffer(subscriberProfile, false, subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, origin, resellerID, kafkaProducer, tenantID, zuks.getStringKey(), false, null);
+              purchaseResponse = purchaseOffer(subscriberProfile, false, subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, origin, resellerID, kafkaProducer, tenantID, zuks.getStringKey(), false, null, null);
             }
             else
             {
-              purchaseResponse = purchaseOffer(subscriberProfile, true, subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, origin, resellerID, kafkaProducer, tenantID, zuks.getStringKey(), false, null);
+              purchaseResponse = purchaseOffer(subscriberProfile, true, subscriberID, offerID, salesChannelID, quantity, moduleID, featureID, origin, resellerID, kafkaProducer, tenantID, zuks.getStringKey(), false, null, null);
               response.put("offer",purchaseResponse.getThirdPartyPresentationMap(subscriberMessageTemplateService,salesChannelService,journeyService,offerService,loyaltyProgramService,productService,voucherService,deliverableService,paymentMeanService, resellerService, tenantID));
             }
           }
@@ -5286,37 +5286,46 @@ public class ThirdPartyManager
     
     PurchaseFulfillmentRequest purchaseFulfillmentRequest = purchaseFulfillmentRequests.get(0);
     
-    //
-    // cancelPurchaseOffer
-    //
-    
-    PurchaseFulfillmentRequest purchaseResponse = null;
-    if (!sync)
+    Offer offer = offerService.getActiveOffer(purchaseFulfillmentRequest.getOfferID(), SystemTime.getCurrentTime());   
+    if (offer != null && offer.getCancellable())
       {
-        purchaseResponse = purchaseOffer(subscriberProfile, sync, subscriberID, purchaseFulfillmentRequest.getOfferID(), purchaseFulfillmentRequest.getSalesChannelID(), purchaseFulfillmentRequest.getQuantity(), moduleID, featureID, origin, purchaseFulfillmentRequest.getResellerID(), kafkaProducer, tenantID, cancelledDeliveryRequestID, true, purchaseFulfillmentRequest.getCreationDate());
-        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
-        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
-      } 
+        //
+        // cancelPurchaseOffer
+        //
+        
+        PurchaseFulfillmentRequest purchaseResponse = null;
+        if (!sync)
+          {
+            purchaseResponse = purchaseOffer(subscriberProfile, sync, subscriberID, purchaseFulfillmentRequest.getOfferID(), purchaseFulfillmentRequest.getSalesChannelID(), purchaseFulfillmentRequest.getQuantity(), moduleID, featureID, origin, purchaseFulfillmentRequest.getResellerID(), kafkaProducer, tenantID, cancelledDeliveryRequestID, true, purchaseFulfillmentRequest.getCreationDate(), purchaseFulfillmentRequest.getVoucherDeliveries());
+            response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseCode());
+            response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SUCCESS.getGenericResponseMessage());
+          } 
+        else
+          {
+            purchaseResponse = purchaseOffer(subscriberProfile, sync, subscriberID, purchaseFulfillmentRequest.getOfferID(), purchaseFulfillmentRequest.getSalesChannelID(), purchaseFulfillmentRequest.getQuantity(), moduleID, featureID, origin, purchaseFulfillmentRequest.getResellerID(), kafkaProducer, tenantID, cancelledDeliveryRequestID, true, purchaseFulfillmentRequest.getCreationDate(), purchaseFulfillmentRequest.getVoucherDeliveries());
+            response.put("offer", purchaseResponse.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, tenantID));
+            if (purchaseResponse.getStatus() == PurchaseFulfillmentStatus.PURCHASED_AND_CANCELLED)
+              {
+
+                //
+                // SubscriberProfileForceUpdate
+                //
+                
+                SubscriberProfileForceUpdate subscriberProfileForceUpdate = new SubscriberProfileForceUpdate(subscriberID, new ParameterMap(), null);
+                subscriberProfileForceUpdate.getParameterMap().put("limitedCancelPurchase", deliveryRequestID);
+                
+                //
+                //  send
+                //
+                
+                kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(subscriberProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), subscriberProfileForceUpdate)));
+              }
+          }
+      }
     else
       {
-        purchaseResponse = purchaseOffer(subscriberProfile, sync, subscriberID, purchaseFulfillmentRequest.getOfferID(), purchaseFulfillmentRequest.getSalesChannelID(), purchaseFulfillmentRequest.getQuantity(), moduleID, featureID, origin, purchaseFulfillmentRequest.getResellerID(), kafkaProducer, tenantID, cancelledDeliveryRequestID, true, purchaseFulfillmentRequest.getCreationDate());
-        response.put("offer", purchaseResponse.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, tenantID));
-        if (purchaseResponse.getStatus() == PurchaseFulfillmentStatus.PURCHASED_AND_CANCELLED)
-          {
-
-            //
-            // SubscriberProfileForceUpdate
-            //
-            
-            SubscriberProfileForceUpdate subscriberProfileForceUpdate = new SubscriberProfileForceUpdate(subscriberID, new ParameterMap(), null);
-            subscriberProfileForceUpdate.getParameterMap().put("limitedCancelPurchase", deliveryRequestID);
-            
-            //
-            //  send
-            //
-            
-            kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(subscriberProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), subscriberProfileForceUpdate)));
-          }
+        response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage().concat(" - offer is not cancellable"));
       }
 
     return JSONUtilities.encodeObject(response);
@@ -6107,35 +6116,16 @@ public class ThirdPartyManager
     
     
     //build the request to send
-    String eventID=zuksVoucherChange.getStringKey();
-    VoucherChange request = new VoucherChange(
-            subscriberID,
-            null,
-            eventID,
-            VoucherChange.VoucherChangeAction.Redeem,
-            voucherProfileStored.getVoucherCode(),
-            voucherProfileStored.getVoucherID(),
-            voucherProfileStored.getFileID(),
-            voucherProfileStored.getModuleID(),
-            voucherProfileStored.getFeatureID(),
-            origin,
-            RESTAPIGenericReturnCodes.UNKNOWN,
-            segments,
-            eventID,
-            voucherProfileStored.getOfferID(),
-            tenantID);
+    String eventID = zuksVoucherChange.getStringKey();
+    VoucherChange request = new VoucherChange(subscriberID, null, eventID, VoucherChange.VoucherChangeAction.Redeem, voucherProfileStored.getVoucherCode(), voucherProfileStored.getVoucherID(), voucherProfileStored.getFileID(), voucherProfileStored.getModuleID(), voucherProfileStored.getFeatureID(), origin, RESTAPIGenericReturnCodes.UNKNOWN, segments, eventID, voucherProfileStored.getOfferID(), tenantID);
 
     Future<VoucherChange> waitingResponse=null;
     if(sync){
       waitingResponse = voucherChangeResponseListenerService.addWithOnValueFilter((value)->value.getEventID().equals(request.getEventID())&&value.getReturnStatus()!=RESTAPIGenericReturnCodes.UNKNOWN);
     }
 
-    String requestTopic = Deployment.getVoucherChangeRequestTopic();
-    kafkaProducer.send(new ProducerRecord<byte[], byte[]>(
-            requestTopic,
-            StringKey.serde().serializer().serialize(requestTopic, new StringKey(subscriberID)),
-            VoucherChange.serde().serializer().serialize(requestTopic, request)
-    ));
+  String requestTopic = Deployment.getVoucherChangeRequestTopic();
+  kafkaProducer.send(new ProducerRecord<byte[], byte[]>(requestTopic, StringKey.serde().serializer().serialize(requestTopic, new StringKey(subscriberID)), VoucherChange.serde().serializer().serialize(requestTopic, request)));
 
     if(sync){
       VoucherChange response = handleWaitingResponse(waitingResponse);
@@ -6325,7 +6315,7 @@ public class ThirdPartyManager
                 errorException = new ThirdPartyManagerException(
                     RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED.getGenericResponseMessage(),
                     RESTAPIGenericReturnCodes.VOUCHER_ALREADY_REDEEMED.getGenericResponseCode(), additionalDetails);
-              }else if(profileVoucher.getVoucherStatusComputed()==VoucherDelivery.VoucherStatus.Expired){
+              }else if(profileVoucher.getVoucherStatusComputed()==VoucherDelivery.VoucherStatus.Expired || profileVoucher.getVoucherStatusComputed()==VoucherDelivery.VoucherStatus.Cancelled){
                 errorException = new ThirdPartyManagerException(RESTAPIGenericReturnCodes.VOUCHER_EXPIRED);
               }else{
                 //an OK one
@@ -7934,10 +7924,11 @@ public class ThirdPartyManager
   /*****************************************
    *
    *  purchaseOffer
+   * @param voucherDeliveryList 
    *
    *****************************************/
   
-  public PurchaseFulfillmentRequest purchaseOffer(SubscriberProfile subscriberProfile, boolean sync, String subscriberID, String offerID, String salesChannelID, int quantity, String moduleID, String featureID, String origin, String resellerID, KafkaProducer<byte[], byte[]> kafkaProducer, int tenantID, String purchaseDeliveryRequestID, boolean cancelPurchase, Date previousPurchaseDate) throws ThirdPartyManagerException
+  public PurchaseFulfillmentRequest purchaseOffer(SubscriberProfile subscriberProfile, boolean sync, String subscriberID, String offerID, String salesChannelID, int quantity, String moduleID, String featureID, String origin, String resellerID, KafkaProducer<byte[], byte[]> kafkaProducer, int tenantID, String purchaseDeliveryRequestID, boolean cancelPurchase, Date previousPurchaseDate, List<VoucherDelivery> voucherDeliveryList) throws ThirdPartyManagerException
   {
     DeliveryManagerDeclaration deliveryManagerDeclaration = Deployment.getDeliveryManagers().get(PURCHASE_FULFILLMENT_MANAGER_TYPE);
     if (deliveryManagerDeclaration == null)
@@ -7963,6 +7954,11 @@ public class ThirdPartyManager
     request.put("resellerID", resellerID);
     request.put("deliveryType", deliveryManagerDeclaration.getDeliveryType());
     request.put("cancelPurchase", cancelPurchase);
+    if (voucherDeliveryList != null)
+      {
+        List<JSONObject> voucherJSONs = voucherDeliveryList.stream().map(voucherDelivery -> voucherDelivery.getJSONPresentation()).collect(Collectors.toList());
+        request.put("voucherDeliveries", JSONUtilities.encodeArray(voucherJSONs));
+      }
     JSONObject valueRes = JSONUtilities.encodeObject(request);
 
     PurchaseFulfillmentRequest purchaseRequest = new PurchaseFulfillmentRequest(subscriberProfile, subscriberGroupEpochReader, valueRes, deliveryManagerDeclaration, offerService, paymentMeanService, resellerService, productService, supplierService, voucherService, SystemTime.getCurrentTime(), tenantID);
