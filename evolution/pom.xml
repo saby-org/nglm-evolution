@@ -3,7 +3,8 @@
   <groupId>com.evolving.nglm</groupId>
   <artifactId>nglm-evolution</artifactId>
   <packaging>jar</packaging>
-  <version>2.1.2_0-SNAPSHOT</version>
+  <version>EVPRO-1605-212_0-SNAPSHOT</version>
+
   <name>evolution</name>
   <url>http://10.100.0.6:8090/artifactory/evolving-internal</url>
   <description>NGLM EVOLUTION</description>
@@ -27,7 +28,8 @@
   <parent>
     <artifactId>nglm-core-common-build</artifactId>
     <groupId>com.evolving.nglm</groupId>
-    <version>2.1.2_0-SNAPSHOT</version>
+    <version>EVPRO-1605-212_0-SNAPSHOT</version>
+
   </parent>
 
   <scm>
@@ -39,7 +41,8 @@
   <properties>
 
     <!-- core version -->
-    <nglm.core.version>2.1.2_0-SNAPSHOT</nglm.core.version>
+    <nglm.core.version>EVPRO-1605-212_0-SNAPSHOT</nglm.core.version>
+
 
     <!-- dependencies - gui -->
     <gui-csr.version>2.1.2_7</gui-csr.version>
