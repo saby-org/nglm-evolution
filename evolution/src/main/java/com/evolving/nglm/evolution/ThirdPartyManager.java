@@ -1371,7 +1371,7 @@ public class ThirdPartyManager
         }
       else
         {
-          response = baseSubscriberProfile.getProfileMapForThirdPartyPresentation(segmentationDimensionService, subscriberGroupEpochReader, exclusionInclusionTargetService, loyaltyProgramService);
+          response = baseSubscriberProfile.getProfileMapForThirdPartyPresentation(subscriberProfileService,segmentationDimensionService, subscriberGroupEpochReader, exclusionInclusionTargetService, loyaltyProgramService);
           response.putAll(resolveAllSubscriberIDs(baseSubscriberProfile, tenantID));
           updateResponse(response, RESTAPIGenericReturnCodes.SUCCESS);
         }
@@ -3780,10 +3780,8 @@ public class ThirdPartyManager
     ****************************************/
 
     String subscriberID = resolveSubscriberID(jsonRoot, tenantID);
-
     String relationshipDisplay = JSONUtilities.decodeString(jsonRoot, "relationship", true);
     String newParentSubscriberID = resolveParentSubscriberID(jsonRoot);
-    
     String subscriberProfileForceUpdateRequestID = UUID.randomUUID().toString();
     jsonRoot.put("subscriberProfileForceUpdateRequestID", subscriberProfileForceUpdateRequestID); //unique id added for listener to check if the request and response are same
 
@@ -3792,6 +3790,29 @@ public class ThirdPartyManager
     * resolve relationship
     *
     *****************************************/
+    String updateDateStr = JSONUtilities.decodeString(jsonRoot, "updateDate", false);
+
+    /*****************************************
+    *
+    * resolve relationship
+    *
+    *****************************************/
+      Date updateDate=new Date();
+    
+      SimpleDateFormat dateFormat = new SimpleDateFormat(Deployment.getAPIresponseDateFormat());   // TODO EVPRO-99
+      dateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getTimeZone()));
+
+      if(updateDateStr!=null && !updateDateStr.isEmpty()) {
+      try {
+    	  updateDate=dateFormat.parse(updateDateStr);  
+     } catch(Exception e) {
+    	 response.put("responseCode", RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage() + "-{check updateDate field and APIresponseDateFormat }");
+         return JSONUtilities.encodeObject(response);
+     }
+    
+  }
+      String relationDate=dateFormat.format(updateDate);
+     
       
     boolean isRelationshipSupported = false;
     String relationshipID = null;
@@ -3832,6 +3853,10 @@ public class ThirdPartyManager
             + "-{a customer cannot be its own parent}");
         return JSONUtilities.encodeObject(response);
       }
+    
+    String newparentwithDate=newParentSubscriberID+GUIManager.DATE_SEPERATOR+relationDate;
+    String subscriberwithDate=subscriberID+GUIManager.DATE_SEPERATOR+relationDate;
+    
 
     try
       {
@@ -3850,8 +3875,12 @@ public class ThirdPartyManager
                 //
                 // Delete child for the parent 
                 // 
-                
-                jsonRoot.put("subscriberID", previousParentSubscriberID);
+            	
+            	String onlyId=previousParentSubscriberID;
+            	if(previousParentSubscriberID.contains("@"));
+            	onlyId=previousParentSubscriberID.substring(0,previousParentSubscriberID.lastIndexOf("@"));
+                        
+                jsonRoot.put("subscriberID", onlyId);
                 SubscriberProfileForceUpdate previousParentProfileForceUpdate = new SubscriberProfileForceUpdate(jsonRoot);
                 ParameterMap previousParentParameterMap = previousParentProfileForceUpdate.getParameterMap();
                 previousParentParameterMap.put("subscriberRelationsUpdateMethod", SubscriberRelationsUpdateMethod.RemoveChild.getExternalRepresentation());
@@ -3863,6 +3892,7 @@ public class ThirdPartyManager
                 //
                   
                 kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(previousParentProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), previousParentProfileForceUpdate)));
+              
                 
               }
             
@@ -3876,7 +3906,7 @@ public class ThirdPartyManager
             ParameterMap newParentParameterMap = newParentProfileForceUpdate.getParameterMap();
             newParentParameterMap.put("subscriberRelationsUpdateMethod", SubscriberRelationsUpdateMethod.AddChild.getExternalRepresentation());
             newParentParameterMap.put("relationshipID", relationshipID);
-            newParentParameterMap.put("relativeSubscriberID", subscriberID);
+            newParentParameterMap.put("relativeSubscriberID", subscriberwithDate);
             
 
             //
@@ -3896,7 +3926,7 @@ public class ThirdPartyManager
             ParameterMap subscriberParameterMap = subscriberProfileForceUpdate.getParameterMap();
             subscriberParameterMap.put("subscriberRelationsUpdateMethod", SubscriberRelationsUpdateMethod.SetParent.getExternalRepresentation());
             subscriberParameterMap.put("relationshipID", relationshipID);
-            subscriberParameterMap.put("relativeSubscriberID", newParentSubscriberID);
+            subscriberParameterMap.put("relativeSubscriberID", newparentwithDate);
             
             
             
@@ -7443,14 +7473,14 @@ public class ThirdPartyManager
               {
                 try
                 {
-                  Pair<String, Integer> s = subscriberIDService.getSubscriberIDAndTenantID(id, param);
+                 Pair<String, Integer> s = subscriberIDService.getSubscriberIDAndTenantID(id, param);
                   
                   if (s == null || s.getSecondElement().intValue() != tenantID)
                     {
                       throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.CUSTOMER_NOT_FOUND);
                     }
                   alternateSubscriberID = s.getFirstElement();
-                  break;
+                 break;
                 } catch (SubscriberIDServiceException e)
                 {
                   log.error("SubscriberIDServiceException can not resolve subscriberID for {} error is {}", id, e.getMessage());
@@ -7465,7 +7495,7 @@ public class ThirdPartyManager
           {
             throw new ThirdPartyManagerException(RESTAPIGenericReturnCodes.MISSING_PARAMETERS);
           }
-        subscriberID = alternateSubscriberID;
+       subscriberID = alternateSubscriberID;
       }
     else if (alternateSubscriberID != null)
       {

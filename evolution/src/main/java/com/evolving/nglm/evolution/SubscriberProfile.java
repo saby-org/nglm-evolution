@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -988,9 +989,24 @@ public abstract class SubscriberProfile
                 
               }
             String parentID = relationship.getValue().getParentSubscriberID();
+            String relationshipDateStr = null;
+            if (parentID != null && parentID.contains("@"))
+              {
+                String[] temp = parentID.split("@", -1);
+                parentID = temp[0];
+                relationshipDateStr = temp[1];
+                try
+                  {
+                    relationshipDateStr = RLMDateUtils.formatDateForElasticsearchDefault(new SimpleDateFormat(Deployment.getAPIresponseDateFormat()).parse(relationshipDateStr));
+                  } catch (ParseException e)
+                  {
+                    e.printStackTrace();
+                  }
+              }
             List<String> childrenIDs = relationship.getValue().getChildrenSubscriberIDs();
             obj.put("relationshipName", relationshipName);
             obj.put("parentCustomerID", parentID);
+            obj.put("relationshipDate", relationshipDateStr);
             obj.put("childrenCount", childrenIDs.size());
             relationships.add(obj);
           }
@@ -1255,9 +1271,13 @@ public abstract class SubscriberProfile
         SubscriberRelatives relatives = this.relations.get(relationshipID);
         if (relatives != null && !(relatives.getParentSubscriberID() == null && relatives.getChildrenSubscriberIDs().isEmpty()))
           {
-            hierarchyRelations.add(relatives.getJSONRepresentation(relationshipID, subscriberProfileService, subscriberGroupEpochReader));
+            //hierarchyRelations.add(relatives.getJSONRepresentation(relationshipID, subscriberProfileService, subscriberGroupEpochReader));
+        	hierarchyRelations.add(relatives.getJSONRepresentation(relationshipID, subscriberProfileService, subscriberGroupEpochReader));
+            
           }
       }
+    
+    
     
     //prepare complexObjectInstances
     
@@ -1495,7 +1515,7 @@ public abstract class SubscriberProfile
   //  getProfileMapForThirdPartyPresentation
   //
 
-  public Map<String,Object> getProfileMapForThirdPartyPresentation(SegmentationDimensionService segmentationDimensionService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ExclusionInclusionTargetService exclusionInclusionTargetService, LoyaltyProgramService loyaltyProgramService)
+  public Map<String,Object> getProfileMapForThirdPartyPresentation(SubscriberProfileService subscriberProfileService, SegmentationDimensionService segmentationDimensionService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ExclusionInclusionTargetService exclusionInclusionTargetService, LoyaltyProgramService loyaltyProgramService)
   {
     HashMap<String, Object> baseProfilePresentation = new HashMap<String,Object>();
     HashMap<String, Object> generalDetailsPresentation = new HashMap<String,Object>();
@@ -1524,6 +1544,20 @@ public abstract class SubscriberProfile
             badgesPresentation.add(JSONUtilities.encodeObject(badgeJSONMap));
           }
       }
+   
+    //
+    // prepare hierarchy
+    //
+    
+    ArrayList<JSONObject> hierarchyRelations = new ArrayList<JSONObject>();
+    for (String relationshipID : this.relations.keySet())
+      {
+        SubscriberRelatives relatives = this.relations.get(relationshipID);
+        if (relatives != null && !(relatives.getParentSubscriberID() == null && relatives.getChildrenSubscriberIDs().isEmpty()))
+          {
+            hierarchyRelations.add(relatives.getNewJSONRepresentation(relationshipID, subscriberProfileService, subscriberGroupEpochReader,tenantID));
+          }
+      }
     
 
     //
@@ -1543,7 +1577,7 @@ public abstract class SubscriberProfile
     generalDetailsPresentation.put("universalControlGroupChangeDate",getDateString(getUniversalControlGroupChangeDate()));
     generalDetailsPresentation.put("badges", JSONUtilities.encodeArray(badgesPresentation));
     generalDetailsPresentation.put("importedOffersDNBO", getImportedOffersDNBO());
-    
+    generalDetailsPresentation.put("relations", JSONUtilities.encodeArray(hierarchyRelations));
     //
     // prepare basic kpiPresentation (if any)
     //

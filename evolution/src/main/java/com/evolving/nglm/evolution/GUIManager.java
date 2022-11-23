@@ -760,7 +760,9 @@ public class GUIManager
 
   protected static final String MULTIPART_FORM_DATA = "multipart/form-data"; 
   protected static final String FILE_REQUEST = "file"; 
-  protected static final String FILE_UPLOAD_META_DATA= "fileUploadMetaData"; 
+  protected static final String FILE_UPLOAD_META_DATA= "fileUploadMetaData";
+
+  public static final String DATE_SEPERATOR = "@"; 
 
   //
   //  context
@@ -21380,12 +21382,30 @@ public class GUIManager
     String customerID = JSONUtilities.decodeString(jsonRoot, "customerID", true);
     String relationshipID = JSONUtilities.decodeString(jsonRoot, "relationshipID", true);
     String newParentCustomerID = JSONUtilities.decodeString(jsonRoot, "newParentCustomerID", true);
+    String updateDateStr = JSONUtilities.decodeString(jsonRoot, "updateDate", false);
 
     /*****************************************
     *
     * resolve relationship
     *
     *****************************************/
+    Date updateDate=new Date();
+    
+      SimpleDateFormat dateFormat = new SimpleDateFormat(Deployment.getAPIresponseDateFormat());   // TODO EVPRO-99
+      dateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getDeployment(tenantID).getTimeZone()));
+
+      if(updateDateStr!=null && !updateDateStr.isEmpty()) {
+      try {
+    	  updateDate=dateFormat.parse(updateDateStr);  
+     } catch(Exception e) {
+    	 response.put("responseCode", RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage() + "-{check updateDate field and APIresponseDateFormat }");
+         return JSONUtilities.encodeObject(response);
+     }
+    
+  }
+      String relationDate=dateFormat.format(updateDate);
+      
+      
       
     boolean isRelationshipSupported = false;
     for (SupportedRelationship supportedRelationship : Deployment.getDeployment(tenantID).getSupportedRelationships().values())
@@ -21426,7 +21446,9 @@ public class GUIManager
         response.put("responseCode", RESTAPIGenericReturnCodes.BAD_FIELD_VALUE.getGenericResponseMessage() + "-{a customer cannot be its own parent}");
         return JSONUtilities.encodeObject(response);
       }
-
+    String newparentwithDate=newParentSubscriberID+DATE_SEPERATOR+relationDate;
+    String subscriberwithDate=subscriberID+DATE_SEPERATOR+relationDate;
+    
     try
       {
         SubscriberProfile subscriberProfile = subscriberProfileService.getSubscriberProfile(subscriberID);
@@ -21444,9 +21466,11 @@ public class GUIManager
                 //
                 // Delete child for the parent 
                 // 
-                
-                jsonRoot.put("subscriberID", previousParentSubscriberID);
-                SubscriberProfileForceUpdate previousParentProfileForceUpdate = new SubscriberProfileForceUpdate(jsonRoot);
+            	String onlyId=previousParentSubscriberID;
+            	if(previousParentSubscriberID.contains("@"));
+            	onlyId=previousParentSubscriberID.substring(0,previousParentSubscriberID.lastIndexOf(DATE_SEPERATOR));
+            	jsonRoot.put("subscriberID", onlyId);
+            	SubscriberProfileForceUpdate previousParentProfileForceUpdate = new SubscriberProfileForceUpdate(jsonRoot);
                 ParameterMap previousParentParameterMap = previousParentProfileForceUpdate.getParameterMap();
                 previousParentParameterMap.put("subscriberRelationsUpdateMethod", SubscriberRelationsUpdateMethod.RemoveChild.getExternalRepresentation());
                 previousParentParameterMap.put("relationshipID", relationshipID);
@@ -21457,7 +21481,6 @@ public class GUIManager
                 //
                   
                 kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(previousParentProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), previousParentProfileForceUpdate)));
-                
               }
             
 
@@ -21470,18 +21493,17 @@ public class GUIManager
             ParameterMap newParentParameterMap = newParentProfileForceUpdate.getParameterMap();
             newParentParameterMap.put("subscriberRelationsUpdateMethod", SubscriberRelationsUpdateMethod.AddChild.getExternalRepresentation());
             newParentParameterMap.put("relationshipID", relationshipID);
-            newParentParameterMap.put("relativeSubscriberID", subscriberID);
+            newParentParameterMap.put("relativeSubscriberID", subscriberwithDate);
               
             //
             // Set parent 
             //
-            
             jsonRoot.put("subscriberID", subscriberID);
             SubscriberProfileForceUpdate subscriberProfileForceUpdate = new SubscriberProfileForceUpdate(jsonRoot);
             ParameterMap subscriberParameterMap = subscriberProfileForceUpdate.getParameterMap();
             subscriberParameterMap.put("subscriberRelationsUpdateMethod", SubscriberRelationsUpdateMethod.SetParent.getExternalRepresentation());
             subscriberParameterMap.put("relationshipID", relationshipID);
-            subscriberParameterMap.put("relativeSubscriberID", newParentSubscriberID);
+            subscriberParameterMap.put("relativeSubscriberID", newparentwithDate);
             
             //
             // submit to kafka 
@@ -29919,10 +29941,10 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
   {
     try
       {
-        Pair<String, Integer> s = subscriberIDService.getSubscriberIDAndTenantID(getCustomerAlternateID, customerID);
+    	Pair<String, Integer> s = subscriberIDService.getSubscriberIDAndTenantID(getCustomerAlternateID, customerID);
         if(s != null && s.getSecondElement().intValue() == tenantID)
-          {            
-            return s.getFirstElement();
+          {    
+        	return s.getFirstElement();
           }
       }
     catch (SubscriberIDServiceException e)
