@@ -42,19 +42,19 @@
     <nglm.core.version>2.2.0-SNAPSHOT</nglm.core.version>
 
     <!-- dependencies - gui -->
-    <gui-csr.version>2.1.2_7a</gui-csr.version>
+    <gui-csr.version>2.1.2_8</gui-csr.version>
     <gui-stg.version>2.1.2_5</gui-stg.version>
-    <gui-fwk.version>2.1.2_4</gui-fwk.version>
+    <gui-fwk.version>2.1.2_5</gui-fwk.version>
     <gui-itm.version>2.1.2_4</gui-itm.version>
     <gui-jmr.version>2.1.2_4</gui-jmr.version>
     <gui-iar.version>2.1.2_5</gui-iar.version>
-    <gui-opc.version>2.1.2_4a</gui-opc.version>
-    <gui-opr.version>2.1.2_4</gui-opr.version>
+    <gui-opc.version>2.1.2_5</gui-opc.version>
+    <gui-opr.version>2.1.2_5</gui-opr.version>
     <gui-sbm.version>2.1.2_4</gui-sbm.version>
     <gui-lpm.version>2.1.2_4</gui-lpm.version>
     <gui-tls.version>1.4.17</gui-tls.version>
     <gui-audit.version>2.1.1_1</gui-audit.version>
-    <gui-links.version>2.1.2</gui-links.version>
+    <gui-links.version>2.1.2_1</gui-links.version>
     <gui-onssl.version>2.1.2_1</gui-onssl.version>
     <gui-doc.version>1.0.1</gui-doc.version>
 
@@ -285,6 +285,7 @@
                     <include>bin/guimanager-run.sh</include>
                     <include>bin/update-subscribergroup.sh</include>
                     <include>bin/configlog.sh</include>
+                    <include>bin/cleanup.sh</include>
                     <include>bin/restoreKafkaBackup.sh</include>
                     <include>bin/storeconfiguration.sh</include>
                     <include>bin/upgrade-run-preamble.sh</include>

@@ -6,6 +6,7 @@ import java.io.StringWriter;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -15,6 +16,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.stream.Collectors;
 
 import javax.net.ssl.SSLContext;
@@ -34,6 +36,7 @@ import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.search.ClearScrollRequest;
 import org.elasticsearch.action.search.MultiSearchRequest;
 import org.elasticsearch.action.search.MultiSearchResponse;
@@ -42,6 +45,8 @@ import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchScrollRequest;
 import org.elasticsearch.action.support.IndicesOptions;
+import org.elasticsearch.action.update.UpdateRequest;
+import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
@@ -52,6 +57,7 @@ import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.client.indices.GetIndexResponse;
 import org.elasticsearch.client.indices.GetMappingsRequest;
 import org.elasticsearch.client.indices.GetMappingsResponse;
+import org.elasticsearch.client.security.RefreshPolicy;
 import org.elasticsearch.client.sniff.ElasticsearchNodesSniffer;
 import org.elasticsearch.client.sniff.NodesSniffer;
 import org.elasticsearch.client.sniff.Sniffer;
@@ -59,6 +65,8 @@ import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.reindex.BulkByScrollResponse;
+import org.elasticsearch.index.reindex.DeleteByQueryRequest;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.Scroll;
 import org.elasticsearch.search.SearchHit;
@@ -73,13 +81,16 @@ import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket;
 import org.elasticsearch.search.aggregations.metrics.ParsedSum;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.Deployment;
+import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.DeliveryRequest;
+import com.evolving.nglm.evolution.GUIManagedObject;
 import com.evolving.nglm.evolution.GUIManager;
 import com.evolving.nglm.evolution.GUIManager.API;
 import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
@@ -91,6 +102,7 @@ import com.evolving.nglm.evolution.NotificationManager.NotificationManagerReques
 import com.evolving.nglm.evolution.PushNotificationManager.PushNotificationManagerRequest;
 import com.evolving.nglm.evolution.SMSNotificationManager.SMSNotificationManagerRequest;
 import com.evolving.nglm.evolution.ThirdPartyManager;
+import com.evolving.nglm.evolution.GUIManagedObject.ElasticSearchMapping;
 import com.evolving.nglm.evolution.datacubes.generator.BDRDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.generator.JourneyTrafficDatacubeGenerator;
 import com.evolving.nglm.evolution.datacubes.generator.MDRDatacubeGenerator;
@@ -105,6 +117,8 @@ import com.evolving.nglm.evolution.reports.notification.NotificationReportMonoPh
 import com.evolving.nglm.evolution.reports.odr.ODRReportDriver;
 import com.evolving.nglm.evolution.reports.odr.ODRReportMonoPhase;
 import com.evolving.nglm.evolution.reports.vdr.VDRReportDriver;
+
+import kafka.zookeeper.DeleteResponse;
 
 public class ElasticsearchClientAPI extends RestHighLevelClient
 {
@@ -169,6 +183,9 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
   public static final String WORKFLOWARCHIVE_JOURNEYID_FIELD = "journeyID";
   public static final String WORKFLOWARCHIVE_NODEID_FIELD = "nodeID";
   public static final String WORKFLOWARCHIVE_COUNT_FIELD = "count";
+  
+  protected static final String MAINTENANCE_ACTION_LOG_INDEX = "maintenance_action_log";
+  protected static final String MAINTENANCE_ACTION_REQUEST_INDEX = "maintenance_action_request";
   
   private static RestClientBuilder restClientBuilder_main = null;
   
@@ -1799,6 +1816,214 @@ public class ElasticsearchClientAPI extends RestHighLevelClient
         log.error("Exception on to generate JourneySubscriberCount {}", e.getMessage());
         throw new ElasticsearchClientException(e.getMessage());
       }
+  }
+  
+  public List<JSONObject> getPendingMaintenanceRequests(String requestID)
+  {
+    List<JSONObject> maintenanceRequests = new ArrayList<JSONObject>();
+    BoolQueryBuilder maintenanceRequestquery = QueryBuilders.boolQuery().mustNot(QueryBuilders.matchQuery("status", "COMPLETED")).mustNot(QueryBuilders.matchQuery("status", "ABORTED"));
+    if (requestID != null && !requestID.trim().isEmpty()) maintenanceRequestquery = maintenanceRequestquery.filter(QueryBuilders.matchQuery("_id", requestID));
+    SearchRequest searchMaintenanceRequest = new SearchRequest(MAINTENANCE_ACTION_REQUEST_INDEX).source(new SearchSourceBuilder().query(maintenanceRequestquery));
+    try
+      {
+        List<SearchHit> hits = getESHits(searchMaintenanceRequest);
+        //
+        //  maintenance
+        //
+        
+        for (SearchHit hit : hits)
+          {
+            Map<String, Object> esFields = hit.getSourceAsMap();
+            Map<String, Object> actionRequests = new HashMap<String, Object>();
+            Date requestDate = RLMDateUtils.parseDateFromElasticsearch((String) esFields.get("requestDate"));
+            int daysBetween = RLMDateUtils.daysBetween(requestDate, SystemTime.getCurrentTime(), Deployment.getDefault().getTimeZone());
+            actionRequests.put("requestedBy", (String) esFields.get("requestedBy"));
+            actionRequests.put("status", (String) esFields.get("status"));
+            actionRequests.put("requestDate", getDateString(requestDate));
+            actionRequests.put("remarks", null);
+            actionRequests.put("requesteID", hit.getId());
+            if (daysBetween > 1) actionRequests.put("remarks", "actionRequest with id ".concat(hit.getId()).concat(" taking more time than usal, please check the log"));
+            maintenanceRequests.add(JSONUtilities.encodeObject(actionRequests));
+          }
+      }
+    catch (GUIManagerException | java.text.ParseException e)
+      {
+        e.printStackTrace();
+      }
+    return maintenanceRequests;
+  }
+  
+  public List<JSONObject> getCompletedMaintenanceRequests(String requestID)
+  {
+    List<JSONObject> maintenanceRequests = new ArrayList<JSONObject>();
+    BoolQueryBuilder maintenanceRequestquery = QueryBuilders.boolQuery().should(QueryBuilders.matchQuery("status", "COMPLETED")).should(QueryBuilders.matchQuery("status", "ABORTED"));
+    if (requestID != null && !requestID.trim().isEmpty()) maintenanceRequestquery = maintenanceRequestquery.filter(QueryBuilders.matchQuery("_id", requestID));
+    SearchRequest searchMaintenanceRequest = new SearchRequest(MAINTENANCE_ACTION_REQUEST_INDEX).source(new SearchSourceBuilder().query(maintenanceRequestquery));
+    try
+      {
+        List<SearchHit> hits = getESHits(searchMaintenanceRequest);
+        //
+        //  maintenance
+        //
+        
+        for (SearchHit hit : hits)
+          {
+            Map<String, Object> esFields = hit.getSourceAsMap();
+            Map<String, Object> actionRequests = new HashMap<String, Object>();
+            Date requestDate = RLMDateUtils.parseDateFromElasticsearch((String) esFields.get("requestDate"));
+            int daysBetween = RLMDateUtils.daysBetween(requestDate, SystemTime.getCurrentTime(), Deployment.getDefault().getTimeZone());
+            actionRequests.put("requestedBy", (String) esFields.get("requestedBy"));
+            actionRequests.put("status", (String) esFields.get("status"));
+            actionRequests.put("requestDate", getDateString(requestDate));
+            actionRequests.put("remarks", null);
+            actionRequests.put("requesteID", hit.getId());
+            actionRequests.put("remarks", null);
+            maintenanceRequests.add(JSONUtilities.encodeObject(actionRequests));
+          }
+      }
+    catch (GUIManagerException | java.text.ParseException e)
+      {
+        e.printStackTrace();
+      }
+    return maintenanceRequests;
+  }
+  
+  public List<JSONObject> getMaintenanceActionLogs(String requestID, Date startDate, Date endDate)
+  {
+    List<JSONObject> actionLogs = new ArrayList<JSONObject>();
+    
+    //
+    // query
+    //
+    
+    BoolQueryBuilder query = QueryBuilders.boolQuery();
+    if (startDate != null) query = query.filter(QueryBuilders.rangeQuery("actionStartDate").gte(RLMDateUtils.formatDateForElasticsearchDefault(startDate)));
+    if (endDate != null) query = query.filter(QueryBuilders.rangeQuery("actionStartDate").lte(RLMDateUtils.formatDateForElasticsearchDefault(endDate)));
+    if (requestID != null && !requestID.trim().isEmpty()) query = query.filter(QueryBuilders.matchQuery("requestID", requestID));
+    
+    //
+    //  searchRequest
+    //
+    
+    SearchRequest searchRequest = new SearchRequest(MAINTENANCE_ACTION_LOG_INDEX).source(new SearchSourceBuilder().query(query));
+    try
+      {
+        List<SearchHit> hits = getESHits(searchRequest);
+        for (SearchHit hit : hits)
+          {
+            Map<String, Object> esFields = hit.getSourceAsMap();
+            Map<String, Object> actionLog = new HashMap<String, Object>();
+            Date actionDate = RLMDateUtils.parseDateFromElasticsearch((String) esFields.get("actionStartDate"));
+            actionLog.put("actionType", (String) esFields.get("actionType"));
+            actionLog.put("node", (String) esFields.get("node"));
+            actionLog.put("user", (String) esFields.get("user"));
+            actionLog.put("actionLog", (String) esFields.get("actionLog"));
+            actionLog.put("status", (String) esFields.get("status"));
+            actionLog.put("remarks", (String) esFields.get("remarks"));
+            actionLog.put("actionDate", getDateString(actionDate));
+            actionLog.put("requestID", (String) esFields.get("requestId"));
+            actionLogs.add(JSONUtilities.encodeObject(actionLog));
+          }
+      } 
+    catch (GUIManagerException | java.text.ParseException e)
+      {
+        e.printStackTrace();
+      }
+    return actionLogs;
+  }
+  
+  public synchronized String createSystemMaintenanceRequest(Map<String, Object> document, Date now)
+  {
+    String result = null;
+    UpdateRequest request = new UpdateRequest(MAINTENANCE_ACTION_REQUEST_INDEX, String.valueOf(now.getTime()));
+    request.doc(document);
+    request.docAsUpsert(true);
+    request.retryOnConflict(4);
+    request.setRefreshPolicy(org.elasticsearch.action.support.WriteRequest.RefreshPolicy.IMMEDIATE);
+    try
+      {
+        UpdateResponse updateResponse = this.update(request, RequestOptions.DEFAULT);
+        result = updateResponse.getId();
+      } 
+    catch (IOException e)
+      {
+        e.printStackTrace();
+      }
+    return result;
+  }
+  
+  public synchronized void clearSystemMaintenanceRequest(Date purgeTill)
+  {
+    DeleteByQueryRequest deleteByQueryRequest = new DeleteByQueryRequest(MAINTENANCE_ACTION_REQUEST_INDEX);
+    BoolQueryBuilder query = QueryBuilders.boolQuery().must(QueryBuilders.matchQuery("status", "COMPLETED"));
+    query = query.filter(QueryBuilders.rangeQuery("actionStartDate").lte(RLMDateUtils.formatDateForElasticsearchDefault(purgeTill)));
+    deleteByQueryRequest.setQuery(query);
+    deleteByQueryRequest.setConflicts("proceed");
+    deleteByQueryRequest.setSlices(DeleteByQueryRequest.AUTO_SLICES);
+    deleteByQueryRequest.setScroll(TimeValue.timeValueMinutes(5));
+    try
+      {
+        BulkByScrollResponse response = this.deleteByQuery(deleteByQueryRequest, RequestOptions.DEFAULT);
+        if (response.getBulkFailures().isEmpty())
+          {
+            log.info("clearSystemMaintenanceRequest done");
+          }
+        else
+          {
+            log.info("clearSystemMaintenanceRequest partially done with number of failures {}", response.getBulkFailures().size());
+          }
+      } 
+    catch (IOException e)
+      {
+        log.info("clearSystemMaintenanceRequest failed error is {}", e.getMessage());
+      }
+  }
+  
+  public synchronized void clearMaintenanceActionLogs(Date purgeTill)
+  {
+
+    DeleteByQueryRequest deleteByQueryRequest = new DeleteByQueryRequest(MAINTENANCE_ACTION_LOG_INDEX);
+    BoolQueryBuilder query = QueryBuilders.boolQuery();
+    query = query.filter(QueryBuilders.rangeQuery("actionStartDate").lte(RLMDateUtils.formatDateForElasticsearchDefault(purgeTill)));
+    deleteByQueryRequest.setQuery(query);
+    deleteByQueryRequest.setConflicts("proceed");
+    deleteByQueryRequest.setSlices(DeleteByQueryRequest.AUTO_SLICES);
+    deleteByQueryRequest.setScroll(TimeValue.timeValueMinutes(5));
+    try
+      {
+        BulkByScrollResponse response = this.deleteByQuery(deleteByQueryRequest, RequestOptions.DEFAULT);
+        if (response.getBulkFailures().isEmpty())
+          {
+            log.info("clearMaintenanceActionLogs done");
+          }
+        else
+          {
+            log.info("clearMaintenanceActionLogs partially done with number of failures {}", response.getBulkFailures().size());
+          }
+      } 
+    catch (IOException e)
+      {
+        log.info("clearMaintenanceActionLogs failed error is {}", e.getMessage());
+      }
+
+  }
+  
+  @Deprecated public String getDateString(Date date)
+  {
+    String result = null;
+    if (null == date)
+      return result;
+    try
+      {
+        SimpleDateFormat dateFormat = new SimpleDateFormat(Deployment.getAPIresponseDateFormat()); // TODO EVPRO-99
+        dateFormat.setTimeZone(TimeZone.getTimeZone(Deployment.getDefault().getTimeZone()));
+        result = dateFormat.format(date);
+      } 
+    catch (Exception e)
+      {
+        log.warn(e.getMessage());
+      }
+    return result;
   }
  
 }

@@ -256,6 +256,11 @@ public class DeploymentCommon
   private static int elasticsearchRetentionDaysCampaigns;
   private static int elasticsearchRetentionDaysBulkCampaigns;
   private static int elasticsearchRetentionWeeksDatacubeJourneys;
+  private static int elasticsearchRetentionDaysMaintenanceDetails;
+  private static int maintenanceLogRetentionDays;
+  private static int archivedCdrRetentionDays;
+  private static int journalctlRetentionDays;
+  
   private static Map<String, Long> elasticsearchTemplatesVersion;
   private static Map<String, Long> elasticsearchIndexByPassVersion;
 
@@ -466,6 +471,7 @@ public class DeploymentCommon
   private static Integer reportManagerMaxMessageLength;
   private static int stockRefreshPeriod;
   private static String periodicEvaluationCronEntry;
+  private static String systemMaintenanceCronEntry;
   private static String ucgEvaluationCronEntry;
   private static String uploadedFileSeparator;
   private static CustomerMetaData customerMetaData;
@@ -569,6 +575,10 @@ public class DeploymentCommon
   public static int getElasticsearchRetentionDaysCampaigns() { return elasticsearchRetentionDaysCampaigns; }
   public static int getElasticsearchRetentionDaysBulkCampaigns() { return elasticsearchRetentionDaysBulkCampaigns; }
   public static int getElasticsearchRetentionWeeksDatacubeJourneys() { return elasticsearchRetentionWeeksDatacubeJourneys; }
+  public static int getElasticsearchRetentionDaysMaintenanceDetails() { return elasticsearchRetentionDaysMaintenanceDetails; }
+  public static int getMaintenanceLogRetentionDays() { return maintenanceLogRetentionDays; }
+  public static int getArchivedCdrRetentionDays() { return archivedCdrRetentionDays; }
+  public static int getJournalctlRetentionDays() { return journalctlRetentionDays; }
   public static Map<String, Long> getElasticsearchTemplatesVersion() { return elasticsearchTemplatesVersion; }
   public static Map<String, Long> getElasticsearchIndexByPassVersion() { return elasticsearchIndexByPassVersion; }
   public static Long getElasticsearchRootTemplateVersion() { return elasticsearchTemplatesVersion.get("root"); }
@@ -813,6 +823,7 @@ public class DeploymentCommon
   public static Integer getReportManagerMaxMessageLength() { return reportManagerMaxMessageLength; } // TODO EVPRO-99 check for tenant and static
   public static int getStockRefreshPeriod() { return stockRefreshPeriod; } // TODO EVPRO-99 check for tenant and static
   public static String getPeriodicEvaluationCronEntry() { return periodicEvaluationCronEntry; }
+  public static String getSystemMaintenanceCronEntry() { return systemMaintenanceCronEntry; }
   public static String getUCGEvaluationCronEntry() { return ucgEvaluationCronEntry; } // TODO EVPRO-99 check for tenant and static
   public static String getReportManagerZookeeperDir() { return reportManagerZookeeperDir; }
   public static String getReportManagerOutputPath() { return reportManagerOutputPath; } // TODO EVPRO-99 Move in TENANT
@@ -936,6 +947,18 @@ public class DeploymentCommon
     elasticsearchRetentionDaysCampaigns = jsonReader.decodeInteger("ESRetentionDaysCampaigns");
     elasticsearchRetentionDaysBulkCampaigns = jsonReader.decodeInteger("ESRetentionDaysBulkCampaigns");
     elasticsearchRetentionWeeksDatacubeJourneys = jsonReader.decodeInteger("ESRetentionWeeksDatacubeJourneys");
+    elasticsearchRetentionDaysMaintenanceDetails = jsonReader.decodeInteger("ESRetentionDaysMaintenanceDetails");
+    
+    String tempResult = null;
+    tempResult = jsonReader.decodeOptionalString("maintenanceLogRetentionDays");
+    maintenanceLogRetentionDays = tempResult == null || tempResult.trim().isEmpty() ? Integer.valueOf(-1) : Integer.parseInt(tempResult);
+    
+    tempResult = jsonReader.decodeOptionalString("archivedCdrRetentionDays");
+    archivedCdrRetentionDays = tempResult == null || tempResult.trim().isEmpty() ? Integer.valueOf(-1) : Integer.parseInt(tempResult);
+    
+    tempResult = jsonReader.decodeOptionalString("journalctlRetentionDays");
+    journalctlRetentionDays = tempResult == null || tempResult.trim().isEmpty() ? Integer.valueOf(-1) : Integer.parseInt(tempResult);
+    
     JSONObject elasticsearchTemplatesVersionJSON = jsonReader.decodeJSONObject("elasticsearchTemplatesVersion");
     elasticsearchTemplatesVersion = new LinkedHashMap<String, Long>();
     for (Object key : elasticsearchTemplatesVersionJSON.keySet()) {
@@ -1436,6 +1459,7 @@ public class DeploymentCommon
     authResponseCacheLifetimeInMinutes = jsonReader.decodeInteger("authResponseCacheLifetimeInMinutes");
     stockRefreshPeriod = jsonReader.decodeInteger("stockRefreshPeriod");
     periodicEvaluationCronEntry = jsonReader.decodeString("periodicEvaluationCronEntry");
+    systemMaintenanceCronEntry = jsonReader.decodeString("systemMaintenanceCronEntry");
     ucgEvaluationCronEntry = jsonReader.decodeString("ucgEvaluationCronEntry");
 
     //

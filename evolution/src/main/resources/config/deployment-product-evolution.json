@@ -107,6 +107,10 @@
   "ESRetentionDaysEDR"              : 45,
   "ESRetentionWeeksDatacubeJourneys.comment": "WARNING: here it is in week",
   "ESRetentionWeeksDatacubeJourneys": 3,
+  "ESRetentionDaysMaintenanceDetails": 45,
+  "maintenanceLogRetentionDays" : "<_MAINTENANCE_LOG_RETENTION_DAYS_>",
+  "archivedCdrRetentionDays" : "<_ARCHIVED_CDR_RETENTION_DAYS_>",
+  "journalctlRetentionDays" : "<_JOURNALCTL_RETENTION_DAYS_>",
   
   "elasticsearchTemplatesVersion" : {
     "root":                             2,
@@ -160,6 +164,7 @@
   
   "periodicEvaluationCronEntry" : "0 2 * * *",
   "ucgEvaluationCronEntry" : "0 4 * * *",
+  "systemMaintenanceCronEntry"    : "5 4 15 * *",
 
   "minExpiryDelayForVoucherDeliveryInHours" : 4,
   "importVoucherFileBulkSize" : 5000,

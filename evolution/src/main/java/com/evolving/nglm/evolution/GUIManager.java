@@ -46,12 +46,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.evolving.nglm.evolution.commoditydelivery.CommodityDeliveryException;
-import com.evolving.nglm.evolution.commoditydelivery.CommodityDeliveryManagerRemovalUtils;
-
-import com.evolving.nglm.evolution.job.Reader;
-import com.evolving.nglm.evolution.job.Sender;
-import com.evolving.nglm.evolution.uniquekey.ZookeeperUniqueKeyServer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.Serdes;
@@ -110,9 +104,6 @@ import com.evolving.nglm.evolution.EvaluationCriterion.CriterionOperator;
 import com.evolving.nglm.evolution.Expression.ConstantExpression;
 import com.evolving.nglm.evolution.GUIManagedObject.GUIManagedObjectType;
 import com.evolving.nglm.evolution.GUIManagedObject.IncompleteObject;
-import com.evolving.nglm.evolution.GUIManager.GUIManagerContext;
-import com.evolving.nglm.evolution.GUIManager.GUIManagerException;
-import com.evolving.nglm.evolution.GUIManager.RenamedProfileCriterionField;
 import com.evolving.nglm.evolution.GUIService.GUIManagedObjectListener;
 import com.evolving.nglm.evolution.Journey.GUINode;
 import com.evolving.nglm.evolution.Journey.JourneyStatus;
@@ -131,17 +122,21 @@ import com.evolving.nglm.evolution.SegmentationDimension.SegmentationDimensionTa
 import com.evolving.nglm.evolution.SubscriberProfile.EvolutionSubscriberStatus;
 import com.evolving.nglm.evolution.SubscriberProfileService.EngineSubscriberProfileService;
 import com.evolving.nglm.evolution.SubscriberProfileService.SubscriberProfileServiceException;
-import com.evolving.nglm.evolution.ThirdPartyManager.API;
 import com.evolving.nglm.evolution.Token.TokenStatus;
+import com.evolving.nglm.evolution.commoditydelivery.CommodityDeliveryException;
+import com.evolving.nglm.evolution.commoditydelivery.CommodityDeliveryManagerRemovalUtils;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectTypeService;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientAPI;
 import com.evolving.nglm.evolution.elasticsearch.ElasticsearchClientException;
 import com.evolving.nglm.evolution.grafana.GrafanaUtils;
+import com.evolving.nglm.evolution.job.Reader;
+import com.evolving.nglm.evolution.job.Sender;
 import com.evolving.nglm.evolution.offeroptimizer.GetOfferException;
 import com.evolving.nglm.evolution.offeroptimizer.ProposedOfferDetails;
 import com.evolving.nglm.evolution.otp.GUIManagerOTP;
 import com.evolving.nglm.evolution.otp.OTPTypeService;
 import com.evolving.nglm.evolution.tenancy.Tenant;
+import com.evolving.nglm.evolution.uniquekey.ZookeeperUniqueKeyServer;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -642,6 +637,9 @@ public class GUIManager
     
     // for GUIManagerExtension
     getAuthDetailsSOS("getAuthDetailsSOS"),
+    getSystemMaintenanceDetails("getSystemMaintenanceDetails"),
+    createSystemMaintenanceRequest("createSystemMaintenanceRequest"),
+    getRetentionConfigurationDetails("getRetentionConfigurationDetails"),
     
     
     //
@@ -2556,6 +2554,9 @@ public class GUIManager
 
         // for GUIManagerExtension
         restServer.createContext("/nglm-guimanager/getAuthDetailsSOS", new APISimpleHandler(API.getAuthDetailsSOS));
+        restServer.createContext("/nglm-guimanager/getSystemMaintenanceDetails", new APISimpleHandler(API.getSystemMaintenanceDetails));
+        restServer.createContext("/nglm-guimanager/createSystemMaintenanceRequest", new APISimpleHandler(API.createSystemMaintenanceRequest));
+        restServer.createContext("/nglm-guimanager/getRetentionConfigurationDetails", new APISimpleHandler(API.getRetentionConfigurationDetails));
         
         restServer.setExecutor(Executors.newFixedThreadPool(10));
         restServer.start();
@@ -2582,12 +2583,15 @@ public class GUIManager
     JobScheduler guiManagerJobScheduler = new JobScheduler("GUIManager");
     String periodicGenerationCronEntry = "5 1,6,11,16,21 * * *";
     String qaCronEntry = "5,10,15,30,45,59 * * * *";
+    String systemMaintenanceCronEntry = DeploymentCommon.getSystemMaintenanceCronEntry();
     ScheduledJob recurrnetCampaignCreationJob = new RecurrentCampaignCreationJob("Recurrent Campaign(create)", periodicGenerationCronEntry, Deployment.getDefault().getTimeZone(), false); // TODO EVPRO-99 i used systemTimeZone instead of BaseTimeZone pet tenant, check if correct
     ScheduledJob challengesOccurrenceJob = new ChallengesOccurrenceJob("Challenges Occurrence", periodicGenerationCronEntry, Deployment.getDefault().getTimeZone(), false);
-    if(recurrnetCampaignCreationJob.isProperlyConfigured() && challengesOccurrenceJob.isProperlyConfigured())
+    ScheduledJob systemMaintenanceJob = new SystemMaintenanceJob("System Maintenance", systemMaintenanceCronEntry, Deployment.getDefault().getTimeZone(), false);
+    if(recurrnetCampaignCreationJob.isProperlyConfigured() && challengesOccurrenceJob.isProperlyConfigured() && systemMaintenanceJob.isProperlyConfigured())
       {
         guiManagerJobScheduler.schedule(recurrnetCampaignCreationJob);
         guiManagerJobScheduler.schedule(challengesOccurrenceJob);
+        guiManagerJobScheduler.schedule(systemMaintenanceJob);
         new Thread(guiManagerJobScheduler::runScheduler, "guiManagerJobScheduler").start();
       }
     else
@@ -4640,7 +4644,18 @@ public class GUIManager
                 case getAuthDetailsSOS:
                   jsonResponse = processGetAuthDetailsSOS(userID, jsonRoot, tenantID);
                   break;
-
+                  
+                case getSystemMaintenanceDetails:
+                  jsonResponse = guiManagerGeneral.processGetSystemMaintenanceDetails(userID, jsonRoot, tenantID);
+                  break;
+                  
+                case createSystemMaintenanceRequest:
+                  jsonResponse = guiManagerGeneral.processCreateSystemMaintenanceRequest(userID, jsonRoot, tenantID);
+                  break;
+                  
+                case getRetentionConfigurationDetails:
+                  jsonResponse = guiManagerGeneral.processGetRetentaionConfigurations(userID, jsonRoot, tenantID);
+                  break;
               }
           }
         else
@@ -31556,6 +31571,71 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
   
   /*****************************************
   *
+  *  SystemMaintenanceJob
+  *
+  *****************************************/
+  
+  public class SystemMaintenanceJob extends ScheduledJob
+  {
+    /***********************************
+     *
+     * constructor
+     *
+     ************************************/
+
+    public SystemMaintenanceJob(String jobName, String periodicGenerationCronEntry, String baseTimeZone, boolean scheduleAtStart)
+    {
+      super(jobName, periodicGenerationCronEntry, baseTimeZone, scheduleAtStart);
+    }
+
+    /***********************************
+     *
+     * run
+     *
+     ************************************/
+
+    @Override protected void run()
+    {
+      //
+      //  request
+      //
+      
+      List<JSONObject> pendingRequests = elasticsearch.getPendingMaintenanceRequests(null);
+      if (pendingRequests.isEmpty())
+        {
+          Map<String, Object> documentMap = new HashMap<String, Object>();
+          Date now = SystemTime.getCurrentTime();
+          documentMap.put("requestedBy", "System");
+          documentMap.put("status", "REQUESTED");
+          documentMap.put("requestDate", RLMDateUtils.formatDateForElasticsearchDefault(now));
+          String requestID = elasticsearch.createSystemMaintenanceRequest(documentMap, now);
+          if (requestID == null)
+            {
+              log.error("unable to create new request");            }
+          else
+            {
+              log.info("new request creaed with requestID {}", requestID);  
+            }
+        }
+      else
+        {
+          log.error("unable to create new request - {} pending requests",  pendingRequests.size());  
+        }
+      
+      //
+      // cleanup
+      //
+      
+      int retentionDays = DeploymentCommon.getElasticsearchRetentionDaysMaintenanceDetails() * -1;
+      Date purgeTill = RLMDateUtils.addDays(SystemTime.getCurrentTime(), retentionDays, Deployment.getDefault().getTimeZone());
+      elasticsearch.clearMaintenanceActionLogs(purgeTill);
+      elasticsearch.clearSystemMaintenanceRequest(purgeTill);
+    }
+   
+  }
+  
+  /*****************************************
+  *
   *  processPutSimpleOffer
   *
   *****************************************/
@@ -32868,6 +32948,8 @@ private JSONObject processGetOffersList(String userID, JSONObject jsonRoot, int 
     result.put("responseCode", "ok");
     return result;
   }
+  
+  
   
   public JSONObject processGetAuthDetailsSOS(String userID, JSONObject jsonRoot, int tenantID) throws GUIManagerException 
   {

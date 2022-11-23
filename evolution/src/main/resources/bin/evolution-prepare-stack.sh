@@ -32,6 +32,13 @@ cat $DEPLOY_ROOT/bin/resources/configlog.sh | perl -e 'while ( $line=<STDIN> ) {
 chmod 755 $DEPLOY_ROOT/bin/configlog.sh
 
 #
+#  cleanup.sh
+#
+
+cat $DEPLOY_ROOT/bin/resources/cleanup.sh | perl -e 'while ( $line=<STDIN> ) { $line=~s/<_([A-Z_0-9]+)_>/$ENV{$1}/g; print $line; }' > $DEPLOY_ROOT/bin/cleanup.sh
+chmod 755 $DEPLOY_ROOT/bin/cleanup.sh
+
+#
 #  restorekafkabackup.sh
 #
 
@@ -1480,5 +1487,3 @@ if [ "$BACKUPMANAGER_ENABLED" = "true" ]; then
   cat $DEPLOY_ROOT/docker/stack-postamble.yml >> $DEPLOY_ROOT/stack/stack-backupmanager.yml
 
 fi
-
-

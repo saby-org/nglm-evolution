@@ -17,6 +17,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -29,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -49,6 +51,7 @@ import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.index.query.*;
+import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.Aggregations;
@@ -74,6 +77,7 @@ import org.slf4j.LoggerFactory;
 import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.DeploymentCommon;
 import com.evolving.nglm.core.JSONUtilities;
+import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.JSONUtilities.JSONUtilitiesException;
 import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.ServerRuntimeException;
@@ -6090,6 +6094,177 @@ public class GUIManagerGeneral extends GUIManager
   
   /****************************************
   *
+  *  processGetSystemMaintenanceDetails
+  *
+  ****************************************/
+  
+  public JSONObject processGetSystemMaintenanceDetails(String userID, JSONObject jsonRoot, int tenantID)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    Map<String, Object> response = new HashMap<String, Object>();
+    
+    /****************************************
+    *
+    *  argument
+    *
+    ****************************************/
+
+    String startDateReq = JSONUtilities.decodeString(jsonRoot, "startDate", false);
+    String endDateReq = JSONUtilities.decodeString(jsonRoot, "endDate", false);
+    String requestID = JSONUtilities.decodeString(jsonRoot, "requestID", false);
+    try
+      {
+        Date startDate = RLMDateUtils.parseDateFromDay(startDateReq, Deployment.getDeployment(tenantID).getTimeZone());
+        Date endDate = RLMDateUtils.parseDateFromDay(endDateReq, Deployment.getDeployment(tenantID).getTimeZone());
+        
+        //
+        //  prepare
+        //
+        
+        startDate = GUIManager.prepareStartDate(startDate, Deployment.getDeployment(tenantID).getTimeZone());
+        endDate = GUIManager.prepareEndDate(endDate, Deployment.getDeployment(tenantID).getTimeZone());
+        
+        response.put("actionLogs", JSONUtilities.encodeArray(this.elasticsearch.getMaintenanceActionLogs(requestID, startDate, endDate)));
+        response.put("pendingRequests", JSONUtilities.encodeArray(this.elasticsearch.getPendingMaintenanceRequests(requestID)));
+        response.put("completedRequests", JSONUtilities.encodeArray(this.elasticsearch.getCompletedMaintenanceRequests(requestID)));
+        response.put("responseCode", "ok");
+      } 
+    catch (java.text.ParseException e)
+      {
+        e.printStackTrace();
+      }
+    
+    /*****************************************
+    *
+    *  return
+    *
+    *****************************************/
+
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /****************************************
+  *
+  *  processGetSystemMaintenanceDetails
+  *
+  ****************************************/
+  
+  public JSONObject processGetRetentaionConfigurations(String userID, JSONObject jsonRoot, int tenantID)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    Map<String, Object> response = new HashMap<String, Object>();
+    List<JSONObject> retentionConfigurations = new ArrayList<JSONObject>();
+    
+    //
+    //  kafka
+    //
+    
+    retentionConfigurations.add(new RetentionConfiguration("guiConfigurationRetentionDays", "GUI Configuration Retention Days", String.valueOf(DeploymentCommon.getGuiConfigurationSoftRetentionDays()), "this is the number of days after which we delete record from topic for a deleted GUIManaged Details").getJSONPresentation());
+    retentionConfigurations.add(new RetentionConfiguration("kafkaRetentionDaysExpiredTokens", "Kafka Retention Days ExpiredTokens", String.valueOf(DeploymentCommon.getKafkaRetentionDaysExpiredTokens()), "this is the number of days after which we delete Expired Tokens").getJSONPresentation());
+    retentionConfigurations.add(new RetentionConfiguration("kafkaRetentionDaysExpiredVouchers", "Kafka Retention Days ExpiredVouchers", String.valueOf(DeploymentCommon.getKafkaRetentionDaysExpiredVouchers()), "this is the number of days after which we delete Expired Vouchers").getJSONPresentation());
+    retentionConfigurations.add(new RetentionConfiguration("kafkaRetentionDaysLoyaltyPrograms", "Kafka Retention Days LoyaltyPrograms", String.valueOf(DeploymentCommon.getKafkaRetentionDaysLoyaltyPrograms()), "this is the number of days after which we delete Subscriber Loyalty Details if exited").getJSONPresentation());
+    retentionConfigurations.add(new RetentionConfiguration("kafkaRetentionDaysRemovedBadges", "Kafka Retention Days Removed Badges", String.valueOf(DeploymentCommon.getKafkaRetentionDaysRemovedBadges()), "this is the number of days after which we delete Subscriber Badge Details if removed").getJSONPresentation());
+    retentionConfigurations.add(new RetentionConfiguration("kafkaRetentionDaysTargets", "Kafka Retention Days Targets", String.valueOf(DeploymentCommon.getKafkaRetentionDaysTargets()), "this is the number of days after which we delete Subscriber Target details after target Expired/Ended").getJSONPresentation());
+    
+    //
+    //  ES
+    //
+    
+    retentionConfigurations.add(new RetentionConfiguration("ESRetentionDaysODR", "ES Retention Days ODR", String.valueOf(DeploymentCommon.getElasticsearchRetentionDaysODR()), "this is the number of days after which we delete ODR index - which provides Offer Detaild Records").getJSONPresentation());
+    retentionConfigurations.add(new RetentionConfiguration("ESRetentionDaysBDR", "ES Retention Days BDR", String.valueOf(DeploymentCommon.getElasticsearchRetentionDaysBDR()), "this is the number of days after which we delete BDR index - which provides Bonus Detaild Records").getJSONPresentation());
+    retentionConfigurations.add(new RetentionConfiguration("ESRetentionDaysMDR", "ES Retention Days MDR", String.valueOf(DeploymentCommon.getElasticsearchRetentionDaysMDR()), "this is the number of days after which we delete MDR index - which provides Message/Notification Detaild Records").getJSONPresentation());
+    retentionConfigurations.add(new RetentionConfiguration("ESRetentionDaysTokens", "ES Retention Days Tokens", String.valueOf(DeploymentCommon.getElasticsearchRetentionDaysTokens()), "this is the number of days after which we delete Token index - which provides Token Detaild Records").getJSONPresentation());
+    retentionConfigurations.add(new RetentionConfiguration("ESRetentionDaysSnapshots", "ES Retention Days Snapshots", String.valueOf(DeploymentCommon.getElasticsearchRetentionDaysSnapshots()), "this is the number of days after which we delete Snapshot index - like subscriberprofile snaps").getJSONPresentation());
+    retentionConfigurations.add(new RetentionConfiguration("ESRetentionDaysMaintenanceDetails", "ES Retention Days Maintenance Details", String.valueOf(DeploymentCommon.getElasticsearchRetentionDaysMaintenanceDetails()), "this is the number of days after which we delete MaintenanceHistoryDetails - like requests, logs, etc...").getJSONPresentation());
+    
+    //
+    //  maintenance
+    //
+    
+    retentionConfigurations.add(new RetentionConfiguration("maintenanceLogRetentionDays", "MAINTENANCE LOG RETENTION DAYS", String.valueOf(DeploymentCommon.getMaintenanceLogRetentionDays()), "number of days for which the Maintenance Logs need to be retained; any files prior to that period will be deleted... -1 means not configured.").getJSONPresentation());
+    retentionConfigurations.add(new RetentionConfiguration("archivedCdrRetentionDays", "ARCHIVED CDR RETENTION DAYS", String.valueOf(DeploymentCommon.getArchivedCdrRetentionDays()), "number of days for which archived CDRs need to be retained; any files prior to that period will be deleted... -1 means not configured.").getJSONPresentation());
+    retentionConfigurations.add(new RetentionConfiguration("journalctlRetentionDays", "JOURNALCTL RETENTION DAYS", String.valueOf(DeploymentCommon.getJournalctlRetentionDays()), "number of days for which old journal logs need to be retained; any logs prior to that period will be deleted... -1 means not configured.").getJSONPresentation());
+   
+    //
+    //  retentionConfigurations
+    //
+    
+    response.put("retentionConfigurations", JSONUtilities.encodeArray(retentionConfigurations));
+    response.put("responseCode", "ok");
+    
+    
+    /*****************************************
+    *
+    *  return
+    *
+    *****************************************/
+
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  /****************************************
+  *
+  *  processCreateSystemMaintenanceRequest
+  *
+  ****************************************/
+  
+  public JSONObject processCreateSystemMaintenanceRequest(String userID, JSONObject jsonRoot, int tenantID)
+  {
+    /****************************************
+    *
+    *  response
+    *
+    ****************************************/
+    
+    Map<String, Object> response = new HashMap<String, Object>();
+    String userName = JSONUtilities.decodeString(jsonRoot, "userName", "Administrator");
+    List<JSONObject> pendingRequests = this.elasticsearch.getPendingMaintenanceRequests(null);
+    if (pendingRequests.isEmpty())
+      {
+        Map<String, Object> documentMap = new HashMap<String, Object>();
+        Date now = SystemTime.getCurrentTime();
+        documentMap.put("requestedBy", userName);
+        documentMap.put("status", "REQUESTED");
+        documentMap.put("requestDate", RLMDateUtils.formatDateForElasticsearchDefault(now));
+        String requestID = this.elasticsearch.createSystemMaintenanceRequest(documentMap, now);
+        if (requestID == null)
+          {
+            response.put("responseCode", "UnableToCreateNewRequest");
+          }
+        else
+          {
+            response.put("requestID", requestID);
+            response.put("responseCode", "ok");
+          }
+      }
+    else
+      {
+        response.put("responseCode", pendingRequests.size() + " pending requests");
+        response.put("pendingRequests", JSONUtilities.encodeArray(pendingRequests));
+      }
+    
+    /*****************************************
+    *
+    *  return
+    *
+    *****************************************/
+
+    return JSONUtilities.encodeObject(response);
+  }
+  
+  
+  /****************************************
+  *
   *  buildGUIDependencyModelTreeMap
   *
   ****************************************/
@@ -6113,5 +6288,6 @@ public class GUIManagerGeneral extends GUIManager
         guiDependencyModelTreeMap.put(guiDependencyModelTree.getGuiManagedObjectType(), guiDependencyModelTree);
       }
   }
+  
 }
 
