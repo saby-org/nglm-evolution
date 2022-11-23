@@ -1919,4 +1919,44 @@ public abstract class CriterionFieldRetriever
     }
     return result.toLowerCase();
   }
+  
+
+  /*****************************************
+  *
+  *  adv criteria - EVPRO-1504
+  *
+  *****************************************/
+  
+  public static Object getNumberOfChildrenForRelation(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) 
+  {
+    Long result = null;
+    SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+    String relationshipID = subcriteriaVal.get(0)==null?null:(String) subcriteriaVal.get(0);
+   
+    //
+    //  relationshipID
+    //
+    
+    if (relationshipID != null)
+      {
+        if (subscriberProfile.getRelations().get(relationshipID) != null) 
+        	{SubscriberRelatives relatives = subscriberProfile.getRelations().get(relationshipID);
+        	if(relatives!=null && relatives.getChildrenSubscriberIDs()!=null)
+        	result=new Long(relatives.getChildrenSubscriberIDs().size());
+        	} 
+        		
+        }
+    else
+      {
+    	 for (SupportedRelationship supportedRelationship : Deployment.getDeployment(subscriberProfile.getTenantID()).getSupportedRelationships().values())
+         {
+    		 if(subscriberProfile.getRelations().get(supportedRelationship.getID()) != null && subscriberProfile.getRelations().get(supportedRelationship.getID()).getChildrenSubscriberIDs()!=null)
+               result=result+subscriberProfile.getRelations().get(supportedRelationship.getID()).getChildrenSubscriberIDs().size();
+         }
+       
+      }
+    
+   
+    return result;
+  }
 }
