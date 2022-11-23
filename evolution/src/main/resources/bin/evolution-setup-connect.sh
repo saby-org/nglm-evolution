@@ -432,4 +432,28 @@ prepare-curl -XPOST $CONNECT_URL_UPDATED_SUBSCRIBER/connectors -H "Content-Type:
        }
    }'
 
+#
+#  source connector -- imported dnbo offers
+#
+
+export CONNECT_URL_PRESENTATIONLOG=${CONNECT_URL_PRESENTATIONLOG:-$DEFAULT_CONNECT_URL}
+prepare-curl -XPOST $CONNECT_URL_PRESENTATIONLOG/connectors -H "Content-Type: application/json" -d '
+  {
+    "name" : "imported_dnbo_offers_file_connector",
+    "config" :
+      {
+      "connector.class" : "com.evolving.nglm.evolution.offeroptimizer.ImportedOffersFileSource",
+      "tasks.max" : 1,
+      "directory" : "/app/data/importedoffersdnbo",
+      "filenamePattern" : "^.*(\\.gz)?(?<!\\.tmp)$",
+      "pollMaxRecords" : 5,
+      "pollingInterval" : 2,
+      "verifySizeInterval" : 0,
+      "topic" : "importedoffersdnbo:${topic.importedoffers.dnbo}",
+      "bootstrapServers" : "'$BROKER_SERVERS'",
+      "internalTopic" : "${topic.importedoffers.dnbo_fileconnector}",
+      "archiveDirectory" : "/app/data/importedoffersdnboarchive"
+      }
+  }' 
+  
 wait

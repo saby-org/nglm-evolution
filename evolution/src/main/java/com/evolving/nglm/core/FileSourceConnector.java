@@ -505,7 +505,7 @@ public abstract class FileSourceConnector extends SourceConnector
 
   @Override public abstract Class<? extends Task> taskClass();
   public Map<String,String> additionalTaskConfig() { return Collections.<String,String>emptyMap(); }
-
+  
   /****************************************
   *
   *  taskConfigs

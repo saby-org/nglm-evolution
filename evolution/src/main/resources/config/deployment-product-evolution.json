@@ -235,7 +235,7 @@
   "cleanupSubscriberTopic"                               : "${topic.cleanupsubscriber}",
   "subscriberProfileForceUpdateTopic"                    : "${topic.subscriberprofileforceupdate}",
   "executeActionOtherSubscriberTopic"                    : "${topic.executeactionothersubscriber}",
-  "voucherActionTopic"                               	   : "${topic.voucheraction}",
+  "voucherActionTopic"                               	 : "${topic.voucheraction}",
   "tokenRedeemedTopic"                                   : "${topic.tokenredeemed}",
   "subscriberStateChangeLog"                             : "${changelog.evolutionengine.subscriberstate}",
   "subscriberStateChangeLogTopic"                        : "${changelog.evolutionengine.subscriberstate.topic}",
@@ -275,7 +275,7 @@
   "sourceAddressTopic"                                   : "${topic.sourceaddress}",
   "voucherChangeRequestTopic"                            : "${topic.voucherchange.request}",
   "voucherChangeResponseTopic"                           : "${topic.voucherchange.response}",
-  "edrDetailsTopic"                           			     : "${topic.edrdetails}",
+  "edrDetailsTopic"                           			 : "${topic.edrdetails}",
   "fileWithVariableEventTopic"                           : "${topic.filewithvariableevent}",
   "workflowEventTopic"                                   : "${topic.workflowEvent}",
   "subscriberProfileForceUpdateResponseTopic"            : "${topic.subscriberProfileForceUpdateResponse}",
@@ -287,6 +287,8 @@
   "productExternalEventResponseTopic"                    : "${topic.productexternalevent.response}",
   "loopbackTopic"                                        : "${topic.loopback}",
   "evolutionJobTopic"                                    : "${topic.evolution.job}",
+  "importedOffersDNBOTopic"						 		 : "${topic.importedoffers.dnbo}",
+
 
   "supportedDataTypes" :
     [
@@ -567,6 +569,13 @@
               { "id" : "event.origin",           "display" : "MessageDelivery - Origin",             "dataType" : "string", "retriever" : "getOrigin_MessageDelivery",           "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "tagMaxLength" : 50, "availableValues" : null },
               { "id" : "event.messageId",        "display" : "MessageDelivery - Message Id",         "dataType" : "string", "retriever" : "getMessageId_MessageDelivery",        "minValue" : 0, "maxValue" : null, "includedOperators" : null, "excludedOperators" : null, "includedComparableFields" : null, "excludedComparableFields" : null, "availableValues" : null }
            ]
+        },
+        { 
+          "name" : "importedScoring",
+          "eventClass" : "com.evolving.nglm.evolution.offeroptimizer.ImportedOffersScoring",
+          "eventTopic" : "${topic.importedoffers.dnbo}",
+          "eventRule"  : "standard",
+          "eventCriterionFields" : []
         }
     ],
 
@@ -628,7 +637,8 @@
                 ]
             }
           ],
-        "javaClass": "com.evolving.nglm.evolution.offeroptimizer.RandomAlgo"
+        "javaClass": "com.evolving.nglm.evolution.offeroptimizer.RandomAlgo",
+        "scoringEngineID": 1
       },
       {
         "id": "M-Price",
@@ -654,10 +664,20 @@
                "name":"thresholdValue"
             }
           ],
-        "javaClass": "com.evolving.nglm.evolution.offeroptimizer.PriceAlgo"
+        "javaClass": "com.evolving.nglm.evolution.offeroptimizer.PriceAlgo",
+        "scoringEngineID": 1
+      },
+      {
+        "id": "imported-scoring-algorithm",
+        "name": "imported-scoring-algorithm",
+        "display": "Offers ranked by preferance",
+        "fileTemplate":"imported_offers",
+        "parameters": [],
+        "javaClass": "com.evolving.nglm.evolution.offeroptimizer.DNBOMatrixOfferOptimizerAlgo",
+        "scoringEngineID": 2
       }
     ],
-
+  
   "propensityRule"                                       :
   {
     "selectedDimensions": [],
@@ -1311,6 +1331,14 @@
 	    "name": "ScoringEngineName#120190508185800",
 	    "display": "DNBO Scoring Engine",
 	    "description": "DNBO Scoring Engine",
+	    "active": true,
+	    "readOnly": true
+      },
+      {
+        "id": "2",
+	    "name": "Imported",
+	    "display": "Imported",
+	    "description": "Imported Scoring Engine",
 	    "active": true,
 	    "readOnly": true
       }

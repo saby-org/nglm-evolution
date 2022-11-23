@@ -163,6 +163,7 @@ import com.evolving.nglm.evolution.Token.TokenStatus;
 import com.evolving.nglm.evolution.UCGState.UCGGroup;
 import com.evolving.nglm.evolution.VoucherChange.VoucherChangeAction;
 import com.evolving.nglm.evolution.kafka.EvolutionProductionExceptionHandler;
+import com.evolving.nglm.evolution.offeroptimizer.ImportedOffersScoring;
 import com.evolving.nglm.evolution.offeroptimizer.ProposedOfferDetails;
 import com.evolving.nglm.evolution.otp.OTPInstanceChangeEvent;
 import com.evolving.nglm.evolution.otp.OTPTypeService;
@@ -4121,6 +4122,21 @@ public class EvolutionEngine
     if (evolutionEvent instanceof OTPInstanceChangeEvent) {
         subscriberProfileUpdated = true;
     }
+    
+    /*****************************************
+    *
+    *  imported dnbo offers
+    *
+    *****************************************/
+    
+    if (evolutionEvent instanceof ImportedOffersScoring) 
+      {
+        ImportedOffersScoring imported = (ImportedOffersScoring) evolutionEvent;
+        log.info("[PRJT] {}", imported.toString());
+        
+        subscriberProfile.setImportedOffersDNBO(imported.getImportedTypeID(), imported.getImportedOffersList());
+        subscriberProfileUpdated = true;
+      }
 
     /*****************************************
     *

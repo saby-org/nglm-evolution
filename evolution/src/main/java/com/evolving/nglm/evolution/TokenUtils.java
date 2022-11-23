@@ -12,6 +12,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -406,10 +407,36 @@ public class TokenUtils
       log.debug(logFragment);
     }
     
-    Set<Offer> offersForAlgo = new HashSet<>();
-    if (selectedScoringSegment.getOfferOptimizationAlgorithm().getID().equals("matrix-algorithm")) // for matrix
+    boolean isSorted = false;
+    LinkedHashSet<Offer> offersForAlgo = new LinkedHashSet<Offer>();
+    String scoringAlgorithmId = selectedScoringSegment.getOfferOptimizationAlgorithm().getID();
+    if (scoringAlgorithmId.startsWith("matrix")) // for matrix
       {
         offersForAlgo = getOffersFromMatrix(subscriberGroupEpochReader, subscriberProfile, dnboMatrixService, scoringStrategy, offerService, salesChannelID, eventDate, tenantID);
+      }
+    else if (scoringAlgorithmId.startsWith("imported")) // for imported offers list
+      {
+        subscriberProfile.getImportedOffersDNBO().entrySet().forEach(entry -> {
+        });
+        
+        SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, eventDate, tenantID);
+        List<String> importedOffers = subscriberProfile.getImportedOffersDNBO().get(scoringAlgorithmId);
+        if (importedOffers != null && !importedOffers.isEmpty())
+          {
+            for (String offerID : importedOffers)
+              {
+               Offer offer = offerService.getActiveOffer(offerID, eventDate);
+               if (offer != null && offer.evaluateProfileCriteria(evaluationRequest))
+                 {
+                   offersForAlgo.add(offer);
+                 }
+              }
+          }
+        else
+          {
+            log.error("no imported offers available for {}", subscriberProfile.getMSISDN());
+          }
+        isSorted = true;
       }
     else
       {
@@ -444,7 +471,7 @@ public class TokenUtils
     Collection<ProposedOfferDetails> offerAvailabilityFromPropensityAlgo = new ArrayList<>();
     // This returns an ordered Collection (and sorted by offerScore)
     offerAvailabilityFromPropensityAlgo =
-        OfferOptimizerAlgoManager.getInstance().applyScoreAndSort(
+        OfferOptimizerAlgoManager.getInstance().applyScoreAndSort(isSorted, 
             algo, algoParameters, offersForAlgo, subscriberProfile, threshold, salesChannelID,
             productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService,
             subscriberGroupEpochReader,
@@ -515,9 +542,9 @@ public class TokenUtils
     return offerAvailabilityFromPropensityAlgo;
   }
   
-  private static Set<Offer> getOffersFromMatrix(ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader, SubscriberProfile subscriberProfile, DNBOMatrixService dnboMatrixService, ScoringStrategy scoringStrategy, OfferService offerService, String salesChannelID, Date eventDate, int tenantID) 
+  private static LinkedHashSet<Offer> getOffersFromMatrix(ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader, SubscriberProfile subscriberProfile, DNBOMatrixService dnboMatrixService, ScoringStrategy scoringStrategy, OfferService offerService, String salesChannelID, Date eventDate, int tenantID) 
   {
-    Set<Offer> offersFromMatrix = new HashSet<>();
+    LinkedHashSet<Offer> offersFromMatrix = new LinkedHashSet<>();
     SubscriberEvaluationRequest evaluationRequest = new SubscriberEvaluationRequest(subscriberProfile, subscriberGroupEpochReader, eventDate, tenantID);
     try
       {
@@ -549,9 +576,6 @@ public class TokenUtils
                   }
               }
           }
-
-        log.info("[PRJT] getOffersFromMatrix.segmentOfferIDs: {}", segmentOfferIDs);
-        log.info("[PRJT] getOffersFromMatrix.offersFromMatrix.size: {}", offersFromMatrix.size());
       }
     catch (GetOfferException e)
       {
@@ -560,15 +584,14 @@ public class TokenUtils
     return offersFromMatrix;
   }
   
-  private static Set<Offer> getOffersToOptimize(Date processingDate, Date eventDate, Set<String> catalogObjectiveIDs,
-      SubscriberProfile subscriberProfile, OfferService offerService, SupplierService supplierService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader, Supplier supplier, ProductService productService, VoucherService voucherService, int tenantID)
+  private static LinkedHashSet<Offer> getOffersToOptimize(Date processingDate, Date eventDate, Set<String> catalogObjectiveIDs, SubscriberProfile subscriberProfile, OfferService offerService, SupplierService supplierService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader, Supplier supplier, ProductService productService, VoucherService voucherService, int tenantID)
   {
     // Browse all offers:
     // - filter by offer objective coming from the split strategy
     // - filter by profile of subscriber
     // Return a set of offers that can be optimised
     Collection<Offer> offers = offerService.getActiveOffers(SystemTime.getCurrentTime(), tenantID);
-    Set<Offer> result = new HashSet<>();
+    LinkedHashSet<Offer> result = new LinkedHashSet<>();
     List<Token> tokens = subscriberProfile.getTokens();
     Collection<Offer>filteredOffers = new ArrayList<>(); 
     /**
