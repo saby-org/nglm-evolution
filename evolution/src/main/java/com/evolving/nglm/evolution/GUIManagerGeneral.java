@@ -118,7 +118,8 @@ public class GUIManagerGeneral extends GUIManager
   
   private static final Logger log = LoggerFactory.getLogger(GUIManagerGeneral.class);
 
-  private static final int HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE = 100;
+  private static final int HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE = 50000;
+  private static final int GENERATE_A_VOUCHER_CODE_THREAD_GROUP_RETRY_COUNT = 40;
   
   private static final Set<String> ADVANCED_SEARCH_RESPONSE_KEY;
   
@@ -4760,7 +4761,6 @@ JSONObject processAdvancedSearch(String userID, JSONObject jsonRoot, int tenantI
   *****************************************/
   JSONObject processGetTokenCodesFormats(String userID, JSONObject jsonRoot, int tenantID)
   {
-
     /*****************************************
     *
     *  retrieve tokenCodesFormats
@@ -4843,16 +4843,21 @@ JSONObject processAdvancedSearch(String userID, JSONObject jsonRoot, int tenantI
     ****************************************/
     String pattern = JSONUtilities.decodeString(jsonRoot, "pattern", true);
     int quantity = JSONUtilities.decodeInteger(jsonRoot, "quantity", true);
+    String supplierID = JSONUtilities.decodeString(jsonRoot, "supplierID", true);
+    String voucherID = JSONUtilities.decodeString(jsonRoot, "voucherID", false);
     
     // find existing vouchers
     
     List<String> existingVoucherCodes = new ArrayList<>();
     Collection<GUIManagedObject> uploadedFileObjects = uploadedFileService.getStoredGUIManagedObjects(true, tenantID);
 
-    String supplierID = JSONUtilities.decodeString(jsonRoot, "supplierID", true);
-
     String applicationID = "vouchers_" + supplierID; // TODO CHECK THIS MK
     
+    //
+    //  unsaved voucher files
+    //
+    
+    log.info("processGenerateVouchers processing unsaved files");
     for (GUIManagedObject uploaded : uploadedFileObjects)
       {
         String fileApplicationID = JSONUtilities.decodeString(uploaded.getJSONRepresentation(), "applicationID", false);
@@ -4864,119 +4869,151 @@ JSONObject processAdvancedSearch(String userID, JSONObject jsonRoot, int tenantI
                 BufferedReader reader = null;
                 String filename = UploadedFile.OUTPUT_FOLDER + uploadedFile.getDestinationFilename();
                 try
-                {
-                  reader = new BufferedReader(new FileReader(filename));
-                  for (String line; (line = reader.readLine()) != null;)
-                    {
-                      if (line.trim().isEmpty()) continue;
-                      existingVoucherCodes.add(line.trim());
-                    }
-                }
+                  {
+                    reader = new BufferedReader(new FileReader(filename));
+                    for (String line; (line = reader.readLine()) != null;)
+                      {
+                        if (line.trim().isEmpty())
+                          continue;
+                        existingVoucherCodes.add(line.trim());
+                      }
+                  } 
                 catch (IOException e)
-                {
-                  log.info("Unable to read voucher file " + filename);
-                } finally {
-                  try {
-                    if (reader != null) reader.close();
-                  }
-                  catch (IOException e)
                   {
                     log.info("Unable to read voucher file " + filename);
+                  } 
+                finally
+                  {
+                    try
+                      {
+                        if (reader != null)
+                          reader.close();
+                      } 
+                    catch (IOException e)
+                      {
+                        log.info("Unable to read voucher file " + filename);
+                      }
                   }
-                }
+              }
+          }
+      }
+    
+    //
+    //  saved voucher files
+    //
+    
+    log.info("processGenerateVouchers processing saved files");
+    Collection<GUIManagedObject> vouchers = voucherService.getStoredVouchers(tenantID);
+    for (GUIManagedObject uncheckedVoucher : vouchers)
+      {
+        if (uncheckedVoucher instanceof VoucherPersonal && ((VoucherPersonal) uncheckedVoucher).getSupplierID().equals(supplierID))
+          {
+            VoucherPersonal voucher = (VoucherPersonal) uncheckedVoucher;
+            log.info("already found a saved voucher for supplierID {} - voucher is {} - will consider all the files for this voucher as well", supplierID, voucher.getGUIManagedObjectDisplay());
+            for (VoucherFile file : voucher.getVoucherFiles())
+              {
+                GUIManagedObject uploadedFile = uploadedFileService.getStoredUploadedFile(file.getFileId());
+                if (uploadedFile instanceof UploadedFile)
+                  {
+                    UploadedFile uploadedUsedFile = (UploadedFile) uploadedFile;
+                    BufferedReader reader = null;
+                    String filename = UploadedFile.OUTPUT_FOLDER + uploadedUsedFile.getDestinationFilename();
+                    try
+                      {
+                        reader = new BufferedReader(new FileReader(filename));
+                        for (String line; (line = reader.readLine()) != null;)
+                          {
+                            if (line.trim().isEmpty()) continue;
+                            existingVoucherCodes.add(line.trim());
+                          }
+                      } 
+                    catch (IOException e)
+                      {
+                        log.info("Unable to read voucher file " + filename);
+                      } 
+                    finally
+                      {
+                        try
+                          {
+                            if (reader != null) reader.close();
+                          } 
+                        catch (IOException e)
+                          {
+                            log.info("Unable to read voucher file " + filename);
+                          }
+                      }
+                  }
               }
           }
       }
         
-    //
-    // EVPRO-1576 - start
-    //
-    
     log.info("GUIManager.processGenerateVouchers- Existing Vouchers count [{}]", existingVoucherCodes.size());
     
-    Set<String> currentVoucherCodes = ConcurrentHashMap.newKeySet(); // store distinct voucher codes - skip for now
+    Set<String> currentVoucherCodes = ConcurrentHashMap.newKeySet(existingVoucherCodes.size()+quantity);
     currentVoucherCodes.addAll(existingVoucherCodes);
-    //List<String> currentVoucherCodes = new ArrayList<>(); // may generate and store duplicate vouchers 
     
-    ExecutorService es = Executors.newCachedThreadPool();
     int minPerThreadCount = 1000; 
     int threadCount = quantity > minPerThreadCount ? Math.min(quantity/minPerThreadCount, 5) : 1; // max 5 thread will work
-    
     Date startDate = SystemTime.getCurrentTime();
-    for(int i=0; i<threadCount; i++)
+    int threadCurrentTry = 0;
+    while (GENERATE_A_VOUCHER_CODE_THREAD_GROUP_RETRY_COUNT > threadCurrentTry && quantity > (currentVoucherCodes.size() - existingVoucherCodes.size()))
       {
-        es.execute(new Runnable() {
-          @Override
-          public void run()
+        threadCurrentTry++;
+        ExecutorService es = Executors.newCachedThreadPool();
+        for (int i = 0; i < threadCount; i++)
           {
-            while(quantity > (currentVoucherCodes.size() - existingVoucherCodes.size()))
+            es.execute(new Runnable()
+            {
+              @Override
+              public void run()
               {
-                boolean newVoucherGenerated = false;
-                for (int i=1; i<=HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE; i++)
+                while (quantity > (currentVoucherCodes.size() - existingVoucherCodes.size()))
                   {
-                    String voucherCode = TokenUtils.generateFromRegex(pattern);
-                    if (currentVoucherCodes.add(voucherCode))
+                    boolean newVoucherGenerated = false;
+                    for (int i = 1; i <= HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE; i++)
                       {
-                        newVoucherGenerated = true;
+                        String voucherCode = TokenUtils.generateFromRegex(pattern);
+                        if (currentVoucherCodes.add(voucherCode))
+                          {
+                            newVoucherGenerated = true;
+                            break;
+                          }
+                      }
+                    if (!newVoucherGenerated)
+                      {
+                        log.info("GUIManager.processGenerateVouchers- After " + HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE + " tries, unable to generate a new voucher code with pattern " + pattern);
                         break;
                       }
                   }
-                if (!newVoucherGenerated)
-                  {
-                    log.info("After " + HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE + " tries, unable to generate a new voucher code with pattern " + pattern);
-                    break;
-                  }
               }
+            });
           }
-        });
-      }
-    es.shutdownNow();
-    
-    // waiting to complete all threads
-    try
-      {
-        while(!es.awaitTermination(2, java.util.concurrent.TimeUnit.SECONDS))
+        es.shutdownNow();
+
+        // waiting to complete all threads
+        try
           {
-            log.info("GUIManager.processGenerateVouchers- taking more time to generate vocuhers");  
+            while (!es.awaitTermination(2, java.util.concurrent.TimeUnit.SECONDS))
+              {
+                log.info("GUIManager.processGenerateVouchers- taking more time to generate vocuhers");
+              }
+          } 
+        catch (InterruptedException ex)
+          {
+            log.error("Issue when finishing ExecutorService threads for voucher generation : " + ex.getMessage());
           }
-      } 
-    catch (InterruptedException ex)
-      {
-        log.error("Issue when finishing ExecutorService threads for voucher generation : " + ex.getMessage());
+        if (GENERATE_A_VOUCHER_CODE_THREAD_GROUP_RETRY_COUNT > threadCurrentTry)
+          {
+            log.warn("thread group failed to create huge number of vouchers will try again - left {} vouchers to generate", quantity - currentVoucherCodes.size());
+          }
       }
     
-    currentVoucherCodes.removeAll(existingVoucherCodes);
+    
     // remove extra vouchers - in case
+    currentVoucherCodes.removeAll(existingVoucherCodes);
     Set<String> generatedVoucherCodes = currentVoucherCodes.stream().limit(quantity).collect(Collectors.toSet());
     
     log.info("GUIManager.processGenerateVouchers- new vouchers[{}] generation completed [{}s]", generatedVoucherCodes.size(), (SystemTime.getCurrentTime().getTime() - startDate.getTime())/1000.0);
-    
-    //
-    // EVPRO-1576 - end
-    //
-    
-    /*List<String> currentVoucherCodes = new ArrayList<>();
-    for (int q=0; q<quantity; q++)
-      {
-        String voucherCode = null; 
-        boolean newVoucherGenerated = false;
-        for (int i=0; i<HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE; i++)
-          {
-            voucherCode = TokenUtils.generateFromRegex(pattern);
-            if (!currentVoucherCodes.contains(voucherCode) && !existingVoucherCodes.contains(voucherCode))
-              {
-                newVoucherGenerated = true;
-                break;
-              }
-          }
-        if (!newVoucherGenerated)
-          {
-            log.info("After " + HOW_MANY_TIMES_TO_TRY_TO_GENERATE_A_VOUCHER_CODE + " tries, unable to generate a new voucher code with pattern " + pattern);
-            break;
-          }
-        log.debug("voucherCode  generated : " + voucherCode);
-        currentVoucherCodes.add(voucherCode);
-      }*/
     
     // convert list to InputStream
     
