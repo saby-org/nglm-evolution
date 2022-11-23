@@ -84,7 +84,7 @@ public class OTPInstance // implements Action
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     // properties inherited from parent
     schemaBuilder.name("one_time_password_instance");
-    schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
+    schemaBuilder.version(SchemaUtilities.packSchemaVersion(2));
     // otp properties
     schemaBuilder.field("otpType", Schema.STRING_SCHEMA);
     schemaBuilder.field("otpStatus", Schema.OPTIONAL_STRING_SCHEMA);
@@ -96,6 +96,7 @@ public class OTPInstance // implements Action
     schemaBuilder.field("latestSuccess", Timestamp.builder().optional().schema());
     schemaBuilder.field("latestError", Timestamp.builder().optional().schema());
     schemaBuilder.field("expirationDate", Timestamp.builder().optional().schema());
+    schemaBuilder.field("retryCount", Schema.OPTIONAL_INT32_SCHEMA); //v2
     
     schema = schemaBuilder.build();
   };
@@ -130,6 +131,7 @@ public class OTPInstance // implements Action
   private Date latestSuccess;
   private Date latestError;
   private Date expirationDate;
+  public Integer retryCount;
 
   /*****************************************
   *
@@ -147,6 +149,7 @@ public class OTPInstance // implements Action
   public Date getLatestSuccess()   {		return latestSuccess;	}
   public Date getLatestError()   {		return latestError;	}
   public Date getExpirationDate() {		return expirationDate;	}
+  public Integer getRetryCount() {     return retryCount; }
   
 //  // Action implementation (matches enum in ActionManager ...)
 //  
@@ -166,6 +169,7 @@ public class OTPInstance // implements Action
   public void setLatestSuccess(Date latestSuccess)   {		this.latestSuccess = latestSuccess;	}
   public void setLatestError(Date latestError)  {		this.latestError = latestError;	}
   public void setExpirationDate(Date expirationDate) {		this.expirationDate = expirationDate;	}
+  public void setRetryCount(Integer retryCount) {     this.retryCount = retryCount; }
   
   /*****************************************
   *
@@ -174,7 +178,7 @@ public class OTPInstance // implements Action
   *****************************************/
 
   public OTPInstance(String otpTypeDisplayName, OTPStatus otpStatus,String otpValue,Integer checksCount,Integer errorCount,
-		  Date creationDate,Date latestUpdate,Date latestSuccess, Date latestError, Date expirationDate)
+		  Date creationDate,Date latestUpdate,Date latestSuccess, Date latestError, Date expirationDate, Integer retryCount)
   {
 	 this.otpTypeDisplayName = otpTypeDisplayName;
 	 this.otpStatus = otpStatus;
@@ -186,6 +190,7 @@ public class OTPInstance // implements Action
 	 this.latestSuccess = latestSuccess;
 	 this.latestError = latestError;
 	 this.expirationDate = expirationDate;
+	 this.retryCount = retryCount;
   }
   
   
@@ -203,6 +208,7 @@ public class OTPInstance // implements Action
 	this.latestSuccess  =  JSONUtilities.decodeDate(jsonRoot,"latestSuccess", false);
 	this.latestError = JSONUtilities.decodeDate(jsonRoot,"latestError", false);
 	this.expirationDate = JSONUtilities.decodeDate(jsonRoot,"expirationDate", true);
+	this.retryCount  =  JSONUtilities.decodeInteger(jsonRoot,"retryCount", true);
   }
  
   
@@ -227,6 +233,7 @@ public class OTPInstance // implements Action
     struct.put("latestSuccess", otpInstance.getLatestSuccess());
     struct.put("latestError", otpInstance.getLatestError());
     struct.put("expirationDate", otpInstance.getExpirationDate());
+    struct.put("retryCount", otpInstance.getRetryCount());
     return struct;
   }
   
@@ -267,9 +274,10 @@ public class OTPInstance // implements Action
     Date latestSuccess = (Date) valueStruct.get("latestSuccess");
     Date latestError = (Date) valueStruct.get("latestError");
     Date expirationDate = (Date) valueStruct.get("expirationDate");
+    Integer retryCount = (schema.field("retryCount")!= null) ? valueStruct.getInt32("retryCount") : 0;
 
     return new OTPInstance( otpTypeID,  otpStatus, otpValue, checksCount, errorCount,
-  		   creationDate, latestUpdate, latestSuccess, latestError, expirationDate);
+  		   creationDate, latestUpdate, latestSuccess, latestError, expirationDate, retryCount);
   }
 
 
@@ -292,7 +300,8 @@ public class OTPInstance // implements Action
 		        + (latestSuccess != null ? "latestSuccess=" + latestSuccess + ", " : "")
 		        + (latestError != null ? "latestError=" + latestError + ", " : "")
 		        + (latestUpdate != null ? "latestUpdate=" + latestUpdate + ", " : "")
-		        + "expirationDate=" + expirationDate + "]";
+		        + ("expirationDate=" + expirationDate + ", ")
+		        + "retryCount=" + retryCount + "]";
 
   }
     
@@ -309,6 +318,7 @@ public class OTPInstance // implements Action
 		 this.latestSuccess = inst.latestSuccess;
 		 this.latestError = inst.latestError;
 		 this.expirationDate = inst.expirationDate;
+		 this.retryCount = inst.retryCount;
   }
 
   /*****************************************
@@ -341,6 +351,7 @@ public JSONObject getJSON() {
 	    result.put("latestSuccess", getTimeOrNull(getLatestSuccess()));
 	    result.put("latestError", getTimeOrNull(getLatestError()));
 	    result.put("expirationDate", getTimeOrNull(getExpirationDate()));
+	    result.put("retryCount", getRetryCount());
 	    return result;
 }
 
