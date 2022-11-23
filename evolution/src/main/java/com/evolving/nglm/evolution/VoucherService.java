@@ -122,41 +122,47 @@ public class VoucherService extends GUIService {
   public Collection<Voucher> getActiveVouchers(Date date, int tenantID) { return (Collection<Voucher>) getActiveGUIManagedObjects(date, tenantID); }
 
   //this call trigger stock count, this for stock information for GUI, so DO NOT USE it for traffic calls
-  public GUIManagedObject getStoredVoucherWithCurrentStocks(String voucherID, boolean includeArchived){
-
-    GUIManagedObject uncheckedVoucher = getStoredVoucher(voucherID,includeArchived);
-    if(!(uncheckedVoucher instanceof VoucherPersonal) && !(uncheckedVoucher instanceof VoucherShared)) return uncheckedVoucher;//cant do more than normal one
+  public GUIManagedObject getStoredVoucherWithCurrentStocks(String voucherID, boolean includeArchived)
+  {
+    GUIManagedObject uncheckedVoucher = getStoredVoucher(voucherID, includeArchived);
+    if (!(uncheckedVoucher instanceof VoucherPersonal) && !(uncheckedVoucher instanceof VoucherShared))
+      return uncheckedVoucher;// cant do more than normal one
 
     // VoucherPersonal : get stock from ES and fill it per file
-    if(uncheckedVoucher instanceof VoucherPersonal){
-      VoucherPersonal voucher = (VoucherPersonal) uncheckedVoucher;
-      // got stats data saved in Zookeeper
-      for(VoucherFile voucherFile:voucher.getVoucherFiles()){
-        voucherFile.setVoucherFileStats(getVoucherFileStatsFromZookeeper(voucherID,voucherFile.getFileId()));
+    if (uncheckedVoucher instanceof VoucherPersonal)
+      {
+        VoucherPersonal voucher = (VoucherPersonal) uncheckedVoucher;
+        // got stats data saved in Zookeeper
+        for (VoucherFile voucherFile : voucher.getVoucherFiles())
+          {
+            voucherFile.setVoucherFileStats(getVoucherFileStatsFromZookeeper(voucherID, voucherFile.getFileId()));
+          }
+        // add the current live status from ES
+        voucherPersonalESService.populateVoucherFileWithStockInformation(voucher, voucher.getTenantID());
+        // sum up
+        int totalStock = 0;
+        int totalRemaining = 0;
+        for (VoucherFile voucherFile : voucher.getVoucherFiles())
+          {
+            totalStock += voucherFile.getVoucherFileStats().getStockImported();
+            totalRemaining += voucherFile.getVoucherFileStats().getStockAvailable();
+          }
+        uncheckedVoucher.getJSONRepresentation().put("stock", totalStock);
+        uncheckedVoucher.getJSONRepresentation().put("remainingStock", totalRemaining);
+        return voucher;
+      } 
+    else if (uncheckedVoucher instanceof VoucherShared)
+      {
+        uncheckedVoucher.getJSONRepresentation().put("remainingStock", ((VoucherShared) uncheckedVoucher).getApproximateRemainingStock());
       }
-      // add the current live status from ES
-      voucherPersonalESService.populateVoucherFileWithStockInformation(voucher, voucher.getTenantID());
-      // sum up
-      int totalStock=0;
-      int totalRemaining=0;
-      for(VoucherFile voucherFile:voucher.getVoucherFiles()){
-        totalStock+=voucherFile.getVoucherFileStats().getStockImported();
-        totalRemaining+=voucherFile.getVoucherFileStats().getStockAvailable();
-      }
-      uncheckedVoucher.getJSONRepresentation().put("stock",totalStock);
-      uncheckedVoucher.getJSONRepresentation().put("remainingStock",totalRemaining);
-      return voucher;
-    }else if(uncheckedVoucher instanceof VoucherShared){
-      uncheckedVoucher.getJSONRepresentation().put("remainingStock",((VoucherShared)uncheckedVoucher).getApproximateRemainingStock());
-    }
-
     return uncheckedVoucher;
   }
   //this call trigger stock count, this for stock information for GUI, so DO NOT USE it for traffic calls
-  public Collection<GUIManagedObject> getStoredVouchersWithCurrentStocks(boolean includeArchived, int tenantID) {
+  public Collection<GUIManagedObject> getStoredVouchersWithCurrentStocks(boolean includeArchived, int tenantID)
+  {
     Collection<GUIManagedObject> toRet = getStoredGUIManagedObjects(includeArchived, tenantID);
     // populate all with stocks info
-    toRet.forEach(voucher->getStoredVoucherWithCurrentStocks(voucher.getGUIManagedObjectID(),true));
+    toRet.forEach(voucher -> getStoredVoucherWithCurrentStocks(voucher.getGUIManagedObjectID(), true));
     return toRet;
   }
 

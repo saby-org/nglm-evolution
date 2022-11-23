@@ -46,7 +46,7 @@ echo deployment complete
 case "${ENTRYPOINT}" in
 
   "guimanager")
-    exec kafka-run-class -name guiManager -loggc com.evolving.nglm.evolution.GUIManager $GUIMANAGER_PORT
+    exec kafka-run-class -name guiManager -loggc com.evolving.nglm.evolution.GUIManager $GUIMANAGER_PORT $GUI_FWK_API_SERVER $FWKSETTINGS_EMAIL_SMTP_USERNAME
     ;;
   "reportmanager")
     exec kafka-run-class -name reportmanager -loggc com.evolving.nglm.evolution.reports.ReportManager $BROKER_SERVERS ${MASTER_ESROUTER_SERVER}:${ELASTICSEARCH_USERNAME}:${ELASTICSEARCH_USERPASSWORD} $KAFKA_REPLICATION_FACTOR $SUBSCRIBER_PARTITIONS $KAFKA_STREAMS_STANDBY_REPLICAS

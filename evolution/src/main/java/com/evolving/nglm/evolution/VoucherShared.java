@@ -36,17 +36,16 @@ public class VoucherShared extends Voucher implements StockableItem {
   private Integer stock;
   private String sharedCode;
   private String codeFormatId;
-
   private String stockableItemID;
 
   public Integer getStock() { return stock; }
   public String getSharedCode() { return sharedCode; }
   public String getCodeFormatId() { return codeFormatId; }
-
   public String getStockableItemID() { return stockableItemID; }
 
 
-  public static Object pack(Object value) {
+  public static Object pack(Object value)
+  {
     VoucherShared voucherShared = (VoucherShared) value;
     Struct struct = new Struct(schema);
     Voucher.packCommon(struct, voucherShared);
@@ -56,7 +55,9 @@ public class VoucherShared extends Voucher implements StockableItem {
     return struct;
   }
 
-  public static VoucherShared unpack(SchemaAndValue schemaAndValue) {
+  public static VoucherShared unpack(SchemaAndValue schemaAndValue)
+  {
+    Schema schema = schemaAndValue.schema();
     Object value = schemaAndValue.value();
     Struct valueStruct = (Struct) value;
     Integer stock = valueStruct.getInt32("stock");
@@ -65,7 +66,8 @@ public class VoucherShared extends Voucher implements StockableItem {
     return new VoucherShared(schemaAndValue, stock, sharedCode, codeFormatId);
   }
 
-  public VoucherShared(SchemaAndValue schemaAndValue, Integer stock, String sharedCode, String codeFormatId) {
+  public VoucherShared(SchemaAndValue schemaAndValue, Integer stock, String sharedCode, String codeFormatId)
+  {
     super(schemaAndValue);
     this.stock = stock;
     this.sharedCode = sharedCode;
@@ -73,12 +75,13 @@ public class VoucherShared extends Voucher implements StockableItem {
     this.stockableItemID = "voucher-shared-" + getVoucherID();
   }
 
-  public VoucherShared(JSONObject jsonRoot, long epoch, GUIManagedObject existingVoucherUnchecked, int tenantID) throws GUIManagerException {
+  public VoucherShared(JSONObject jsonRoot, long epoch, GUIManagedObject existingVoucherUnchecked, int tenantID) throws GUIManagerException
+  {
 
     super(jsonRoot, GUIManagedObjectType.Vouchershared, epoch, existingVoucherUnchecked, tenantID);
 
     // not allow this type change
-    if(existingVoucherUnchecked instanceof VoucherPersonal) throw new GUIManagerException("can not modify Personal to Shared Voucher type",existingVoucherUnchecked.getGUIManagedObjectDisplay());
+    if (existingVoucherUnchecked instanceof VoucherPersonal) throw new GUIManagerException("can not modify Personal to Shared Voucher type", existingVoucherUnchecked.getGUIManagedObjectDisplay());
 
     VoucherShared existingVoucherShared = (existingVoucherUnchecked != null && existingVoucherUnchecked instanceof VoucherShared) ? (VoucherShared) existingVoucherUnchecked : null;
 
@@ -87,30 +90,36 @@ public class VoucherShared extends Voucher implements StockableItem {
     this.codeFormatId = JSONUtilities.decodeString(jsonRoot, "codeFormatId", true);
     this.stockableItemID = "voucher-shared-" + getVoucherID();
 
-    if (epochChanged(existingVoucherShared)){
-      this.setEpoch(epoch);
-    }
+    if (epochChanged(existingVoucherShared))
+      {
+        this.setEpoch(epoch);
+      }
 
   }
 
-  private boolean epochChanged(VoucherShared existingProduct){
-    if (existingProduct != null && existingProduct.getAccepted()){
-      boolean epochChanged = false;
-      epochChanged = epochChanged || ! Objects.equals(getGUIManagedObjectID(), existingProduct.getGUIManagedObjectID());
-      epochChanged = epochChanged || ! Objects.equals(stock, existingProduct.getStock());
-      epochChanged = epochChanged || ! Objects.equals(sharedCode, existingProduct.getSharedCode());
-      epochChanged = epochChanged || ! Objects.equals(codeFormatId, existingProduct.getCodeFormatId());
-      return epochChanged;
-    }else{
-      return true;
-    }
+  private boolean epochChanged(VoucherShared existingProduct)
+  {
+    if (existingProduct != null && existingProduct.getAccepted())
+      {
+        boolean epochChanged = false;
+        epochChanged = epochChanged || !Objects.equals(getGUIManagedObjectID(), existingProduct.getGUIManagedObjectID());
+        epochChanged = epochChanged || !Objects.equals(stock, existingProduct.getStock());
+        epochChanged = epochChanged || !Objects.equals(sharedCode, existingProduct.getSharedCode());
+        epochChanged = epochChanged || !Objects.equals(codeFormatId, existingProduct.getCodeFormatId());
+        return epochChanged;
+      } 
+    else
+      {
+        return true;
+      }
   }
 
   @Override
-  public void validate(VoucherTypeService voucherTypeService, UploadedFileService uploadedFileService, Date now) throws GUIManagerException {
+  public void validate(VoucherTypeService voucherTypeService, UploadedFileService uploadedFileService, Date now) throws GUIManagerException
+  {
     commonValidate(voucherTypeService, now);
     // check type id is Shared
-    if(!voucherTypeService.getActiveVoucherType(getVoucherTypeId(),now).getCodeType().equals(VoucherType.CodeType.Shared)) throw new GUIManagerException("wrong VoucherType for "+this.getClass().getSimpleName(),getVoucherTypeId());
+    if (!voucherTypeService.getActiveVoucherType(getVoucherTypeId(), now).getCodeType().equals(VoucherType.CodeType.Shared)) throw new GUIManagerException("wrong VoucherType for " + this.getClass().getSimpleName(), getVoucherTypeId());
   }
   
   @Override public Map<String, List<String>> getGUIDependencies(List<GUIService> guiServiceList, int tenantID)
@@ -134,5 +143,4 @@ public class VoucherShared extends Voucher implements StockableItem {
   {
     return GUIManagedObjectType.Vouchershared;
   }
-
 }

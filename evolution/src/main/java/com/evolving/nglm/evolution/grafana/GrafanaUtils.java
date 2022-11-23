@@ -215,11 +215,13 @@ public class GrafanaUtils
                                     if (db != null && db.getFirstElement() != null && db.getSecondElement() != null)
                                       {
                                         log.info("GrafanaUtils.prepareGrafanaForTenants Datasource " + db.getFirstElement() + " " + db.getSecondElement() + " well created for org " + orgID);
-                                      } else
+                                      } 
+                                    else
                                       {
                                         log.warn("GrafanaUtils.prepareGrafanaForTenants Problem while creating Datasource " + db + " for orgID " + orgID + " for datasource file name " + currentFileName);
                                       }
-                                  } else
+                                  } 
+                                else
                                   {
                                     log.info("contains...");
                                   }
@@ -393,28 +395,8 @@ public class GrafanaUtils
               {
                 log.warn("GrafanaUtils.prepareGrafanaForTenants: Problem while loading Dashboard " + db.getFirstElement() + " for orgID " + orgID + " for dashboard file name " + currentFileName);
               }
-
-            // mapDbEs.put("webguiname","IAR");
-            // mapDbEs.put("type","GRAFANA");
-            // mapDbEs.put("icon","");
-            // mapDbEs.put("iframewidth",1800);
-            // mapDbEs.put("iframeheight",1600);
-            // mapDbEs.put("webpath","");
-            // mapDbEs.put("reportGroup","");
-            // mapDbEs.put("permissionKey","");
-            // mapDbEs.put("tenantid",tenantID);
-            // request.doc(mapDbEs);
-            // request.docAsUpsert(true);
-            // request.retryOnConflict(4);
-            //
-            // try {
-            // elasticsearch.update(request, RequestOptions.DEFAULT);
-            // } catch (Exception e) {
-            // StringWriter stackTraceWriter = new StringWriter();
-            // e.printStackTrace(new PrintWriter(stackTraceWriter, true));
-            // log.error("Pushing failed: "+stackTraceWriter.toString()+"");
-            // }
-          } catch (Exception e)
+          } 
+        catch (Exception e)
           {
             log.warn("Exception " + e.getClass().getName() + " while loading dasboard from file " + currentFileName + " for tenant " + tenantID, e);
           }

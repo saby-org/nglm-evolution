@@ -473,6 +473,7 @@ public class DeploymentCommon
   private static String periodicEvaluationCronEntry;
   private static String systemMaintenanceCronEntry;
   private static String ucgEvaluationCronEntry;
+  private static String stockRecurrenceCronEntry;
   private static String uploadedFileSeparator;
   private static CustomerMetaData customerMetaData;
   private static String APIresponseDateFormat;
@@ -524,7 +525,12 @@ public class DeploymentCommon
   //Third Party Manager
   private static List<String> thirdPartyMethodTypes;
   private static Map<String,String> thirdPartyAPIHeaders;
-
+  private static String stockRecurrenceAndNotificationCronEntry;
+  private static String stockAlertEmailSubject;
+  private static String stockAlertEmailBody;
+  private static String stockAlertLoginCredentail;
+  private static String stockAlertPasswordCredentail;
+  private static int stockReplanishDaysRange;
   
   /*****************************************
   *
@@ -825,6 +831,7 @@ public class DeploymentCommon
   public static String getPeriodicEvaluationCronEntry() { return periodicEvaluationCronEntry; }
   public static String getSystemMaintenanceCronEntry() { return systemMaintenanceCronEntry; }
   public static String getUCGEvaluationCronEntry() { return ucgEvaluationCronEntry; } // TODO EVPRO-99 check for tenant and static
+  public static String getStockRecurrenceCronEntry() { return stockRecurrenceCronEntry; } // EVPRO-1600
   public static String getReportManagerZookeeperDir() { return reportManagerZookeeperDir; }
   public static String getReportManagerOutputPath() { return reportManagerOutputPath; } // TODO EVPRO-99 Move in TENANT
   public static String getReportManagerContentDateFormat() { return reportManagerContentDateFormat; }
@@ -884,8 +891,13 @@ public class DeploymentCommon
   
   public static List<String> getThirdPartyMethodTypes() { return thirdPartyMethodTypes; }
   public static Map<String, String> getThirdPartyAPIHeaders() { return thirdPartyAPIHeaders; }
+  public static String getStockRecurrenceAndNotificationCronEntry() { return stockRecurrenceAndNotificationCronEntry; }
+  public static String getStockAlertEmailSubject() { return stockAlertEmailSubject; }
+  public static String getStockAlertEmailBody() { return stockAlertEmailBody; }
+  public static String getStockAlertLoginCredentail() { return stockAlertLoginCredentail; }
+  public static String getStockAlertPasswordCredentail() { return stockAlertPasswordCredentail; }
+  public static int getStockReplanishDaysRange() { return stockReplanishDaysRange; }
 
-  
   /****************************************
   *
   * Load all variables need by static code (GUIManagedObject init)
@@ -1461,6 +1473,7 @@ public class DeploymentCommon
     periodicEvaluationCronEntry = jsonReader.decodeString("periodicEvaluationCronEntry");
     systemMaintenanceCronEntry = jsonReader.decodeString("systemMaintenanceCronEntry");
     ucgEvaluationCronEntry = jsonReader.decodeString("ucgEvaluationCronEntry");
+    stockRecurrenceCronEntry = jsonReader.decodeString("stockRecurrenceCronEntry");
 
     //
     //  Reports
@@ -1625,19 +1638,26 @@ public class DeploymentCommon
     minDaysInUCGForQuickRemoval = jsonReader.decodeInteger("minDaysInUCGForQuickRemoval");
     ucgQuickOverloadRemoval = jsonReader.decodeBoolean("ucgQuickOverloadRemoval");
     
-    //thirdParty api conf
+    // thirdParty api conf
     thirdPartyMethodTypes = new ArrayList<>();
     JSONArray methods = jsonReader.decodeJSONArray("thirdPartyMethodTypes");
-    for (int i = 0; i < methods.size(); i++) {
-      String data = methods.get(i).toString();
-      thirdPartyMethodTypes.add(data);
-    }
+    for (int i = 0; i < methods.size(); i++)
+      {
+        String data = methods.get(i).toString();
+        thirdPartyMethodTypes.add(data);
+      }
     JSONObject thirdPartyAPIHeadersOBJ = jsonReader.decodeJSONObject("thirdPartyAPIHeaders");
     thirdPartyAPIHeaders = new LinkedHashMap<String, String>();
-    for (Object key : thirdPartyAPIHeadersOBJ.keySet()) {
-    	thirdPartyAPIHeaders.put((String) key, (String) thirdPartyAPIHeadersOBJ.get(key));
-    }
-    
+    for (Object key : thirdPartyAPIHeadersOBJ.keySet())
+      {
+        thirdPartyAPIHeaders.put((String) key, (String) thirdPartyAPIHeadersOBJ.get(key));
+      }
+    stockRecurrenceAndNotificationCronEntry = jsonReader.decodeString("stockRecurrenceAndNotificationCronEntry");
+    stockAlertEmailSubject = jsonReader.decodeString("stockAlertEmailSubject");
+    stockAlertEmailBody = jsonReader.decodeString("stockAlertEmailBody");
+    stockAlertLoginCredentail = jsonReader.decodeString("stockAlertLoginCredentail");
+    stockAlertPasswordCredentail = jsonReader.decodeString("stockAlertPasswordCredentail");
+    stockReplanishDaysRange = jsonReader.decodeInteger("stockReplanishDaysRange");
   }
 
   
