@@ -25375,7 +25375,7 @@ public class GUIManager
    // cancelledDeliveryRequest
    //
    
-   String cancelledDeliveryRequestID = deliveryRequestID.concat("_cancel_purchase");
+   String cancelledDeliveryRequestID = deliveryRequestID.concat(EvolutionEngine.CANCEL_PURCHASE_POSTFIX);
    boolean cancelledDeliveryRequest = subscriberProfile.getLimitedCancelPurchases().contains(deliveryRequestID); // first level check
    
    if (!cancelledDeliveryRequest)
@@ -25422,46 +25422,14 @@ public class GUIManager
    Offer offer = offerService.getActiveOffer(purchaseFulfillmentRequest.getOfferID(), now);   
    if (offer != null && offer.getCancellable())
      {
-       //
-       // cancelPurchaseOffer
-       //
-
-       PurchaseFulfillmentRequest purchaseResponse = null;
-       if (!sync)
-         {
-           purchaseResponse = purchaseOffer(subscriberProfile, sync, subscriberID, purchaseFulfillmentRequest.getOfferID(), purchaseFulfillmentRequest.getSalesChannelID(), purchaseFulfillmentRequest.getQuantity(), moduleID, featureID, origin, purchaseFulfillmentRequest.getResellerID(), kafkaProducer, cancelledDeliveryRequestID, true, purchaseFulfillmentRequest.getCreationDate(), purchaseFulfillmentRequest.getVoucherDeliveries());
-           response.put("responseCode", "ok");
-         } 
-       else
-         {
-           purchaseResponse = purchaseOffer(subscriberProfile, sync, subscriberID, purchaseFulfillmentRequest.getOfferID(), purchaseFulfillmentRequest.getSalesChannelID(), purchaseFulfillmentRequest.getQuantity(), moduleID, featureID, origin, purchaseFulfillmentRequest.getResellerID(), kafkaProducer, cancelledDeliveryRequestID, true, purchaseFulfillmentRequest.getCreationDate(), purchaseFulfillmentRequest.getVoucherDeliveries());
-           response.put("offer", purchaseResponse.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, tenantID));
-           response.put("responseCode", "ok");
-           log.info("purchaseResponse.getStatus() {}", purchaseResponse.getStatus());
-           if (purchaseResponse.getStatus() == PurchaseFulfillmentStatus.PURCHASED_AND_CANCELLED)
-             {
-
-               //
-               // SubscriberProfileForceUpdate
-               //
-
-               SubscriberProfileForceUpdate subscriberProfileForceUpdate = new SubscriberProfileForceUpdate(subscriberID, new ParameterMap(), null);
-               subscriberProfileForceUpdate.getParameterMap().put("limitedCancelPurchase", deliveryRequestID);
-
-               //
-               // send
-               //
-
-               kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(subscriberProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), subscriberProfileForceUpdate)));
-
-             }
-         }
+       PurchaseFulfillmentRequest purchaseResponse = purchaseOffer(subscriberProfile, true, subscriberID, purchaseFulfillmentRequest.getOfferID(), purchaseFulfillmentRequest.getSalesChannelID(), purchaseFulfillmentRequest.getQuantity(), moduleID, featureID, origin, purchaseFulfillmentRequest.getResellerID(), kafkaProducer, cancelledDeliveryRequestID, true, purchaseFulfillmentRequest.getCreationDate(), purchaseFulfillmentRequest.getVoucherDeliveries());
+       response.put("offer", purchaseResponse.getGUIPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, tenantID));
+       response.put("responseCode", "ok");
      }
    else
      {
        response.put("responseCode", "offer is not cancellable");
      }
-   
    return JSONUtilities.encodeObject(response);
  }
  

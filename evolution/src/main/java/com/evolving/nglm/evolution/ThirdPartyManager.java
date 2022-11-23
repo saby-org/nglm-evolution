@@ -5246,7 +5246,7 @@ public class ThirdPartyManager
     // cancelledDeliveryRequest
     //
     
-    String cancelledDeliveryRequestID = deliveryRequestID.concat("_cancel_purchase");
+    String cancelledDeliveryRequestID = deliveryRequestID.concat(EvolutionEngine.CANCEL_PURCHASE_POSTFIX);
     boolean cancelledDeliveryRequest = subscriberProfile.getLimitedCancelPurchases().contains(deliveryRequestID);
     if (!cancelledDeliveryRequest)
       {
@@ -5285,7 +5285,6 @@ public class ThirdPartyManager
     //
     
     PurchaseFulfillmentRequest purchaseFulfillmentRequest = purchaseFulfillmentRequests.get(0);
-    
     Offer offer = offerService.getActiveOffer(purchaseFulfillmentRequest.getOfferID(), SystemTime.getCurrentTime());   
     if (offer != null && offer.getCancellable())
       {
@@ -5304,22 +5303,6 @@ public class ThirdPartyManager
           {
             purchaseResponse = purchaseOffer(subscriberProfile, sync, subscriberID, purchaseFulfillmentRequest.getOfferID(), purchaseFulfillmentRequest.getSalesChannelID(), purchaseFulfillmentRequest.getQuantity(), moduleID, featureID, origin, purchaseFulfillmentRequest.getResellerID(), kafkaProducer, tenantID, cancelledDeliveryRequestID, true, purchaseFulfillmentRequest.getCreationDate(), purchaseFulfillmentRequest.getVoucherDeliveries());
             response.put("offer", purchaseResponse.getThirdPartyPresentationMap(subscriberMessageTemplateService, salesChannelService, journeyService, offerService, loyaltyProgramService, productService, voucherService, deliverableService, paymentMeanService, resellerService, tenantID));
-            if (purchaseResponse.getStatus() == PurchaseFulfillmentStatus.PURCHASED_AND_CANCELLED)
-              {
-
-                //
-                // SubscriberProfileForceUpdate
-                //
-                
-                SubscriberProfileForceUpdate subscriberProfileForceUpdate = new SubscriberProfileForceUpdate(subscriberID, new ParameterMap(), null);
-                subscriberProfileForceUpdate.getParameterMap().put("limitedCancelPurchase", deliveryRequestID);
-                
-                //
-                //  send
-                //
-                
-                kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(subscriberProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), subscriberProfileForceUpdate)));
-              }
           }
       }
     else
@@ -5327,7 +5310,6 @@ public class ThirdPartyManager
         response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
         response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage().concat(" - offer is not cancellable"));
       }
-
     return JSONUtilities.encodeObject(response);
   }
   

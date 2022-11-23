@@ -4,12 +4,6 @@
 *
 ****************************************************************************/
 
-/****************************************************************************
-*
-*  EvolutionEngine.java
-*
-****************************************************************************/
-
 package com.evolving.nglm.evolution;
 
 import java.io.BufferedReader;
@@ -202,6 +196,7 @@ public class EvolutionEngine
   static final String INTERNAL_VARIABLE_RESELLER = "XXEvolReseller".toLowerCase();
   static final String INTERNAL_ID_SUPPLIER = "InternalIDSupplier";
   static final String INTERNAL_ID_RESELLER = "InternalIDReseller";
+  public static final String CANCEL_PURCHASE_POSTFIX = "_cancel_purchase";
   
   /*****************************************
   *
@@ -3561,20 +3556,6 @@ public class EvolutionEngine
           }
         
         //
-        //  limitedCancelPurchase
-        //
-
-        if (subscriberProfileForceUpdate.getParameterMap().containsKey("limitedCancelPurchase"))
-          {
-            String deliveryRequestID = (String) subscriberProfileForceUpdate.getParameterMap().get("limitedCancelPurchase");
-            if (deliveryRequestID != null)
-              {
-                subscriberProfile.addCancelPurchase(deliveryRequestID);
-                subscriberProfileUpdated = true;
-              }
-          }
-
-        //
         //  Hierarchy modifications 
         //
         
@@ -4032,6 +4013,7 @@ public class EvolutionEngine
           }
         else if (purchaseFulfillmentRequest.getCancelPurchase())
           {
+            subscriberProfile.addCancelPurchase(purchaseFulfillmentRequest.getDeliveryRequestID().replaceFirst(CANCEL_PURCHASE_POSTFIX, "").trim());
             List<Pair<String, Date>> purchases = subscriberProfile.getOfferPurchaseSalesChannelHistory().get(offerID);
             if (purchases != null)
               {
