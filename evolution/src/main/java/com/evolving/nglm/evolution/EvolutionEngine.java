@@ -7842,10 +7842,17 @@ public class EvolutionEngine
                                     {
                                       if(Module.Journey_Manager.getExternalRepresentation().equals(journeyState.getSourceModuleID()) && existing.getJourneyID().equals(journeyState.getsourceFeatureID())){
                                         existing.getJourneyParameters().put(current.getKey(), current.getValue());
-                                        existing.getJourneyHistory().setConversionsCount(journeyState.getJourneyHistory().getConversionCount(), SystemTime.getCurrentTime());
+                                        
+                                        //existing.getJourneyHistory().setConversionsCount(journeyState.getJourneyHistory().getConversionCount(), SystemTime.getCurrentTime());
+                                        existing.getJourneyHistory().incrementConversions(SystemTime.getCurrentTime());
+                                        
                                         break;
                                       }
                                     }
+                                }
+                              else if(newValue) // EVPRO-1631 -- added a new block just to update conversioncount, without interrupting prev code
+                                {
+                                  journeyState.getJourneyHistory().incrementConversions(SystemTime.getCurrentTime());
                                 }
                             }
                           else {
@@ -7864,9 +7871,13 @@ public class EvolutionEngine
                                     if(Module.Journey_Manager.getExternalRepresentation().equals(existing.getSourceModuleID()) && journeyState.getJourneyID().equals(existing.getsourceFeatureID())){
                                       // this is a workflow of the given journey
                                       existing.getJourneyParameters().put(current.getKey(), current.getValue());
-                                      existing.getJourneyHistory().setConversionsCount(journeyState.getJourneyHistory().getConversionCount(), SystemTime.getCurrentTime());
+                                      //existing.getJourneyHistory().setConversionsCount(journeyState.getJourneyHistory().getConversionCount(), SystemTime.getCurrentTime());
                                     }
                                   }
+                              }
+                            else if(newValue)   // EVPRO-1631 -- added a new block just to update conversioncount, without interrupting prev code
+                              {
+                                journeyState.getJourneyHistory().incrementConversions(SystemTime.getCurrentTime());
                               }
                           }
                         }

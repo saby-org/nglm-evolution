@@ -126,6 +126,9 @@ public class JourneyCustomerStatesReportMonoPhase implements ReportCsvFactory
 //            else   
             journeyInfo.put("customerStatus", getSubscriberJourneyStatus(journeyComplete, statusConverted, statusNotified, statusTargetGroup, statusControlGroup, statusUniversalControlGroup).getDisplay());
 
+            // conversionCount
+            journeyInfo.put("conversionCount", journeyStats.get("conversionCount") != null ? journeyStats.get("conversionCount") : 0);
+            
             List<String> nodeHistory = (List<String>) journeyStats.get("nodeHistory");
             StringBuilder sbStatus = new StringBuilder();
             if (nodeHistory != null && !nodeHistory.isEmpty())
