@@ -288,21 +288,17 @@ public class TokenUtils
    *
    *****************************************/
   
-  public static Collection<ProposedOfferDetails> getOffers(Date processingDate, DNBOToken token, SubscriberEvaluationRequest evaluationRequest,
-      SubscriberProfile subscriberProfile, PresentationStrategy presentationStrategy,
-      ProductService productService, ProductTypeService productTypeService,
-      VoucherService voucherService, VoucherTypeService voucherTypeService,
-      CatalogCharacteristicService catalogCharacteristicService,
-      ScoringStrategyService scoringStrategyService,
-      ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader,
-      SegmentationDimensionService segmentationDimensionService,
-      DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameters, OfferService offerService, SupplierService supplierService, DNBOMatrixService dnboMatrixService, StringBuffer returnedLog,
-      String msisdn, Supplier supplier, int tenantID) throws GetOfferException
+  public static Collection<ProposedOfferDetails> getOffers(Date processingDate, DNBOToken token, SubscriberEvaluationRequest evaluationRequest, SubscriberProfile subscriberProfile, PresentationStrategy presentationStrategy, ProductService productService, ProductTypeService productTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService, CatalogCharacteristicService catalogCharacteristicService, ScoringStrategyService scoringStrategyService, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader, SegmentationDimensionService segmentationDimensionService, DNBOMatrixAlgorithmParameters dnboMatrixAlgorithmParameters, OfferService offerService, SupplierService supplierService, DNBOMatrixService dnboMatrixService, StringBuffer returnedLog, String msisdn, Supplier supplier, int tenantID) throws GetOfferException
   {
-    // check if we can call this PS
+    /*
+     *   token can be null if so only offers will be visible and not considered as presented - this happen only from CC call from NBO tab
+     * 
+     */
+    
     int maximumPresentationsPeriodDays = presentationStrategy.getMaximumPresentationsPeriodDays();
     Date earliestDateToKeep = RLMDateUtils.addDays(processingDate, -maximumPresentationsPeriodDays, Deployment.getDeployment(tenantID).getTimeZone());
-    List<Date> presentationDates = token.getPresentationDates();
+    List<Date> presentationDates = new ArrayList<Date>();
+    if (token != null) presentationDates = token.getPresentationDates();
     List<Date> newPresentationDates = new ArrayList<>();
     for (Date date : presentationDates)
       {
@@ -316,12 +312,12 @@ public class TokenUtils
     if (nbPresentationSoFar >= nbPresentationMax)
       {
         returnedLog.append("token has been presented " + nbPresentationSoFar + " times in the past " + maximumPresentationsPeriodDays + " days, no more presentation allowed (max : " + nbPresentationMax + " )");
-        token.setPresentationDates(new ArrayList<>()); // indicates that bound has failed
+        if (token != null)  token.setPresentationDates(new ArrayList<>()); // indicates that bound has failed
         return new ArrayList<>();
       }
     newPresentationDates.add(processingDate);
-    token.setPresentationDates(newPresentationDates);
-    
+    if (token != null)  token.setPresentationDates(newPresentationDates);
+
     Set<String> salesChannelIDs = presentationStrategy.getSalesChannelIDs();
     // TODO : which sales channel to take ?
     String salesChannelID = salesChannelIDs.iterator().next();
@@ -331,7 +327,7 @@ public class TokenUtils
     if (setAEligibility == null || setAEligibility.isEmpty())
       {
         setToUse = setA;
-      }
+      } 
     else
       {
         setToUse = presentationStrategy.getSetB(); // default one
@@ -347,31 +343,31 @@ public class TokenUtils
     Map<String, Collection<ProposedOfferDetails>> scoringCache = new HashMap<>(); // indexed by scoringStrategyID
     List<ProposedOfferDetails> res = new ArrayList<>();
     int indexResult = 0;
-    for (int positionIndex=0; positionIndex < setToUse.getPositions().size(); positionIndex++)
+    for (int positionIndex = 0; positionIndex < setToUse.getPositions().size(); positionIndex++)
       {
         PositionElement position = setToUse.getPositions().get(positionIndex);
         if (position.getAdditionalCriteria() != null && !position.getAdditionalCriteria().isEmpty())
-        {
-          boolean valid = false;
-          for (EvaluationCriterion criterion : position.getAdditionalCriteria())
-            {
-              if (criterion.evaluate(evaluationRequest))
-                {
-                  valid = true;
-                  break;
-                }
-            }
-          if (!valid)
-            {
-              log.trace("For positionIndex " + (positionIndex+1) + " skip element because criteria not true");
-              continue; // skip this position in the result            
-            }
-        }
+          {
+            boolean valid = false;
+            for (EvaluationCriterion criterion : position.getAdditionalCriteria())
+              {
+                if (criterion.evaluate(evaluationRequest))
+                  {
+                    valid = true;
+                    break;
+                  }
+              }
+            if (!valid)
+              {
+                log.trace("For positionIndex " + (positionIndex + 1) + " skip element because criteria not true");
+                continue; // skip this position in the result
+              }
+          }
         String scoringStrategyID = position.getScoringStrategyID();
         ScoringStrategy scoringStrategy = scoringStrategyService.getActiveScoringStrategy(scoringStrategyID, evaluationRequest.getEvaluationDate());
         if (scoringStrategy == null)
           {
-            log.warn("For positionIndex " + (positionIndex+1) + " invalid scoring strategy " + scoringStrategyID);
+            log.warn("For positionIndex " + (positionIndex + 1) + " invalid scoring strategy " + scoringStrategyID);
             continue; // skip this position in the result
           }
         Collection<ProposedOfferDetails> localScoring = scoringCache.get(scoringStrategyID);
@@ -380,10 +376,10 @@ public class TokenUtils
             localScoring = getOffersWithScoringStrategy(processingDate, evaluationRequest.getEvaluationDate(), salesChannelID, subscriberProfile, scoringStrategy, productService, productTypeService, voucherService, voucherTypeService, catalogCharacteristicService, subscriberGroupEpochReader, segmentationDimensionService, dnboMatrixAlgorithmParameters, offerService, supplierService, dnboMatrixService, returnedLog, msisdn, supplier, tenantID);
             scoringCache.put(scoringStrategyID, localScoring);
           }
-        if (localScoring.size() < indexResult+1)
+        if (localScoring.size() < indexResult + 1)
           {
-            log.warn("For positionIndex " + (positionIndex+1) + " result does not have enough elements : " + localScoring.size());
-            continue; // skip this position in the result            
+            log.warn("For positionIndex " + (positionIndex + 1) + " result does not have enough elements : " + localScoring.size());
+            continue; // skip this position in the result
           }
         res.add(indexResult, localScoring.toArray(new ProposedOfferDetails[0])[positionIndex]);
         indexResult++;
@@ -730,8 +726,7 @@ public class TokenUtils
     return supplierSons;
   }
   
-  private static ScoringSegment getScoringSegment(ScoringStrategy strategy, SubscriberProfile subscriberProfile,
-      ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader, int tenantID) throws GetOfferException
+  private static ScoringSegment getScoringSegment(ScoringStrategy strategy, SubscriberProfile subscriberProfile, ReferenceDataReader<String, SubscriberGroupEpoch> subscriberGroupEpochReader, int tenantID) throws GetOfferException
   {
     // let retrieve the first sub strategy that maps this user:
     Date now = SystemTime.getCurrentTime();
