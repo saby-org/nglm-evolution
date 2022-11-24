@@ -117,6 +117,7 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
                 log.debug("ready to send alert notification for offer {}", offer.getGUIManagedObjectDisplay());
                 sendNotification(offer, remainingStock);
               }
+          }
 
             //
             // auto increment stock (EVPRO-1600)
@@ -162,7 +163,6 @@ public class StockRecurrenceAndNotificationJob  extends ScheduledJob
               {
                 log.debug("[StockRecurrenceAndNotificationJob] offer[{}] StockRecurrence[{}] - Stock Recurrence Scheduling not-configured.", offer.getOfferID(), offer.getStockRecurrence());
               }
-          }
       }
 
         Collection<Product> activeProducts = productService.getActiveProducts(now, 0);
