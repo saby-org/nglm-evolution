@@ -4139,8 +4139,6 @@ public class EvolutionEngine
     if (evolutionEvent instanceof ImportedOffersScoring) 
       {
         ImportedOffersScoring imported = (ImportedOffersScoring) evolutionEvent;
-        log.info("[PRJT] {}", imported.toString());
-        
         subscriberProfile.setImportedOffersDNBO(imported.getImportedTypeID(), imported.getImportedOffersList());
         subscriberProfileUpdated = true;
       }
@@ -4653,8 +4651,9 @@ public class EvolutionEngine
                     info.put(LoyaltyProgramChallengeEventInfos.LEVEL_UPDATE_TYPE.getExternalRepresentation(), loyaltyProgramLevelChange.getExternalRepresentation());
                     ProfileLoyaltyProgramChangeEvent profileLoyaltyProgramChangeEvent = new ProfileLoyaltyProgramChangeEvent(subscriberProfile.getSubscriberID(), loyaltyProgram.getLoyaltyProgramID(), loyaltyProgram.getLoyaltyProgramType(), info);
                     subscriberState.getProfileLoyaltyProgramChangeEvents().add(profileLoyaltyProgramChangeEvent);
-
-                    launchChangeTierWorkflows(evolutionEvent, subscriberState, loyaltyProgramChallenge, currentLevel, newLevelName, loyaltyProgramState.getLoyaltyProgramID());
+                    
+                    SubscriberStreamEvent trigEvnt = evolutionEvent != null ? evolutionEvent : profileLoyaltyProgramChangeEvent; //[Bad code PRJT must check and fix ASAP]
+                    launchChangeTierWorkflows(trigEvnt, subscriberState, loyaltyProgramChallenge, currentLevel, newLevelName, loyaltyProgramState.getLoyaltyProgramID());
                   }
               }
           }
@@ -4689,7 +4688,6 @@ public class EvolutionEngine
 
         // Enter tier workflow
         ChallengeLevel newLevel = loyaltyProgramChallenge.getLevel(newTierName);
-        log.info("[PRJT] launchChangeTierWorkflows -- newTierName:[{}], newLevel:[{}]", newTierName, newLevel !=null ? newLevel.toString() : newLevel); 
         if (newLevel != null) triggerLoyaltyWorflow(evolutionEvent, subscriberState, newLevel.getWorkflowChange(), featureID, newLevel.getLevelName());
         break;
         
@@ -4725,13 +4723,10 @@ public class EvolutionEngine
     if(loyaltyWorflowID == null) { return false; }
     
     String toBeAdded = eventToTrigWorkflow.getClass().getName() + ":" + eventToTrigWorkflow.getEventDate().getTime() + ":" + loyaltyWorflowID + ":" + featureID + ":" + DeliveryRequest.Module.Loyalty_Program.getExternalRepresentation() + ":" + origin ;
-    log.info("[PRJT] toBeAdded: {}", toBeAdded);
     List<String> workflowTriggering = subscriberState.getWorkflowTriggering();
-    log.info("[PRJT] workflowTriggering: {}", workflowTriggering);
     if(workflowTriggering.contains(toBeAdded))
       {
         // there is a conflict, i.e. this has already be requested, which means the date is not enough to discriminate... will see
-        log.info("[PRJT] triggerLoyaltyWorflow already has " + toBeAdded);
         return false;
       }
     workflowTriggering.add(toBeAdded);
