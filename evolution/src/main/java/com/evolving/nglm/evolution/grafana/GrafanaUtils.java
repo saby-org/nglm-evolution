@@ -223,7 +223,7 @@ public class GrafanaUtils
                                   } 
                                 else
                                   {
-                                    log.info("contains...");
+                                    log.debug("contains...");
                                   }
                               }
                           } catch (Exception e)
