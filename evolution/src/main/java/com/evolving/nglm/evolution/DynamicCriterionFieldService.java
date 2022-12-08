@@ -567,7 +567,7 @@ public class DynamicCriterionFieldService extends GUIService
             
           case MetricHistoryCriterion :
             retriever = "getComplexObjectMetricHistory";
-            metricHistoryType = false;
+            metricHistoryType = true;
             break;
             
           default:
