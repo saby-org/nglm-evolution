@@ -124,6 +124,12 @@ public class EvaluationCriterion
     NoArgumentCriterion("noArgument"),
     IntegerSetCriterion("integerSet"),
     DoubleSetCriterion("doubleSet"),
+    
+    //
+    //  special for metric history
+    //
+    
+    MetricHistoryCriterion("metricHistory"),
 
     //
     //  structure

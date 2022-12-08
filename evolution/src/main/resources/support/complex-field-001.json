@@ -11,6 +11,10 @@
       {
          "subfieldName":"Last Call Date",
          "subfieldDataType":"date"
+      },
+      {
+         "subfieldName":"Call Amount",
+         "subfieldDataType":"metricHistory"
       }
    ],
    "apiVersion":1,

@@ -541,6 +541,12 @@ public class DynamicCriterionFieldService extends GUIService
       {
         String criteriaID = "complex" + "." + complexObjectType.getGUIManagedObjectName() + "." + subfield.getValue().getPrivateID() + "." + subfield.getValue().getSubfieldName() + "." + complexObjectType.getGUIManagedObjectID();
         String criteriaDisplay = complexObjectType.getGUIManagedObjectDisplay() + " - " + subfield.getValue().getSubfieldName();
+        
+        Map<String, Object> criterionFieldJSONMAP = new LinkedHashMap<String, Object>();
+        criterionFieldJSONMAP.put("id", criteriaID);
+        criterionFieldJSONMAP.put("display", criteriaDisplay);
+        criterionFieldJSONMAP.put("dataType", subfield.getValue().getCriterionDataType().getExternalRepresentation());
+        
         String retriever = null;
         switch (subfield.getValue().getCriterionDataType())
         {
@@ -564,15 +570,16 @@ public class DynamicCriterionFieldService extends GUIService
             retriever = "getComplexObjectStringSet";
             break;
             
+          case MetricHistoryCriterion :
+            retriever = "getComplexObjectMetricHistory";
+            break;
+            
           default:
             log.warn("ComplexObjectType: Unsupported CriterionDataType " + subfield.getValue().getCriterionDataType());
             throw new GUIManagerException("ComplexObjectType: Unsupported CriterionDataType ", subfield.getValue().getCriterionDataType().getExternalRepresentation());
         }
         
-        Map<String, Object> criterionFieldJSONMAP = new LinkedHashMap<String, Object>();
-        criterionFieldJSONMAP.put("id", criteriaID);
-        criterionFieldJSONMAP.put("display", criteriaDisplay);
-        criterionFieldJSONMAP.put("dataType", subfield.getValue().getCriterionDataType().getExternalRepresentation());
+        
         //criterionFieldJSONMAP.put("tagMaxLength", 100);
         //criterionFieldJSONMAP.put("esField", esField);
         criterionFieldJSONMAP.put("retriever", retriever);

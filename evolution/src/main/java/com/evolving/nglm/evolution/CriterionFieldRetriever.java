@@ -1760,6 +1760,39 @@ public abstract class CriterionFieldRetriever
       }
     return result;   
   }
+  
+  public static Object getComplexObjectMetricHistory(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) throws CriterionException
+  {
+    long result = 0;
+    log.info("RAJ K getComplexObjectMetricHistory fieldName {}, subcriteriaVal {}", fieldName, subcriteriaVal);
+    //
+    //  fieldName = complex.ExampleObjName.subfieldprivateID.subfieldName.complexObjectTypeID
+    //
+    
+    /*String[] split = fieldName.split("\\.");
+    boolean invalidFieldName = split.length != 5 || !split[0].equals("complex");
+    if (invalidFieldName)
+      {
+        throw new CriterionException("field " + fieldName + " can't be handled");
+      }
+    else
+      {
+        String complexObjectTypeName = split[1];
+        String elementID = (String) subcriteriaVal.get(0);
+        String subfieldName = split[3];
+        SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+        try
+          {
+            List<String> complexResult = ComplexObjectUtils.getComplexObjectStringSet(subscriberProfile, complexObjectTypeName, elementID, subfieldName);
+            if (complexResult != null) result.addAll(complexResult);
+          } 
+        catch (ComplexObjectException e)
+          {
+            log.error("ComplexObjectException for {}", fieldName);
+          }
+      }*/
+    return result;   
+  }
 
   /*****************************************
   *
