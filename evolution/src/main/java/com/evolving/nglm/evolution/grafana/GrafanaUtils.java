@@ -395,7 +395,7 @@ public class GrafanaUtils
               } 
             else
               {
-                log.error("GrafanaUtils.prepareGrafanaForTenants: Problem while loading Dashboard ");
+                log.error("GrafanaUtils.prepareGrafanaForTenants: Problem while loading Dashboard from file {}, for tenant {}", currentFileName, tenantID);
               }
           } 
         catch (Exception e)
