@@ -580,12 +580,11 @@ public class DynamicCriterionFieldService extends GUIService
         if (metricHistoryType)
           {
             JSONObject subfieldJSON = (JSONObject) JSONUtilities.decodeJSONArray(complexObjectType.getJSONRepresentation(), "subfields", true).stream().filter(subfldJSON -> subfield.getValue().getSubfieldName().equals(JSONUtilities.decodeString((JSONObject)subfldJSON, "subfieldName", true))).findFirst().orElse(null);
-            log.info("RAJ K subfieldJSON {}", subfieldJSON);
             JSONObject kpisJSON = JSONUtilities.decodeJSONObject(subfieldJSON, "kpis", true);
             log.info("RAJ K kpisJSON {}", kpisJSON);
-            Set<Integer> daysKPIs = (Set<Integer>) JSONUtilities.decodeJSONArray(kpisJSON, "days").stream().map(intval -> Integer.valueOf((int) intval)).collect(Collectors.toSet());
+            Set<Long> daysKPIs = (Set<Long>) JSONUtilities.decodeJSONArray(kpisJSON, "days").stream().map(intval -> Long.valueOf((Long) intval)).collect(Collectors.toSet());
             log.info("RAJ K daysKPIs {}", daysKPIs);
-            Set<Integer> monthsKPIs = (Set<Integer>) JSONUtilities.decodeJSONArray(kpisJSON, "months").stream().map(intval -> Integer.valueOf((int) intval)).collect(Collectors.toSet());
+            Set<Long> monthsKPIs = (Set<Long>) JSONUtilities.decodeJSONArray(kpisJSON, "months").stream().map(intval -> Long.valueOf((Long) intval)).collect(Collectors.toSet());
             log.info("RAJ K monthsKPIs {}", monthsKPIs);
             if (daysKPIs.size() + monthsKPIs.size() > 5 )
               {
@@ -593,7 +592,7 @@ public class DynamicCriterionFieldService extends GUIService
                 throw new GUIManagerException("ComplexObjectType: Unsupported metricHistory - supports max 5KPIs", subfield.getValue().getSubfieldName());
               }
             
-            for (Integer daysKPI : daysKPIs)
+            for (Long daysKPI : daysKPIs)
               {
                 Map<String, Object> criterionFieldJSONMAP = new LinkedHashMap<String, Object>();
                 criterionFieldJSONMAP.put("id", criteriaID.concat(".").concat(String.valueOf(daysKPI)));
@@ -627,7 +626,7 @@ public class DynamicCriterionFieldService extends GUIService
 
                 putGUIManagedObject(criterionField, SystemTime.getCurrentTime(), newComplexObjectType, null);
               }
-            for (Integer monthKPIs : monthsKPIs)
+            for (Long monthKPIs : monthsKPIs)
               {
                 Map<String, Object> criterionFieldJSONMAP = new LinkedHashMap<String, Object>();
                 criterionFieldJSONMAP.put("id", criteriaID.concat(".").concat(String.valueOf(monthKPIs)));
