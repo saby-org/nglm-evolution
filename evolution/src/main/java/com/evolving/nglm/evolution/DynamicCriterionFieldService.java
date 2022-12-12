@@ -592,8 +592,8 @@ public class DynamicCriterionFieldService extends GUIService
             for (Long daysKPI : daysKPIs)
               {
                 Map<String, Object> criterionFieldJSONMAP = new LinkedHashMap<String, Object>();
-                criterionFieldJSONMAP.put("id", criteriaID.concat(".").concat(String.valueOf(daysKPI)));
-                criterionFieldJSONMAP.put("display", criteriaDisplay.concat(" Last-").concat(String.valueOf(daysKPI).concat(" days")));
+                criterionFieldJSONMAP.put("id", criteriaID.concat(".").concat(String.valueOf(daysKPI)).concat(".").concat("days"));
+                criterionFieldJSONMAP.put("display", criteriaDisplay.concat(" Last-").concat(String.valueOf(daysKPI).concat("Days")));
                 criterionFieldJSONMAP.put("dataType", "integer");
                 criterionFieldJSONMAP.put("retriever", retriever);
                 criterionFieldJSONMAP.put("subcriteria", JSONUtilities.encodeArray(subcriteriaJSONArray));
@@ -626,8 +626,8 @@ public class DynamicCriterionFieldService extends GUIService
             for (Long monthKPIs : monthsKPIs)
               {
                 Map<String, Object> criterionFieldJSONMAP = new LinkedHashMap<String, Object>();
-                criterionFieldJSONMAP.put("id", criteriaID.concat(".").concat(String.valueOf(monthKPIs)));
-                criterionFieldJSONMAP.put("display", criteriaDisplay.concat(" Last-").concat(String.valueOf(monthKPIs).concat(" months")));
+                criterionFieldJSONMAP.put("id", criteriaID.concat(".").concat(String.valueOf(monthKPIs)).concat(".").concat("months"));
+                criterionFieldJSONMAP.put("display", criteriaDisplay.concat(" Last-").concat(String.valueOf(monthKPIs).concat("Months")));
                 criterionFieldJSONMAP.put("dataType", "integer");
                 criterionFieldJSONMAP.put("retriever", retriever);
                 criterionFieldJSONMAP.put("subcriteria", JSONUtilities.encodeArray(subcriteriaJSONArray));
