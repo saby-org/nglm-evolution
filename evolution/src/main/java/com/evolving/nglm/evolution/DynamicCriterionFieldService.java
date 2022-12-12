@@ -14,6 +14,8 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.json.simple.JSONArray;
@@ -572,16 +574,64 @@ public class DynamicCriterionFieldService extends GUIService
             
           default:
             log.warn("ComplexObjectType: Unsupported CriterionDataType " + subfield.getValue().getCriterionDataType());
-            throw new GUIManagerException("ComplexObjectType: Unsupported CriterionDataType ", subfield.getValue().getCriterionDataType().getExternalRepresentation());
+            
         }
         
         if (metricHistoryType)
           {
-            for (int i=0; i < 3; i++)
+            JSONObject subfieldJSON = (JSONObject) JSONUtilities.decodeJSONArray(complexObjectType.getJSONRepresentation(), "subfields", true).stream().filter(subfldJSON -> subfield.getValue().getSubfieldName().equals(JSONUtilities.decodeString((JSONObject)subfldJSON, "subfieldName", true))).findFirst().orElse(null);
+            log.info("RAJ K subfieldJSON {}", subfieldJSON);
+            JSONObject kpisJSON = JSONUtilities.decodeJSONObject(subfieldJSON, "kpis", true);
+            log.info("RAJ K kpisJSON {}", kpisJSON);
+            Set<Integer> daysKPIs = (Set<Integer>) JSONUtilities.decodeJSONArray(kpisJSON, "days").stream().map(intval -> Integer.valueOf((int) intval)).collect(Collectors.toSet());
+            log.info("RAJ K daysKPIs {}", daysKPIs);
+            Set<Integer> monthsKPIs = (Set<Integer>) JSONUtilities.decodeJSONArray(kpisJSON, "months").stream().map(intval -> Integer.valueOf((int) intval)).collect(Collectors.toSet());
+            log.info("RAJ K monthsKPIs {}", monthsKPIs);
+            if (daysKPIs.size() + monthsKPIs.size() > 5 )
+              {
+                log.error("metricHistory supports max 5KPIs - can not create the metric subfileds criteria");
+                throw new GUIManagerException("ComplexObjectType: Unsupported metricHistory - supports max 5KPIs", subfield.getValue().getSubfieldName());
+              }
+            
+            for (Integer daysKPI : daysKPIs)
               {
                 Map<String, Object> criterionFieldJSONMAP = new LinkedHashMap<String, Object>();
-                criterionFieldJSONMAP.put("id", criteriaID.concat(".").concat(String.valueOf(i)));
-                criterionFieldJSONMAP.put("display", criteriaDisplay.concat(" - ").concat(String.valueOf(i).concat(" days")));
+                criterionFieldJSONMAP.put("id", criteriaID.concat(".").concat(String.valueOf(daysKPI)));
+                criterionFieldJSONMAP.put("display", criteriaDisplay.concat(" -last- ").concat(String.valueOf(daysKPI).concat(" days")));
+                criterionFieldJSONMAP.put("dataType", "integer");
+                criterionFieldJSONMAP.put("retriever", retriever);
+                criterionFieldJSONMAP.put("subcriteria", JSONUtilities.encodeArray(subcriteriaJSONArray));
+                criterionFieldJSONMAP.put("tagFormat", null);
+                criterionFieldJSONMAP.put("includedOperators", null);
+                criterionFieldJSONMAP.put("excludedOperators", null);
+                criterionFieldJSONMAP.put("includedComparableFields", null); 
+                criterionFieldJSONMAP.put("excludedComparableFields", null);
+                criterionFieldJSONMAP.put("esField",subfield.getValue().getSubfieldName()); //RAJ K todo
+                log.info("RAJ K metricHistoryType-criterionFieldJSONMAP {}", criterionFieldJSONMAP);
+                
+                //
+                //  criterionFieldJSON
+                //
+                
+                JSONObject criterionFieldJSON = JSONUtilities.encodeObject(criterionFieldJSONMAP);
+                
+                //
+                //  criterionField
+                //
+                
+                DynamicCriterionField criterionField = new DynamicCriterionField(complexObjectType, criterionFieldJSON, tenantID);
+                
+                //
+                //  put
+                //
+
+                putGUIManagedObject(criterionField, SystemTime.getCurrentTime(), newComplexObjectType, null);
+              }
+            for (Integer monthKPIs : monthsKPIs)
+              {
+                Map<String, Object> criterionFieldJSONMAP = new LinkedHashMap<String, Object>();
+                criterionFieldJSONMAP.put("id", criteriaID.concat(".").concat(String.valueOf(monthKPIs)));
+                criterionFieldJSONMAP.put("display", criteriaDisplay.concat(" -last- ").concat(String.valueOf(monthKPIs).concat(" months")));
                 criterionFieldJSONMAP.put("dataType", "integer");
                 criterionFieldJSONMAP.put("retriever", retriever);
                 criterionFieldJSONMAP.put("subcriteria", JSONUtilities.encodeArray(subcriteriaJSONArray));

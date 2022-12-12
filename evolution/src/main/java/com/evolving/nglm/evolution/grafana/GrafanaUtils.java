@@ -303,7 +303,7 @@ public class GrafanaUtils
             log.debug("GrafanaUtils.prepareGrafanaForTenants: = parsing a Dashboard = " + currentFileName);
             log.trace("GrafanaUtils.prepareGrafanaForTenants ===parsing a Dashboard==== " + currentFileName + "\n" + s);
             JSONObject fulldashboardDef = (JSONObject) (new JSONParser()).parse(s);
-            JSONObject dashboardDef = (JSONObject) fulldashboardDef.get("dashboard");
+            JSONObject dashboardDef = JSONUtilities.decodeJSONObject(fulldashboardDef, "dashboard", true);//                   (JSONObject) fulldashboardDef.get("dashboard");
             String expectedTitle = (String) dashboardDef.get("title");
             String existingUID = exisitingDashBoards.get(expectedTitle);
             String regex = "[ACDEFGHJKMNPQRTWXYacdefghjkmnpqrtwx34679]{15}";

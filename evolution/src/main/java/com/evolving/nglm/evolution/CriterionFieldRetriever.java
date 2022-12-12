@@ -1766,11 +1766,12 @@ public abstract class CriterionFieldRetriever
     long result = 0;
     log.info("RAJ K getComplexObjectMetricHistory fieldName {}, subcriteriaVal {}", fieldName, subcriteriaVal);
     //
-    //  fieldName = complex.ExampleObjName.subfieldprivateID.subfieldName.complexObjectTypeID
+    //  fieldName = complex.ExampleObjName.subfieldprivateID.subfieldName.complexObjectTypeID.x //x means last x days
+    //            = complex.calldestination.3162.Call Amount.5.2
     //
     
-    /*String[] split = fieldName.split("\\.");
-    boolean invalidFieldName = split.length != 5 || !split[0].equals("complex");
+    String[] split = fieldName.split("\\.");
+    boolean invalidFieldName = split.length != 6 || !split[0].equals("complex");
     if (invalidFieldName)
       {
         throw new CriterionException("field " + fieldName + " can't be handled");
@@ -1783,14 +1784,17 @@ public abstract class CriterionFieldRetriever
         SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
         try
           {
-            List<String> complexResult = ComplexObjectUtils.getComplexObjectStringSet(subscriberProfile, complexObjectTypeName, elementID, subfieldName);
-            if (complexResult != null) result.addAll(complexResult);
+            MetricHistory complexMetricHistory = ComplexObjectUtils.getComplexObjectMetricHistory(subscriberProfile, complexObjectTypeName, elementID, subfieldName);
+            if (complexMetricHistory != null) 
+              {
+                result = complexMetricHistory.getYesterday(evaluationRequest.getEvaluationDate());
+              }
           } 
         catch (ComplexObjectException e)
           {
             log.error("ComplexObjectException for {}", fieldName);
           }
-      }*/
+      }
     return result;   
   }
 

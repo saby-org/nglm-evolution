@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.SystemTime;
+import com.evolving.nglm.evolution.MetricHistory;
 import com.evolving.nglm.evolution.SubscriberProfile;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectException.ComplexObjectUtilsReturnCodes;
 import com.evolving.nglm.evolution.datamodel.DataModelFieldValue;
@@ -152,6 +153,43 @@ public class ComplexObjectUtils
     Object value = getComplexObjectValue(profile, complexTypeName, elementID, subfieldName);
     if(value != null && !(value instanceof ArrayList)) { throw new ComplexObjectException(ComplexObjectUtilsReturnCodes.BAD_SUBFIELD_TYPE, "complexTypeName:" + complexTypeName + " elementID:" + elementID + " subfieldName:" + subfieldName + " is not a StringSet but " + value.getClass().getName());}
     return (List<String>) value; 
+  }
+  
+  public static Object getComplexObjectMetricHistory(SubscriberProfile profile, String complexTypeName, String elementID, String subfieldName) throws ComplexObjectException
+  {
+    Object value = null; 
+    Collection<ComplexObjectType> types = complexObjectTypeService.getActiveComplexObjectTypes(SystemTime.getCurrentTime(), profile.getTenantID());
+    ComplexObjectType current = types.stream().filter(complexObjectType -> complexObjectType.getComplexObjectTypeName().equals(complexTypeName)).findFirst().orElse(null);
+    if(current == null) { throw new ComplexObjectException(ComplexObjectUtilsReturnCodes.UNKNOWN_COMPLEX_TYPE, "Unknown " + complexTypeName); }
+    
+    // check if the element ID exists
+    if(!current.getAvailableElements().contains(elementID)){ throw new ComplexObjectException(ComplexObjectUtilsReturnCodes.UNKNOWN_ELEMENT, "Unknown " + elementID + " into " + complexTypeName);}
+    
+    // retrieve the subfield declaration
+    ComplexObjectTypeSubfield subfieldType = current.getSubfields().values().stream().filter(subfld -> subfld.getSubfieldName().equals(subfieldName)).findFirst().orElse(null);
+    if(subfieldType == null)
+      {
+        value = ComplexObjectUtilsReturnCodes.UNKNOWN_SUBFIELD;
+      }
+    else
+      {
+        // check if the profile already has an instance for this type / element
+        List<ComplexObjectInstance> instances = profile.getComplexObjectInstances();
+        if(instances == null)
+          {
+            value = null;
+          }
+        else
+          {
+            
+          }
+      }
+    
+    
+    
+    //getComplexObjectValue(profile, complexTypeName, elementID, subfieldName);
+    if(value != null && !(value instanceof MetricHistory)) { throw new ComplexObjectException(ComplexObjectUtilsReturnCodes.BAD_SUBFIELD_TYPE, "complexTypeName:" + complexTypeName + " elementID:" + elementID + " subfieldName:" + subfieldName + " is not a StringSet but " + value.getClass().getName());}
+    return value; 
   }
   
   private static Object getComplexObjectValue(SubscriberProfile profile, String complexTypeName, String elementID, String subfieldName) throws ComplexObjectException
