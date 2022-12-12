@@ -1782,18 +1782,12 @@ public abstract class CriterionFieldRetriever
         String elementID = (String) subcriteriaVal.get(0);
         String subfieldName = split[3];
         SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
-        try
+        MetricHistory complexMetricHistory = null;// ComplexObjectUtils.getComplexObjectMetricHistory(subscriberProfile, complexObjectTypeName, elementID, subfieldName);
+        if (complexMetricHistory != null) 
           {
-            MetricHistory complexMetricHistory = ComplexObjectUtils.getComplexObjectMetricHistory(subscriberProfile, complexObjectTypeName, elementID, subfieldName);
-            if (complexMetricHistory != null) 
-              {
-                result = complexMetricHistory.getYesterday(evaluationRequest.getEvaluationDate());
-              }
-          } 
-        catch (ComplexObjectException e)
-          {
-            log.error("ComplexObjectException for {}", fieldName);
+            result = complexMetricHistory.getYesterday(evaluationRequest.getEvaluationDate());
           }
+      
       }
     return result;   
   }
