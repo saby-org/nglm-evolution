@@ -1793,7 +1793,15 @@ public abstract class CriterionFieldRetriever
         int metricLastN = Integer.parseInt(split[5]);
         String metricLastUnit = split[6];
         log.info("RAJ K metricLastN {}, metricLastUnit {}", metricLastN, metricLastUnit);
-        MetricHistory complexMetricHistory = new MetricHistory(95, 7, MetricHistoryMode.Standard, subscriberProfile.getTenantID()); // ComplexObjectUtils.getComplexObjectMetricHistory(subscriberProfile, complexObjectTypeName, elementID, subfieldName);
+        MetricHistory complexMetricHistory = null;
+        try
+          {
+            complexMetricHistory = ComplexObjectUtils.getComplexObjectMetricHistory(subscriberProfile, complexObjectTypeName, elementID, subfieldName);
+          } 
+        catch (ComplexObjectException e)
+          {
+            e.printStackTrace();
+          }
         if (complexMetricHistory != null) 
           {
             switch (metricLastUnit.toLowerCase())
