@@ -134,7 +134,7 @@ public class ComplexObjectUtils
             log.info("RAJ K updating metrisHistory for field {} for the first time", subfieldType.getSubfieldName());
             MetricHistory subfieldMetricHistory = new MetricHistory(95, 7, MetricHistoryMode.Standard, profile.getTenantID());
             subfieldMetricHistory.update(eventTime, metricValue);
-            instance.getMetricHistories().put(subfieldType.getSubfieldName(), subfieldMetricHistory);
+            metricHistories.put(subfieldType.getSubfieldName(), subfieldMetricHistory);
           }
         else
           {
