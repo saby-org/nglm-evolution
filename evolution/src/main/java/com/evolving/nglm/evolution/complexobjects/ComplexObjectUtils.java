@@ -125,6 +125,7 @@ public class ComplexObjectUtils
       }
     if (metrisHistoryValue)
       {
+        long metricValue = ((Number) value).longValue();
         log.info("RAJ K updating metrisHistoryValue {}", metrisHistoryValue);
         Map<String, MetricHistory> metricHistories = instance.getMetricHistories();
         if (metricHistories == null) metricHistories = new HashMap<String, MetricHistory>();
@@ -132,14 +133,14 @@ public class ComplexObjectUtils
           {
             log.info("RAJ K updating metrisHistory for field {} for the first time", subfieldType.getSubfieldName());
             MetricHistory subfieldMetricHistory = new MetricHistory(95, 7, MetricHistoryMode.Standard, profile.getTenantID());
-            subfieldMetricHistory.update(eventTime, (long) value);
+            subfieldMetricHistory.update(eventTime, metricValue);
             instance.getMetricHistories().put(subfieldType.getSubfieldName(), subfieldMetricHistory);
           }
         else
           {
             log.info("RAJ K updating existing metrisHistory for field {}   *****************************", subfieldType.getSubfieldName());
             MetricHistory subfieldMetricHistory = new MetricHistory(metricHistories.get(subfieldType.getSubfieldName()));
-            subfieldMetricHistory.update(eventTime, (long) value);
+            subfieldMetricHistory.update(eventTime, metricValue);
             instance.getMetricHistories().put(subfieldType.getSubfieldName(), subfieldMetricHistory);
           }
         log.info("RAJ K updated metrisHistoryValue {}", metrisHistoryValue);

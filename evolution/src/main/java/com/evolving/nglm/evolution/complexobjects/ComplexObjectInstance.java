@@ -201,12 +201,15 @@ public class ComplexObjectInstance
     return new ComplexObjectInstance(complexObjectTypeID, elementID, fieldValues, metricHistories);
   }
   
-  public static Map<String,Object> packMetricHistories(Map<String,MetricHistory> scoreBalances)
+  public static Map<String,Object> packMetricHistories(Map<String,MetricHistory> metricHistories)
   {
     Map<String,Object> result = new HashMap<String,Object>();
-    for (String loyaltyProgramID : scoreBalances.keySet())
+    if (metricHistories != null)
       {
-        result.put(loyaltyProgramID, MetricHistory.pack(scoreBalances.get(loyaltyProgramID)));
+        for (String subfieldName : metricHistories.keySet())
+          {
+            result.put(subfieldName, MetricHistory.pack(metricHistories.get(subfieldName)));
+          }
       }
     return result;
   }
@@ -217,7 +220,7 @@ public class ComplexObjectInstance
     //  get schema for ScoreBalances
     //
 
-    Schema scoreBalanceSchema = schema.valueSchema();
+    Schema metricHistoriesSchema = schema.valueSchema();
 
     //
     //  unpack
@@ -226,7 +229,7 @@ public class ComplexObjectInstance
     Map<String,MetricHistory> result = new HashMap<>();
     for (String key : value.keySet())
       {
-        result.put(key, MetricHistory.unpack(new SchemaAndValue(scoreBalanceSchema, value.get(key))));
+        result.put(key, MetricHistory.unpack(new SchemaAndValue(metricHistoriesSchema, value.get(key))));
       }
 
     //
