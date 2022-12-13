@@ -119,9 +119,10 @@ public class ComplexObjectInstance
   public String getComplexObjectTypeID() { return complexObjectTypeID; }
   public String getElementID() { return elementID; }
   public Map<String, MetricHistory> getMetricHistories() { return metricHistories; }
-  public void initMetricHistories()
+  public Map<String, MetricHistory> initAndGetMetricHistories()
   {
     this.metricHistories = new HashMap<String, MetricHistory>();
+    return metricHistories;
   }
 
   /*****************************************

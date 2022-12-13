@@ -126,9 +126,12 @@ public class ComplexObjectUtils
     if (metrisHistoryValue)
       {
         long metricValue = ((Number) value).longValue();
-        log.info("RAJ K updating metrisHistoryValue {}", metrisHistoryValue);
         Map<String, MetricHistory> metricHistories = instance.getMetricHistories();
-        if (metricHistories == null) metricHistories = new HashMap<String, MetricHistory>();
+        if (metricHistories == null)
+          {
+            metricHistories = instance.initAndGetMetricHistories();
+            log.info("RAJ K initAndGetMetricHistories done");
+          }
         if (metricHistories.get(subfieldType.getSubfieldName()) == null)
           {
             log.info("RAJ K updating metrisHistory for field {} for the first time", subfieldType.getSubfieldName());
