@@ -1317,7 +1317,7 @@ public abstract class SubscriberProfile
                         MetricHistory subfieldMetricHistory = instance.getMetricHistories().get(subfield);
                         JSONObject metricJSONVal = getMetricHistoryJSONForComplexSubField(subfield, subfieldMetricHistory, instance.getComplexObjectTypeID(), complexObjectTypeService);
                         log.info("RAJ K subscriberProfile creating MetricHistJSON for {} is {}", subfield, metricJSONVal);
-                        elementVal.put(subfield, metricJSONVal);
+                        elementVal.put(subfield, metricJSONVal.toJSONString());
                       }
                   }
 
