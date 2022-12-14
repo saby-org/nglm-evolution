@@ -583,11 +583,6 @@ public class DynamicCriterionFieldService extends GUIService
             JSONObject kpisJSON = JSONUtilities.decodeJSONObject(subfieldJSON, "kpis", true);
             Set<Long> daysKPIs = (Set<Long>) JSONUtilities.decodeJSONArray(kpisJSON, "days").stream().map(intval -> Long.valueOf((Long) intval)).collect(Collectors.toSet());
             Set<Long> monthsKPIs = (Set<Long>) JSONUtilities.decodeJSONArray(kpisJSON, "months").stream().map(intval -> Long.valueOf((Long) intval)).collect(Collectors.toSet());
-            if (daysKPIs.size() + monthsKPIs.size() > 10 )
-              {
-                log.error("metricHistory supports max 5KPIs - can not create the metric subfileds criteria");
-                throw new GUIManagerException("ComplexObjectType: Unsupported metricHistory - supports max 10KPIs", subfield.getValue().getSubfieldName());
-              }
             
             for (Long daysKPI : daysKPIs)
               {

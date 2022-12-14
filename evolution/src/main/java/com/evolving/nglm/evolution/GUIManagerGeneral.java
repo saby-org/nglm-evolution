@@ -2029,6 +2029,7 @@ JSONObject processAdvancedSearch(String userID, JSONObject jsonRoot, int tenantI
         ****************************************/
 
         ComplexObjectType complexObjectType = new ComplexObjectType(jsonRoot, epoch, existingComplexObjectType, tenantID);
+        complexObjectType.validate();
 
         /*****************************************
          *
