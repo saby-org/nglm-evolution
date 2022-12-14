@@ -1195,7 +1195,7 @@ public abstract class SubscriberProfile
   //  getProfileMapForGUIPresentation
   //
 
-  public Map<String, Object> getProfileMapForGUIPresentation(SubscriberProfileService subscriberProfileService, LoyaltyProgramService loyaltyProgramService, SegmentationDimensionService segmentationDimensionService, TargetService targetService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService, ExclusionInclusionTargetService exclusionInclusionTargetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
+  public Map<String, Object> getProfileMapForGUIPresentation(SubscriberProfileService subscriberProfileService, LoyaltyProgramService loyaltyProgramService, SegmentationDimensionService segmentationDimensionService, TargetService targetService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService, ExclusionInclusionTargetService exclusionInclusionTargetService, DynamicCriterionFieldService dynamicCriterionFieldService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
   {
     //
     //  now
@@ -1307,6 +1307,16 @@ public abstract class SubscriberProfile
                         Object currVal = entry.getValue().getValue();
                         if (currVal instanceof Date) currVal = getDateString((Date) currVal);
                         elementVal.put(entry.getKey(), currVal);
+                      }
+                  }
+                if (instance.getMetricHistories() != null)
+                  {
+                    for (String subfield : instance.getMetricHistories().keySet())
+                      {
+                        log.info("RAJ K subscriberProfile creating MetricHistJSON for {}", subfield);
+                        MetricHistory subfieldMetricHistory = instance.getMetricHistories().get(subfield);
+                        JSONObject metricJSONVal = getMetricHistoryJSONForComplexSubField(subfield, subfieldMetricHistory, instance.getComplexObjectTypeID(), complexObjectTypeService);
+                        elementVal.put(subfield, metricJSONVal);
                       }
                   }
 
@@ -1515,6 +1525,62 @@ public abstract class SubscriberProfile
   //  getProfileMapForThirdPartyPresentation
   //
 
+  private JSONObject getMetricHistoryJSONForComplexSubField(String subfield, MetricHistory subfieldMetricHistory, String complexObjectTypeID, ComplexObjectTypeService complexObjectTypeService)
+  {
+    Map<String, Object> metricJSONMap = new HashMap<String, Object>();
+    Date now = SystemTime.getCurrentTime();
+    ComplexObjectType complexObjectType = complexObjectTypeService.getActiveComplexObjectType(complexObjectTypeID, now);
+    if (complexObjectType != null)
+      {
+        ComplexObjectTypeSubfield complexObjectTypeSubfield = complexObjectType.getSubfields().values().stream().filter(subfld -> subfld.getSubfieldName().equals(subfield)).findFirst().orElse(null);
+        if (complexObjectTypeSubfield != null)
+          {
+            JSONObject subfieldJSON = (JSONObject) JSONUtilities.decodeJSONArray(complexObjectType.getJSONRepresentation(), "subfields", true).stream().filter(subfldJSON -> complexObjectTypeSubfield.getSubfieldName().equals(JSONUtilities.decodeString((JSONObject)subfldJSON, "subfieldName", true))).findFirst().orElse(null);
+            if (subfieldJSON != null)
+              {
+                JSONObject kpisJSON = JSONUtilities.decodeJSONObject(subfieldJSON, "kpis", true);
+                Set<Long> daysKPIs = (Set<Long>) JSONUtilities.decodeJSONArray(kpisJSON, "days").stream().map(intval -> Long.valueOf((Long) intval)).collect(Collectors.toSet());
+                Set<Long> monthsKPIs = (Set<Long>) JSONUtilities.decodeJSONArray(kpisJSON, "months").stream().map(intval -> Long.valueOf((Long) intval)).collect(Collectors.toSet());
+                if (subfieldMetricHistory != null) 
+                  {
+                    //
+                    //  daysKPIs
+                    //
+                    
+                    for (Long metricLastN : daysKPIs)
+                      {
+                        if (metricLastN > 0)
+                          {
+                            metricJSONMap.put(metricLastN.toString().concat("D"), CriterionFieldRetriever.getPreviousNDays(subfieldMetricHistory, now, metricLastN.intValue(), getTenantID()));
+                          }
+                        else
+                          {
+                            metricJSONMap.put(metricLastN.toString().concat("D"), subfieldMetricHistory.getToday(now));
+                          }
+                      }
+                    
+                    //
+                    //  monthsKPIs
+                    //
+                    
+                    for (Long metricLastN : monthsKPIs)
+                      {
+                        if (metricLastN > 0)
+                          {
+                            metricJSONMap.put(metricLastN.toString().concat("M"), CriterionFieldRetriever.getPreviousNMonths(subfieldMetricHistory, now, metricLastN.intValue(), getTenantID()));
+                          }
+                        else
+                          {
+                            metricJSONMap.put(metricLastN.toString().concat("M"), subfieldMetricHistory.getThisMonth(now));
+                          }
+                      }
+                  }
+              }
+          }
+        
+      }
+    return JSONUtilities.encodeObject(metricJSONMap);
+  }
   public Map<String,Object> getProfileMapForThirdPartyPresentation(SubscriberProfileService subscriberProfileService, SegmentationDimensionService segmentationDimensionService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ExclusionInclusionTargetService exclusionInclusionTargetService, LoyaltyProgramService loyaltyProgramService)
   {
     HashMap<String, Object> baseProfilePresentation = new HashMap<String,Object>();

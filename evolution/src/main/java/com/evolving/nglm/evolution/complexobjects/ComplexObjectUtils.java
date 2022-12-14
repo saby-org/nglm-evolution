@@ -248,8 +248,6 @@ public class ComplexObjectUtils
           }
       }
     
-    
-    
     //getComplexObjectValue(profile, complexTypeName, elementID, subfieldName);
     if(value != null && !(value instanceof MetricHistory)) { throw new ComplexObjectException(ComplexObjectUtilsReturnCodes.BAD_SUBFIELD_TYPE, "complexTypeName:" + complexTypeName + " elementID:" + elementID + " subfieldName:" + subfieldName + " is not a StringSet but " + value.getClass().getName());}
     return (MetricHistory) value; 

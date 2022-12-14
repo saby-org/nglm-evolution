@@ -1820,7 +1820,7 @@ public abstract class CriterionFieldRetriever
               case "months":
                 if (metricLastN > 0)
                   {
-                    result = getPreviousNMonth(complexMetricHistory, evaluationRequest.getEvaluationDate(), metricLastN, subscriberProfile.getTenantID());
+                    result = getPreviousNMonths(complexMetricHistory, evaluationRequest.getEvaluationDate(), metricLastN, subscriberProfile.getTenantID());
                   }
                 else
                   {
@@ -1842,7 +1842,7 @@ public abstract class CriterionFieldRetriever
   //  getPreviousNDays
   //
 
-  private static Long getPreviousNDays(final MetricHistory complexMetricHistory, Date evaluationDate, int metricLastN, int tenantID)
+  static Long getPreviousNDays(final MetricHistory complexMetricHistory, Date evaluationDate, int metricLastN, int tenantID)
   {
     Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getDeployment(tenantID).getTimeZone());
     Date startDay = RLMDateUtils.addDays(day, -metricLastN, Deployment.getDeployment(tenantID).getTimeZone());
@@ -1854,7 +1854,7 @@ public abstract class CriterionFieldRetriever
   //  getPreviousNMonth
   //
 
-  public static Long getPreviousNMonth(final MetricHistory complexMetricHistory, Date evaluationDate, int metricLastN, int tenantID)
+  public static Long getPreviousNMonths(final MetricHistory complexMetricHistory, Date evaluationDate, int metricLastN, int tenantID)
   {
     Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getDeployment(tenantID).getTimeZone());
     Date startOfMonth = RLMDateUtils.truncate(day, Calendar.MONTH, Deployment.getDeployment(tenantID).getTimeZone()); 
