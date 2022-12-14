@@ -1546,8 +1546,8 @@ public abstract class SubscriberProfile
             if (subfieldJSON != null)
               {
                 JSONObject kpisJSON = JSONUtilities.decodeJSONObject(subfieldJSON, "kpis", true);
-                Set<Long> daysKPIs = (Set<Long>) JSONUtilities.decodeJSONArray(kpisJSON, "days").stream().map(intval -> Long.valueOf((Long) intval)).collect(Collectors.toSet());
-                Set<Long> monthsKPIs = (Set<Long>) JSONUtilities.decodeJSONArray(kpisJSON, "months").stream().map(intval -> Long.valueOf((Long) intval)).collect(Collectors.toSet());
+                Set<Long> daysKPIs = (Set<Long>) JSONUtilities.decodeJSONArray(kpisJSON, "days").stream().map(intval -> Long.valueOf((Long) intval)).sorted().collect(Collectors.toSet());
+                Set<Long> monthsKPIs = (Set<Long>) JSONUtilities.decodeJSONArray(kpisJSON, "months").stream().map(intval -> Long.valueOf((Long) intval)).sorted().collect(Collectors.toSet());
                 log.info("RAJ K getMetricHistoryJSONForComplexSubField daysKPIs {}, monthsKPIs {}", daysKPIs, monthsKPIs);
                 if (subfieldMetricHistory != null) 
                   {
