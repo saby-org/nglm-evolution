@@ -1195,7 +1195,7 @@ public abstract class SubscriberProfile
   //  getProfileMapForGUIPresentation
   //
 
-  public Map<String, Object> getProfileMapForGUIPresentation(SubscriberProfileService subscriberProfileService, LoyaltyProgramService loyaltyProgramService, SegmentationDimensionService segmentationDimensionService, TargetService targetService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService, ExclusionInclusionTargetService exclusionInclusionTargetService, DynamicCriterionFieldService dynamicCriterionFieldService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
+  public Map<String, Object> getProfileMapForGUIPresentation(SubscriberProfileService subscriberProfileService, LoyaltyProgramService loyaltyProgramService, SegmentationDimensionService segmentationDimensionService, TargetService targetService, PointService pointService, ComplexObjectTypeService complexObjectTypeService, VoucherService voucherService, VoucherTypeService voucherTypeService, ExclusionInclusionTargetService exclusionInclusionTargetService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader)
   {
     //
     //  now
