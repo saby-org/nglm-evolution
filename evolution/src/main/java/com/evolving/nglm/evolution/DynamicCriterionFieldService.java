@@ -599,7 +599,6 @@ public class DynamicCriterionFieldService extends GUIService
                 criterionFieldJSONMAP.put("includedComparableFields", null); 
                 criterionFieldJSONMAP.put("excludedComparableFields", null);
                 criterionFieldJSONMAP.put("esField",subfield.getValue().getSubfieldName()); //RAJ K todo
-                log.info("RAJ K metricHistoryType-criterionFieldJSONMAP {}", criterionFieldJSONMAP);
                 
                 //
                 //  criterionFieldJSON
@@ -634,7 +633,6 @@ public class DynamicCriterionFieldService extends GUIService
                 criterionFieldJSONMAP.put("includedComparableFields", null); 
                 criterionFieldJSONMAP.put("excludedComparableFields", null);
                 criterionFieldJSONMAP.put("esField",subfield.getValue().getSubfieldName()); //RAJ K todo
-                log.info("RAJ K metricHistoryType-criterionFieldJSONMAP {}", criterionFieldJSONMAP);
                 
                 //
                 //  criterionFieldJSON
@@ -670,7 +668,6 @@ public class DynamicCriterionFieldService extends GUIService
             criterionFieldJSONMAP.put("includedComparableFields", null); 
             criterionFieldJSONMAP.put("excludedComparableFields", null);
             criterionFieldJSONMAP.put("esField",subfield.getValue().getSubfieldName());
-            log.info("RAJ K criterionFieldJSONMAP {}", criterionFieldJSONMAP);
             
             //
             //  criterionFieldJSON
@@ -699,15 +696,37 @@ public class DynamicCriterionFieldService extends GUIService
   *
   *****************************************/
 
-  public void removeComplexObjectTypeAdvanceCriterionFields(GUIManagedObject guiManagedObject) // RAJ K to do
+  public void removeComplexObjectTypeAdvanceCriterionFields(GUIManagedObject guiManagedObject)
   {
     ComplexObjectType complexObjectType = (ComplexObjectType) guiManagedObject;
     for(Map.Entry<Integer, ComplexObjectTypeSubfield> subfield : complexObjectType.getSubfields().entrySet())
       {
-        String criteriaID = "complex" + "." + complexObjectType.getGUIManagedObjectName() + "." + subfield.getValue().getPrivateID() + "." + subfield.getValue().getSubfieldName() + "." + complexObjectType.getGUIManagedObjectID();
-        GUIManagedObject guiManagedObjectCrt = getStoredDynamicCriterionField(criteriaID);
-        if (guiManagedObjectCrt != null) removeGUIManagedObject(criteriaID, SystemTime.getCurrentTime(), null, guiManagedObject.getTenantID());
-        
+        String nonMetricCriteriaID = "complex" + "." + complexObjectType.getGUIManagedObjectName() + "." + subfield.getValue().getPrivateID() + "." + subfield.getValue().getSubfieldName() + "." + complexObjectType.getGUIManagedObjectID();
+        if (subfield.getValue().getCriterionDataType() == CriterionDataType.MetricHistoryCriterion)
+          {
+            JSONObject subfieldJSON = (JSONObject) JSONUtilities.decodeJSONArray(complexObjectType.getJSONRepresentation(), "subfields", true).stream().filter(subfldJSON -> subfield.getValue().getSubfieldName().equals(JSONUtilities.decodeString((JSONObject)subfldJSON, "subfieldName", true))).findFirst().orElse(null);
+            JSONObject kpisJSON = JSONUtilities.decodeJSONObject(subfieldJSON, "kpis", true);
+            Set<Long> daysKPIs = (Set<Long>) JSONUtilities.decodeJSONArray(kpisJSON, "days").stream().map(intval -> Long.valueOf((Long) intval)).collect(Collectors.toSet());
+            Set<Long> monthsKPIs = (Set<Long>) JSONUtilities.decodeJSONArray(kpisJSON, "months").stream().map(intval -> Long.valueOf((Long) intval)).collect(Collectors.toSet());
+            
+            for (Long daysKPI : daysKPIs)
+            {
+              String metricCriteriaID = nonMetricCriteriaID.concat(".").concat(String.valueOf(daysKPI)).concat(".").concat("days");
+              GUIManagedObject guiManagedObjectCrt = getStoredDynamicCriterionField(metricCriteriaID);
+              if (guiManagedObjectCrt != null) removeGUIManagedObject(metricCriteriaID, SystemTime.getCurrentTime(), null, guiManagedObject.getTenantID());
+            }
+            for (Long monthKPIs : monthsKPIs)
+              {
+                String metricCriteriaID = nonMetricCriteriaID.concat(".").concat(String.valueOf(monthKPIs)).concat(".").concat("months");
+                GUIManagedObject guiManagedObjectCrt = getStoredDynamicCriterionField(metricCriteriaID);
+                if (guiManagedObjectCrt != null) removeGUIManagedObject(metricCriteriaID, SystemTime.getCurrentTime(), null, guiManagedObject.getTenantID());
+              }
+          }
+        else
+          {
+            GUIManagedObject guiManagedObjectCrt = getStoredDynamicCriterionField(nonMetricCriteriaID);
+            if (guiManagedObjectCrt != null) removeGUIManagedObject(nonMetricCriteriaID, SystemTime.getCurrentTime(), null, guiManagedObject.getTenantID());
+          }
       }
   }
   

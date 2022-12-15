@@ -130,23 +130,19 @@ public class ComplexObjectUtils
         if (metricHistories == null)
           {
             metricHistories = instance.initAndGetMetricHistories();
-            log.info("RAJ K initAndGetMetricHistories done");
           }
         if (metricHistories.get(subfieldType.getSubfieldName()) == null)
           {
-            log.info("RAJ K updating metrisHistory for field {} for the first time", subfieldType.getSubfieldName());
             MetricHistory subfieldMetricHistory = new MetricHistory(95, 7, MetricHistoryMode.Standard, profile.getTenantID());
             subfieldMetricHistory.update(eventTime, metricValue);
             metricHistories.put(subfieldType.getSubfieldName(), subfieldMetricHistory);
           }
         else
           {
-            log.info("RAJ K updating existing metrisHistory for field {}   *****************************", subfieldType.getSubfieldName());
             MetricHistory subfieldMetricHistory = new MetricHistory(metricHistories.get(subfieldType.getSubfieldName()));
             subfieldMetricHistory.update(eventTime, metricValue);
             instance.getMetricHistories().put(subfieldType.getSubfieldName(), subfieldMetricHistory);
           }
-        log.info("RAJ K updated metrisHistoryValue {}", metrisHistoryValue);
       }
     else
       {

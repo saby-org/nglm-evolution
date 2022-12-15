@@ -1765,12 +1765,10 @@ public abstract class CriterionFieldRetriever
   public static Object getComplexObjectMetricHistory(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) throws CriterionException
   {
     Long result = null;
-    log.info("RAJ K getComplexObjectMetricHistory fieldName {}, subcriteriaVal {}", fieldName, subcriteriaVal);
+    
     //
-    //  fieldName = complex.ExampleObjName.subfieldprivateID.subfieldName.complexObjectTypeID.x //x means last x days
-    //            = complex.calldestination.3162.Call Amount.5.2
-    //            = complex.calldestination.3162.Call Amount.5.3.days
-    //            = complex.calldestination.3162.Call Amount.5.3.months
+    //  fieldName = complex.calldestination.3162.Call Amount.5.3.days
+    //  fieldName = complex.calldestination.3162.Call Amount.5.3.months
     //
     
     String[] split = fieldName.split("\\.");
@@ -1792,7 +1790,6 @@ public abstract class CriterionFieldRetriever
         
         int metricLastN = Integer.parseInt(split[5]);
         String metricLastUnit = split[6];
-        log.info("RAJ K metricLastN {}, metricLastUnit {}", metricLastN, metricLastUnit);
         MetricHistory complexMetricHistory = null;
         try
           {
@@ -1834,7 +1831,6 @@ public abstract class CriterionFieldRetriever
           }
       
       }
-    log.info("RAJ K result {}", result);
     return result;   
   }
   

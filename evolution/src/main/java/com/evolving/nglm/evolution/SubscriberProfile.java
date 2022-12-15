@@ -1313,10 +1313,8 @@ public abstract class SubscriberProfile
                   {
                     for (String subfield : instance.getMetricHistories().keySet())
                       {
-                        log.info("RAJ K subscriberProfile creating MetricHistJSON for {}", subfield);
                         MetricHistory subfieldMetricHistory = instance.getMetricHistories().get(subfield);
                         JSONObject metricJSONVal = getMetricHistoryJSONForComplexSubField(subfield, subfieldMetricHistory, instance.getComplexObjectTypeID(), complexObjectTypeService);
-                        log.info("RAJ K subscriberProfile creating MetricHistJSON for {} is {}", subfield, metricJSONVal);
                         elementVal.put(subfield, metricJSONVal.toJSONString());
                       }
                   }
@@ -1528,27 +1526,20 @@ public abstract class SubscriberProfile
 
   private JSONObject getMetricHistoryJSONForComplexSubField(String subfield, MetricHistory subfieldMetricHistory, String complexObjectTypeID, ComplexObjectTypeService complexObjectTypeService)
   {
-    log.info("RAJ K getMetricHistoryJSONForComplexSubField complexObjectTypeID {}", complexObjectTypeID);
     Map<String, Object> metricJSONMap = new HashMap<String, Object>();
     Date now = SystemTime.getCurrentTime();
     ComplexObjectType complexObjectType = complexObjectTypeService.getActiveComplexObjectType(complexObjectTypeID, now);
-    log.info("RAJ K getMetricHistoryJSONForComplexSubField complexObjectType is null {}", complexObjectType == null);
     if (complexObjectType != null)
       {
-        log.info("RAJ K getMetricHistoryJSONForComplexSubField complexObjectType {}", complexObjectType.getGUIManagedObjectDisplay());
         ComplexObjectTypeSubfield complexObjectTypeSubfield = complexObjectType.getSubfields().values().stream().filter(subfld -> subfld.getSubfieldName().equals(subfield)).findFirst().orElse(null);
-        log.info("RAJ K getMetricHistoryJSONForComplexSubField complexObjectTypeSubfield is null {}", complexObjectTypeSubfield == null);
         if (complexObjectTypeSubfield != null)
           {
-            log.info("RAJ K getMetricHistoryJSONForComplexSubField complexObjectTypeSubfield {}", complexObjectTypeSubfield.getSubfieldName());
             JSONObject subfieldJSON = (JSONObject) JSONUtilities.decodeJSONArray(complexObjectType.getJSONRepresentation(), "subfields", true).stream().filter(subfldJSON -> complexObjectTypeSubfield.getSubfieldName().equals(JSONUtilities.decodeString((JSONObject)subfldJSON, "subfieldName", true))).findFirst().orElse(null);
-            log.info("RAJ K getMetricHistoryJSONForComplexSubField subfieldJSON {}", subfieldJSON);
             if (subfieldJSON != null)
               {
                 JSONObject kpisJSON = JSONUtilities.decodeJSONObject(subfieldJSON, "kpis", true);
                 Set<Long> daysKPIs = (Set<Long>) JSONUtilities.decodeJSONArray(kpisJSON, "days").stream().map(intval -> Long.valueOf((Long) intval)).sorted().collect(Collectors.toSet());
                 Set<Long> monthsKPIs = (Set<Long>) JSONUtilities.decodeJSONArray(kpisJSON, "months").stream().map(intval -> Long.valueOf((Long) intval)).sorted().collect(Collectors.toSet());
-                log.info("RAJ K getMetricHistoryJSONForComplexSubField daysKPIs {}, monthsKPIs {}", daysKPIs, monthsKPIs);
                 if (subfieldMetricHistory != null) 
                   {
                     //
@@ -1586,7 +1577,6 @@ public abstract class SubscriberProfile
               }
           }
       }
-    log.info("RAJ K getMetricHistoryJSONForComplexSubField metricJSONMap {}", metricJSONMap);
     return JSONUtilities.encodeObject(metricJSONMap);
   }
   public Map<String,Object> getProfileMapForThirdPartyPresentation(SubscriberProfileService subscriberProfileService, SegmentationDimensionService segmentationDimensionService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ExclusionInclusionTargetService exclusionInclusionTargetService, LoyaltyProgramService loyaltyProgramService)
