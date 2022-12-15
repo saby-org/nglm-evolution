@@ -338,9 +338,9 @@ public class ComplexObjectType extends GUIManagedObject
                 Set<Long> daysKPIs = (Set<Long>) JSONUtilities.decodeJSONArray(kpisJSON, "days").stream().map(intval -> Long.valueOf((Long) intval)).collect(Collectors.toSet());
                 Set<Long> monthsKPIs = (Set<Long>) JSONUtilities.decodeJSONArray(kpisJSON, "months").stream().map(intval -> Long.valueOf((Long) intval)).collect(Collectors.toSet());
                 
-                if (daysKPIs.size() + monthsKPIs.size() > 10 )
+                if (daysKPIs.size() + monthsKPIs.size() < 1 || daysKPIs.size() + monthsKPIs.size() > 10 )
                   {
-                    log.error(complexObjectTypeSubfield.getSubfieldName() + " - metricHistory supports max 5KPIs - can not create the metric subfileds criteria");
+                    log.error(complexObjectTypeSubfield.getSubfieldName() + " - metricHistory supports max 10KPIs and min 1KPIs");
                     throw new GUIManagerException("ComplexObjectType: Unsupported metricHistory for " + complexObjectTypeSubfield.getSubfieldName() +" - supports max 10KPIs", complexObjectTypeSubfield.getSubfieldName());
                   }
                 if (daysKPIs.stream().mapToLong(x -> x).max().orElse(-1L) > 90L)
