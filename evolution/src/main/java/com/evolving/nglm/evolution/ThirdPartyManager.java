@@ -5293,7 +5293,8 @@ public class ThirdPartyManager
     //
     
     PurchaseFulfillmentRequest purchaseFulfillmentRequest = purchaseFulfillmentRequests.get(0);
-    Offer offer = offerService.getActiveOffer(purchaseFulfillmentRequest.getOfferID(), SystemTime.getCurrentTime());   
+    GUIManagedObject offerUnchecked = offerService.getStoredGUIManagedObject(purchaseFulfillmentRequest.getOfferID(), true);
+    Offer offer = (offerUnchecked != null && offerUnchecked.getAccepted()) ? (Offer) offerUnchecked : null;
     if (offer != null && offer.getCancellable())
       {
         //
@@ -5316,7 +5317,7 @@ public class ThirdPartyManager
     else
       {
         response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
-        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage().concat(" - offer is not cancellable"));
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage().concat(" - offer is not cancellable or avilable"));
       }
     return JSONUtilities.encodeObject(response);
   }
