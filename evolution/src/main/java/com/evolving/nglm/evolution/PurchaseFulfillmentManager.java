@@ -2332,7 +2332,8 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         while (purchaseStatus.getOfferStockDebited() != null && !purchaseStatus.getOfferStockDebited().isEmpty())
           {
             String offerID = purchaseStatus.getOfferStockDebited().remove(0);
-            Offer offer = offerService.getActiveOffer(offerID, originatingDeliveryRequest.getEventDate());
+            GUIManagedObject offerUnchecked = offerService.getStoredGUIManagedObject(offerID, true);
+            Offer offer = (offerUnchecked != null && offerUnchecked.getAccepted()) ? (Offer) offerUnchecked : null;
             if (offer == null)
               {
                 purchaseStatus.addOfferStockRollbackFailed(offerID);

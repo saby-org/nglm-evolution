@@ -5317,7 +5317,7 @@ public class ThirdPartyManager
     else
       {
         response.put(GENERIC_RESPONSE_CODE, RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseCode());
-        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage().concat(" - offer is not cancellable or avilable"));
+        response.put(GENERIC_RESPONSE_MSG, RESTAPIGenericReturnCodes.SYSTEM_ERROR.getGenericResponseMessage().concat(" - offer is not cancellable or available"));
       }
     return JSONUtilities.encodeObject(response);
   }

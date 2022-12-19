@@ -25508,7 +25508,7 @@ public class GUIManager
      }
    else
      {
-       response.put("responseCode", "offer is not cancellable or avilable");
+       response.put("responseCode", "offer is not cancellable or available");
      }
    return JSONUtilities.encodeObject(response);
  }
