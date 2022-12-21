@@ -697,6 +697,7 @@ public abstract class SubscriberProfile
             Map<String, Object> subfieldJSONMap = new HashMap<String, Object>();
             for (ComplexObjectTypeSubfield subfield : complexObjectType.getSubfields().values())
               {
+                boolean metricField = false;
                 Object value = null;
                 try
                   {
@@ -723,6 +724,24 @@ public abstract class SubscriberProfile
                       case StringSetCriterion:
                         value = ComplexObjectUtils.getComplexObjectStringSet(this, complexObjectType.getGUIManagedObjectName(), element, subfield.getSubfieldName());
                         break;
+                        
+                      case MetricHistoryCriterion:
+                        metricField = true;
+                        MetricHistory subfieldMetricHistory = ComplexObjectUtils.getComplexObjectMetricHistory(this, complexObjectType.getGUIManagedObjectName(), element, subfield.getSubfieldName());
+                        if (subfieldMetricHistory != null)
+                          {
+                            JSONObject metricJsonObject = getMetricHistoryJSONForComplexSubField(subfield.getSubfieldName(), subfieldMetricHistory, complexObjectType.getComplexObjectTypeID(), complexObjectTypeService);
+                            log.info("RAJ K jsonObject {}", metricJsonObject);
+                            for (Object jsonKey : metricJsonObject.keySet())
+                              {
+                                if (jsonKey instanceof String)
+                                  {
+                                    Number meTricValue =  (Number) metricJsonObject.get(jsonKey);
+                                    if (meTricValue != null) subfieldJSONMap.put(subfield.getSubfieldName().concat(".").concat(jsonKey.toString()), meTricValue);
+                                  }
+                              }
+                          }
+                        break;
 
                       default:
                         log.error("invalid data type {} for sub field {}", subfield.getCriterionDataType(), subfield.getSubfieldName());
@@ -733,7 +752,7 @@ public abstract class SubscriberProfile
                   {
                     log.error("ComplexObjectException {}", e.getMessage());
                   }
-                if (value != null) subfieldJSONMap.put(subfield.getSubfieldName(), value);
+                if (!metricField && value != null) subfieldJSONMap.put(subfield.getSubfieldName(), value);
               }
             if (!subfieldJSONMap.isEmpty()) elementJSONMAP.put(element, JSONUtilities.encodeObject(subfieldJSONMap));
           }
