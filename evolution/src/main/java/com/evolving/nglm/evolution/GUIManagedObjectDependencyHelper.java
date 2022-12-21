@@ -41,7 +41,7 @@ public class GUIManagedObjectDependencyHelper
   
   public static void createDependencyTreeMAP(Map<String, GUIDependencyModelTree> guiDependencyModelTreeMap, GUIDependencyModelTree guiDependencyModelTree, Set<String>  dependencies, String objectID, List<JSONObject> dependencyListOutput, boolean fiddleTest, List<GUIService> guiServiceList, int tenantID) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException
   {
-    log.info("createDependencyTreeMAP for {} - ID {} will look into {} types", guiDependencyModelTree.getGuiManagedObjectType(), objectID, dependencies);
+    log.debug("createDependencyTreeMAP for {} - ID {} will look into {} types", guiDependencyModelTree.getGuiManagedObjectType(), objectID, dependencies);
     for (String dependency : dependencies)
       {
         //
@@ -120,6 +120,7 @@ public class GUIManagedObjectDependencyHelper
                 dependentMap.put("active", guiManagedObject.getActive());
                 dependentMap.put("objectType", dependency);
                 dependentMap.put("dependencies", JSONUtilities.encodeArray(nextDependencyOutputList));
+                if (guiManagedObject instanceof Offer) dependentMap.put("cancellable", ((Offer) guiManagedObject).getCancellable()); // special - to stop editing the objects used in a cancellable offer
               }
             
             //
