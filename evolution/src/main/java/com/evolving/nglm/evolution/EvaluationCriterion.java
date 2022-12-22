@@ -1611,6 +1611,7 @@ public class EvaluationCriterion
             actualQuery = actualQuery.must(noPainlessEsQuery("complexFields.elements." + exp.evaluateConstant() + "." + esField, criterionOperator, argument, false));
           }
         QueryBuilder query = QueryBuilders.boolQuery().filter(QueryBuilders.nestedQuery("complexFields", actualQuery, ScoreMode.Total));
+        log.info("RAJ K query {}", query.toString());
         return query;
       }
 
