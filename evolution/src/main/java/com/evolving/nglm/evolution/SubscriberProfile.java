@@ -731,7 +731,6 @@ public abstract class SubscriberProfile
                         if (subfieldMetricHistory != null)
                           {
                             JSONObject metricJsonObject = getMetricHistoryJSONForComplexSubField(subfield.getSubfieldName(), subfieldMetricHistory, complexObjectType.getComplexObjectTypeID(), complexObjectTypeService);
-                            log.info("RAJ K jsonObject {}", metricJsonObject);
                             for (Object jsonKey : metricJsonObject.keySet())
                               {
                                 if (jsonKey instanceof String)
