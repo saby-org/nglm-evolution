@@ -737,7 +737,7 @@ public abstract class SubscriberProfile
                                 if (jsonKey instanceof String)
                                   {
                                     Number meTricValue =  (Number) metricJsonObject.get(jsonKey);
-                                    if (meTricValue != null) subfieldJSONMap.put(subfield.getSubfieldName().concat(".").concat(jsonKey.toString()), meTricValue);
+                                    if (meTricValue != null) subfieldJSONMap.put(subfield.getSubfieldName().concat("_").concat(jsonKey.toString()), meTricValue);
                                   }
                               }
                           }

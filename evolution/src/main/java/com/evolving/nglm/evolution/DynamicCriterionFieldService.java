@@ -598,7 +598,7 @@ public class DynamicCriterionFieldService extends GUIService
                 criterionFieldJSONMAP.put("excludedOperators", null);
                 criterionFieldJSONMAP.put("includedComparableFields", null); 
                 criterionFieldJSONMAP.put("excludedComparableFields", null);
-                criterionFieldJSONMAP.put("esField", subfield.getValue().getSubfieldName().concat(".").concat(String.valueOf(daysKPI).concat("D"))); //RAJ K todo
+                criterionFieldJSONMAP.put("esField", subfield.getValue().getSubfieldName().concat("_").concat(String.valueOf(daysKPI).concat("D"))); //RAJ K todo
                 
                 //
                 //  criterionFieldJSON
@@ -632,7 +632,7 @@ public class DynamicCriterionFieldService extends GUIService
                 criterionFieldJSONMAP.put("excludedOperators", null);
                 criterionFieldJSONMAP.put("includedComparableFields", null); 
                 criterionFieldJSONMAP.put("excludedComparableFields", null);
-                criterionFieldJSONMAP.put("esField", subfield.getValue().getSubfieldName().concat(".").concat(String.valueOf(monthKPIs).concat("M"))); //RAJ K todo
+                criterionFieldJSONMAP.put("esField", subfield.getValue().getSubfieldName().concat("_").concat(String.valueOf(monthKPIs).concat("M"))); //RAJ K todo
                 
                 //
                 //  criterionFieldJSON
