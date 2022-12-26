@@ -25498,7 +25498,8 @@ public class GUIManager
    //  cancellable offer
    //
    
-   Offer offer = offerService.getActiveOffer(purchaseFulfillmentRequest.getOfferID(), now);   
+   GUIManagedObject offerUnchecked = offerService.getStoredGUIManagedObject(purchaseFulfillmentRequest.getOfferID(), true);
+   Offer offer = (offerUnchecked != null && offerUnchecked.getAccepted()) ? (Offer) offerUnchecked : null;
    if (offer != null && offer.getCancellable())
      {
        PurchaseFulfillmentRequest purchaseResponse = purchaseOffer(subscriberProfile, true, subscriberID, purchaseFulfillmentRequest.getOfferID(), purchaseFulfillmentRequest.getSalesChannelID(), purchaseFulfillmentRequest.getQuantity(), moduleID, featureID, origin, purchaseFulfillmentRequest.getResellerID(), kafkaProducer, cancelledDeliveryRequestID, true, purchaseFulfillmentRequest.getCreationDate(), purchaseFulfillmentRequest.getVoucherDeliveries());
@@ -25507,7 +25508,7 @@ public class GUIManager
      }
    else
      {
-       response.put("responseCode", "offer is not cancellable");
+       response.put("responseCode", "offer is not cancellable or available");
      }
    return JSONUtilities.encodeObject(response);
  }
