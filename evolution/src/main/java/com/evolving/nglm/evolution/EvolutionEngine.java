@@ -1952,6 +1952,12 @@ public class EvolutionEngine
     case Delete: // Delete is useful for SubscriberManager, not really for Evolution Engine
     case DeleteImmediate: // DeleteImmediate is useful for SubscriberManager, not really for Evolution Engine
       if (previousSubscriberState == null) { return null; }
+      
+      // add a TimedEvaluation event to complete the process immediately - EVPRO-1704
+      TimedEvaluation deltimed = new TimedEvaluation(subscriberState.getSubscriberID(), SystemTime.getCurrentTime(), "deleteImmediate-1-" + subscriberProfile.getSubscriberID());
+      subscriberState.getScheduledEvaluations().add(deltimed);
+      updateScheduledEvaluations(scheduledEvaluationsBefore, subscriberState.getScheduledEvaluations());
+      
       SubscriberState.stateStoreSerde().setKafkaRepresentation(Deployment.getSubscriberStateChangeLogTopic(), subscriberState);
       evolutionHackyEvent.enrichWithContext(context);// filter output based on this
       return subscriberState;
