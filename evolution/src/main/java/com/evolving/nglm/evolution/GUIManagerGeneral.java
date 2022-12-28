@@ -1988,6 +1988,12 @@ JSONObject processAdvancedSearch(String userID, JSONObject jsonRoot, int tenantI
         String idString = complexObjectTypeService.generateComplexObjectTypeID();
         jsonRoot.put("id", idString);
       }
+    
+    //
+    // complex object is not editable
+    //
+    
+    jsonRoot.put("readOnly", Boolean.TRUE);
 
     /*****************************************
     *
