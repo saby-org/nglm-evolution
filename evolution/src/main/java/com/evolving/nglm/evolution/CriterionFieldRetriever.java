@@ -16,6 +16,7 @@ import com.evolving.nglm.evolution.LoyaltyProgramHistory.TierHistory;
 import com.evolving.nglm.evolution.LoyaltyProgramMission.MissionStep;
 import com.evolving.nglm.evolution.LoyaltyProgramMissionHistory.StepHistory;
 import com.evolving.nglm.evolution.LoyaltyProgramPoints.Tier;
+import com.evolving.nglm.evolution.MetricHistory.MetricHistoryMode;
 import com.evolving.nglm.evolution.SubscriberPredictions.Prediction;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectException;
 import com.evolving.nglm.evolution.complexobjects.ComplexObjectInstance;
@@ -1759,6 +1760,103 @@ public abstract class CriterionFieldRetriever
           }
       }
     return result;   
+  }
+  
+  public static Object getComplexObjectMetricHistory(SubscriberEvaluationRequest evaluationRequest, String fieldName, List<Object> subcriteriaVal) throws CriterionException
+  {
+    Long result = null;
+    
+    //
+    //  fieldName = complex.calldestination.3162.Call Amount.5.3.days
+    //  fieldName = complex.calldestination.3162.Call Amount.5.3.months
+    //
+    
+    String[] split = fieldName.split("\\.");
+    boolean invalidFieldName = split.length != 7 || !split[0].equals("complex");
+    if (invalidFieldName)
+      {
+        throw new CriterionException("field " + fieldName + " can't be handled");
+      }
+    else
+      {
+        String complexObjectTypeName = split[1];
+        String elementID = (String) subcriteriaVal.get(0);
+        String subfieldName = split[3];
+        SubscriberProfile subscriberProfile = evaluationRequest.getSubscriberProfile();
+        
+        //
+        //  metric
+        //
+        
+        int metricLastN = Integer.parseInt(split[5]);
+        String metricLastUnit = split[6];
+        MetricHistory complexMetricHistory = null;
+        try
+          {
+            complexMetricHistory = ComplexObjectUtils.getComplexObjectMetricHistory(subscriberProfile, complexObjectTypeName, elementID, subfieldName);
+          } 
+        catch (ComplexObjectException e)
+          {
+            e.printStackTrace();
+          }
+        if (complexMetricHistory != null) 
+          {
+            switch (metricLastUnit.toLowerCase())
+            {
+              case "days":
+                if (metricLastN > 0)
+                  {
+                    result = getPreviousNDays(complexMetricHistory, evaluationRequest.getEvaluationDate(), metricLastN, subscriberProfile.getTenantID());
+                  }
+                else
+                  {
+                    result = complexMetricHistory.getToday(evaluationRequest.getEvaluationDate());
+                  }
+                break;
+                
+              case "months":
+                if (metricLastN > 0)
+                  {
+                    result = getPreviousNMonths(complexMetricHistory, evaluationRequest.getEvaluationDate(), metricLastN, subscriberProfile.getTenantID());
+                  }
+                else
+                  {
+                    result = complexMetricHistory.getThisMonth(evaluationRequest.getEvaluationDate());
+                  }
+                break;
+
+              default:
+                throw new CriterionException("invalide metricHistory unint " + metricLastUnit +" supports days/months");
+            }
+          }
+      
+      }
+    return result;   
+  }
+  
+  //
+  //  getPreviousNDays
+  //
+
+  static Long getPreviousNDays(final MetricHistory complexMetricHistory, Date evaluationDate, int metricLastN, int tenantID)
+  {
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getDeployment(tenantID).getTimeZone());
+    Date startDay = RLMDateUtils.addDays(day, -metricLastN, Deployment.getDeployment(tenantID).getTimeZone());
+    Date endDay = RLMDateUtils.addDays(day, -1, Deployment.getDeployment(tenantID).getTimeZone());
+    return complexMetricHistory.getValue(startDay, endDay);
+  }
+  
+  //
+  //  getPreviousNMonth
+  //
+
+  public static Long getPreviousNMonths(final MetricHistory complexMetricHistory, Date evaluationDate, int metricLastN, int tenantID)
+  {
+    Date day = RLMDateUtils.truncate(evaluationDate, Calendar.DATE, Deployment.getDeployment(tenantID).getTimeZone());
+    Date startOfMonth = RLMDateUtils.truncate(day, Calendar.MONTH, Deployment.getDeployment(tenantID).getTimeZone()); 
+    Date startDay = RLMDateUtils.addMonths(startOfMonth, -metricLastN, Deployment.getDeployment(tenantID).getTimeZone());
+    Date endDay = RLMDateUtils.addDays(startOfMonth, -1, Deployment.getDeployment(tenantID).getTimeZone());
+    return complexMetricHistory.getValue(startDay, endDay);
   }
 
   /*****************************************

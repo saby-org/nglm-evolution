@@ -8,6 +8,7 @@ package com.evolving.nglm.evolution.complexobjects;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -26,6 +27,7 @@ import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.SchemaUtilities;
 import com.evolving.nglm.core.SystemTime;
 import com.evolving.nglm.evolution.EvaluationCriterion.CriterionDataType;
+import com.evolving.nglm.evolution.MetricHistory;
 import com.evolving.nglm.evolution.datamodel.DataModelFieldValue;
 
 public class ComplexObjectInstance
@@ -61,6 +63,7 @@ public class ComplexObjectInstance
     schemaBuilder.field("complexObjectTypeID", Schema.STRING_SCHEMA);
     schemaBuilder.field("elementID", Schema.STRING_SCHEMA);
     schemaBuilder.field("fieldValues", Schema.BYTES_SCHEMA);
+    schemaBuilder.field("metricHistories", SchemaBuilder.map(Schema.STRING_SCHEMA, MetricHistory.schema()).name("subscriber_complex_histories").schema());
     schema = schemaBuilder.build();
   };
 
@@ -86,6 +89,7 @@ public class ComplexObjectInstance
   private String complexObjectTypeID;
   private String elementID;
   private Map<String, DataModelFieldValue> fieldValues; // key is the fieldName
+  private Map<String, MetricHistory> metricHistories; // key is the fieldName
 
   // internal, to avoid un-needed deserialization/serialization
   private boolean modified=false;
@@ -103,15 +107,23 @@ public class ComplexObjectInstance
     modified=true;
     return getFieldValuesReadOnly();
   }
+
   // setter will always modify
-  public void setFieldValues(Map<String, DataModelFieldValue> fieldValues) {
-    modified=true;
+  public void setFieldValues(Map<String, DataModelFieldValue> fieldValues)
+  {
+    modified = true;
     this.fieldValues = fieldValues;
   }
 
   // normal getters
   public String getComplexObjectTypeID() { return complexObjectTypeID; }
   public String getElementID() { return elementID; }
+  public Map<String, MetricHistory> getMetricHistories() { return metricHistories; }
+  public Map<String, MetricHistory> initAndGetMetricHistories()
+  {
+    this.metricHistories = new HashMap<String, MetricHistory>();
+    return metricHistories;
+  }
 
   /*****************************************
   *
@@ -132,10 +144,11 @@ public class ComplexObjectInstance
   *
   *****************************************/
 
-  public ComplexObjectInstance(String complexObjectTypeID, String elementID, byte[] fieldValues)
+  public ComplexObjectInstance(String complexObjectTypeID, String elementID, byte[] fieldValues, Map<String,MetricHistory> metricHistories)
   {
     this(complexObjectTypeID,elementID);
     this.byteRepresentation = fieldValues;// keep only byte representation, will be unpack only "on demand"
+    this.metricHistories = metricHistories;
   }
 
   /*****************************************
@@ -152,6 +165,7 @@ public class ComplexObjectInstance
     struct.put("complexObjectTypeID", complexObjectInstance.getComplexObjectTypeID());
     struct.put("elementID", complexObjectInstance.getElementID());
     struct.put("fieldValues", complexObjectInstance.serializeFields());
+    struct.put("metricHistories", packMetricHistories(complexObjectInstance.getMetricHistories()));
     return struct;
   }
   
@@ -179,12 +193,51 @@ public class ComplexObjectInstance
     String complexObjectTypeID = valueStruct.getString("complexObjectTypeID");
     String elementID = valueStruct.getString("elementID");
     byte[] fieldValues = valueStruct.getBytes("fieldValues");
+    Map<String,MetricHistory> metricHistories = schema.field("metricHistories") != null ? unpackMetricHistories(schema.field("metricHistories").schema(), (Map<String,Object>) valueStruct.get("metricHistories")): Collections.<String,MetricHistory>emptyMap();
     
     //
     //  return
     //
 
-    return new ComplexObjectInstance(complexObjectTypeID, elementID, fieldValues);
+    return new ComplexObjectInstance(complexObjectTypeID, elementID, fieldValues, metricHistories);
+  }
+  
+  public static Map<String,Object> packMetricHistories(Map<String,MetricHistory> metricHistories)
+  {
+    Map<String,Object> result = new HashMap<String,Object>();
+    if (metricHistories != null)
+      {
+        for (String subfieldName : metricHistories.keySet())
+          {
+            result.put(subfieldName, MetricHistory.pack(metricHistories.get(subfieldName)));
+          }
+      }
+    return result;
+  }
+  
+  private static Map<String,MetricHistory> unpackMetricHistories(Schema schema, Map<String,Object> value)
+  {
+    //
+    //  get schema for ScoreBalances
+    //
+
+    Schema metricHistoriesSchema = schema.valueSchema();
+
+    //
+    //  unpack
+    //
+
+    Map<String,MetricHistory> result = new HashMap<>();
+    for (String key : value.keySet())
+      {
+        result.put(key, MetricHistory.unpack(new SchemaAndValue(metricHistoriesSchema, value.get(key))));
+      }
+
+    //
+    //  return
+    //
+
+    return result;
   }
 
   /*****************************************

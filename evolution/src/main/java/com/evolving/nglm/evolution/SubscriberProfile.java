@@ -697,6 +697,7 @@ public abstract class SubscriberProfile
             Map<String, Object> subfieldJSONMap = new HashMap<String, Object>();
             for (ComplexObjectTypeSubfield subfield : complexObjectType.getSubfields().values())
               {
+                boolean metricField = false;
                 Object value = null;
                 try
                   {
@@ -723,6 +724,23 @@ public abstract class SubscriberProfile
                       case StringSetCriterion:
                         value = ComplexObjectUtils.getComplexObjectStringSet(this, complexObjectType.getGUIManagedObjectName(), element, subfield.getSubfieldName());
                         break;
+                        
+                      case MetricHistoryCriterion:
+                        metricField = true;
+                        MetricHistory subfieldMetricHistory = ComplexObjectUtils.getComplexObjectMetricHistory(this, complexObjectType.getGUIManagedObjectName(), element, subfield.getSubfieldName());
+                        if (subfieldMetricHistory != null)
+                          {
+                            JSONObject metricJsonObject = getMetricHistoryJSONForComplexSubField(subfield.getSubfieldName(), subfieldMetricHistory, complexObjectType.getComplexObjectTypeID(), complexObjectTypeService);
+                            for (Object jsonKey : metricJsonObject.keySet())
+                              {
+                                if (jsonKey instanceof String)
+                                  {
+                                    Number meTricValue =  (Number) metricJsonObject.get(jsonKey);
+                                    if (meTricValue != null) subfieldJSONMap.put(subfield.getSubfieldName().concat("_").concat(jsonKey.toString()), meTricValue);
+                                  }
+                              }
+                          }
+                        break;
 
                       default:
                         log.error("invalid data type {} for sub field {}", subfield.getCriterionDataType(), subfield.getSubfieldName());
@@ -733,7 +751,7 @@ public abstract class SubscriberProfile
                   {
                     log.error("ComplexObjectException {}", e.getMessage());
                   }
-                if (value != null) subfieldJSONMap.put(subfield.getSubfieldName(), value);
+                if (!metricField && value != null) subfieldJSONMap.put(subfield.getSubfieldName(), value);
               }
             if (!subfieldJSONMap.isEmpty()) elementJSONMAP.put(element, JSONUtilities.encodeObject(subfieldJSONMap));
           }
@@ -1309,6 +1327,15 @@ public abstract class SubscriberProfile
                         elementVal.put(entry.getKey(), currVal);
                       }
                   }
+                if (instance.getMetricHistories() != null)
+                  {
+                    for (String subfield : instance.getMetricHistories().keySet())
+                      {
+                        MetricHistory subfieldMetricHistory = instance.getMetricHistories().get(subfield);
+                        JSONObject metricJSONVal = getMetricHistoryJSONForComplexSubField(subfield, subfieldMetricHistory, instance.getComplexObjectTypeID(), complexObjectTypeService);
+                        elementVal.put(subfield, metricJSONVal.toJSONString());
+                      }
+                  }
 
               }
             else
@@ -1515,6 +1542,61 @@ public abstract class SubscriberProfile
   //  getProfileMapForThirdPartyPresentation
   //
 
+  private JSONObject getMetricHistoryJSONForComplexSubField(String subfield, MetricHistory subfieldMetricHistory, String complexObjectTypeID, ComplexObjectTypeService complexObjectTypeService)
+  {
+    Map<String, Object> metricJSONMap = new HashMap<String, Object>();
+    Date now = SystemTime.getCurrentTime();
+    ComplexObjectType complexObjectType = complexObjectTypeService.getActiveComplexObjectType(complexObjectTypeID, now);
+    if (complexObjectType != null)
+      {
+        ComplexObjectTypeSubfield complexObjectTypeSubfield = complexObjectType.getSubfields().values().stream().filter(subfld -> subfld.getSubfieldName().equals(subfield)).findFirst().orElse(null);
+        if (complexObjectTypeSubfield != null)
+          {
+            JSONObject subfieldJSON = (JSONObject) JSONUtilities.decodeJSONArray(complexObjectType.getJSONRepresentation(), "subfields", true).stream().filter(subfldJSON -> complexObjectTypeSubfield.getSubfieldName().equals(JSONUtilities.decodeString((JSONObject)subfldJSON, "subfieldName", true))).findFirst().orElse(null);
+            if (subfieldJSON != null)
+              {
+                JSONObject kpisJSON = JSONUtilities.decodeJSONObject(subfieldJSON, "kpis", true);
+                Set<Long> daysKPIs = (Set<Long>) JSONUtilities.decodeJSONArray(kpisJSON, "days").stream().map(intval -> Long.valueOf((Long) intval)).sorted().collect(Collectors.toSet());
+                Set<Long> monthsKPIs = (Set<Long>) JSONUtilities.decodeJSONArray(kpisJSON, "months").stream().map(intval -> Long.valueOf((Long) intval)).sorted().collect(Collectors.toSet());
+                if (subfieldMetricHistory != null) 
+                  {
+                    //
+                    //  daysKPIs
+                    //
+                    
+                    for (Long metricLastN : daysKPIs)
+                      {
+                        if (metricLastN > 0)
+                          {
+                            metricJSONMap.put(metricLastN.toString().concat("D"), CriterionFieldRetriever.getPreviousNDays(subfieldMetricHistory, now, metricLastN.intValue(), getTenantID()));
+                          }
+                        else
+                          {
+                            metricJSONMap.put(metricLastN.toString().concat("D"), subfieldMetricHistory.getToday(now));
+                          }
+                      }
+                    
+                    //
+                    //  monthsKPIs
+                    //
+                    
+                    for (Long metricLastN : monthsKPIs)
+                      {
+                        if (metricLastN > 0)
+                          {
+                            metricJSONMap.put(metricLastN.toString().concat("M"), CriterionFieldRetriever.getPreviousNMonths(subfieldMetricHistory, now, metricLastN.intValue(), getTenantID()));
+                          }
+                        else
+                          {
+                            metricJSONMap.put(metricLastN.toString().concat("M"), subfieldMetricHistory.getThisMonth(now));
+                          }
+                      }
+                  }
+              }
+          }
+      }
+    return JSONUtilities.encodeObject(metricJSONMap);
+  }
   public Map<String,Object> getProfileMapForThirdPartyPresentation(SubscriberProfileService subscriberProfileService, SegmentationDimensionService segmentationDimensionService, ReferenceDataReader<String,SubscriberGroupEpoch> subscriberGroupEpochReader, ExclusionInclusionTargetService exclusionInclusionTargetService, LoyaltyProgramService loyaltyProgramService)
   {
     HashMap<String, Object> baseProfilePresentation = new HashMap<String,Object>();

@@ -14,6 +14,8 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.json.simple.JSONArray;
@@ -539,6 +541,7 @@ public class DynamicCriterionFieldService extends GUIService
     
     for(Map.Entry<Integer, ComplexObjectTypeSubfield> subfield : complexObjectType.getSubfields().entrySet())
       {
+        boolean metricHistoryType = false;
         String criteriaID = "complex" + "." + complexObjectType.getGUIManagedObjectName() + "." + subfield.getValue().getPrivateID() + "." + subfield.getValue().getSubfieldName() + "." + complexObjectType.getGUIManagedObjectID();
         String criteriaDisplay = complexObjectType.getGUIManagedObjectDisplay() + " - " + subfield.getValue().getSubfieldName();
         String retriever = null;
@@ -564,43 +567,126 @@ public class DynamicCriterionFieldService extends GUIService
             retriever = "getComplexObjectStringSet";
             break;
             
+          case MetricHistoryCriterion :
+            retriever = "getComplexObjectMetricHistory";
+            metricHistoryType = true;
+            break;
+            
           default:
             log.warn("ComplexObjectType: Unsupported CriterionDataType " + subfield.getValue().getCriterionDataType());
-            throw new GUIManagerException("ComplexObjectType: Unsupported CriterionDataType ", subfield.getValue().getCriterionDataType().getExternalRepresentation());
+            
         }
         
-        Map<String, Object> criterionFieldJSONMAP = new LinkedHashMap<String, Object>();
-        criterionFieldJSONMAP.put("id", criteriaID);
-        criterionFieldJSONMAP.put("display", criteriaDisplay);
-        criterionFieldJSONMAP.put("dataType", subfield.getValue().getCriterionDataType().getExternalRepresentation());
-        //criterionFieldJSONMAP.put("tagMaxLength", 100);
-        //criterionFieldJSONMAP.put("esField", esField);
-        criterionFieldJSONMAP.put("retriever", retriever);
-        criterionFieldJSONMAP.put("subcriteria", JSONUtilities.encodeArray(subcriteriaJSONArray));
-        criterionFieldJSONMAP.put("tagFormat", null);
-        criterionFieldJSONMAP.put("includedOperators", null);
-        criterionFieldJSONMAP.put("excludedOperators", null);
-        criterionFieldJSONMAP.put("includedComparableFields", null); 
-        criterionFieldJSONMAP.put("excludedComparableFields", null);
-        criterionFieldJSONMAP.put("esField",subfield.getValue().getSubfieldName());
-        
-        //
-        //  criterionFieldJSON
-        //
-        
-        JSONObject criterionFieldJSON = JSONUtilities.encodeObject(criterionFieldJSONMAP);
-        
-        //
-        //  criterionField
-        //
-        
-        DynamicCriterionField criterionField = new DynamicCriterionField(complexObjectType, criterionFieldJSON, tenantID);
-        
-        //
-        //  put
-        //
+        if (metricHistoryType)
+          {
+            JSONObject subfieldJSON = (JSONObject) JSONUtilities.decodeJSONArray(complexObjectType.getJSONRepresentation(), "subfields", true).stream().filter(subfldJSON -> subfield.getValue().getSubfieldName().equals(JSONUtilities.decodeString((JSONObject)subfldJSON, "subfieldName", true))).findFirst().orElse(null);
+            JSONObject kpisJSON = JSONUtilities.decodeJSONObject(subfieldJSON, "kpis", true);
+            Set<Long> daysKPIs = (Set<Long>) JSONUtilities.decodeJSONArray(kpisJSON, "days").stream().map(intval -> Long.valueOf((Long) intval)).collect(Collectors.toSet());
+            Set<Long> monthsKPIs = (Set<Long>) JSONUtilities.decodeJSONArray(kpisJSON, "months").stream().map(intval -> Long.valueOf((Long) intval)).collect(Collectors.toSet());
+            
+            for (Long daysKPI : daysKPIs)
+              {
+                Map<String, Object> criterionFieldJSONMAP = new LinkedHashMap<String, Object>();
+                criterionFieldJSONMAP.put("id", criteriaID.concat(".").concat(String.valueOf(daysKPI)).concat(".").concat("days"));
+                criterionFieldJSONMAP.put("display", criteriaDisplay.concat(" Last-").concat(String.valueOf(daysKPI).concat("Days")));
+                if (daysKPI == 0) criterionFieldJSONMAP.put("display", criteriaDisplay.concat(" Today"));
+                criterionFieldJSONMAP.put("dataType", "integer");
+                criterionFieldJSONMAP.put("retriever", retriever);
+                criterionFieldJSONMAP.put("subcriteria", JSONUtilities.encodeArray(subcriteriaJSONArray));
+                criterionFieldJSONMAP.put("tagFormat", null);
+                criterionFieldJSONMAP.put("includedOperators", null);
+                criterionFieldJSONMAP.put("excludedOperators", null);
+                criterionFieldJSONMAP.put("includedComparableFields", null); 
+                criterionFieldJSONMAP.put("excludedComparableFields", null);
+                criterionFieldJSONMAP.put("esField", subfield.getValue().getSubfieldName().concat("_").concat(String.valueOf(daysKPI).concat("D")));
+                
+                //
+                //  criterionFieldJSON
+                //
+                
+                JSONObject criterionFieldJSON = JSONUtilities.encodeObject(criterionFieldJSONMAP);
+                
+                //
+                //  criterionField
+                //
+                
+                DynamicCriterionField criterionField = new DynamicCriterionField(complexObjectType, criterionFieldJSON, tenantID);
+                
+                //
+                //  put
+                //
 
-        putGUIManagedObject(criterionField, SystemTime.getCurrentTime(), newComplexObjectType, null);
+                putGUIManagedObject(criterionField, SystemTime.getCurrentTime(), newComplexObjectType, null);
+              }
+            for (Long monthKPIs : monthsKPIs)
+              {
+                Map<String, Object> criterionFieldJSONMAP = new LinkedHashMap<String, Object>();
+                criterionFieldJSONMAP.put("id", criteriaID.concat(".").concat(String.valueOf(monthKPIs)).concat(".").concat("months"));
+                criterionFieldJSONMAP.put("display", criteriaDisplay.concat(" Last-").concat(String.valueOf(monthKPIs).concat("Months")));
+                if (monthKPIs == 0) criterionFieldJSONMAP.put("display", criteriaDisplay.concat(" ThisMonth"));
+                criterionFieldJSONMAP.put("dataType", "integer");
+                criterionFieldJSONMAP.put("retriever", retriever);
+                criterionFieldJSONMAP.put("subcriteria", JSONUtilities.encodeArray(subcriteriaJSONArray));
+                criterionFieldJSONMAP.put("tagFormat", null);
+                criterionFieldJSONMAP.put("includedOperators", null);
+                criterionFieldJSONMAP.put("excludedOperators", null);
+                criterionFieldJSONMAP.put("includedComparableFields", null); 
+                criterionFieldJSONMAP.put("excludedComparableFields", null);
+                criterionFieldJSONMAP.put("esField", subfield.getValue().getSubfieldName().concat("_").concat(String.valueOf(monthKPIs).concat("M")));
+                
+                //
+                //  criterionFieldJSON
+                //
+                
+                JSONObject criterionFieldJSON = JSONUtilities.encodeObject(criterionFieldJSONMAP);
+                
+                //
+                //  criterionField
+                //
+                
+                DynamicCriterionField criterionField = new DynamicCriterionField(complexObjectType, criterionFieldJSON, tenantID);
+                
+                //
+                //  put
+                //
+
+                putGUIManagedObject(criterionField, SystemTime.getCurrentTime(), newComplexObjectType, null);
+              }
+            
+          }
+        else
+          {
+            Map<String, Object> criterionFieldJSONMAP = new LinkedHashMap<String, Object>();
+            criterionFieldJSONMAP.put("id", criteriaID);
+            criterionFieldJSONMAP.put("display", criteriaDisplay);
+            criterionFieldJSONMAP.put("dataType", subfield.getValue().getCriterionDataType().getExternalRepresentation());
+            criterionFieldJSONMAP.put("retriever", retriever);
+            criterionFieldJSONMAP.put("subcriteria", JSONUtilities.encodeArray(subcriteriaJSONArray));
+            criterionFieldJSONMAP.put("tagFormat", null);
+            criterionFieldJSONMAP.put("includedOperators", null);
+            criterionFieldJSONMAP.put("excludedOperators", null);
+            criterionFieldJSONMAP.put("includedComparableFields", null); 
+            criterionFieldJSONMAP.put("excludedComparableFields", null);
+            criterionFieldJSONMAP.put("esField", subfield.getValue().getSubfieldName());
+            
+            //
+            //  criterionFieldJSON
+            //
+            
+            JSONObject criterionFieldJSON = JSONUtilities.encodeObject(criterionFieldJSONMAP);
+            
+            //
+            //  criterionField
+            //
+            
+            DynamicCriterionField criterionField = new DynamicCriterionField(complexObjectType, criterionFieldJSON, tenantID);
+            
+            //
+            //  put
+            //
+
+            putGUIManagedObject(criterionField, SystemTime.getCurrentTime(), newComplexObjectType, null);
+          }
       }
   }
 
@@ -615,10 +701,32 @@ public class DynamicCriterionFieldService extends GUIService
     ComplexObjectType complexObjectType = (ComplexObjectType) guiManagedObject;
     for(Map.Entry<Integer, ComplexObjectTypeSubfield> subfield : complexObjectType.getSubfields().entrySet())
       {
-        String criteriaID = "complex" + "." + complexObjectType.getGUIManagedObjectName() + "." + subfield.getValue().getPrivateID() + "." + subfield.getValue().getSubfieldName() + "." + complexObjectType.getGUIManagedObjectID();
-        GUIManagedObject guiManagedObjectCrt = getStoredDynamicCriterionField(criteriaID);
-        if (guiManagedObjectCrt != null) removeGUIManagedObject(criteriaID, SystemTime.getCurrentTime(), null, guiManagedObject.getTenantID());
-        
+        String nonMetricCriteriaID = "complex" + "." + complexObjectType.getGUIManagedObjectName() + "." + subfield.getValue().getPrivateID() + "." + subfield.getValue().getSubfieldName() + "." + complexObjectType.getGUIManagedObjectID();
+        if (subfield.getValue().getCriterionDataType() == CriterionDataType.MetricHistoryCriterion)
+          {
+            JSONObject subfieldJSON = (JSONObject) JSONUtilities.decodeJSONArray(complexObjectType.getJSONRepresentation(), "subfields", true).stream().filter(subfldJSON -> subfield.getValue().getSubfieldName().equals(JSONUtilities.decodeString((JSONObject)subfldJSON, "subfieldName", true))).findFirst().orElse(null);
+            JSONObject kpisJSON = JSONUtilities.decodeJSONObject(subfieldJSON, "kpis", true);
+            Set<Long> daysKPIs = (Set<Long>) JSONUtilities.decodeJSONArray(kpisJSON, "days").stream().map(intval -> Long.valueOf((Long) intval)).collect(Collectors.toSet());
+            Set<Long> monthsKPIs = (Set<Long>) JSONUtilities.decodeJSONArray(kpisJSON, "months").stream().map(intval -> Long.valueOf((Long) intval)).collect(Collectors.toSet());
+            
+            for (Long daysKPI : daysKPIs)
+            {
+              String metricCriteriaID = nonMetricCriteriaID.concat(".").concat(String.valueOf(daysKPI)).concat(".").concat("days");
+              GUIManagedObject guiManagedObjectCrt = getStoredDynamicCriterionField(metricCriteriaID);
+              if (guiManagedObjectCrt != null) removeGUIManagedObject(metricCriteriaID, SystemTime.getCurrentTime(), null, guiManagedObject.getTenantID());
+            }
+            for (Long monthKPIs : monthsKPIs)
+              {
+                String metricCriteriaID = nonMetricCriteriaID.concat(".").concat(String.valueOf(monthKPIs)).concat(".").concat("months");
+                GUIManagedObject guiManagedObjectCrt = getStoredDynamicCriterionField(metricCriteriaID);
+                if (guiManagedObjectCrt != null) removeGUIManagedObject(metricCriteriaID, SystemTime.getCurrentTime(), null, guiManagedObject.getTenantID());
+              }
+          }
+        else
+          {
+            GUIManagedObject guiManagedObjectCrt = getStoredDynamicCriterionField(nonMetricCriteriaID);
+            if (guiManagedObjectCrt != null) removeGUIManagedObject(nonMetricCriteriaID, SystemTime.getCurrentTime(), null, guiManagedObject.getTenantID());
+          }
       }
   }
   

@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
@@ -316,5 +317,46 @@ public class ComplexObjectType extends GUIManagedObject
         return true;
       }
    }
+  
+  public void validate() throws GUIManagerException
+  {
+    if (subfields != null && !subfields.isEmpty())
+      {
+        List<ComplexObjectTypeSubfield> metricHistorySubfields = subfields.values().stream().filter(subfld -> subfld.getCriterionDataType() == CriterionDataType.MetricHistoryCriterion).collect(Collectors.toList());
+        
+        //
+        //  no of MetricHistory subfields
+        //
+        
+        if (metricHistorySubfields.size() > 2) throw new GUIManagerException("Complex Object " + getGUIManagedObjectDisplay() + " has " + metricHistorySubfields.size() + " MetricHistory subfield but supports max 2", String.valueOf(metricHistorySubfields.size()));
+        for (ComplexObjectTypeSubfield complexObjectTypeSubfield : metricHistorySubfields)
+          {
+            JSONObject subfieldJSON = (JSONObject) JSONUtilities.decodeJSONArray(getJSONRepresentation(), "subfields", true).stream().filter(subfldJSON -> complexObjectTypeSubfield.getSubfieldName().equals(JSONUtilities.decodeString((JSONObject)subfldJSON, "subfieldName", true))).findFirst().orElse(null);
+            if (subfieldJSON != null)
+              {
+                JSONObject kpisJSON = JSONUtilities.decodeJSONObject(subfieldJSON, "kpis", true);
+                Set<Long> daysKPIs = (Set<Long>) JSONUtilities.decodeJSONArray(kpisJSON, "days").stream().map(intval -> Long.valueOf((Long) intval)).collect(Collectors.toSet());
+                Set<Long> monthsKPIs = (Set<Long>) JSONUtilities.decodeJSONArray(kpisJSON, "months").stream().map(intval -> Long.valueOf((Long) intval)).collect(Collectors.toSet());
+                
+                if (daysKPIs.size() + monthsKPIs.size() < 1 || daysKPIs.size() + monthsKPIs.size() > 10 )
+                  {
+                    log.error(complexObjectTypeSubfield.getSubfieldName() + " - metricHistory supports max 10KPIs and min 1KPIs");
+                    throw new GUIManagerException("ComplexObjectType: Unsupported metricHistory for " + complexObjectTypeSubfield.getSubfieldName() +" - supports max 10KPIs", complexObjectTypeSubfield.getSubfieldName());
+                  }
+                if (daysKPIs.stream().mapToLong(x -> x).max().orElse(-1L) > 90L)
+                  {
+                    log.error(complexObjectTypeSubfield.getSubfieldName() + " - metricHistory supports max daysKPIs as 90");
+                    throw new GUIManagerException("ComplexObjectType: Unsupported metricHistory for " + complexObjectTypeSubfield.getSubfieldName() +" - supports max 90 as daysKPIs value", complexObjectTypeSubfield.getSubfieldName());
+                  }
+                if (monthsKPIs.stream().mapToLong(x -> x).max().orElse(-1L) > 6L)
+                  {
+                    log.error(complexObjectTypeSubfield.getSubfieldName() + " - metricHistory supports max monthsKPIs as 6");
+                    throw new GUIManagerException("ComplexObjectType: Unsupported metricHistory for " + complexObjectTypeSubfield.getSubfieldName() +" - supports max 6 as monthsKPIs value", complexObjectTypeSubfield.getSubfieldName());
+                  }
+              }
+          }
+      }
+    
+  }
 }
 

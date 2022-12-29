@@ -223,7 +223,7 @@ public class GrafanaUtils
                                   } 
                                 else
                                   {
-                                    log.info("contains...");
+                                    log.debug("contains...");
                                   }
                               }
                           } catch (Exception e)
@@ -260,12 +260,14 @@ public class GrafanaUtils
                     if (tenantID == 0)
                       {
                         createDashboardForOrg(elasticsearch, existingOrgs, tenantID, orgID, t0FileNames, exisitingDashBoards);
-                      } else if (tenantID != 0)
+                      } 
+                    else if (tenantID != 0)
                       {
                         if (magDeploy == true)
                           {
                             createDashboardForOrg(elasticsearch, existingOrgs, tenantID, orgID, magFileNames, exisitingDashBoards);
-                          } else
+                          } 
+                        else
                           {
                             createDashboardForOrg(elasticsearch, existingOrgs, tenantID, orgID, nonT0FileNames, exisitingDashBoards);
                           }
@@ -301,7 +303,7 @@ public class GrafanaUtils
             log.debug("GrafanaUtils.prepareGrafanaForTenants: = parsing a Dashboard = " + currentFileName);
             log.trace("GrafanaUtils.prepareGrafanaForTenants ===parsing a Dashboard==== " + currentFileName + "\n" + s);
             JSONObject fulldashboardDef = (JSONObject) (new JSONParser()).parse(s);
-            JSONObject dashboardDef = (JSONObject) fulldashboardDef.get("dashboard");
+            JSONObject dashboardDef = JSONUtilities.decodeJSONObject(fulldashboardDef, "dashboard", true);//                   (JSONObject) fulldashboardDef.get("dashboard");
             String expectedTitle = (String) dashboardDef.get("title");
             String existingUID = exisitingDashBoards.get(expectedTitle);
             String regex = "[ACDEFGHJKMNPQRTWXYacdefghjkmnpqrtwx34679]{15}";
@@ -325,7 +327,7 @@ public class GrafanaUtils
                   }
                 if (response.getStatusLine().getStatusCode() != 200)
                   {
-                    log.warn("Problem while loading dashboard " + expectedTitle + " for organisation orgID, " + orgID + " error code " + response.getStatusLine().getStatusCode() + " response message " + response.getStatusLine().getReasonPhrase());
+                    log.error("Problem while loading dashboard " + expectedTitle + " for organisation orgID " + orgID + " error code " + response.getStatusLine().getStatusCode() + " response message " + response.getStatusLine().getReasonPhrase());
                   }
                 // Then recreate it using a unique uid that starts with t<tenandID>-
                 String newUID = "t" + tenantID + "-" + TokenUtils.generateFromRegex(regex);
@@ -393,7 +395,7 @@ public class GrafanaUtils
               } 
             else
               {
-                log.warn("GrafanaUtils.prepareGrafanaForTenants: Problem while loading Dashboard " + db.getFirstElement() + " for orgID " + orgID + " for dashboard file name " + currentFileName);
+                log.error("GrafanaUtils.prepareGrafanaForTenants: Problem while loading Dashboard from file {}, for tenant {}", currentFileName, tenantID);
               }
           } 
         catch (Exception e)
@@ -638,21 +640,22 @@ public class GrafanaUtils
       }
     if (response.getStatusLine().getStatusCode() != 200)
       {
-        log.warn("GrafanaUtils.prepareGrafanaForTenants: Problem while loading dashboard " + dbDefinition.get("title") + " for organisation orgID, " + orgID + " error code " + response.getStatusLine().getStatusCode() + " response message " + response.getStatusLine().getReasonPhrase());
+        log.error("GrafanaUtils.prepareGrafanaForTenants: Problem while loading dashboard " + dbDefinition.get("title") + " for organisation orgID " + orgID + " error code " + response.getStatusLine().getStatusCode() + " response message " + response.getStatusLine().getReasonPhrase());
         try
           {
             JSONObject responseJson = (JSONObject) (new JSONParser()).parse(EntityUtils.toString(response.getEntity(), "UTF-8"));
-          } catch (ParseException e)
+            log.error("GrafanaUtils.responseJson {}", responseJson);
+          } 
+        catch (ParseException e)
           {
-            // TODO Auto-generated catch block
             e.printStackTrace();
-          } catch (org.json.simple.parser.ParseException e)
+          } 
+        catch (org.json.simple.parser.ParseException e)
           {
-            // TODO Auto-generated catch block
             e.printStackTrace();
-          } catch (IOException e)
+          } 
+        catch (IOException e)
           {
-            // TODO Auto-generated catch block
             e.printStackTrace();
           }
         return null;
@@ -664,7 +667,8 @@ public class GrafanaUtils
         String title = (String) responseJson.get("slug");
         Long id = (Long) responseJson.get("id");
         return new Pair<String, Integer>(title, id != null ? (int) id.longValue() : null);
-      } catch (Exception e)
+      } 
+    catch (Exception e)
       {
         log.warn("GrafanaUtils.prepareGrafanaForTenants: Exception " + e.getClass().getName() + " while loading dashboard " + dbDefinition.get("title") + " for organisation orgID " + orgID, e);
         return null;
