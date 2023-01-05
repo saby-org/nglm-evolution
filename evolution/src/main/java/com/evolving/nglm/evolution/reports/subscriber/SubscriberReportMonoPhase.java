@@ -18,6 +18,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.zip.ZipOutputStream;
 
 import org.elasticsearch.index.query.QueryBuilder;
@@ -51,8 +52,22 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
   private final static int INDEX_SEGMENT_NAME = 1;
   private Map<Integer, Map<String, String>> allDimensionsMapPerTenant = new HashMap<>();
   private List<String> allProfileFields = new ArrayList<>();
-  private static SimpleDateFormat parseSDF1 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");   // TODO EVPRO-99
-  private static SimpleDateFormat parseSDF2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX");   // TODO EVPRO-99
+  public static final ThreadLocal<SimpleDateFormat> parseSDF1_ = ThreadLocal.withInitial(   // TODO EVPRO-99
+      () -> {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
+        sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getDefault().getTimeZone())); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+        return sdf;
+      });
+  
+  public static final ThreadLocal<SimpleDateFormat> parseSDF2_ = ThreadLocal.withInitial(   // TODO EVPRO-99
+      () -> {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX");
+        sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getDefault().getTimeZone())); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+        return sdf;
+      });
+  
+  
+  
   private Map<Integer, Map<String, String>> dimNameDisplayMappingPerTenant = new HashMap<>();
   private int tenantID = 0;
 
@@ -108,7 +123,7 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
           // current format comes from ES and is : 2020-04-20T09:51:38.953Z
           try
           {
-            Date date = parseSDF1.parse(activationDateStr);
+            Date date = parseSDF1_.get().parse(activationDateStr);
             // replace with new value
             result.put(activationDate, ReportsCommonCode.getDateString(date)); 
           }
@@ -117,7 +132,7 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
             // Could also be 2019-11-27 15:39:30.276+0100
             try
             {
-              Date date = parseSDF2.parse(activationDateStr);
+              Date date =  parseSDF2_.get().parse(activationDateStr);
               // replace with new value
               result.put(activationDate, ReportsCommonCode.getDateString(date));
             }
