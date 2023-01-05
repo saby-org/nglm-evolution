@@ -52,9 +52,6 @@ public class SubscriberReportMonoPhase implements ReportCsvFactory {
   private final static int INDEX_SEGMENT_NAME = 1;
   private Map<Integer, Map<String, String>> allDimensionsMapPerTenant = new HashMap<>();
   private List<String> allProfileFields = new ArrayList<>();
-  //private static SimpleDateFormat parseSDF1 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");   // TODO EVPRO-99
-  //private static SimpleDateFormat parseSDF2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX");   // TODO EVPRO-99
-  
   public static final ThreadLocal<SimpleDateFormat> parseSDF1_ = ThreadLocal.withInitial(   // TODO EVPRO-99
       () -> {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
