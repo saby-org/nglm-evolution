@@ -41,7 +41,7 @@ public class OfferTranslation
     SchemaBuilder schemaBuilder = SchemaBuilder.struct();
     schemaBuilder.name("offer_translation");
     schemaBuilder.version(SchemaUtilities.packSchemaVersion(1));
-    schemaBuilder.field("display", Schema.OPTIONAL_STRING_SCHEMA);
+    schemaBuilder.field("display", Schema.STRING_SCHEMA);
     schemaBuilder.field("description", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("imageURL", Schema.OPTIONAL_STRING_SCHEMA);
     schemaBuilder.field("languageID", Schema.OPTIONAL_STRING_SCHEMA);
