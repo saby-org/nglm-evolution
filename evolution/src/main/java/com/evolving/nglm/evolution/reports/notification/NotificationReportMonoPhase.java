@@ -81,9 +81,19 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
   private static final String source = "source";
   private static final String communicationChannel = "communicationChannel";
   private static final String origin = "origin";
+  public static final ThreadLocal<SimpleDateFormat> parseSDF1_ = ThreadLocal.withInitial(   // TODO EVPRO-99
+      () -> {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
+        sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getDefault().getTimeZone())); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+        return sdf;
+      });
   
-  private static SimpleDateFormat parseSDF1 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");   // TODO EVPRO-99
-  private static SimpleDateFormat parseSDF2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX");   // TODO EVPRO-99
+  public static final ThreadLocal<SimpleDateFormat> parseSDF2_ = ThreadLocal.withInitial(   // TODO EVPRO-99
+      () -> {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX");
+        sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getDefault().getTimeZone())); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+        return sdf;
+      });
 
   private static final String messageContent = "messageContent";
   private static final String templateID = "templateID";
@@ -216,14 +226,14 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
                     }else {
 	                    try
 	                    {
-	                      Date date = parseSDF1.parse(creationDateStr);
+	                      Date date = parseSDF1_.get().parse(creationDateStr);
 	                      notifRecs.put(creationDate, ReportsCommonCode.getDateString(date)); // replace with new value
 	                    } catch (ParseException e1)
 	                    {
 	                      // Could also be 2019-11-27 15:39:30.276+0100
 	                      try
 	                      {
-	                        Date date = parseSDF2.parse(creationDateStr);
+	                        Date date = parseSDF2_.get().parse(creationDateStr);
 	                        notifRecs.put(creationDate, ReportsCommonCode.getDateString(date)); // replace with new value
 	                      } catch (ParseException e2)
 	                      {
@@ -255,14 +265,14 @@ public class NotificationReportMonoPhase implements ReportCsvFactory
                     // 2020-04-20T09:51:38.953Z
                     try
                     {
-                      Date date = parseSDF1.parse(deliveryDateStr);
+                      Date date = parseSDF1_.get().parse(deliveryDateStr);
                       notifRecs.put(deliveryDate, ReportsCommonCode.getDateString(date)); // replace with new value
                     } catch (ParseException e1)
                     {
                       // Could also be 2019-11-27 15:39:30.276+0100
                       try
                       {
-                        Date date = parseSDF2.parse(deliveryDateStr);
+                        Date date = parseSDF2_.get().parse(deliveryDateStr);
                         notifRecs.put(deliveryDate, ReportsCommonCode.getDateString(date)); // replace with new value
                       } catch (ParseException e2)
                       {
