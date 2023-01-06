@@ -75,8 +75,19 @@ public class BDRReportMonoPhase implements ReportCsvFactory
   private static final String deliveryRequestID = "deliveryRequestID";
   private static final String originatingDeliveryRequestID = "originatingDeliveryRequestID";
   private static final String eventID = "eventID";
-  private static SimpleDateFormat parseSDF1 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");   // TODO EVPRO-99
-  private static SimpleDateFormat parseSDF2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX");   // TODO EVPRO-99
+  public static final ThreadLocal<SimpleDateFormat> parseSDF1_ = ThreadLocal.withInitial(   // TODO EVPRO-99
+      () -> {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
+        sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getDefault().getTimeZone())); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+        return sdf;
+      });
+  
+  public static final ThreadLocal<SimpleDateFormat> parseSDF2_ = ThreadLocal.withInitial(   // TODO EVPRO-99
+      () -> {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXX");
+        sdf.setTimeZone(TimeZone.getTimeZone(Deployment.getDefault().getTimeZone())); // TODO EVPRO-99 use systemTimeZone instead of baseTimeZone, is it correct or should it be per tenant ???
+        return sdf;
+      });
 
   static List<String> headerFieldsOrder = new ArrayList<String>();
   static
@@ -243,7 +254,7 @@ public class BDRReportMonoPhase implements ReportCsvFactory
                     // 2020-04-20T09:51:38.953Z
                     try
                     {
-                      Date date = parseSDF1.parse(deliverableExpirationDateStr);
+                      Date date = parseSDF1_.get().parse(deliverableExpirationDateStr);
                       bdrRecs.put(deliverableExpirationDate, ReportsCommonCode.getDateString(date)); // replace with new value
                     }
                     catch (ParseException e1)
@@ -251,7 +262,7 @@ public class BDRReportMonoPhase implements ReportCsvFactory
                       // Could also be 2019-11-27 15:39:30.276+0100
                       try
                       {
-                        Date date = parseSDF2.parse(deliverableExpirationDateStr);
+                        Date date = parseSDF2_.get().parse(deliverableExpirationDateStr);
                         bdrRecs.put(deliverableExpirationDate, ReportsCommonCode.getDateString(date)); // replace with new value
                       }
                       catch (ParseException e2)
