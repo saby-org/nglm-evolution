@@ -253,10 +253,9 @@ public class ComplexObjectInstance
     // for each field of this complex object, let switch on each supported datatype and encode a tag/length/value
     // <field_private_ID 2 bytes><length 2 bytes><value>, so overhead of 4 bytes per value
     ComplexObjectType complexObjectType = complexObjectTypeService.getActiveComplexObjectType(complexObjectTypeID, SystemTime.getCurrentTime());
-    if (complexObjectType == null || fieldValues == null)
+    if (complexObjectType == null)
       {
         /* complexObjectType - Should not happen as the detection is done before calling Pack */
-        /* fieldValues - can be null if only metrictype subfield decleared */
         return new byte[] {};
       }
     return serialize(complexObjectType.getSubfields());
@@ -266,6 +265,7 @@ public class ComplexObjectInstance
   {
 
     if(!modified) return byteRepresentation;// no modification happened, just sending pack what we unpacked
+    else if (fieldValues == null) return new byte[] {}; /* fieldValues - can be null if only metrictype subfield decleared */
 
     List<byte[]> resultList = new ArrayList<>(fieldValues.size());
     int finalBytesSize=0;
