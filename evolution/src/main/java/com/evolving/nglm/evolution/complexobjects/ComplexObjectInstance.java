@@ -162,8 +162,8 @@ public class ComplexObjectInstance
   public static Object pack(Object value)
   {
     ComplexObjectInstance complexObjectInstance = (ComplexObjectInstance) value;
+    log.info("RAJ K pack - elementID {}, fieldValues {}", complexObjectInstance.getElementID(), complexObjectInstance.serializeFields());
     Struct struct = new Struct(schema);
-
     struct.put("complexObjectTypeID", complexObjectInstance.getComplexObjectTypeID());
     struct.put("elementID", complexObjectInstance.getElementID());
     struct.put("fieldValues", complexObjectInstance.serializeFields());
