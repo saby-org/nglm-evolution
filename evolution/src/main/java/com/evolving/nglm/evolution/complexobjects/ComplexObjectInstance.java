@@ -125,8 +125,6 @@ public class ComplexObjectInstance
     return metricHistories;
   }
   
-  protected void initModify() { this.modified = true;}
-
   /*****************************************
   *
   * constructor default
@@ -162,7 +160,6 @@ public class ComplexObjectInstance
   public static Object pack(Object value)
   {
     ComplexObjectInstance complexObjectInstance = (ComplexObjectInstance) value;
-    log.info("RAJ K pack - elementID {}, fieldValues {}", complexObjectInstance.getElementID(), complexObjectInstance.serializeFields());
     Struct struct = new Struct(schema);
     struct.put("complexObjectTypeID", complexObjectInstance.getComplexObjectTypeID());
     struct.put("elementID", complexObjectInstance.getElementID());
@@ -265,7 +262,7 @@ public class ComplexObjectInstance
   {
 
     if(!modified) return byteRepresentation;// no modification happened, just sending pack what we unpacked
-    else if (fieldValues == null) return new byte[] {}; /* fieldValues - can be null if only metrictype subfield decleared */
+    else if (fieldValues == null || fieldValues.isEmpty()) return new byte[] {}; /* fieldValues - can be null if only metrictype subfield decleared */
 
     List<byte[]> resultList = new ArrayList<>(fieldValues.size());
     int finalBytesSize=0;
