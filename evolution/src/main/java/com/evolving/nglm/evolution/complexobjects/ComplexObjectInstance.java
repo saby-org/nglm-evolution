@@ -255,8 +255,13 @@ public class ComplexObjectInstance
     // for each field of this complex object, let switch on each supported datatype and encode a tag/length/value
     // <field_private_ID 2 bytes><length 2 bytes><value>, so overhead of 4 bytes per value
     ComplexObjectType complexObjectType = complexObjectTypeService.getActiveComplexObjectType(complexObjectTypeID, SystemTime.getCurrentTime());
-    if(complexObjectType == null) { /*Should not happen as the detection is done before calling Pack */ return new byte[] {}; };
-
+    if (complexObjectType == null || fieldValues == null)
+      {
+        /* complexObjectType - Should not happen as the detection is done before calling Pack */
+        /* fieldValues - can be null if only metrictype subfield decleared */
+        log.info("RAJ K serialize method called - with modified {}", modified);
+        return new byte[] {};
+      }
     log.info("RAJ K serialize method calling - with modified {}", modified);
     return serialize(complexObjectType.getSubfields());
   }
