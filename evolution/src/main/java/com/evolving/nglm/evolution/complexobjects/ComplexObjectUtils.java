@@ -125,6 +125,7 @@ public class ComplexObjectUtils
       }
     if (metrisHistoryValue)
       {
+        instance.initModify();
         long metricValue = ((Number) value).longValue();
         Map<String, MetricHistory> metricHistories = instance.getMetricHistories();
         if (metricHistories == null)

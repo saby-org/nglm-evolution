@@ -124,6 +124,8 @@ public class ComplexObjectInstance
     this.metricHistories = new HashMap<String, MetricHistory>();
     return metricHistories;
   }
+  
+  protected void initModify() { this.modified = true;}
 
   /*****************************************
   *
@@ -249,11 +251,13 @@ public class ComplexObjectInstance
 
   private byte[] serializeFields()
   {
+    log.info("RAJ K serializeFields method called");
     // for each field of this complex object, let switch on each supported datatype and encode a tag/length/value
     // <field_private_ID 2 bytes><length 2 bytes><value>, so overhead of 4 bytes per value
     ComplexObjectType complexObjectType = complexObjectTypeService.getActiveComplexObjectType(complexObjectTypeID, SystemTime.getCurrentTime());
     if(complexObjectType == null) { /*Should not happen as the detection is done before calling Pack */ return new byte[] {}; };
 
+    log.info("RAJ K serialize method calling - with modified {}", modified);
     return serialize(complexObjectType.getSubfields());
   }
 
@@ -413,18 +417,11 @@ public class ComplexObjectInstance
             // nothing to do
           }
       }
-    if (finalBytesSize == 0 || resultList.isEmpty())
-      {
-        return new byte[] {};
-      }
-    else
-      {
-        byte[] result = new byte[finalBytesSize];
-        ByteBuffer buffer = ByteBuffer.wrap(result);
-        for(byte[] toAdd:resultList) buffer.put(toAdd);
-        log.info("RAJ K result {}", result);
-        return result;
-      }
+    byte[] result = new byte[finalBytesSize];
+    ByteBuffer buffer = ByteBuffer.wrap(result);
+    for(byte[] toAdd:resultList) buffer.put(toAdd);
+    log.info("RAJ K result {}", result);
+    return result;
   }
   
   /*****************************************
