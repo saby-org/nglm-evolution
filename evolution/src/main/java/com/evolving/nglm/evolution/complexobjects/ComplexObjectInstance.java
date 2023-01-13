@@ -402,6 +402,7 @@ public class ComplexObjectInstance
                   }          
                 break;
               default:
+                log.info("RAJ K data type {}", fieldType.getCriterionDataType()); // should handle with blank array ??               
                 break;
               }
           }
@@ -414,6 +415,7 @@ public class ComplexObjectInstance
     byte[] result = new byte[finalBytesSize];
     ByteBuffer buffer = ByteBuffer.wrap(result);
     for(byte[] toAdd:resultList) buffer.put(toAdd);
+    log.info("RAJ K result {}", result);
     return result;
   }
   
