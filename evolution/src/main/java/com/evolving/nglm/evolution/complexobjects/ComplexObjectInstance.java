@@ -413,11 +413,18 @@ public class ComplexObjectInstance
             // nothing to do
           }
       }
-    byte[] result = new byte[finalBytesSize];
-    ByteBuffer buffer = ByteBuffer.wrap(result);
-    for(byte[] toAdd:resultList) buffer.put(toAdd);
-    log.info("RAJ K result {}", result);
-    return result;
+    if (finalBytesSize == 0 || resultList.isEmpty())
+      {
+        return new byte[] {};
+      }
+    else
+      {
+        byte[] result = new byte[finalBytesSize];
+        ByteBuffer buffer = ByteBuffer.wrap(result);
+        for(byte[] toAdd:resultList) buffer.put(toAdd);
+        log.info("RAJ K result {}", result);
+        return result;
+      }
   }
   
   /*****************************************
