@@ -117,7 +117,6 @@ public class ComplexObjectUtils
     List<ComplexObjectInstance> instances = profile.getComplexObjectInstances();
     if(instances == null) { instances = new ArrayList<>(); profile.setComplexObjectInstances(instances);}
     
-    log.info("RAJ K setComplexObjectValue {}", value);
     ComplexObjectInstance instance = instances.stream().filter(current -> current.getComplexObjectTypeID().equals(type.getComplexObjectTypeID()) && current.getElementID().equals(elementID)).findAny().orElse(null);
     if(instance == null)
       {
