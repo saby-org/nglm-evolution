@@ -40,6 +40,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
@@ -64,6 +65,8 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.utils.Utils;
@@ -296,6 +299,8 @@ public class EvolutionEngine
   private static PropensityService propensityService;
   private static RetentionService retentionService;
 
+  private static KafkaProducer<byte[], byte[]> kafkaProducer;
+  
   private String evolutionEngineKey;
   public String getEvolutionEngineKey(){return evolutionEngineKey;}
   private static EvolutionEngineEventDeclaration voucherActionEventDeclaration = null;
@@ -416,6 +421,17 @@ public class EvolutionEngine
     //
 
     log.info("main START: {} {} {} {} {}", stateDirectory, bootstrapServers, kafkaStreamsStandbyReplicas, kafkaReplicationFactor);
+    
+    //
+    // kafkaProducer
+    // 
+    
+    Properties producerProperties = new Properties();
+    producerProperties.put("bootstrap.servers", bootstrapServers);
+    producerProperties.put("acks", "all");
+    producerProperties.put("key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
+    producerProperties.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
+    kafkaProducer = new KafkaProducer<byte[], byte[]>(producerProperties);
 
     //
     //  dynamicCriterionFieldsService
@@ -2017,8 +2033,56 @@ public class EvolutionEngine
           CleanupSubscriber cleanupEvent = new CleanupSubscriber(subscriberState.getSubscriberID(), SubscriberAction.DeleteImmediate);
           cleanupEvent.setCleanExtESReady(true);
           subscriberState.getImmediateCleanupActions().add(cleanupEvent);
+          
+          //
+          // remove relationship dependency (for parent only) -- [EVPRO-1724]
+          //
+          
+          Map<String, SubscriberRelatives> subscriberRelations = subscriberProfile.getRelations();
+          for (String relationshipID : subscriberRelations.keySet())
+            {
+              String previousParentSubscriberID = null;
+              SubscriberRelatives relatives = subscriberProfile.getRelations().get(relationshipID);
+              if(relatives != null && relatives.getParentSubscriberID() != null) 
+                {
+                  previousParentSubscriberID = relatives.getParentSubscriberID().substring(0,relatives.getParentSubscriberID().lastIndexOf("@")); // can still be null if undefined (no parent)
+                }
+              
+              if(previousParentSubscriberID != null)
+                {
+                  //
+                  // Delete child for the parent
+                  //
+                  
+                  try
+                    {
+                      JSONObject jsonRoot = new JSONObject();
+
+                      String subscriberProfileForceUpdateRequestID = UUID.randomUUID().toString();
+                      jsonRoot.put("subscriberProfileForceUpdateRequestID", subscriberProfileForceUpdateRequestID);
+                      
+                      jsonRoot.put("subscriberID", previousParentSubscriberID);
+                      SubscriberProfileForceUpdate parentProfileForceUpdate = new SubscriberProfileForceUpdate(jsonRoot);
+                      ParameterMap parentParameterMap = parentProfileForceUpdate.getParameterMap();
+                      parentParameterMap.put("subscriberRelationsUpdateMethod", SubscriberRelationsUpdateMethod.RemoveChild.getExternalRepresentation());
+                      parentParameterMap.put("relationshipID", relationshipID);
+                      parentParameterMap.put("relativeSubscriberID", subscriberProfile.getSubscriberID());
+
+                      //
+                      // submit to kafka
+                      //
+                      
+                      kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(parentProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), parentProfileForceUpdate)));
+                    } 
+                  catch (Exception e)
+                    {
+                      log.error("Exception in removing relationship dependency : {}", e.getMessage());
+                    }
+                }
+            }
         }
     }
+  
   /*****************************************
   *
   * End cleanup section
