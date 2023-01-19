@@ -65,8 +65,6 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.utils.Utils;
@@ -299,8 +297,6 @@ public class EvolutionEngine
   private static PropensityService propensityService;
   private static RetentionService retentionService;
 
-  private static KafkaProducer<byte[], byte[]> kafkaProducer;
-  
   private String evolutionEngineKey;
   public String getEvolutionEngineKey(){return evolutionEngineKey;}
   private static EvolutionEngineEventDeclaration voucherActionEventDeclaration = null;
@@ -422,17 +418,6 @@ public class EvolutionEngine
 
     log.info("main START: {} {} {} {} {}", stateDirectory, bootstrapServers, kafkaStreamsStandbyReplicas, kafkaReplicationFactor);
     
-    //
-    // kafkaProducer
-    // 
-    
-    Properties producerProperties = new Properties();
-    producerProperties.put("bootstrap.servers", bootstrapServers);
-    producerProperties.put("acks", "all");
-    producerProperties.put("key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
-    producerProperties.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
-    kafkaProducer = new KafkaProducer<byte[], byte[]>(producerProperties);
-
     //
     //  dynamicCriterionFieldsService
     //
@@ -2041,6 +2026,7 @@ public class EvolutionEngine
           Map<String, SubscriberRelatives> subscriberRelations = subscriberProfile.getRelations();
           for (String relationshipID : subscriberRelations.keySet())
             {
+              SupportedRelationship supportedRelationship = DeploymentCommon.getSupportedRelationships().get(relationshipID);
               String previousParentSubscriberID = null;
               SubscriberRelatives relatives = subscriberProfile.getRelations().get(relationshipID);
               if(relatives != null && relatives.getParentSubscriberID() != null) 
@@ -2050,34 +2036,10 @@ public class EvolutionEngine
               
               if(previousParentSubscriberID != null)
                 {
-                  //
-                  // Delete child for the parent
-                  //
-                  
-                  try
-                    {
-                      JSONObject jsonRoot = new JSONObject();
-
-                      String subscriberProfileForceUpdateRequestID = UUID.randomUUID().toString();
-                      jsonRoot.put("subscriberProfileForceUpdateRequestID", subscriberProfileForceUpdateRequestID);
-                      
-                      jsonRoot.put("subscriberID", previousParentSubscriberID);
-                      SubscriberProfileForceUpdate parentProfileForceUpdate = new SubscriberProfileForceUpdate(jsonRoot);
-                      ParameterMap parentParameterMap = parentProfileForceUpdate.getParameterMap();
-                      parentParameterMap.put("subscriberRelationsUpdateMethod", SubscriberRelationsUpdateMethod.RemoveChild.getExternalRepresentation());
-                      parentParameterMap.put("relationshipID", relationshipID);
-                      parentParameterMap.put("relativeSubscriberID", subscriberProfile.getSubscriberID());
-
-                      //
-                      // submit to kafka
-                      //
-                      
-                      kafkaProducer.send(new ProducerRecord<byte[], byte[]>(Deployment.getSubscriberProfileForceUpdateTopic(), StringKey.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), new StringKey(parentProfileForceUpdate.getSubscriberID())), SubscriberProfileForceUpdate.serde().serializer().serialize(Deployment.getSubscriberProfileForceUpdateTopic(), parentProfileForceUpdate)));
-                    } 
-                  catch (Exception e)
-                    {
-                      log.error("Exception in removing relationship dependency : {}", e.getMessage());
-                    }
+                  // trigger parent to remove this as a child
+                  UpdateOtherSubscriber updateOtherSubscriber = new UpdateOtherSubscriber(previousParentSubscriberID);
+                  updateOtherSubscriber.parentRemoved(Long.valueOf(subscriberState.getSubscriberID()), supportedRelationship);
+                  subscriberState.getUpdateOtherSubscriberRequests().add(updateOtherSubscriber);
                 }
             }
         }
