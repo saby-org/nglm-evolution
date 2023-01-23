@@ -420,6 +420,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       schemaBuilder.field("voucherDeliveries", SchemaBuilder.array(VoucherDelivery.schema()).optional());
       schemaBuilder.field("cancelPurchase", Schema.BOOLEAN_SCHEMA);
       schemaBuilder.field("previousPurchaseDate", Timestamp.builder().optional().schema());
+      schemaBuilder.field("metadata", Schema.OPTIONAL_STRING_SCHEMA);
       schema = schemaBuilder.build();
     }
 
@@ -460,6 +461,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     private List<VoucherDelivery> voucherDeliveries;
     private boolean cancelPurchase;
     private Date previousPurchaseDate;
+    private JSONObject metadata;
     
     //
     //  accessors
@@ -481,6 +483,8 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public String getSupplierDisplay() { return supplierDisplay; }
     public boolean getCancelPurchase() {return cancelPurchase; }
     public Date getPreviousPurchaseDate() { return previousPurchaseDate; }
+    public JSONObject getMetadata() { return metadata; }
+    
     //
     //  setters
     //
@@ -498,6 +502,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     public void setCancelPurchase(boolean cancelPurchase) { this.cancelPurchase = cancelPurchase;}
     public void setPreviousPurchaseDate(Date previousPurchaseDate) { this.previousPurchaseDate = previousPurchaseDate; } 
     public void setVoucherDeliveries(List<VoucherDelivery> voucherDeliveries) { this.voucherDeliveries = voucherDeliveries; }
+    public void setMetadata(JSONObject metadata) { this.metadata = metadata; }
     
     //
     //  offer delivery accessors
@@ -723,6 +728,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       this.resellerDisplay = JSONUtilities.decodeString(jsonRoot, "resellerDisplay", false);
       this.supplierDisplay = JSONUtilities.decodeString(jsonRoot, "supplierDisplay", false);
       this.cancelPurchase = JSONUtilities.decodeBoolean(jsonRoot, "cancelPurchase", Boolean.FALSE);
+      this.metadata = JSONUtilities.decodeJSONObject(jsonRoot, "metadata", new JSONObject());
       if (cancelPurchase) this.voucherDeliveries = decodeVoucherDeliveries(JSONUtilities.decodeJSONArray(jsonRoot, "voucherDeliveries", new JSONArray())); // hack to get back the voucher details send on a previous purchase call in cancel
       updatePurchaseFulfillmentRequest(offerService, paymentMeanService, resellerService, productService, supplierService, voucherService, now, tenantID);
     }
@@ -751,7 +757,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
     *
     *****************************************/
 
-    private PurchaseFulfillmentRequest(SchemaAndValue schemaAndValue, String offerID, String offerDisplay, int quantity, String salesChannelID, PurchaseFulfillmentStatus status, String offerContent, String meanOfPayment, long offerPrice, String origin, String resellerID, String resellerDisplay, String supplierDisplay, List<VoucherDelivery> voucherDeliveries, boolean cancelPurchase, Date previousPurchaseDate)
+    private PurchaseFulfillmentRequest(SchemaAndValue schemaAndValue, String offerID, String offerDisplay, int quantity, String salesChannelID, PurchaseFulfillmentStatus status, String offerContent, String meanOfPayment, long offerPrice, String origin, String resellerID, String resellerDisplay, String supplierDisplay, List<VoucherDelivery> voucherDeliveries, boolean cancelPurchase, Date previousPurchaseDate, JSONObject metadata)
     {
       super(schemaAndValue);
       this.offerID = offerID;
@@ -770,6 +776,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       this.supplierDisplay = supplierDisplay;
       this.cancelPurchase = cancelPurchase;
       this.previousPurchaseDate = previousPurchaseDate;
+      this.metadata = metadata;
     }
 
     /*****************************************
@@ -797,6 +804,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       this.voucherDeliveries = purchaseFulfillmentRequest.getVoucherDeliveries();
       this.cancelPurchase = purchaseFulfillmentRequest.getCancelPurchase();
       this.previousPurchaseDate = purchaseFulfillmentRequest.getPreviousPurchaseDate();
+      this.metadata = purchaseFulfillmentRequest.getMetadata();
     }
 
     /*****************************************
@@ -847,6 +855,10 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       this.quantity = (Integer) esFields.get("offerQty");
       this.returnCode = (Integer) esFields.get("returnCode");
       this.status = PurchaseFulfillmentStatus.fromReturnCode(returnCode);
+      if (esFields.get("metadata") != null)
+        {
+          this.metadata = JSONUtilities.encodeObject((Map) esFields.get("metadata"));
+        }
       
       //
       // derived
@@ -971,6 +983,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       struct.put("supplierDisplay", purchaseFulfillmentRequest.getSupplierDisplay());
       struct.put("cancelPurchase", purchaseFulfillmentRequest.getCancelPurchase());
       struct.put("previousPurchaseDate", purchaseFulfillmentRequest.getPreviousPurchaseDate());
+      struct.put("metadata", purchaseFulfillmentRequest.getMetadata() != null ? purchaseFulfillmentRequest.getMetadata().toJSONString() : null);
       if(purchaseFulfillmentRequest.getVoucherDeliveries()!=null) struct.put("voucherDeliveries", packVoucherDeliveries(purchaseFulfillmentRequest.getVoucherDeliveries()));
       return struct;
     }
@@ -1025,13 +1038,25 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       List<VoucherDelivery> voucherDeliveries = (schemaVersion >= 5) ? unpackVoucherDeliveries(schema.field("voucherDeliveries").schema(), valueStruct.get("voucherDeliveries")) : null;
       boolean cancelPurchase = (schemaVersion >= 10) ? valueStruct.getBoolean("cancelPurchase") : false;
       Date previousPurchaseDate = (schemaVersion >= 10) ? (Date) valueStruct.get("previousPurchaseDate") : null;
-
+      String metadataStr = (schema.field("metadata")!= null) ?  valueStruct.getString("metadata") : null;
+      JSONObject metadata = new JSONObject();
+      if (metadataStr != null)
+        {
+          try
+            {
+              metadata = (JSONObject) (new JSONParser()).parse(metadataStr);
+            } 
+          catch (ParseException e)
+            {
+              e.printStackTrace();
+            }
+        }
 
       //
       //  return
       //
 
-      return new PurchaseFulfillmentRequest(schemaAndValue, offerID, offerDisplay, quantity, salesChannelID, status, offerContent, meanOfPayment, offerPrice, origin, resellerID, resellerDisplay, supplierDisplay, voucherDeliveries, cancelPurchase, previousPurchaseDate);
+      return new PurchaseFulfillmentRequest(schemaAndValue, offerID, offerDisplay, quantity, salesChannelID, status, offerContent, meanOfPayment, offerPrice, origin, resellerID, resellerDisplay, supplierDisplay, voucherDeliveries, cancelPurchase, previousPurchaseDate, metadata);
     }
 
     private static List<VoucherDelivery> unpackVoucherDeliveries(Schema schema, Object value){
@@ -1116,6 +1141,20 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       guiPresentationMap.put(OFFERQTY, getQuantity());
 
       GUIManagedObject offerGMO = offerService.getStoredOffer(getOfferID(), true);
+      
+      //
+      //  OFFERCANCELLABLE
+      //
+      
+      guiPresentationMap.put(OFFERCANCELLABLE, offerGMO.getAccepted() ? ((Offer) offerGMO).getCancellable() : false);
+      if (getMetadata() != null)
+        {
+          Boolean cancellable = JSONUtilities.decodeBoolean(getMetadata(), "cancellable");
+          if (cancellable != null)
+            {
+              guiPresentationMap.put(OFFERCANCELLABLE, cancellable);
+            }
+        }
 
       //
       //  presentation
@@ -1125,8 +1164,6 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
         {
           guiPresentationMap.put(OFFERNAME, offerGMO.getJSONRepresentation().get("name"));
           guiPresentationMap.put(OFFERDISPLAY, offerGMO.getJSONRepresentation().get("display"));
-          guiPresentationMap.put(OFFERCANCELLABLE, offerGMO.getAccepted() ? ((Offer) offerGMO).getCancellable() : false);
-
           guiPresentationMap.put(OFFERSTOCK, offerGMO.getJSONRepresentation().get("presentationStock")); // in case we don't find the offer
           
           if (offerGMO instanceof Offer)
@@ -1204,6 +1241,20 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
       if (offerObject != null && offerObject instanceof Offer)
         {
           offer = (Offer) offerObject;
+          thirdPartyPresentationMap.put(OFFERCANCELLABLE, offer.getCancellable());
+        }
+      
+      //
+      //  OFFERCANCELLABLE
+      //
+      
+      if (getMetadata() != null)
+        {
+          Boolean cancellable = JSONUtilities.decodeBoolean(getMetadata(), "cancellable");
+          if (cancellable != null)
+            {
+              thirdPartyPresentationMap.put(OFFERCANCELLABLE, cancellable);
+            }
         }
 
       //
@@ -1216,7 +1267,6 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
           thirdPartyPresentationMap.put(OFFERDISPLAY, offer.getJSONRepresentation().get("display"));
           thirdPartyPresentationMap.put(OFFERQTY, getQuantity());
           thirdPartyPresentationMap.put(OFFERSTOCK, offer.getStock());
-          thirdPartyPresentationMap.put(OFFERCANCELLABLE, offer.getCancellable());
           if(offer.getOfferSalesChannelsAndPrices() != null){
             for(OfferSalesChannelsAndPrice channel : offer.getOfferSalesChannelsAndPrices()){
               if(channel.getSalesChannelIDs() != null) {
@@ -1393,7 +1443,8 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
             Offer offer = (offerUnchecked != null && offerUnchecked.getAccepted()) ? (Offer) offerUnchecked : null;
             if (offer != null)
               {
-                if (offer.getOfferVouchers() != null && !offer.getOfferVouchers().isEmpty())
+                JSONObject metadata = purchaseRequest.getMetadata();
+                if (purchaseRequest.getVoucherDeliveries() != null && !purchaseRequest.getVoucherDeliveries().isEmpty())
                   {
                     List<VoucherDelivery> voucherDeliveries = getCancelableVouchers(subscriberProfile, purchaseRequest.getVoucherDeliveries());
                     for (VoucherDelivery voucherDelivery : voucherDeliveries)
@@ -1420,26 +1471,29 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
                 
 
                 //
-                //  addPaymentDebited
+                //  addPaymentDebited - read from ES(metadata)
                 //
                 
-                if (offer.getOfferSalesChannelsAndPrices() != null)
+                if (metadata != null)
                   {
-                    OfferSalesChannelsAndPrice offerPrice = offer.getOfferSalesChannelsAndPrices().stream().filter(ofrPric -> ofrPric.getSalesChannelIDs().contains(salesChannelID)).findFirst().orElse(null);
-                    if (offerPrice != null && offerPrice.getPrice() != null)
+                    JSONObject offerPriceJson = JSONUtilities.decodeJSONObject(metadata, "offerPrice", false);
+                    if (offerPriceJson != null)
                       {
-                        purchaseStatus.addPaymentDebited(offerPrice.getPrice());
+                        OfferPrice offerPrice = new OfferPrice(offerPriceJson);
+                        purchaseStatus.addPaymentDebited(offerPrice);
                       }
                   }
                 
                 //
-                //  addProductCredited
+                //  addProductCredited - read from ES(metadata)
                 //
                 
-                if (offer.getOfferProducts() != null && !offer.getOfferProducts().isEmpty())
+                JSONArray offerProducts = JSONUtilities.decodeJSONArray(metadata, "offerProducts", new JSONArray());
+                if (!offerProducts.isEmpty())
                   {
-                    for (OfferProduct offerProduct : offer.getOfferProducts())
+                    for (int i = 0; i < offerProducts.size(); i++)
                       {
+                        OfferProduct offerProduct = new OfferProduct((JSONObject) offerProducts.get(i));
                         Product product = productService.getActiveProduct(offerProduct.getProductID(), purchaseRequest.getPreviousPurchaseDate());
                         if (product != null)
                           {
@@ -1452,6 +1506,7 @@ public class PurchaseFulfillmentManager extends DeliveryManager implements Runna
                             purchaseStatus.addProductStockDebited(offerProduct);
                           }
                       }
+                    
                   }
               }
             else

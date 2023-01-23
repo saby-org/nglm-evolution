@@ -11,9 +11,11 @@ import java.util.Random;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.sink.SinkRecord;
+import org.json.simple.JSONObject;
 
 import com.evolving.nglm.core.Deployment;
 import com.evolving.nglm.core.DeploymentCommon;
+import com.evolving.nglm.core.JSONUtilities;
 import com.evolving.nglm.core.RLMDateUtils;
 import com.evolving.nglm.core.ReferenceDataReader;
 import com.evolving.nglm.core.SimpleESSinkConnector;
@@ -156,6 +158,7 @@ public class ODRSinkConnector extends SimpleESSinkConnector
       Offer offer = offerService.getActiveOffer(purchaseManager.getOfferID(), now);
 
       List<Map<String, Object>> voucherList = new ArrayList<>();
+      Map<String, Object> metadataJSON = new HashMap<String, Object>();
       
       Map<String,Object> documentMap = new HashMap<String,Object>();
       documentMap.put("subscriberID", purchaseManager.getSubscriberID());
@@ -171,6 +174,7 @@ public class ODRSinkConnector extends SimpleESSinkConnector
      
         if (offer != null)
           {
+            metadataJSON.put("cancellable", offer.getCancellable());
             if (offer.getOfferSalesChannelsAndPrices() != null)
               {
                 for (OfferSalesChannelsAndPrice channel : offer.getOfferSalesChannelsAndPrices())
@@ -181,9 +185,11 @@ public class ODRSinkConnector extends SimpleESSinkConnector
                           {
                             if (salesChannelID.equals(purchaseManager.getSalesChannelID()))
                               {
+                                metadataJSON.put("salesChannelID", salesChannelID);
                                 OfferPrice price = channel.getPrice();
                                 if (price != null)
                                   {
+                                    metadataJSON.put("offerPrice", price.getJSONRepresentation());
                                     PaymentMean paymentMean = (PaymentMean) paymentMeanService.getStoredPaymentMean(price.getPaymentMeanID());
                                     if (paymentMean != null)
                                       {
@@ -198,12 +204,17 @@ public class ODRSinkConnector extends SimpleESSinkConnector
               }
         documentMap.put("offerStock", offer.getStock());
         StringBuilder sb = new StringBuilder();
-        if(offer.getOfferProducts() != null) {
-          for(OfferProduct offerProduct : offer.getOfferProducts()) {
-            Product product = (Product) productService.getStoredProduct(offerProduct.getProductID());
-            sb.append(offerProduct.getQuantity()+" ").append(product!=null?product.getDisplay():"product"+offerProduct.getProductID()).append(",");
+        if (offer.getOfferProducts() != null)
+          {
+            List<JSONObject> offerProducts = new ArrayList<JSONObject>();
+            for (OfferProduct offerProduct : offer.getOfferProducts())
+              {
+                offerProducts.add(offerProduct.getJSONRepresentation());
+                Product product = (Product) productService.getStoredProduct(offerProduct.getProductID());
+                sb.append(offerProduct.getQuantity() + " ").append(product != null ? product.getDisplay() : "product" + offerProduct.getProductID()).append(",");
+              }
+            metadataJSON.put("offerProducts", JSONUtilities.encodeArray(offerProducts));
           }
-        }
           if (purchaseManager.getVoucherDeliveries() != null)
             {
               // StringBuilder voucherCodeSb=new StringBuilder("");//ready for
@@ -256,6 +267,7 @@ public class ODRSinkConnector extends SimpleESSinkConnector
       documentMap.put("vouchers", voucherList);
       documentMap.put("creationDate", purchaseManager.getCreationDate() != null ? RLMDateUtils.formatDateForElasticsearchDefault(purchaseManager.getCreationDate()):"");
       documentMap.put("stratum", purchaseManager.getStatisticsSegmentsMap(subscriberGroupEpochReader, segmentationDimensionService));
+      documentMap.put("metadata", JSONUtilities.encodeObject(metadataJSON));
 
       return documentMap;
     }

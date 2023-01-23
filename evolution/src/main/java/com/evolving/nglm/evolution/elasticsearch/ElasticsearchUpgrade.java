@@ -269,10 +269,13 @@ public class ElasticsearchUpgrade
     //   - origin                                          (was not indexed: index config was set to false)
     // - from to 2.0.0_2 (3) to 2.0.0_2 (4) :
     //   - returnCode                                      (was a keyword, is now a integer)
-    loadPatch("detailedrecords_offers"            , 1, 4, "detailedrecords_offers-_tmp", (s) -> s,
+    // - from to 2.1.1_4 (4) to 2.1.1_4/2.2.0 (5) :
+    //   - meta_data                                       (new)
+    loadPatch("detailedrecords_offers"            , 1, 5, "detailedrecords_offers-_tmp", (s) -> s,
         "ctx._source.tenantID = 1;");
-    loadPatch("detailedrecords_offers"            , 2, 4, "detailedrecords_offers-_tmp", (s) -> s, "");
-    loadPatch("detailedrecords_offers"            , 3, 4, "detailedrecords_offers-_tmp", (s) -> s, "");
+    loadPatch("detailedrecords_offers"            , 2, 5, "detailedrecords_offers-_tmp", (s) -> s, "");
+    loadPatch("detailedrecords_offers"            , 3, 5, "detailedrecords_offers-_tmp", (s) -> s, "");
+    loadPatch("detailedrecords_offers"            , 4, 5, "detailedrecords_offers-_tmp", (s) -> s, "");
     
     /*****************************************
     *

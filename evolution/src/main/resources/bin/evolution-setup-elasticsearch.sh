@@ -458,7 +458,8 @@ prepare-es-update-curl -XPUT https://$MASTER_ESROUTER_SERVER/_template/odr -u $E
       "deliveryStatus" : { "type" : "keyword" },
       "returnCodeDetails" : { "type" : "keyword", "index" : "false" },
       "voucherCode" : { "type" : "keyword" },
-      "voucherPartnerID" : { "type" : "keyword" }
+      "voucherPartnerID" : { "type" : "keyword" },
+      "metadata"        : { "type": "object" }
     }
   }
 }'
